@@ -1,4 +1,29 @@
 # massive.py
+"""
+A wxPython GUI to provide easy login to the MASSIVE Desktop, 
+initially on Mac OS X.  It can be run using "python massive.py",
+assuming that you have a 32-bit version of Python installed,
+wxPython, and the pexpect module.
+
+The py2app module is required to build the MASSIVE.app 
+application bundle, which can be built as follows:
+
+   python create_massive_bundle.py py2app
+  
+ACKNOWLEDGEMENT
+
+Thanks to Michael Eager for a concise, non-GUI Python script
+which demonstrated the use of the Python pexpect module to 
+automate SSH logins and to automate calling TurboVNC.  This
+wxPython version aims to be more user-friendly, particularly on 
+Mac OS X and Windows, and aims to be develop a sophisticated
+knowledge of things which can wrong when attempting to launch
+the MASSIVE Desktop, e.g. an SSH Tunnel is already open on 
+Port 5901, and to provide an appropriate balance between
+resolving problems automatically for the user and reporting
+them to the user as clearly as possible.
+ 
+"""
 
 import wx
 import pexpect
