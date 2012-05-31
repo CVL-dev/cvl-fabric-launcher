@@ -1,0 +1,72 @@
+
+MASSIVE LAUNCHER
+================
+
+MASSIVE Launcher is an attempt to offer MASSIVE users an easier login method,
+beginning with Mac OS X users.  Currently Mac OS X users have to install
+TurboVNC, only to find that there is no double-clickable TurboVNC application
+in their Applications folder, so they have to run it from the command-line 
+after creating an SSH tunnel.  MASSIVE Launcher provides a double-clickable
+GUI launcher for MASSIVE users, which creates the SSH tunnel automatically, 
+using the Python pexpect library, and then calls TurboVNC to launch the MASSIVE
+Desktop.  This allows the user to launch the MASSIVE Desktop without having to
+use the command-line.
+
+MASSIVE LAUNCHER CONFLUENCE DOCUMENTATION
+
+See https://confluence-vre.its.monash.edu.au/display/CVL/Easy+login+on+Mac+OS+X+using+wxPython
+
+BUNDLING THE PYTHON SCRIPTS INTO A MAC OS X APPLICATION
+
+On Mac OS X, the launcher app can be built using:
+
+python create_massive_bundle.py py2app
+
+The core code of the launcher is in the massive.py script, and can be run
+with "python masive.py". The create_massive_bundle.py script is used with 
+py2app to create the MASSIVE.app application bundle. 
+
+The create_massive_bundle.py script can be used to specify the application
+name, the icon file, the version number, and other attributes to be included
+within MASSIVE.app/Contents/Info.plist
+
+MASSIVE LAUNCHER VERSION NUMBER
+
+The version number of a Mac OS X application is listed in its 
+ApplicationName.app/Contents/Info.plist file.  However, the MASSIVE Launcher
+application needs to be able to check its version number programmatically
+(preferably using a platform-independent method), so that it can inform the 
+user if an upgrade is required.  For this reason, the version number is 
+recorded in the massive_launcher_version_number.py script, so that it can be 
+read by both the create_massive_bundle.py script, used by py2app to build
+MASSIVE.app/Contents/Info.plist, and by the massive.py application.
+
+PYTHON VERSION
+
+A 32-bit version of Python is required to use wxPython. It is best to install
+Python from python.org, rather than trying to use a pre-installed version
+bundled with the operating system. James uses python-2.7.3-macosx10.3.dmg from 
+Python.org.
+
+WXPYTHON VERSION
+
+The wxPython version you use must match the Python version being used 
+(e.g. 2.7).  James uses wxPython2.8-osx-unicode-2.8.12.1-universal-py2.7 from 
+http://wxpython.org/download.php 
+
+ICON
+
+The MASSIVE.icns icon file is for the Mac OS X operating system only. 
+It was created using the free Img2icns application. http://www.img2icnsapp.com/
+There is also a built-in Mac OS X application, Icon Composer. It used to live
+in the /Applications/Utilities/ folder, or the /Developer/Applications/ folder.
+Now you have to install Xcode first (from the App Store), then launch Xcode, and from the Xcode menu, choose "Open Developer Tool". The image used to create
+the icon was taken as a screenshot (cmd-shift-4) from the MASSIVE website. The
+white background was then made transparent, by using Gimp 2.8's 
+"Color to Alpha..." menu item in the "Colors" menu. 
+
+The create_massive_bundle.py script can be used to specify the icon file
+(MASSIVE.icns), which will be included in MASSIVE.app/Contents/Info.plist by
+the py2app module. The MASSIVE.icns file will be copied into
+MASSIVE.app/Contents/Resources/ by the py2app module.
+
