@@ -33,6 +33,15 @@ import sys
 import traceback
 from threading import *
 import os
+import ssh
+import HTMLParser
+import urllib
+import massive_launcher_version_number
+import StringIO
+#import logging
+
+#logger = ssh.util.logging.getLogger()
+#logger.setLevel(logging.WARN)
 
 defaulthost = "m2.massive.org.au"
 
@@ -41,6 +50,33 @@ project = ""
 hours = ""
 username = ""
 password = ""
+
+class MyHtmlParser(HTMLParser.HTMLParser):
+  def __init__(self):
+    HTMLParser.HTMLParser.__init__(self)
+    self.recording = 0
+    self.data = []
+
+  def handle_starttag(self, tag, attributes):
+    if tag != 'span':
+      return
+    if self.recording:
+      self.recording += 1
+      return
+    for name, value in attributes:
+      if name == 'id' and value == 'MassiveLauncherLatestVersionNumber':
+        break
+    else:
+      return
+    self.recording = 1
+
+  def handle_endtag(self, tag):
+    if tag == 'span' and self.recording:
+      self.recording -= 1
+
+  def handle_data(self, data):
+    if self.recording:
+      self.data.append(data)
 
 class MyFrame(wx.Frame):
 
@@ -88,8 +124,27 @@ class MyFrame(wx.Frame):
         self.SetStatusBar(self.statusbar)
         self.Centre()
 
+        myHtmlParser = MyHtmlParser()
+        feed = urllib.urlopen("https://mnhs-massive-dev.med.monash.edu/index.php?option=com_content&view=article&id=121")
+        html = feed.read()
+        myHtmlParser.feed(html)
+        myHtmlParser.close()
+
+        latestVersion = myHtmlParser.data[0].strip()
+
+        if latestVersion!=massive_launcher_version_number.version_number:
+            dlg = wx.MessageDialog(self, 
+                "You are running version " + massive_launcher_version_number.version_number + "\n\n" +
+                "The latest version is " + myHtmlParser.data[0] + "\n\n" +
+                "Please download a new version from:\n\nhttps://mnhs-massive-dev.med.monash.edu/index.php?option=com_content&view=article&id=121\n\n" +
+                "For queries, please contact:\n\nhelp@massive.org.au\njames.wettenhall@monash.edu\n",
+                "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+            sys.exit(1)
+ 
     def OnAbout(self, event):
-        dlg = wx.MessageDialog(self, "Version 0.0.1\n",
+        dlg = wx.MessageDialog(self, "Version " + massive_launcher_version_number.version_number + "\n",
                                 "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
@@ -117,99 +172,116 @@ class MyFrame(wx.Frame):
                 vnc = "/opt/TurboVNC/bin/vncviewer"
 
                 try:
-                    wx.CallAfter(sys.stdout.write, " Attempting to log in to " + host + "...\n")
+                    wx.CallAfter(sys.stdout.write, "Attempting to log in to " + host + "...\n")
+                    
+                    sshClient = ssh.SSHClient()
+                    sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                    sshClient.connect(host,username=username,password=password)
 
-                    child1 = pexpect.spawn("ssh "+username+"@"+host, timeout=20)
-                    ssh_newkey = "Are you sure you want to continue connecting"
-                    count = 0
-                    shouldWaitForLoginAcknowledgement = True
-                    while shouldWaitForLoginAcknowledgement:
-                        i = child1.expect ([ssh_newkey,'password:',pexpect.EOF,pexpect.TIMEOUT],1)
-                        if i==0:
-                            child1.sendline("yes")        
-                            i=child1.expect([ssh_newkey,'password:',pexpect.EOF])
-                            shouldWaitForLoginAcknowledgement = True
-                        elif i==1:
-                            child1.sendline (password)
-                            shouldWaitForLoginAcknowledgement = False
-                        elif i==2:
-                            wx.CallAfter(sys.stdout.write, " EOF encountered while trying to log in.\n")
-                            shouldWaitForLoginAcknowledgement = False
-                        elif i==3:
-                            if count<5:
-                                count +=1
-                                time.sleep(1)
-                            else:
-                                wx.CallAfter(sys.stdout.write, " Login timed out.\n")
-                                shouldWaitForLoginAcknowledgement = False
+                    stdin,stdout,stderr = sshClient.exec_command("uptime")
+                    wx.CallAfter(sys.stdout.write, stderr.read())
+                    wx.CallAfter(sys.stdout.write, "uptime: " + stdout.read())
 
-                    wx.CallAfter(sys.stdout.write, " First login done.\n")
+                    wx.CallAfter(sys.stdout.write, "First login done.\n")
 
-                    child1.sendline("mybalance --hours")
-                    child1.expect("Project")
-                    wx.CallAfter(sys.stdout.write, "\n mybalance --hours\n Project ")
-                    wx.CallAfter(sys.stdout.write, child1.readline().strip() + "\n")
-                    wx.CallAfter(sys.stdout.write, " " + child1.readline().strip() + "\n")
-                    wx.CallAfter(sys.stdout.write, " " + child1.readline().strip() + "\n")
-
-                    #time.sleep(10)
                     wx.CallAfter(sys.stdout.write, "\n")
 
-                    wx.CallAfter(sys.stdout.write, " " + qsubcmd + "\n")
+                    wx.CallAfter(sys.stdout.write, "mybalance --hours\n")
+                    stdin,stdout,stderr = sshClient.exec_command("mybalance --hours")
+                    wx.CallAfter(sys.stdout.write, stderr.read())
+                    wx.CallAfter(sys.stdout.write, stdout.read())
+
                     wx.CallAfter(sys.stdout.write, "\n")
-                    child1.sendline(qsubcmd)
 
-                    shouldWaitForQsubAcknowledgement = True
-                    while shouldWaitForQsubAcknowledgement:
-                        i = child1.expect (["qsub: waiting for job ",pexpect.EOF,pexpect.TIMEOUT],1)
-                        if i==0:
-                            shouldWaitForQsubAcknowledgement = False
-                            restOfLine = child1.readline()
-                            restOfLineStringSplit = restOfLine.split(" ")
-                            jobNumberAndNode = restOfLineStringSplit[0]
-                            jobNumberAndNodeStringSplit = jobNumberAndNode.split(".")
-                            jobNumber = jobNumberAndNodeStringSplit[0]
-                            wx.CallAfter(sys.stdout.write, " qsub: waiting for job " + restOfLine)
+                    wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
+                    wx.CallAfter(sys.stdout.write, "\n")
+                  
+                    # An ssh channel can be used to execute a command, 
+                    # and you can use it in a select statement to find out when data can be read.
+                    # The channel object can be read from and written to, connecting with 
+                    # stdout and stdin of the remote command. You can get at stderr by calling 
+                    # channel.makefile_stderr(...).
 
-                    #wx.CallAfter(sys.stdout.write, "\n")
+                    transport = sshClient.get_transport()
+                    channel = transport.open_session()
+                    channel.get_pty()
+                    channel.setblocking(0)
+                    channel.invoke_shell()
+                    out = ""
+                    channel.send(qsubcmd + "\n")
 
-                    wx.CallAfter(sys.stdout.write, " *")
-                    for i in range(1,9):
-                        time.sleep(1)
-                        wx.CallAfter(sys.stdout.write, "*")
+                    # From: http://www.lag.net/paramiko/docs/paramiko.Channel-class.html#recv_stderr_ready
+                    # "Only channels using exec_command or invoke_shell without a pty 
+                    #  will ever have data on the stderr stream."
 
-                    shouldWaitForNode = True
-                    while shouldWaitForNode:
-                        i = child1.expect ([" Starting XServer on the following nodes...",pexpect.EOF,pexpect.TIMEOUT],timeout=1)
-                        #wx.CallAfter(sys.stdout.write, child1.before)
-                        if i==0:
-                            shouldWaitForNode = False
-                            child1.readline()
-                            # grab the visnode and strip the white space at the start and at the end
-                            visnode = child1.readline().strip()
-                            break
-                        elif i==1:
-                            break
-                        elif i==2:
+                    lineNumber = 0
+                    startingXServerLineNumber = -1
+                    breakOutOfMainLoop = False
+                    lineFragment = ""
+
+                    while True:
+                        tCheck = 0
+                        while not channel.recv_ready() and not channel.recv_stderr_ready():
+                            #wx.CallAfter(sys.stdout.write, "*")
                             time.sleep(1)
-                            wx.CallAfter(sys.stdout.write, "*")
+                            tCheck+=1
+                            if tCheck >= 10:
+                                wx.CallAfter(sys.stdout.write, "Read time out?\n") # TODO: add exception here
+                                # return False
+                                break
+                        if (channel.recv_stderr_ready()):
+                            out = channel.recv_stderr(1024)
+                            buff = StringIO.StringIO(out)
+                            line = lineFragment + buff.readline()
+                            while line != "":
+                                wx.CallAfter(sys.stdout.write, "ERROR: " + line)
+                        if (channel.recv_ready()):
+                            out = channel.recv(1024)
+                            buff = StringIO.StringIO(out)
+                            line = lineFragment + buff.readline()
+                            while line != "":
+                                lineNumber += 1
+                                if not line.endswith("\n") and not line.endswith("\r"):
+                                    lineFragment = line
+                                    #wx.CallAfter(sys.stdout.write, "lineFragment: " + "!!!"+lineFragment+"!!!")
+                                    break
+                                else:
+                                    lineFragment = ""
+                                if "waiting for job" in line:
+                                    wx.CallAfter(sys.stdout.write, line)
+                                    #wx.CallAfter(sys.stdout.write, "\"waiting for job\" is in: ???" + line.strip() + "???\n")
+                                if "Starting XServer on the following nodes" in line:
+                                    startingXServerLineNumber = lineNumber
+                                    #wx.CallAfter(sys.stdout.write, "<XS>" + line.strip() + "</XS>\n")
+                                if lineNumber == (startingXServerLineNumber + 1): # vis node
+                                    visnode = line.strip()
+                                    #wx.CallAfter(sys.stdout.write, "### " + line.strip() + " ### \n")
+                                    breakOutOfMainLoop = True
+                                line = buff.readline()
+                        if breakOutOfMainLoop:
+                            break
 
-                    wx.CallAfter(sys.stdout.write, "\n\n")
+                    wx.CallAfter(sys.stdout.write, "\n")
 
-                    wx.CallAfter(sys.stdout.write, " Massive Desktop visnode: " + visnode + "\n\n")
+                    wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
 
                     ###print child1.before
                     ###print child1.after
 
                     # Note that the use of system calls to "ps" etc. below is not portable to the Windows platform.
-                    # An alternative could be to use the psutil module - see http://stackoverflow.com/questions/6780035/python-how-to-run-ps-cax-grep-something-in-python and http://code.google.com/p/psutil/, however it is difficult to install on my Mac (because I use a 32-bit Python for wxPython), due to this bug: http://bugs.python.org/issue13590.  A work around could be to install my 32-bit version Python from source to ensure that my local gcc version is used to build it.
+                    # An alternative could be to use the psutil module - see http://stackoverflow.com/questions/6780035/python-how-to-run-ps-cax-grep-something-in-python and http://code.google.com/p/psutil/.
                     # Probably a better way to check for use of port 5901 on Mac is to use: "lsof -i tcp:5901"
                     # On Unix systems with fuser installed, you can use: "fuser -v -n tcp 5901"
-                    wx.CallAfter(sys.stdout.write, " Checking for and removing any existing ssh tunnel(s) using local port 5901...\n\n")
-                    os.system("ps ax | grep \"5901\\:\" | grep ssh | awk '{print $1}' | xargs kill")
 
-                    wx.CallAfter(sys.stdout.write, " Starting tunnelled ssh session...\n")
-                    wx.CallAfter(sys.stdout.write, " ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host+"\n\n")
+                    # We can use sys.platform to check the OS.  
+                    # Typical return values include 'darwin' (Mac OS X), 'win32', 'linux2', ...
+
+                    if not sys.platform.startswith("win"):
+                        wx.CallAfter(sys.stdout.write, "Checking for and removing any existing ssh tunnel(s) using local port 5901...\n\n")
+                        os.system("ps ax | grep \"5901\\:\" | grep ssh | awk '{print $1}' | xargs kill")
+
+                    wx.CallAfter(sys.stdout.write, "Starting tunnelled ssh session...\n")
+                    wx.CallAfter(sys.stdout.write, "ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host+"\n\n")
                     ssh_tunnel = pexpect.spawn("ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host, timeout=1)
 
                     ssh_newkey = "Are you sure you want to continue connecting"
@@ -230,8 +302,8 @@ class MyFrame(wx.Frame):
                                 shouldWaitForTunnelToBeSetup = False
                                 break
                         elif i==2:
-                            raise Exception(" " + ssh_tunnel.before + "\n" + 
-                                                " " + ssh_tunnel.readline())
+                            raise Exception(ssh_tunnel.before + "\n" + 
+                                                ssh_tunnel.readline())
                         elif i==3:
                             break
                         elif i==4:
@@ -239,13 +311,13 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "\n Checking for TurboVNC...\n")
                     if os.path.exists(vnc):
-                        wx.CallAfter(sys.stdout.write, " TurboVNC was found in " + vnc + "\n")
+                        wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
-                        wx.CallAfter(sys.stdout.write, " Error: TurboVNC was not found in " + vnc + "\n")
+                        wx.CallAfter(sys.stdout.write, "Error: TurboVNC was not found in " + vnc + "\n")
 
-                    wx.CallAfter(sys.stdout.write, "\n Starting MASSIVE VNC...\n")
+                    wx.CallAfter(sys.stdout.write, "\nStarting MASSIVE VNC...\n")
 
-                    wx.CallAfter(sys.stdout.write, " " + vnc + " -user " + username + " localhost:1")
+                    wx.CallAfter(sys.stdout.write, vnc + " -user " + username + " localhost:1")
                     child2 = pexpect.spawn(vnc + " -user " + username + " localhost:1")
                     time.sleep(1)
                     child2.expect("Password:")
@@ -258,6 +330,8 @@ class MyFrame(wx.Frame):
                             shouldWaitForMassiveDesktopVNCSessionToFinish = False
                         else:
                             time.sleep(1)
+
+                    sshClient.close()
 
                     #child1.logout()
                     #self.statusbar.SetStatusText('User connected')
