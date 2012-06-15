@@ -27,7 +27,9 @@ them to the user as clearly as possible.
 
 import sys
 if sys.platform.startswith("win"):
-    import winpexpect
+    import _winreg
+    #import winpexpect
+    import subprocess
 else:
     import pexpect
 import wx
@@ -43,7 +45,6 @@ import urllib
 import massive_launcher_version_number
 import StringIO
 import forward
-#import subprocess
 #import logging
 
 #logger = ssh.util.logging.getLogger()
@@ -299,6 +300,10 @@ class MyFrame(wx.Frame):
                     time.sleep(2)
 
                     vnc = "/opt/TurboVNC/bin/vncviewer"
+                    if sys.platform.startswith("win"):
+                        key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
+                        queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                        vnc = os.path.join(queryResult[0], "vncviewer.exe")
                     #wx.CallAfter(sys.stdout.write, "\nChecking for TurboVNC...\n")
                     if os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
@@ -320,7 +325,9 @@ class MyFrame(wx.Frame):
 
                     try:
                         if sys.platform.startswith("win"):
-                            child = winpexpect.winspawn(vnc + " -user " + username + " localhost:1")
+                            #child = winpexpect.winspawn("\"" + vnc + "\" -user " + username + " localhost:1")
+                            wx.CallAfter(sys.stdout.write, "\"" + vnc + "\" /user " + username + " /password " + password + " localhost:1")
+                            subprocess.call("\"" + vnc + "\" /user " + username + " /password " + password + " localhost:1",shell=True)
                         else:
                             wx.CallAfter(sys.stdout.write, "Spawing TurboVNC process, using pexpect...\n")
                             child = pexpect.spawn(vnc + " -user " + username + " localhost:1")
