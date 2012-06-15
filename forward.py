@@ -33,6 +33,9 @@ import select
 import SocketServer
 import sys
 from optparse import OptionParser
+#import logging
+
+import wx
 
 import paramiko
 
@@ -41,15 +44,22 @@ DEFAULT_PORT = 4000
 
 g_verbose = True
 
-
-class ForwardServer (SocketServer.ThreadingTCPServer):
-    daemon_threads = True
-    allow_reuse_address = True
-    
+#logging.basicConfig(level=logging.DEBUG,
+                    #format='%(name)s: %(message)s',
+                    #)
 
 class Handler (SocketServer.BaseRequestHandler):
 
+    def __init__(self, request, client_address, server):
+        #self.logger = logging.getLogger('Handler')
+        #self.logger.debug('Handler.__init__')
+        SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
+        return
+
     def handle(self):
+    
+        #verbose("Handler.handle 1")
+
         try:
             chan = self.ssh_transport.open_channel('direct-tcpip',
                                                    (self.chain_host, self.chain_port),
@@ -59,6 +69,9 @@ class Handler (SocketServer.BaseRequestHandler):
                                                               self.chain_port,
                                                               repr(e)))
             return
+
+        #verbose("Handler.handle 2")
+
         if chan is None:
             verbose('Incoming request to %s:%d was rejected by the SSH server.' %
                     (self.chain_host, self.chain_port))
@@ -82,21 +95,39 @@ class Handler (SocketServer.BaseRequestHandler):
         self.request.close()
         verbose('Tunnel closed from %r' % (self.request.getpeername(),))
 
+class ForwardServer (SocketServer.ThreadingTCPServer):
+
+    def __init__(self, server_address, handler_class=Handler):
+        #self.logger = logging.getLogger('ForwardServer')
+        #self.logger.debug('ForwardServer.__init__')
+        SocketServer.TCPServer.__init__(self, server_address, handler_class)
+        return
+
+    daemon_threads = True
+    allow_reuse_address = True
+    
+
 
 def forward_tunnel(local_port, remote_host, remote_port, transport):
     # this is a little convoluted, but lets me configure things for the Handler
     # object.  (SocketServer doesn't give Handlers any way to access the outer
     # server normally.)
+
     class SubHander (Handler):
         chain_host = remote_host
         chain_port = remote_port
         ssh_transport = transport
-    ForwardServer(('', local_port), SubHander).serve_forever()
 
+    #verbose("local_port = " + str(local_port))
+    #verbose("remote_host = " + remote_host)
+    #verbose("remote_port = " + str(remote_port))
+
+    ForwardServer(('', local_port), SubHander).serve_forever()
 
 def verbose(s):
     if g_verbose:
-        print s
+        #print s
+        wx.CallAfter(sys.stdout.write, s + "\n")
 
 
 HELP = """\

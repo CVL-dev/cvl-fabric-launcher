@@ -31,13 +31,15 @@ import getpass
 import time
 import sys
 import traceback
-from threading import *
+import threading
+#from threading import *
 import os
 import ssh
 import HTMLParser
 import urllib
 import massive_launcher_version_number
 import StringIO
+import forward
 #import logging
 
 #logger = ssh.util.logging.getLogger()
@@ -81,6 +83,9 @@ class MyHtmlParser(HTMLParser.HTMLParser):
 class MyFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
+
+        global logTextCtrl
+
         wx.Frame.__init__(self, parent, id, title, size=(305, 310))
 
         self.menu_bar  = wx.MenuBar()
@@ -153,11 +158,11 @@ class MyFrame(wx.Frame):
         sys.exit()
 
     def OnLogin(self, event):
-        class LoginThread(Thread):
+        class LoginThread(threading.Thread):
             """Login Thread Class."""
             def __init__(self, notify_window):
                 """Init Worker Thread Class."""
-                Thread.__init__(self)
+                threading.Thread.__init__(self)
                 self._notify_window = notify_window
                 self._want_abort = 0
                 # This starts the thread running on creation, but you could
@@ -168,8 +173,7 @@ class MyFrame(wx.Frame):
                 """Run Worker Thread."""
                 # This is the time-consuming code executing in the new thread. 
 
-                qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
-                vnc = "/opt/TurboVNC/bin/vncviewer"
+                global logTextCtrl
 
                 try:
                     wx.CallAfter(sys.stdout.write, "Attempting to log in to " + host + "...\n")
@@ -192,6 +196,8 @@ class MyFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write, stdout.read())
 
                     wx.CallAfter(sys.stdout.write, "\n")
+
+                    qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
 
                     wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
                     wx.CallAfter(sys.stdout.write, "\n")
@@ -226,7 +232,7 @@ class MyFrame(wx.Frame):
                             time.sleep(1)
                             tCheck+=1
                             if tCheck >= 10:
-                                wx.CallAfter(sys.stdout.write, "Read time out?\n") # TODO: add exception here
+                                #wx.CallAfter(sys.stdout.write, "Read time out?\n") # TODO: add exception here
                                 # return False
                                 break
                         if (channel.recv_stderr_ready()):
@@ -243,19 +249,15 @@ class MyFrame(wx.Frame):
                                 lineNumber += 1
                                 if not line.endswith("\n") and not line.endswith("\r"):
                                     lineFragment = line
-                                    #wx.CallAfter(sys.stdout.write, "lineFragment: " + "!!!"+lineFragment+"!!!")
                                     break
                                 else:
                                     lineFragment = ""
                                 if "waiting for job" in line:
                                     wx.CallAfter(sys.stdout.write, line)
-                                    #wx.CallAfter(sys.stdout.write, "\"waiting for job\" is in: ???" + line.strip() + "???\n")
                                 if "Starting XServer on the following nodes" in line:
                                     startingXServerLineNumber = lineNumber
-                                    #wx.CallAfter(sys.stdout.write, "<XS>" + line.strip() + "</XS>\n")
                                 if lineNumber == (startingXServerLineNumber + 1): # vis node
                                     visnode = line.strip()
-                                    #wx.CallAfter(sys.stdout.write, "### " + line.strip() + " ### \n")
                                     breakOutOfMainLoop = True
                                 line = buff.readline()
                         if breakOutOfMainLoop:
@@ -280,36 +282,67 @@ class MyFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, "Checking for and removing any existing ssh tunnel(s) using local port 5901...\n\n")
                         os.system("ps ax | grep \"5901\\:\" | grep ssh | awk '{print $1}' | xargs kill")
 
-                    wx.CallAfter(sys.stdout.write, "Starting tunnelled ssh session...\n")
-                    wx.CallAfter(sys.stdout.write, "ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host+"\n\n")
-                    ssh_tunnel = pexpect.spawn("ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host, timeout=1)
+                    def createTunnel():
+                        wx.CallAfter(sys.stdout.write, "Starting tunnelled ssh session...\n")
+                        wx.CallAfter(sys.stdout.write, "ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host+"\n\n")
 
-                    ssh_newkey = "Are you sure you want to continue connecting"
-                    shouldWaitForTunnelToBeSetup = True
-                    count = 0
-                    while shouldWaitForTunnelToBeSetup:
-                        i = ssh_tunnel.expect ([ssh_newkey,'password:',"Could not request local forwarding.",pexpect.EOF,pexpect.TIMEOUT],1)
-                        if i==0:
-                            ssh_tunnel.sendline("yes")        
-                            i=ssh_tunnel.expect([ssh_newkey,'password:',pexpect.EOF,pexpect.TIMEOUT])
-                        elif i==1:
-                            ssh_tunnel.sendline (password)
-                            # Wait to see if any errors are returned from the SSH tunnel:
-                            if count<5:
-                                count += 1
-                                time.sleep(1)
-                            else:
-                                shouldWaitForTunnelToBeSetup = False
-                                break
-                        elif i==2:
-                            raise Exception(ssh_tunnel.before + "\n" + 
-                                                ssh_tunnel.readline())
-                        elif i==3:
-                            break
-                        elif i==4:
-                            break
+                        #####sshClient2 = ssh.SSHClient()
+                        #####sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
-                    wx.CallAfter(sys.stdout.write, "\n Checking for TurboVNC...\n")
+                        ###verbose('Connecting to ssh host %s:%d ...' % (host, 22))
+                        #####wx.CallAfter(sys.stdout.write, "Connecting to ssh host %s:%d ... " % (host, 22))
+                        #####try:
+                            #####sshClient2.connect(host, 22, username=username, key_filename=None,
+                                           #####look_for_keys=False, password=password)
+                            #####wx.CallAfter(sys.stdout.write, "Connection succeeded!\n")
+                        #####except Exception, e:
+                            #####wx.CallAfter(sys.stdout.write, "*** Failed to connect to %s:%d: %r\n" % (host, 22, e))
+                            ########sys.exit(1)
+
+                        try:
+                            #####forward.forward_tunnel(5901, visnode, 5901, sshClient2.get_transport())
+                            forward.forward_tunnel(5901, visnode, 5901, sshClient.get_transport())
+                            ###verbose('Now forwarding port %d to %s:%d ...' % (options.port, remote[0], remote[1]))
+                            wx.CallAfter(sys.stdout.write, "Now forwarding port %d to %s:%d ...\n" % (5901, visnode, 5901))
+                        except KeyboardInterrupt:
+                            wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
+                            ###sys.exit(0)
+
+                        #ssh_tunnel = pexpect.spawn("ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host, timeout=1)
+
+                        #ssh_newkey = "Are you sure you want to continue connecting"
+                        #shouldWaitForTunnelToBeSetup = True
+                        #count = 0
+                        #while shouldWaitForTunnelToBeSetup:
+                            #i = ssh_tunnel.expect ([ssh_newkey,'password:',"Could not request local forwarding.",pexpect.EOF,pexpect.TIMEOUT],1)
+                            #if i==0:
+                                #ssh_tunnel.sendline("yes")        
+                                #i=ssh_tunnel.expect([ssh_newkey,'password:',pexpect.EOF,pexpect.TIMEOUT])
+                            #elif i==1:
+                                #ssh_tunnel.sendline (password)
+                                ## Wait to see if any errors are returned from the SSH tunnel:
+                                #if count<5:
+                                    #count += 1
+                                    #time.sleep(1)
+                                #else:
+                                    #shouldWaitForTunnelToBeSetup = False
+                                    #break
+                            #elif i==2:
+                                #raise Exception(ssh_tunnel.before + "\n" + 
+                                                    #ssh_tunnel.readline())
+                            #elif i==3:
+                                #break
+                            #elif i==4:
+                                #break
+
+                    #createTunnel()
+                    tunnelThread = threading.Thread(target=createTunnel)
+                    tunnelThread.start()
+                    #tunnelThread.join()
+                    time.sleep(2)
+
+                    vnc = "/opt/TurboVNC/bin/vncviewer"
+                    #wx.CallAfter(sys.stdout.write, "\nChecking for TurboVNC...\n")
                     if os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
@@ -331,6 +364,7 @@ class MyFrame(wx.Frame):
                         else:
                             time.sleep(1)
 
+                    #####sshClient2.close()
                     sshClient.close()
 
                     #child1.logout()
