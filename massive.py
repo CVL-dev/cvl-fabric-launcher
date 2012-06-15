@@ -25,11 +25,14 @@ them to the user as clearly as possible.
  
 """
 
-import wx
-import pexpect
-import getpass
-import time
 import sys
+if sys.platform.startswith("win"):
+    import winpexpect
+else:
+    import pexpect
+import wx
+#import getpass
+import time
 import traceback
 import threading
 #from threading import *
@@ -40,6 +43,7 @@ import urllib
 import massive_launcher_version_number
 import StringIO
 import forward
+#import subprocess
 #import logging
 
 #logger = ssh.util.logging.getLogger()
@@ -267,9 +271,6 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
 
-                    ###print child1.before
-                    ###print child1.after
-
                     # Note that the use of system calls to "ps" etc. below is not portable to the Windows platform.
                     # An alternative could be to use the psutil module - see http://stackoverflow.com/questions/6780035/python-how-to-run-ps-cax-grep-something-in-python and http://code.google.com/p/psutil/.
                     # Probably a better way to check for use of port 5901 on Mac is to use: "lsof -i tcp:5901"
@@ -286,59 +287,15 @@ class MyFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, "Starting tunnelled ssh session...\n")
                         wx.CallAfter(sys.stdout.write, "ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host+"\n\n")
 
-                        #####sshClient2 = ssh.SSHClient()
-                        #####sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
-
-                        ###verbose('Connecting to ssh host %s:%d ...' % (host, 22))
-                        #####wx.CallAfter(sys.stdout.write, "Connecting to ssh host %s:%d ... " % (host, 22))
-                        #####try:
-                            #####sshClient2.connect(host, 22, username=username, key_filename=None,
-                                           #####look_for_keys=False, password=password)
-                            #####wx.CallAfter(sys.stdout.write, "Connection succeeded!\n")
-                        #####except Exception, e:
-                            #####wx.CallAfter(sys.stdout.write, "*** Failed to connect to %s:%d: %r\n" % (host, 22, e))
-                            ########sys.exit(1)
-
                         try:
-                            #####forward.forward_tunnel(5901, visnode, 5901, sshClient2.get_transport())
                             forward.forward_tunnel(5901, visnode, 5901, sshClient.get_transport())
-                            ###verbose('Now forwarding port %d to %s:%d ...' % (options.port, remote[0], remote[1]))
                             wx.CallAfter(sys.stdout.write, "Now forwarding port %d to %s:%d ...\n" % (5901, visnode, 5901))
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
                             ###sys.exit(0)
 
-                        #ssh_tunnel = pexpect.spawn("ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host, timeout=1)
-
-                        #ssh_newkey = "Are you sure you want to continue connecting"
-                        #shouldWaitForTunnelToBeSetup = True
-                        #count = 0
-                        #while shouldWaitForTunnelToBeSetup:
-                            #i = ssh_tunnel.expect ([ssh_newkey,'password:',"Could not request local forwarding.",pexpect.EOF,pexpect.TIMEOUT],1)
-                            #if i==0:
-                                #ssh_tunnel.sendline("yes")        
-                                #i=ssh_tunnel.expect([ssh_newkey,'password:',pexpect.EOF,pexpect.TIMEOUT])
-                            #elif i==1:
-                                #ssh_tunnel.sendline (password)
-                                ## Wait to see if any errors are returned from the SSH tunnel:
-                                #if count<5:
-                                    #count += 1
-                                    #time.sleep(1)
-                                #else:
-                                    #shouldWaitForTunnelToBeSetup = False
-                                    #break
-                            #elif i==2:
-                                #raise Exception(ssh_tunnel.before + "\n" + 
-                                                    #ssh_tunnel.readline())
-                            #elif i==3:
-                                #break
-                            #elif i==4:
-                                #break
-
-                    #createTunnel()
                     tunnelThread = threading.Thread(target=createTunnel)
                     tunnelThread.start()
-                    #tunnelThread.join()
                     time.sleep(2)
 
                     vnc = "/opt/TurboVNC/bin/vncviewer"
@@ -350,24 +307,43 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "\nStarting MASSIVE VNC...\n")
 
-                    wx.CallAfter(sys.stdout.write, vnc + " -user " + username + " localhost:1")
-                    child2 = pexpect.spawn(vnc + " -user " + username + " localhost:1")
-                    time.sleep(1)
-                    child2.expect("Password:")
-                    child2.sendline(password)
+                    #####wx.CallAfter(sys.stdout.write, vnc + " -user " + username + " localhost:1")
+                    #####proc = subprocess.Popen(vnc+" -user "+username+" localhost:1", 
+                        #####stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                        #####close_fds=True,universal_newlines=True)
+                    #####output = proc.communicate()[0]
+                    #####wx.CallAfter(sys.stdout.write, output)
+                    #####time.sleep(1)
+                    #####output = proc.communicate(input=password + "\n")[0]
+                    #####wx.CallAfter(sys.stdout.write, output)
+                    #####time.sleep(1)
+
+                    try:
+                        if sys.platform.startswith("win"):
+                            child = winpexpect.winspawn(vnc + " -user " + username + " localhost:1")
+                        else:
+                            wx.CallAfter(sys.stdout.write, "Spawing TurboVNC process, using pexpect...\n")
+                            child = pexpect.spawn(vnc + " -user " + username + " localhost:1")
+                            wx.CallAfter(sys.stdout.write, "Spawned TurboVNC process: " + vnc + " -user " + username + " localhost:1\n")
+                        time.sleep(1)
+                        child.expect("Password:")
+                        child.sendline(password)
+                    except BaseException, err:
+                        wx.CallAfter(sys.stdout.write,str(err))
+
+                    #wx.CallAfter(sys.stdout.write, child1.before)
+                    #wx.CallAfter(sys.stdout.write, child1.after)
 
                     shouldWaitForMassiveDesktopVNCSessionToFinish = True
                     while shouldWaitForMassiveDesktopVNCSessionToFinish:
-                        i = child2.expect ([pexpect.EOF,pexpect.TIMEOUT])
+                        i = child.expect ([pexpect.EOF,pexpect.TIMEOUT])
                         if i==0:
                             shouldWaitForMassiveDesktopVNCSessionToFinish = False
                         else:
                             time.sleep(1)
 
-                    #####sshClient2.close()
                     sshClient.close()
 
-                    #child1.logout()
                     #self.statusbar.SetStatusText('User connected')
                     #self.statusbar.SetStatusText('')
 
