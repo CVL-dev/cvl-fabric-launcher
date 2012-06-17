@@ -37,7 +37,8 @@ from optparse import OptionParser
 
 import wx
 
-import paramiko
+#import paramiko
+import ssh
 
 SSH_PORT = 22
 DEFAULT_PORT = 4000
@@ -186,9 +187,11 @@ def main():
     if options.readpass:
         password = getpass.getpass('Enter SSH password: ')
     
-    client = paramiko.SSHClient()
+    #client = paramiko.SSHClient()
+    client = ssh.SSHClient()
     client.load_system_host_keys()
-    client.set_missing_host_key_policy(paramiko.WarningPolicy())
+    #client.set_missing_host_key_policy(paramiko.WarningPolicy())
+    client.set_missing_host_key_policy(ssh.WarningPolicy())
 
     verbose('Connecting to ssh host %s:%d ...' % (server[0], server[1]))
     try:
