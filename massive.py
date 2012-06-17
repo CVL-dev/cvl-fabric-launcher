@@ -326,7 +326,7 @@ class MyFrame(wx.Frame):
                     try:
                         if sys.platform.startswith("win"):
                             #child = winpexpect.winspawn("\"" + vnc + "\" -user " + username + " localhost:1")
-                            wx.CallAfter(sys.stdout.write, "\"" + vnc + "\" /user " + username + " /password " + password + " localhost:1")
+                            #wx.CallAfter(sys.stdout.write, "\"" + vnc + "\" /user " + username + " /password " + password + " localhost:1")
                             subprocess.call("\"" + vnc + "\" /user " + username + " /password " + password + " localhost:1",shell=True)
                         else:
                             wx.CallAfter(sys.stdout.write, "Spawing TurboVNC process, using pexpect...\n")
