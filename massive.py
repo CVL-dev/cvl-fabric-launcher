@@ -370,7 +370,10 @@ class MyFrame(wx.Frame):
         logWindow.Show(True)
 
         logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY,size=(700,450))
-        font1 = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        if sys.platform.startswith("win"):
+            font1 = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        else:
+            font1 = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         logTextCtrl.SetFont(font1)
 
         sys.stdout = logTextCtrl
