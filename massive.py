@@ -118,8 +118,12 @@ class MyFrame(wx.Frame):
 
         self.massiveHost = wx.TextCtrl(panel, -1, defaulthost,  (125, 15), size=(145, -1))
         projects = ['', 'Monash016', 'Desc002']
-        self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(170, -1),choices=projects, style=wx.CB_DROPDOWN)
-        self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(170, -1),min=1,max=24)
+
+        widgetWidth = 145
+        if sys.platform.startswith("darwin"):
+            widgetWidth = 170
+        self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(widgetWidth, -1),choices=projects, style=wx.CB_DROPDOWN)
+        self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(widgetWidth, -1),min=1,max=24)
         self.massiveUsername = wx.TextCtrl(panel, -1, '',  (125, 135), (145, -1))
         self.massivePassword = wx.TextCtrl(panel, -1, '',  (125, 175), (145, -1), style=wx.TE_PASSWORD)
 
@@ -316,57 +320,32 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "\nStarting MASSIVE VNC...\n")
 
-                    ##### DON'T DELETE THIS COMMENTED-OUT STUFF.  IT MAY BE USEFUL FOR PIPING IN PASSWORD TO TURBOVNC ON WINDOWS #####
-                    #####wx.CallAfter(sys.stdout.write, vnc + " -user " + username + " localhost:1")
-                    #####proc = subprocess.Popen(vnc+" -user "+username+" localhost:1", 
-                        #####stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                        #####close_fds=True,universal_newlines=True)
-                    #####output = proc.communicate()[0]
-                    #####wx.CallAfter(sys.stdout.write, output)
-                    #####time.sleep(1)
-                    #####output = proc.communicate(input=password + "\n")[0]
-                    #####wx.CallAfter(sys.stdout.write, output)
-                    #####time.sleep(1)
-
                     try:
                         if sys.platform.startswith("win"):
-                            #wx.CallAfter(sys.stdout.write, "\"" + vnc + "\" /user " + username + " /password " + password + " localhost:1")
+                            #wx.CallAfter(sys.stdout.write, "\"" + vnc + "\" /user " + username + " -autopass localhost:1")
 
                             # This will bring up TurboVNC GUI which will ask user for a password:
-                            subprocess.call("\"" + vnc + "\" /user " + username + " localhost:1",shell=True)
+                            #subprocess.call("\"" + vnc + "\" /user " + username + " /autopass localhost:1",shell=True)
+                            proc = subprocess.Popen("\""+vnc+"\" /user "+username+" /autopass localhost:1", 
+                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                universal_newlines=True)
+                            proc.communicate(input=password)
+                            proc.communicate()
                         else:
                             wx.CallAfter(sys.stdout.write, "Spawing TurboVNC process, using subprocess.call()...\n")
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
-                            #wx.CallAfter(sys.stdout.write, "Spawned TurboVNC process: " + vnc + " -user " + username + " localhost:1\n")
-                        #time.sleep(1)
-                        #child.expect("Password:")
-                        #child.sendline(password)
                     except BaseException, err:
                         wx.CallAfter(sys.stdout.write,str(err))
 
-                    #wx.CallAfter(sys.stdout.write, child1.before)
-                    #wx.CallAfter(sys.stdout.write, child1.after)
+                    # Execution probably won't get to this point.
+                    # Closing the MASSIVE Desktop will kill the SSH tunnel,
+                    # and the SSH tunnel thread will call os._exit(0),
+                    # because it's too complicated to catch the exception
+                    # nicely, and then send a message back to the main 
+                    # thread to tell it to exit.
 
-                    #shouldWaitForMassiveDesktopVNCSessionToFinish = True
-                    #while shouldWaitForMassiveDesktopVNCSessionToFinish:
-                        #i = child.expect ([pexpect.EOF,pexpect.TIMEOUT])
-                        #if i==0:
-                            #shouldWaitForMassiveDesktopVNCSessionToFinish = False
-                        #else:
-                            #time.sleep(1)
-
-                    sshClient.close() # Is this causing launcher to freeze? Maybe need to close tunnel first.
+                    sshClient.close()
                     system.exit(0)
-
-                    #self.statusbar.SetStatusText('User connected')
-                    #self.statusbar.SetStatusText('')
-
-                #except AttributeError:
-                    #self.statusbar.SetForegroundColour(wx.RED)
-                    #self.statusbar.SetStatusText('Incorrect params')
-
-                #except all_errors, err:
-                    #self.statusbar.SetStatusText(str(err))
 
                 except:
                     #traceback.print_exc()
