@@ -86,10 +86,15 @@ class MyFrame(wx.Frame):
 
         global logTextCtrl
 
+        # The default window style is wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.RESIZE_BORDER | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX | wx.CLIP_CHILDREN
+        # If you remove wx.RESIZE_BORDER from it, you'll get a frame which cannot be resized.
+        # wx.Frame(parent, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+
+
         if sys.platform.startswith("win"):
-            wx.Frame.__init__(self, parent, id, title, size=(305, 350))
+            wx.Frame.__init__(self, parent, id, title, size=(305, 350), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         else:
-            wx.Frame.__init__(self, parent, id, title, size=(305, 310))
+            wx.Frame.__init__(self, parent, id, title, size=(305, 310), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         self.menu_bar  = wx.MenuBar()
         self.help_menu = wx.Menu()
@@ -113,8 +118,8 @@ class MyFrame(wx.Frame):
 
         self.massiveHost = wx.TextCtrl(panel, -1, defaulthost,  (125, 15), size=(145, -1))
         projects = ['', 'Monash016', 'Desc002']
-        self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(160, -1),choices=projects, style=wx.CB_DROPDOWN)
-        self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(160, -1),min=1,max=24)
+        self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(170, -1),choices=projects, style=wx.CB_DROPDOWN)
+        self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(170, -1),min=1,max=24)
         self.massiveUsername = wx.TextCtrl(panel, -1, '',  (125, 135), (145, -1))
         self.massivePassword = wx.TextCtrl(panel, -1, '',  (125, 175), (145, -1), style=wx.TE_PASSWORD)
 
