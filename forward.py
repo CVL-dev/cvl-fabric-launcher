@@ -80,21 +80,40 @@ class Handler (SocketServer.BaseRequestHandler):
 
         verbose('Connected!  Tunnel open %r -> %r -> %r' % (self.request.getpeername(),
                                                             chan.getpeername(), (self.chain_host, self.chain_port)))
-        while True:
-            r, w, x = select.select([self.request, chan], [], [])
-            if self.request in r:
-                data = self.request.recv(1024)
-                if len(data) == 0:
+        try:
+            while True:
+                try:
+                    r, w, x = select.select([self.request, chan], [], [])
+                    if self.request in r:
+                        data = self.request.recv(1024)
+                        if len(data) == 0:
+                            break
+                        chan.send(data)
+                    if chan in r:
+                        data = chan.recv(1024)
+                        if len(data) == 0:
+                            break
+                        self.request.send(data)
+                except Exception, e:
+                    #wx.CallAfter(sys.stdout.write, str(e) + "\n")
+                    #theserver.shutdown()
+                    #sys.exit(1)
+
+                    # We should implement proper exception handling for the SSH tunnel,
+                    # but the most likely exception will be when the MASSIVE Desktop
+                    # terminates the tunnel, in which case the launcher should exit.
+                    os._exit(0)
                     break
-                chan.send(data)
-            if chan in r:
-                data = chan.recv(1024)
-                if len(data) == 0:
-                    break
-                self.request.send(data)
-        chan.close()
-        self.request.close()
-        verbose('Tunnel closed from %r' % (self.request.getpeername(),))
+
+            chan.close()
+            self.request.close()
+            verbose('Tunnel closed from %r' % (self.request.getpeername(),))
+        except Exception, e:
+            # We should implement proper exception handling for the SSH tunnel,
+            # but the most likely exception will be when the MASSIVE Desktop
+            # terminates the tunnel, in which case the launcher should exit.
+            os._exit(0)
+        os._exit(0)
 
 class ForwardServer (SocketServer.ThreadingTCPServer):
 
@@ -123,7 +142,9 @@ def forward_tunnel(local_port, remote_host, remote_port, transport):
     #verbose("remote_host = " + remote_host)
     #verbose("remote_port = " + str(remote_port))
 
-    ForwardServer(('', local_port), SubHander).serve_forever()
+    global theserver
+    theserver = ForwardServer(('', local_port), SubHander)
+    theserver.serve_forever()
 
 def verbose(s):
     if g_verbose:
