@@ -367,14 +367,17 @@ class MyFrame(wx.Frame):
         password = self.massivePassword.GetValue()
 
         logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
-        logWindow.Show(True)
 
-        logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY,size=(700,450))
+        logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
+        gs = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
+        gs.Add(logTextCtrl, 0, wx.EXPAND)
+        logWindow.SetSizer(gs)
         if sys.platform.startswith("win"):
             font1 = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         else:
             font1 = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         logTextCtrl.SetFont(font1)
+        logWindow.Show(True)
 
         sys.stdout = logTextCtrl
         sys.stderr = logTextCtrl
