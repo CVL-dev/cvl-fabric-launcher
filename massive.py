@@ -190,7 +190,9 @@ class MyFrame(wx.Frame):
 
                 try:
                     displaySize = wx.DisplaySize()
-                    desiredWidth = displaySize[0] * 0.95
+                    #desiredWidth = displaySize[0] * 0.95
+                    #desiredWidth = displaySize[0] * 1.00
+                    desiredWidth = displaySize[0] * 0.99
                     desiredHeight = displaySize[1] * 0.85
 
                     #wx.CallAfter(sys.stdout.write, "(desiredWidth,desiredHeight) = (%d,%d)\n" % (desiredWidth,desiredHeight))
