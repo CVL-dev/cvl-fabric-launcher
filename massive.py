@@ -3,7 +3,7 @@
 A wxPython GUI to provide easy login to the MASSIVE Desktop, 
 initially on Mac OS X.  It can be run using "python massive.py",
 assuming that you have a 32-bit version of Python installed,
-wxPython, and the pexpect module.
+wxPython, and the dependent Python modules imported below.
 
 The py2app module is required to build the MASSIVE.app 
 application bundle, which can be built as follows:
@@ -28,16 +28,11 @@ them to the user as clearly as possible.
 import sys
 if sys.platform.startswith("win"):
     import _winreg
-    #import winpexpect
-    import subprocess
-else:
-    import pexpect
+import subprocess
 import wx
-#import getpass
 import time
 import traceback
 import threading
-#from threading import *
 import os
 import ssh
 import HTMLParser
@@ -91,7 +86,10 @@ class MyFrame(wx.Frame):
 
         global logTextCtrl
 
-        wx.Frame.__init__(self, parent, id, title, size=(305, 310))
+        if sys.platform.startswith("win"):
+            wx.Frame.__init__(self, parent, id, title, size=(305, 350))
+        else:
+            wx.Frame.__init__(self, parent, id, title, size=(305, 310))
 
         self.menu_bar  = wx.MenuBar()
         self.help_menu = wx.Menu()
@@ -103,6 +101,7 @@ class MyFrame(wx.Frame):
 
         # Let's implement the About menu using py2app instead,
         # so that we can easily insert the version number.
+        # We may need to treat different OS's differently.
 
         panel = wx.Panel(self)
 
@@ -187,9 +186,9 @@ class MyFrame(wx.Frame):
                     sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
                     sshClient.connect(host,username=username,password=password)
 
-                    stdin,stdout,stderr = sshClient.exec_command("uptime")
-                    wx.CallAfter(sys.stdout.write, stderr.read())
-                    wx.CallAfter(sys.stdout.write, "uptime: " + stdout.read())
+                    #stdin,stdout,stderr = sshClient.exec_command("uptime")
+                    #wx.CallAfter(sys.stdout.write, stderr.read())
+                    #wx.CallAfter(sys.stdout.write, "uptime: " + stdout.read())
 
                     wx.CallAfter(sys.stdout.write, "First login done.\n")
 
@@ -312,6 +311,7 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "\nStarting MASSIVE VNC...\n")
 
+                    ##### DON'T DELETE THIS COMMENTED-OUT STUFF.  IT MAY BE USEFUL FOR PIPING IN PASSWORD TO TURBOVNC ON WINDOWS #####
                     #####wx.CallAfter(sys.stdout.write, vnc + " -user " + username + " localhost:1")
                     #####proc = subprocess.Popen(vnc+" -user "+username+" localhost:1", 
                         #####stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
@@ -325,31 +325,33 @@ class MyFrame(wx.Frame):
 
                     try:
                         if sys.platform.startswith("win"):
-                            #child = winpexpect.winspawn("\"" + vnc + "\" -user " + username + " localhost:1")
                             #wx.CallAfter(sys.stdout.write, "\"" + vnc + "\" /user " + username + " /password " + password + " localhost:1")
-                            subprocess.call("\"" + vnc + "\" /user " + username + " /password " + password + " localhost:1",shell=True)
+
+                            # This will bring up TurboVNC GUI which will ask user for a password:
+                            subprocess.call("\"" + vnc + "\" /user " + username + " localhost:1",shell=True)
                         else:
-                            wx.CallAfter(sys.stdout.write, "Spawing TurboVNC process, using pexpect...\n")
-                            child = pexpect.spawn(vnc + " -user " + username + " localhost:1")
-                            wx.CallAfter(sys.stdout.write, "Spawned TurboVNC process: " + vnc + " -user " + username + " localhost:1\n")
-                        time.sleep(1)
-                        child.expect("Password:")
-                        child.sendline(password)
+                            wx.CallAfter(sys.stdout.write, "Spawing TurboVNC process, using subprocess.call()...\n")
+                            subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
+                            #wx.CallAfter(sys.stdout.write, "Spawned TurboVNC process: " + vnc + " -user " + username + " localhost:1\n")
+                        #time.sleep(1)
+                        #child.expect("Password:")
+                        #child.sendline(password)
                     except BaseException, err:
                         wx.CallAfter(sys.stdout.write,str(err))
 
                     #wx.CallAfter(sys.stdout.write, child1.before)
                     #wx.CallAfter(sys.stdout.write, child1.after)
 
-                    shouldWaitForMassiveDesktopVNCSessionToFinish = True
-                    while shouldWaitForMassiveDesktopVNCSessionToFinish:
-                        i = child.expect ([pexpect.EOF,pexpect.TIMEOUT])
-                        if i==0:
-                            shouldWaitForMassiveDesktopVNCSessionToFinish = False
-                        else:
-                            time.sleep(1)
+                    #shouldWaitForMassiveDesktopVNCSessionToFinish = True
+                    #while shouldWaitForMassiveDesktopVNCSessionToFinish:
+                        #i = child.expect ([pexpect.EOF,pexpect.TIMEOUT])
+                        #if i==0:
+                            #shouldWaitForMassiveDesktopVNCSessionToFinish = False
+                        #else:
+                            #time.sleep(1)
 
-                    sshClient.close()
+                    sshClient.close() # Is this causing launcher to freeze? Maybe need to close tunnel first.
+                    system.exit(0)
 
                     #self.statusbar.SetStatusText('User connected')
                     #self.statusbar.SetStatusText('')
