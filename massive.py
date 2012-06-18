@@ -189,17 +189,48 @@ class MyFrame(wx.Frame):
                 global logTextCtrl
 
                 try:
+                    displaySize = wx.DisplaySize()
+                    desiredWidth = displaySize[0] * 0.95
+                    desiredHeight = displaySize[1] * 0.85
+
+                    #wx.CallAfter(sys.stdout.write, "(desiredWidth,desiredHeight) = (%d,%d)\n" % (desiredWidth,desiredHeight))
+
                     wx.CallAfter(sys.stdout.write, "Attempting to log in to " + host + "...\n")
                     
                     sshClient = ssh.SSHClient()
                     sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
                     sshClient.connect(host,username=username,password=password)
 
+                    wx.CallAfter(sys.stdout.write, "First login done.\n")
+
+                    wx.CallAfter(sys.stdout.write, "\n")
+
+                    stdin,stdout,stderr = sshClient.exec_command("if ! [ -f ~/.vnc/turbovncserver.conf ]; then cp /etc/turbovncserver.conf  ~/.vnc/; fi")
+                    stderrRead = stderr.read()
+                    if len(stderrRead) > 0:
+                        wx.CallAfter(sys.stdout.write, stderrRead)
+                    stdin,stdout,stderr = sshClient.exec_command("grep \"^\w*\$geometry\" ~/.vnc/turbovncserver.conf")
+                    stderrRead = stderr.read()
+                    stdoutRead = stdout.read()
+                    if len(stdoutRead)>0 and stdoutRead.strip().startswith("$"):
+                        #wx.CallAfter(sys.stdout.write, stdoutRead.strip() + " was found in ~/.vnc/turbovncserver.conf\n")
+                        sed_cmd = "sed -i -e 's/^\\w*\\$geometry.*/$geometry = \"%dx%d\";/g' ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight)
+                        wx.CallAfter(sys.stdout.write, sed_cmd + "\n")
+                        stdin,stdout,stderr = sshClient.exec_command(sed_cmd)
+                        stderrRead = stderr.read()
+                        if len(stderrRead) > 0:
+                            wx.CallAfter(sys.stdout.write, stderrRead)
+                    else:
+                        wx.CallAfter(sys.stdout.write, "$geometry = ... was not found in ~/.vnc/turbovncserver.conf")
+                        stdin,stdout,stderr = sshClient.exec_command(
+                            "echo '$geometry = \"%dx%d\"' >> ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight))
+                        stderrRead = stderr.read()
+                        if len(stderrRead) > 0:
+                            wx.CallAfter(sys.stdout.write, stderrRead)
+                    
                     #stdin,stdout,stderr = sshClient.exec_command("uptime")
                     #wx.CallAfter(sys.stdout.write, stderr.read())
                     #wx.CallAfter(sys.stdout.write, "uptime: " + stdout.read())
-
-                    wx.CallAfter(sys.stdout.write, "First login done.\n")
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
@@ -403,6 +434,7 @@ class MyStatusBar(wx.StatusBar):
 
 class MyApp(wx.App):
     def OnInit(self):
+
         frame = MyFrame(None, -1, 'MASSIVE')
         frame.Show(True)
         return True
