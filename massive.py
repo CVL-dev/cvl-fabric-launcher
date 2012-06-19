@@ -467,7 +467,7 @@ class MyStatusBar(wx.StatusBar):
 class MyApp(wx.App):
     def OnInit(self):
 
-        frame = MyFrame(None, -1, 'MASSIVE')
+        frame = MyFrame(None, -1, 'MASSIVE Launcher')
         frame.Show(True)
         return True
 
