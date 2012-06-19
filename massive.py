@@ -97,10 +97,12 @@ class MyFrame(wx.Frame):
             wx.Frame.__init__(self, parent, id, title, size=(305, 310), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         self.menu_bar  = wx.MenuBar()
-        self.help_menu = wx.Menu()
-        self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE")
-        #self.Bind(wx.EVT_MENU, self.OnAbout, id=wx.ID_ABOUT)
-        self.menu_bar.Append(self.help_menu, "&Help")
+
+        if sys.platform.startswith("win"):
+            self.help_menu = wx.Menu()
+            self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE")
+            self.Bind(wx.EVT_MENU, self.OnAbout, id=wx.ID_ABOUT)
+            self.menu_bar.Append(self.help_menu, "&Help")
 
         self.SetMenuBar(self.menu_bar)
 
@@ -142,11 +144,20 @@ class MyFrame(wx.Frame):
         self.SetStatusBar(self.statusbar)
         self.Centre()
 
-        myHtmlParser = MyHtmlParser()
-        feed = urllib.urlopen("https://mnhs-massive-dev.med.monash.edu/index.php?option=com_content&view=article&id=121")
-        html = feed.read()
-        myHtmlParser.feed(html)
-        myHtmlParser.close()
+        try:
+            myHtmlParser = MyHtmlParser()
+            feed = urllib.urlopen("https://mnhs-massive-dev.med.monash.edu/index.php?option=com_content&view=article&id=121")
+            html = feed.read()
+            myHtmlParser.feed(html)
+            myHtmlParser.close()
+        except:
+            dlg = wx.MessageDialog(self, "Error: Unable to contact MASSIVE website to check version number.\n\n" +
+                                        "The launcher cannot continue.\n",
+                                "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+            sys.exit(1)
+
 
         latestVersion = myHtmlParser.data[0].strip()
 
