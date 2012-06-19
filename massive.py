@@ -101,7 +101,7 @@ class MyFrame(wx.Frame):
         if sys.platform.startswith("win"):
             self.file_menu = wx.Menu()
             self.file_menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window and exit program.")
-            self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
+            self.Bind(wx.EVT_MENU, self.OnExit, id=wx.ID_EXIT)
             self.menu_bar.Append(self.file_menu, "&File")
 
             self.help_menu = wx.Menu()
@@ -186,11 +186,13 @@ class MyFrame(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def OnClose(self, event):
-        sys.exit()
+    def OnExit(self, event):
+        #sys.exit()
+        os._exit(0)
 
     def OnCancel(self, event):
-        sys.exit()
+        #sys.exit()
+        os._exit(0)
 
     def OnLogin(self, event):
         class LoginThread(threading.Thread):
