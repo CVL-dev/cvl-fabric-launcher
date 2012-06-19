@@ -104,13 +104,13 @@ class MyFrame(wx.Frame):
             self.Bind(wx.EVT_MENU, self.OnExit, id=wx.ID_EXIT)
             self.menu_bar.Append(self.file_menu, "&File")
 
-            self.help_menu = wx.Menu()
-            self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE")
-            self.Bind(wx.EVT_MENU, self.OnAbout, id=wx.ID_ABOUT)
-            self.menu_bar.Append(self.help_menu, "&Help")
-
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
             self.SetIcon(_icon)
+
+        self.help_menu = wx.Menu()
+        self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE Launcher")
+        self.Bind(wx.EVT_MENU, self.OnAbout, id=wx.ID_ABOUT)
+        self.menu_bar.Append(self.help_menu, "&Help")
 
         self.SetTitle("MASSIVE Launcher")
 
