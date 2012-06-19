@@ -99,6 +99,11 @@ class MyFrame(wx.Frame):
         self.menu_bar  = wx.MenuBar()
 
         if sys.platform.startswith("win"):
+            self.file_menu = wx.Menu()
+            self.file_menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window and exit program.")
+            self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
+            self.menu_bar.Append(self.file_menu, "&File")
+
             self.help_menu = wx.Menu()
             self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE")
             self.Bind(wx.EVT_MENU, self.OnAbout, id=wx.ID_ABOUT)
@@ -177,6 +182,9 @@ class MyFrame(wx.Frame):
                                 "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
+
+    def OnClose(self, event):
+        sys.exit()
 
     def OnCancel(self, event):
         sys.exit()
