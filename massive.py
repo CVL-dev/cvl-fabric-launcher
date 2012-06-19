@@ -109,6 +109,9 @@ class MyFrame(wx.Frame):
             self.Bind(wx.EVT_MENU, self.OnAbout, id=wx.ID_ABOUT)
             self.menu_bar.Append(self.help_menu, "&Help")
 
+            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+            self.SetIcon(_icon)
+
         self.SetMenuBar(self.menu_bar)
 
         # Let's implement the About menu using py2app instead,
@@ -419,6 +422,10 @@ class MyFrame(wx.Frame):
         password = self.massivePassword.GetValue()
 
         logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
+
+        if sys.platform.startswith("win"):
+            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+            logWindow.SetIcon(_icon)
 
         logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
         gs = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
