@@ -8,7 +8,7 @@ AppName=MASSIVE Launcher
 AppVersion=0.0.2
 DefaultDirName={pf}\MASSIVE Launcher
 DefaultGroupName=MASSIVE Launcher
-UninstallDisplayIcon={app}\MASSIVE.exe
+UninstallDisplayIcon={app}\MASSIVE Launcher.exe
 Compression=lzma2
 SolidCompression=yes
 OutputDir=Z:\Desktop\cvl_svn\launcher\trunk\
@@ -19,4 +19,4 @@ Source: "dist\*.*"; DestDir: "{app}"
 ;Source: "Readme.txt"; DestDir: "{app}"; Flags: isreadme
 
 [Icons]
-Name: "{group}\MASSIVE Launcher"; Filename: "{app}\MASSIVE.exe"
+Name: "{group}\MASSIVE Launcher"; Filename: "{app}\MASSIVE Launcher.exe"

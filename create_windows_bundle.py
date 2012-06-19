@@ -26,7 +26,8 @@ setup(
     windows = [
         {
             "script": "massive.py",
-            "icon_resources": [(1, "massive.ico")]
+            "icon_resources": [(1, "massive.ico")],
+            "dest_base": "MASSIVE Launcher"
         }
     ],
     )
