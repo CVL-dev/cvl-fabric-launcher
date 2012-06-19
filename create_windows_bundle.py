@@ -22,6 +22,11 @@ setup(
     name = "MASSIVE Launcher",
 
     # targets to build
-    windows = ["massive.py"],
-    #console = ["hello.py"],
+    #windows = ["massive.py"],
+    windows = [
+        {
+            "script": "massive.py",
+            "icon_resources": [(1, "massive.ico")]
+        }
+    ],
     )
