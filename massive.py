@@ -112,6 +112,8 @@ class MyFrame(wx.Frame):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
             self.SetIcon(_icon)
 
+        self.SetTitle("MASSIVE Launcher")
+
         self.SetMenuBar(self.menu_bar)
 
         # Let's implement the About menu using py2app instead,
