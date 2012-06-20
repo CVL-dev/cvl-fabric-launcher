@@ -189,11 +189,9 @@ class MyFrame(wx.Frame):
         dlg.Destroy()
 
     def OnExit(self, event):
-        #sys.exit()
         os._exit(0)
 
     def OnCancel(self, event):
-        #sys.exit()
         os._exit(0)
 
     def OnLogin(self, event):
@@ -216,12 +214,8 @@ class MyFrame(wx.Frame):
 
                 try:
                     displaySize = wx.DisplaySize()
-                    #desiredWidth = displaySize[0] * 0.95
-                    #desiredWidth = displaySize[0] * 1.00
                     desiredWidth = displaySize[0] * 0.99
                     desiredHeight = displaySize[1] * 0.85
-
-                    #wx.CallAfter(sys.stdout.write, "(desiredWidth,desiredHeight) = (%d,%d)\n" % (desiredWidth,desiredHeight))
 
                     wx.CallAfter(sys.stdout.write, "Attempting to log in to " + host + "...\n")
                     
@@ -241,7 +235,6 @@ class MyFrame(wx.Frame):
                     stderrRead = stderr.read()
                     stdoutRead = stdout.read()
                     if len(stdoutRead)>0 and stdoutRead.strip().startswith("$"):
-                        #wx.CallAfter(sys.stdout.write, stdoutRead.strip() + " was found in ~/.vnc/turbovncserver.conf\n")
                         sed_cmd = "sed -i -e 's/^\\w*\\$geometry.*/$geometry = \"%dx%d\";/g' ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight)
                         wx.CallAfter(sys.stdout.write, sed_cmd + "\n")
                         stdin,stdout,stderr = sshClient.exec_command(sed_cmd)
@@ -256,10 +249,6 @@ class MyFrame(wx.Frame):
                         if len(stderrRead) > 0:
                             wx.CallAfter(sys.stdout.write, stderrRead)
                     
-                    #stdin,stdout,stderr = sshClient.exec_command("uptime")
-                    #wx.CallAfter(sys.stdout.write, stderr.read())
-                    #wx.CallAfter(sys.stdout.write, "uptime: " + stdout.read())
-
                     wx.CallAfter(sys.stdout.write, "\n")
 
                     wx.CallAfter(sys.stdout.write, "mybalance --hours\n")
@@ -300,6 +289,7 @@ class MyFrame(wx.Frame):
                     while True:
                         tCheck = 0
                         while not channel.recv_ready() and not channel.recv_stderr_ready():
+                            #Use asterisks to simulate progress bar:
                             #wx.CallAfter(sys.stdout.write, "*")
                             time.sleep(1)
                             tCheck+=1
@@ -353,11 +343,10 @@ class MyFrame(wx.Frame):
 
                     def createTunnel():
                         wx.CallAfter(sys.stdout.write, "Starting tunnelled ssh session...\n")
-                        wx.CallAfter(sys.stdout.write, "ssh -N -L 5901:"+visnode+":5901 "+username+"@"+host+"\n\n")
+                        wx.CallAfter(sys.stdout.write, "ssh -L 5901:"+visnode+":5901 "+username+"@"+host+"\n\n")
 
                         try:
                             forward.forward_tunnel(5901, visnode, 5901, sshClient.get_transport())
-                            wx.CallAfter(sys.stdout.write, "Now forwarding port %d to %s:%d ...\n" % (5901, visnode, 5901))
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
                             ###sys.exit(0)
@@ -371,7 +360,6 @@ class MyFrame(wx.Frame):
                         key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
                         queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                         vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                    #wx.CallAfter(sys.stdout.write, "\nChecking for TurboVNC...\n")
                     if os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
@@ -381,17 +369,12 @@ class MyFrame(wx.Frame):
 
                     try:
                         if sys.platform.startswith("win"):
-                            #wx.CallAfter(sys.stdout.write, "\"" + vnc + "\" /user " + username + " -autopass localhost:1")
-
-                            # This will bring up TurboVNC GUI which will ask user for a password:
-                            #subprocess.call("\"" + vnc + "\" /user " + username + " /autopass localhost:1",shell=True)
                             proc = subprocess.Popen("\""+vnc+"\" /user "+username+" /autopass localhost:1", 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             proc.communicate(input=password)
                             proc.communicate()
                         else:
-                            #wx.CallAfter(sys.stdout.write, "Spawing TurboVNC process, using subprocess.call()...\n")
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
                     except BaseException, err:
                         wx.CallAfter(sys.stdout.write,str(err))
