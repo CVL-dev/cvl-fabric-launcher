@@ -391,7 +391,7 @@ class MyFrame(wx.Frame):
                             proc.communicate(input=password)
                             proc.communicate()
                         else:
-                            wx.CallAfter(sys.stdout.write, "Spawing TurboVNC process, using subprocess.call()...\n")
+                            #wx.CallAfter(sys.stdout.write, "Spawing TurboVNC process, using subprocess.call()...\n")
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
                     except BaseException, err:
                         wx.CallAfter(sys.stdout.write,str(err))
