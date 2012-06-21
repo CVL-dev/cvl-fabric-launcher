@@ -1,0 +1,56 @@
+The MASSIVE Launcher.dmg disk image can be created using the method described 
+here: 
+
+http://stackoverflow.com/questions/96882/how-do-i-create-a-nice-looking-dmg-for-mac-os-x-using-command-line-tools
+
+The exact steps used are shown below.
+
+This assumes that the MASSIVE Launcher.app bundle has been copied to a separate
+folder, called "dmg", to distinguish it from the "dist" folder which may contain
+additional files, which are not required in the disk image.
+
+The background.png image file provides the background image for the disk image,
+which displays an arrow, telling the user to drag the MASSIVE Launcher.app 
+bundle into (a symbolic link to) their Applications folder.
+
+mkdir ~/Desktop/dmg/
+mv dist/MASSIVE\ Launcher.app/ ~/Desktop/dmg/
+cd ~/Desktop/
+source=~/Desktop/dmg
+title="MASSIVE Launcher"
+size=80000
+applicationName="MASSIVE Launcher"
+finalDMGName="MASSIVE Launcher"
+backgroundPictureName=background.png
+hdiutil create -srcfolder "${source}" -volname "${title}" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDRW -size ${size}k pack.temp.dmg
+device=$(hdiutil attach -readwrite -noverify -noautoopen "pack.temp.dmg" | egrep '^/dev/' | sed 1q | awk '{print $1}')
+cp ~/Desktop/background.png /Volumes/MASSIVE\ Launcher/.background/
+echo '
+tell application "Finder"
+     tell disk "'${title}'"
+           open
+           set current view of container window to icon view
+           set toolbar visible of container window to false
+           set statusbar visible of container window to false
+           set the bounds of container window to {400, 100, 885, 430}
+           set theViewOptions to the icon view options of container window
+           set arrangement of theViewOptions to not arranged
+           set icon size of theViewOptions to 96
+           set background picture of theViewOptions to file ".background:'${backgroundPictureName}'"
+           make new alias file at container window to POSIX file "/Applications" with properties {name:"Applications"}
+           set position of item "'${applicationName}'" of container window to {120, 163}
+           set position of item "Applications" of container window to {375, 163}
+           close
+           open
+           update without registering applications
+     end tell
+   end tell
+' | osascript
+sudo chmod -Rf go-w /Volumes/"${title}"
+sync
+sync
+hdiutil detach ${device}
+rm -f "${finalDMGName}.dmg"
+hdiutil convert "pack.temp.dmg" -format UDZO -imagekey zlib-level=9 -o "${finalDMGName}"
+rm -f pack.temp.dmg
+
