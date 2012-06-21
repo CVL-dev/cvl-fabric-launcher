@@ -1,6 +1,7 @@
 # Adapted from C:\Python27\Lib\site-packages\py2exe\samples\simple\setup.py
 
 # Run the build process by running
+#
 # 'python create_windows_bundle.py py2exe' in a console prompt.
 #
 # This script would traditionally be named 'setup.py'.
