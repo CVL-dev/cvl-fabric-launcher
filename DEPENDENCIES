@@ -1,0 +1,165 @@
+DEPENDENCIES FOR MASSIVE LAUNCHER
+
+1. OVERVIEW
+2. RECOMMENDED PYTHON VERSION
+3. PYTHON MODULES REQUIRED TO RUN LAUNCHER
+4. PYTHON MODULES REQUIRED TO BUILD THE BUNDLED DISTRIBUTABLE APPLICATION
+
+1. OVERVIEW
+
+The MASSIVE Launcher is a wxPython application which can be run by typing
+"python massive.py" at the command prompt.  It can be built into a Mac OS X
+application bundle using py2app, and it can be built into a Windows 
+application bundle using py2exe.  Bundling the application in this way
+requires additional Python modules - see Section 4.
+
+2. RECOMMENDED PYTHON VERSION
+
+At the time of writing, wxPython doesn't play nicely with 64-bit Python 
+versions  on Mac OS X, so installing a 32-bit Python version from Python.Org
+is recommended. Since there is no strong reason to produce a 64-bit Launcher
+application at this stage, I stick with 32-bit binaries on all platforms.
+
+I use the following Python versions:
+
+Mac OS X: http://www.python.org/ftp/python/2.7.3/python-2.7.3-macosx10.3.dmg
+
+Windows: http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi
+
+3. PYTHON MODULES REQUIRED TO RUN LAUNCHER
+
+3.1 wx
+3.2 setuptools
+3.3 pycrypto
+3.4 ssh
+
+
+3.1 wx
+
+The wxPython GUI toolkit can be downloaded from http://wxpython.org/
+It is important to match the wxPython version download with the Python version
+you are running.  Because I use Python 2.7.x, I download a version of wxPython
+including "27" in the filename.
+
+I use the following wxPython versions:
+
+Mac OS X: http://downloads.sourceforge.net/wxpython/wxPython2.8-osx-unicode-2.8.12.1-universal-py2.7.dmg
+
+Windows: http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-unicode-2.8.12.1-py27.exe
+
+3.2 setuptools
+
+The setuptools module isn't required to run the launcher, but it is required
+to build a Mac application bundle, and it is useful to have installed, so that
+other Python modules can be installed using "sudo python setup.py install".
+
+I use version 0.6c11 of setuptools:
+
+http://pypi.python.org/pypi/setuptools/0.6c11
+
+MS Windows installers are available.  I use: 
+
+Windows: setuptools-0.6c11.win32-py2.7.exe
+
+Mac OS X: setuptools-0.6c11-py2.7.egg
+
+The setuptools module can be installed on Mac OS X by running:
+
+sh setuptools-0.6c11-py2.7.egg
+
+3.3 pycrypto
+
+I use version 2.3 of the pycrypto module: http://pypi.python.org/pypi/pycrypto/
+which is required by the SSH module: http://pypi.python.org/pypi/ssh/
+
+pycrypto can be difficult to build from source on Windows, but you can download
+a binary from:
+- http://www.voidspace.org.uk/downloads/  OR
+- http://blog.victorjabur.com/2011/06/08/modules-python-library-compiled-for-windows-32-and-64-unofficial-windows-binaries-for-python/
+
+On Mac OS X, pycrypto can be downloaded as source from:
+
+http://pypi.python.org/packages/source/p/pycrypto/pycrypto-2.3.tar.gz
+
+If you have an appropriate version of gcc and related tools installed, then
+the pycrypto module can be installed using:
+
+python setup.py build
+sudo python setup.py install
+
+Building Python modules including C code on Mac OS X requires matching the 
+version of gcc used to build the module, with the version of gcc, used to
+build Python itself.  If you have installed a cutting edge version of the
+Xcode developer tools, then you may find that Python modules fail to build,
+because you are running gcc 4.2 in /usr/bin/, but Python itself was built with
+gcc 4.0.  To revert back to a less cutting edge version of the Xcode developer
+tools, you can refer to his blog article: 
+http://macfiets.blogspot.com.au/2011/05/how-to-download-xcode-3.html 
+which takes you to the following link: 
+http://connect.apple.com/, https://developer.apple.com/downloads/index.action# 
+where you can download the "Xcode 3.2.6 and iOS SDK 4.3" disk image.
+
+If you find that the Xcode application itself refuses to install, and you want
+to install it, follow the trick on this page: http://anatomicwax.tumblr.com/post/8064949186/installing-xcode-3-2-6-on-lion-redux
+
+If you are rolling back from gcc 4.2 to gcc 4.0, you will need to fix up the 
+symbolic links in /usr/bin/:
+
+cd /usr/bin/
+sudo mv gcc gcc.bkp # Make a backup of the old symbolic link.
+sudo mv cc cc.bkp # Make a backup of the old symbolic link.
+sudo ln -s gcc-4.0  gcc
+sudo ln -s gcc-4.0 cc
+
+To ensure that you are building pure 32-bit Intel binaries, and not hybrid
+Universal binaries (including the PowerPC architecture as well), set the 
+"ARCHFLAGS" environment variable to "-arch i386" before running 
+python setup.py build
+sudo python setup.py install
+
+If after all of that hard work, you find that "import pycrypto" doesn't work,
+don't worry - the correct module name is "Crypto".  Try "import Crypto".
+
+3.4 ssh
+
+I use version 1.7.14 of the PyPi SSH module, which can be found here: 
+
+http://pypi.python.org/pypi/ssh/1.7.14
+
+It contains pure Python code, so its installation doesn't require a C compiler.
+
+It can be installed with:
+python setup.py build
+sudo python setup.py install
+
+
+4. PYTHON MODULES REQUIRED TO BUILD THE BUNDLED DISTRIBUTABLE APPLICATION
+
+4.1 setuptools
+4.2 py2app
+4.3 py2exe
+
+4.1 setuptools
+
+See section 3.2
+
+4.2 py2app
+
+The py2app module, used by the Launcher's create_mac_bundle.py script, can be
+downloaded from here:
+
+http://pypi.python.org/packages/source/p/py2app/py2app-0.6.4.tar.gz
+
+It can be installed in the usual way:
+
+python setup.py build
+sudo python setup.py install
+
+4.3 py2exe
+
+I use version 0.6.9 of the py2exe module with the Launcher's create_windows_bundle.py script.
+
+Version 0.6.9 of py2exe can be downloaded from here:
+
+http://downloads.sourceforge.net/project/py2exe/py2exe/0.6.9/py2exe-0.6.9.win32-py2.7.exe
+
