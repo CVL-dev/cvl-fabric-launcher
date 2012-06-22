@@ -45,7 +45,8 @@ import forward
 #logger = ssh.util.logging.getLogger()
 #logger.setLevel(logging.WARN)
 
-defaulthost = "m2.massive.org.au"
+#defaulthost = "m2.massive.org.au"
+defaulthost = "m2-login2.massive.org.au"
 
 host = ""
 project = ""
@@ -92,9 +93,9 @@ class MyFrame(wx.Frame):
 
 
         if sys.platform.startswith("win"):
-            wx.Frame.__init__(self, parent, id, title, size=(305, 350), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+            wx.Frame.__init__(self, parent, id, title, size=(350, 350), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         else:
-            wx.Frame.__init__(self, parent, id, title, size=(305, 310), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+            wx.Frame.__init__(self, parent, id, title, size=(350, 310), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         self.menu_bar  = wx.MenuBar()
 
@@ -128,23 +129,46 @@ class MyFrame(wx.Frame):
         wx.StaticText(panel, -1, 'Username', (10, 140))
         wx.StaticText(panel, -1, 'Password', (10, 180))
 
-        self.massiveHost = wx.TextCtrl(panel, -1, defaulthost,  (125, 15), size=(145, -1))
-        projects = ['', 'Monash016', 'Desc002']
+        #widgetWidth1 = 145
+        widgetWidth1 = 180
+        self.massiveHost = wx.TextCtrl(panel, -1, defaulthost,  (125, 15), size=(widgetWidth1, -1))
+        #projects = ['Monash016', 'Desc002']
 
-        widgetWidth = 145
+        projects = [
+            'ASync001','ASync002','ASync003','ASync004','ASync005','ASync006',
+            'ASync007','ASync008','ASync009','ASync010','ASync011','CSIRO001',
+            'CSIRO002','CSIRO003','CSIRO004','CSIRO005','CSIRO006','CSIRO007',
+            'Desc001','Desc002','Desc003','Monash001','Monash002','Monash003',
+            'Monash004','Monash005','Monash006','Monash007','Monash008',
+            'Monash009','Monash010','Monash011','Monash012','Monash013',
+            'Monash014','Monash015','Monash016','Monash017','Monash018',
+            'Monash019','Monash020','Monash021','Monash022','Monash023',
+            'Monash024','Monash025','Monash026','Monash027','Monash028',
+            'Monash029','Monash030','Monash031','Monash032','Monash033',
+            'Monash034','NCId75','NCIdb5','NCIdc0','NCIdd2','NCIg61','NCIg75',
+            'NCIq97','NCIr14','NCIw25','NCIw27','NCIw67','NCIw81','NCIw91',
+            'NCIy40','NCIy95','NCIy96','pDeak0023','pDeak0024','pDeak0026',
+            'pLaTr0011','pMelb0095','pMelb0100','pMelb0103','pMelb0104',
+            'pMOSP','pRMIT0074','pRMIT0078','pVPAC0005','Training'
+            ]
+
+        #widgetWidth2 = 145
+        widgetWidth2 = 180
         if sys.platform.startswith("darwin"):
-            widgetWidth = 170
-        self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(widgetWidth, -1),choices=projects, style=wx.CB_DROPDOWN)
-        self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(widgetWidth, -1),min=1,max=24)
-        self.massiveUsername = wx.TextCtrl(panel, -1, '',  (125, 135), (145, -1))
-        self.massivePassword = wx.TextCtrl(panel, -1, '',  (125, 175), (145, -1), style=wx.TE_PASSWORD)
+            widgetWidth2 = widgetWidth2 + 25
+        self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
+        self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
+        self.massiveUsername = wx.TextCtrl(panel, -1, '',  (125, 135), (widgetWidth1, -1))
+        self.massivePassword = wx.TextCtrl(panel, -1, '',  (125, 175), (widgetWidth1, -1), style=wx.TE_PASSWORD)
 
         self.massiveHours.MoveAfterInTabOrder(self.massiveProject)
         self.massiveUsername.MoveAfterInTabOrder(self.massiveHours)
         self.massivePassword.MoveAfterInTabOrder(self.massiveUsername)
 
-        cancelButton = wx.Button(panel, 1, 'Cancel', (35, 225))
-        loginButton = wx.Button(panel, 2, 'Login', (145, 225))
+        #cancelButton = wx.Button(panel, 1, 'Cancel', (35, 225))
+        cancelButton = wx.Button(panel, 1, 'Cancel', (35+45, 225))
+        #loginButton = wx.Button(panel, 2, 'Login', (145, 225))
+        loginButton = wx.Button(panel, 2, 'Login', (145+45, 225))
         loginButton.SetDefault()
 
         self.Bind(wx.EVT_BUTTON, self.OnCancel, id=1)
