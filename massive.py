@@ -47,8 +47,8 @@ import appdirs
 #logger = ssh.util.logging.getLogger()
 #logger.setLevel(logging.WARN)
 
-#defaulthost = "m2.massive.org.au"
-defaulthost = "m2-login2.massive.org.au"
+#defaultHost = "m2.massive.org.au"
+defaultHost = "m2-login2.massive.org.au"
 
 host = ""
 project = ""
@@ -131,9 +131,14 @@ class MyFrame(wx.Frame):
         wx.StaticText(panel, -1, 'Username', (10, 140))
         wx.StaticText(panel, -1, 'Password', (10, 180))
 
-        #widgetWidth1 = 145
         widgetWidth1 = 180
-        self.massiveHost = wx.TextCtrl(panel, -1, defaulthost,  (125, 15), size=(widgetWidth1, -1))
+        widgetWidth2 = 180
+        if sys.platform.startswith("darwin"):
+            widgetWidth2 = widgetWidth2 + 25
+        #self.massiveHost = wx.TextCtrl(panel, -1, defaultHost,  (125, 15), size=(widgetWidth1, -1))
+        massiveHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
+            "m2-login1.massive.org.au", "m2-login2.massive.org.au"]
+        self.massiveHost = wx.ComboBox(panel, -1, value=defaultHost, pos=(125, 15), size=(widgetWidth2, -1),choices=massiveHosts, style=wx.CB_DROPDOWN)
 
         global defaultProjectPlaceholder
         defaultProjectPlaceholder = '[Use my default project]';
@@ -156,10 +161,6 @@ class MyFrame(wx.Frame):
             'pMOSP','pRMIT0074','pRMIT0078','pVPAC0005','Training'
             ]
 
-        #widgetWidth2 = 145
-        widgetWidth2 = 180
-        if sys.platform.startswith("darwin"):
-            widgetWidth2 = widgetWidth2 + 25
         self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
         self.massiveProject.SetValue(defaultProjectPlaceholder)
         self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
