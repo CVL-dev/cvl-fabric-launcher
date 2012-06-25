@@ -9,7 +9,7 @@ This assumes that the MASSIVE Launcher.app bundle has been copied to a separate
 folder, called "dmg", to distinguish it from the "dist" folder which may contain
 additional files, which are not required in the disk image.
 
-The background.png image file provides the background image for the disk image,
+The dmgBackgroundMacOSX.png image file provides the background image for the disk image,
 which displays an arrow, telling the user to drag the MASSIVE Launcher.app 
 bundle into (a symbolic link to) their Applications folder.
 
@@ -21,10 +21,10 @@ title="MASSIVE Launcher"
 size=80000
 applicationName="MASSIVE Launcher"
 finalDMGName="MASSIVE Launcher"
-backgroundPictureName=background.png
+backgroundPictureName=~/Desktop/cvl_svn/launcher/trunk/dmgBackgroundMacOSX.png
 hdiutil create -srcfolder "${source}" -volname "${title}" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDRW -size ${size}k pack.temp.dmg
 device=$(hdiutil attach -readwrite -noverify -noautoopen "pack.temp.dmg" | egrep '^/dev/' | sed 1q | awk '{print $1}')
-cp ~/Desktop/background.png /Volumes/MASSIVE\ Launcher/.background/
+cp ~/Desktop/cvl_svn/launcher/trunk/dmgBackgroundMacOSX.png /Volumes/MASSIVE\ Launcher/.background/
 echo '
 tell application "Finder"
      tell disk "'${title}'"
