@@ -125,13 +125,19 @@ class MyFrame(wx.Frame):
         # so that we can easily insert the version number.
         # We may need to treat different OS's differently.
 
-        panel = wx.Panel(self)
+        global loginDialogPanel
+        loginDialogPanel = wx.Panel(self)
 
-        wx.StaticText(panel, -1, 'MASSIVE host', (10, 20))
-        wx.StaticText(panel, -1, 'MASSIVE project', (10, 60))
-        wx.StaticText(panel, -1, 'Hours requested', (10, 100))
-        wx.StaticText(panel, -1, 'Username', (10, 140))
-        wx.StaticText(panel, -1, 'Password', (10, 180))
+        global massiveHostLabel
+        massiveHostLabel = wx.StaticText(loginDialogPanel, -1, 'MASSIVE host', (10, 20))
+        global massiveProjectLabel
+        massiveProjectLabel = wx.StaticText(loginDialogPanel, -1, 'MASSIVE project', (10, 60))
+        global massiveHoursLabel
+        massiveHoursLabel = wx.StaticText(loginDialogPanel, -1, 'Hours requested', (10, 100))
+        global massiveUsernameLabel
+        massiveUsernameLabel = wx.StaticText(loginDialogPanel, -1, 'Username', (10, 140))
+        global massivePasswordLabel
+        massivePasswordLabel = wx.StaticText(loginDialogPanel, -1, 'Password', (10, 180))
 
         widgetWidth1 = 180
         widgetWidth2 = 180
@@ -140,7 +146,8 @@ class MyFrame(wx.Frame):
 
         massiveHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
             "m2-login1.massive.org.au", "m2-login2.massive.org.au"]
-        self.massiveHost = wx.ComboBox(panel, -1, value=defaultHost, pos=(125, 15), size=(widgetWidth2, -1),choices=massiveHosts, style=wx.CB_DROPDOWN)
+        global massiveHostComboBox
+        massiveHostComboBox = wx.ComboBox(loginDialogPanel, -1, value=defaultHost, pos=(125, 15), size=(widgetWidth2, -1),choices=massiveHosts, style=wx.CB_DROPDOWN)
 
         global defaultProjectPlaceholder
         defaultProjectPlaceholder = '[Use my default project]';
@@ -162,7 +169,8 @@ class MyFrame(wx.Frame):
             'pLaTr0011','pMelb0095','pMelb0100','pMelb0103','pMelb0104',
             'pMOSP','pRMIT0074','pRMIT0078','pVPAC0005','Training'
             ]
-        self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
+        global massiveProjectComboBox
+        massiveProjectComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
         global project
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "project"):
@@ -176,14 +184,13 @@ class MyFrame(wx.Frame):
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
         if project.strip()!="":
-            self.massiveProject.SetValue(project)
+            massiveProjectComboBox.SetValue(project)
         else:
-            self.massiveProject.SetValue(defaultProjectPlaceholder)
+            massiveProjectComboBox.SetValue(defaultProjectPlaceholder)
 
-        self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
+        global massiveHoursField
+        massiveHoursField = wx.SpinCtrl(loginDialogPanel, -1, value='4', pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
 
-        global config
-        global massiveLauncherPreferencesFilePath
         global username
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "username"):
@@ -196,20 +203,25 @@ class MyFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        self.massiveUsername = wx.TextCtrl(panel, -1, username,  (125, 135), (widgetWidth1, -1))
+        global massiveUsernameTextField
+        massiveUsernameTextField = wx.TextCtrl(loginDialogPanel, -1, username,  (125, 135), (widgetWidth1, -1))
+        massiveUsernameTextField = massiveUsernameTextField
         if username.strip()!="":
-            self.massiveUsername.SelectAll()
+            massiveUsernameTextField.SelectAll()
 
-        self.massivePassword = wx.TextCtrl(panel, -1, '',  (125, 175), (widgetWidth1, -1), style=wx.TE_PASSWORD)
+        global massivePasswordField
+        massivePasswordField = wx.TextCtrl(loginDialogPanel, -1, '',  (125, 175), (widgetWidth1, -1), style=wx.TE_PASSWORD)
 
-        self.massiveUsername.SetFocus()
+        massiveUsernameTextField.SetFocus()
 
-        self.massiveHours.MoveAfterInTabOrder(self.massiveProject)
-        self.massiveUsername.MoveAfterInTabOrder(self.massiveHours)
-        self.massivePassword.MoveAfterInTabOrder(self.massiveUsername)
+        massiveHoursField.MoveAfterInTabOrder(massiveProjectComboBox)
+        massiveUsernameTextField.MoveAfterInTabOrder(massiveHoursField)
+        massivePasswordField.MoveAfterInTabOrder(massiveUsernameTextField)
 
-        cancelButton = wx.Button(panel, 1, 'Cancel', (130, 225))
-        loginButton = wx.Button(panel, 2, 'Login', (230, 225))
+        global cancelButton
+        cancelButton = wx.Button(loginDialogPanel, 1, 'Cancel', (130, 225))
+        global loginButton
+        loginButton = wx.Button(loginDialogPanel, 2, 'Login', (230, 225))
         loginButton.SetDefault()
 
         self.Bind(wx.EVT_BUTTON, self.OnCancel, id=1)
@@ -276,6 +288,22 @@ class MyFrame(wx.Frame):
             def run(self):
                 """Run Worker Thread."""
                 # This is the time-consuming code executing in the new thread. 
+
+                waitCursor = wx.StockCursor(wx.CURSOR_WAIT)
+                loginDialogFrame.SetCursor(waitCursor)
+                loginDialogPanel.SetCursor(waitCursor)
+                massiveHostLabel.SetCursor(waitCursor)
+                massiveProjectLabel.SetCursor(waitCursor)
+                massiveHoursLabel.SetCursor(waitCursor)
+                massiveUsernameLabel.SetCursor(waitCursor)
+                massivePasswordLabel.SetCursor(waitCursor)
+                massiveHostComboBox.SetCursor(waitCursor)
+                massiveProjectComboBox.SetCursor(waitCursor)
+                massiveHoursField.SetCursor(waitCursor)
+                massiveUsernameTextField.SetCursor(waitCursor)
+                massivePasswordField.SetCursor(waitCursor)
+                cancelButton.SetCursor(waitCursor)
+                loginButton.SetCursor(waitCursor)
 
                 global logTextCtrl
                 global loginDialogStatusBar
@@ -457,6 +485,22 @@ class MyFrame(wx.Frame):
                             proc.communicate()
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
+                        arrowCursor = wx.StockCursor(wx.CURSOR_WAIT)
+                        loginDialogFrame.SetCursor(arrowCursor)
+                        loginDialogPanel.SetCursor(arrowCursor)
+                        massiveHostLabel.SetCursor(arrowCursor)
+                        massiveProjectLabel.SetCursor(arrowCursor)
+                        massiveHoursLabel.SetCursor(arrowCursor)
+                        massiveUsernameLabel.SetCursor(arrowCursor)
+                        massivePasswordLabel.SetCursor(arrowCursor)
+                        massiveHostComboBox.SetCursor(arrowCursor)
+                        massiveProjectComboBoxSetCursor(arrowCursor)
+                        massiveHoursField.SetCursor(arrowCursor)
+                        massiveUsernameTextField.SetCursor(arrowCursor)
+                        massivePasswordField.SetCursor(arrowCursor)
+                        cancelButton.SetCursor(arrowCursor)
+                        loginButton.SetCursor(arrowCursor)
+
                     except BaseException, err:
                         wx.CallAfter(sys.stdout.write,str(err))
 
@@ -483,11 +527,11 @@ class MyFrame(wx.Frame):
                 # Method for use by main thread to signal an abort
                 self._want_abort = 1
 
-        username = self.massiveUsername.GetValue()
-        password = self.massivePassword.GetValue()
-        host = self.massiveHost.GetValue()
-        hours = str(self.massiveHours.GetValue())
-        project = self.massiveProject.GetValue()
+        username = massiveUsernameTextField.GetValue()
+        password = massivePasswordField.GetValue()
+        host = massiveHostComboBox.GetValue()
+        hours = str(massiveHoursField.GetValue())
+        project = massiveProjectComboBox.GetValue()
         if project == defaultProjectPlaceholder:
             xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
             # Get list of user's projects from Karaage:
@@ -495,10 +539,8 @@ class MyFrame(wx.Frame):
             # projects = users_projects[1]
             # Get user's default project from Karaage:
             project = xmlrpcServer.get_project(username)
-            self.massiveProject.SetValue(project)
+            massiveProjectComboBox.SetValue(project)
 
-        global config
-        global massiveLauncherPreferencesFilePath
         config.set("MASSIVE Launcher Preferences","username",username)
         config.set("MASSIVE Launcher Preferences","project",project)
         with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -559,8 +601,9 @@ class MyApp(wx.App):
         if os.path.exists(massiveLauncherPreferencesFilePath):
             config.read(massiveLauncherPreferencesFilePath)
 
-        frame = MyFrame(None, -1, 'MASSIVE Launcher')
-        frame.Show(True)
+        global loginDialogFrame
+        loginDialogFrame = MyFrame(None, -1, 'MASSIVE Launcher')
+        loginDialogFrame.Show(True)
         return True
 
 app = MyApp(0)
