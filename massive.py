@@ -429,7 +429,7 @@ class MyFrame(wx.Frame):
 
                     tunnelThread = threading.Thread(target=createTunnel)
 
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Creating SSH tunnel...")
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
                     tunnelThread.start()
                     time.sleep(2)
