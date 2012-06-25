@@ -216,6 +216,8 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OnLogin, id=2)
 
         self.statusbar = MyStatusBar(self)
+        global loginDialogStatusBar
+        loginDialogStatusBar = self.statusbar
         self.SetStatusBar(self.statusbar)
         self.Centre()
 
@@ -276,12 +278,14 @@ class MyFrame(wx.Frame):
                 # This is the time-consuming code executing in the new thread. 
 
                 global logTextCtrl
+                global loginDialogStatusBar
 
                 try:
                     displaySize = wx.DisplaySize()
                     desiredWidth = displaySize[0] * 0.99
                     desiredHeight = displaySize[1] * 0.85
 
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Logging in to " + host)
                     wx.CallAfter(sys.stdout.write, "Attempting to log in to " + host + "...\n")
                     
                     sshClient = ssh.SSHClient()
@@ -292,6 +296,7 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Setting display resolution...")
                     stdin,stdout,stderr = sshClient.exec_command("if ! [ -f ~/.vnc/turbovncserver.conf ]; then cp /etc/turbovncserver.conf  ~/.vnc/; fi")
                     stderrRead = stderr.read()
                     if len(stderrRead) > 0:
@@ -316,12 +321,16 @@ class MyFrame(wx.Frame):
                     
                     wx.CallAfter(sys.stdout.write, "\n")
 
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Checking quota...")
+
                     wx.CallAfter(sys.stdout.write, "mybalance --hours\n")
                     stdin,stdout,stderr = sshClient.exec_command("mybalance --hours")
                     wx.CallAfter(sys.stdout.write, stderr.read())
                     wx.CallAfter(sys.stdout.write, stdout.read())
 
                     wx.CallAfter(sys.stdout.write, "\n")
+
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
 
                     qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
 
@@ -392,6 +401,8 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
+
                     wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
 
                     # Note that the use of system calls to "ps" etc. below is not portable to the Windows platform.
@@ -417,6 +428,9 @@ class MyFrame(wx.Frame):
                             ###sys.exit(0)
 
                     tunnelThread = threading.Thread(target=createTunnel)
+
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Creating SSH tunnel...")
+
                     tunnelThread.start()
                     time.sleep(2)
 
@@ -429,6 +443,8 @@ class MyFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
                         wx.CallAfter(sys.stdout.write, "Error: TurboVNC was not found in " + vnc + "\n")
+
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Launching TurboVNC...")
 
                     wx.CallAfter(sys.stdout.write, "\nStarting MASSIVE VNC...\n")
 
