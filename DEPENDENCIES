@@ -2,7 +2,7 @@ DEPENDENCIES FOR MASSIVE LAUNCHER
 
 1. OVERVIEW
 2. RECOMMENDED PYTHON VERSION
-3. PYTHON MODULES REQUIRED TO RUN LAUNCHER
+3. PYTHON MODULES REQUIRED TO RUN MASSIVE LAUNCHER
 4. PYTHON MODULES REQUIRED TO BUILD THE BUNDLED DISTRIBUTABLE APPLICATION
 
 1. OVERVIEW
@@ -26,12 +26,13 @@ Mac OS X: http://www.python.org/ftp/python/2.7.3/python-2.7.3-macosx10.3.dmg
 
 Windows: http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi
 
-3. PYTHON MODULES REQUIRED TO RUN LAUNCHER
+3. PYTHON MODULES REQUIRED TO RUN MASSIVE LAUNCHER
 
 3.1 wx
 3.2 setuptools
 3.3 pycrypto
 3.4 ssh
+3.5 appdirs
 
 
 3.1 wx
@@ -113,9 +114,9 @@ sudo ln -s gcc-4.0 cc
 
 To ensure that you are building pure 32-bit Intel binaries, and not hybrid
 Universal binaries (including the PowerPC architecture as well), set the 
-"ARCHFLAGS" environment variable to "-arch i386" before running 
-python setup.py build
-sudo python setup.py install
+"ARCHFLAGS" environment variable to "-arch i386" before running:
+  python setup.py build
+  sudo python setup.py install
 
 If after all of that hard work, you find that "import pycrypto" doesn't work,
 don't worry - the correct module name is "Crypto".  Try "import Crypto".
@@ -128,10 +129,23 @@ http://pypi.python.org/pypi/ssh/1.7.14
 
 It contains pure Python code, so its installation doesn't require a C compiler.
 
-It can be installed with:
+It can be installed using:
+
 python setup.py build
 sudo python setup.py install
 
+3.5 appdirs
+
+I use version 1.2.0 of the PyPi appdirs module, which can be found here:
+
+http://pypi.python.org/pypi/appdirs/1.2.0
+
+It contains pure Python code, so its installation doesn't require a C compiler.
+
+It can be installed using:
+
+python setup.py build
+sudo python setup.py install
 
 4. PYTHON MODULES REQUIRED TO BUILD THE BUNDLED DISTRIBUTABLE APPLICATION
 
