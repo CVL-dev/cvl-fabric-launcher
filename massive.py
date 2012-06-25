@@ -40,6 +40,8 @@ import urllib
 import massive_launcher_version_number
 import StringIO
 import forward
+import xmlrpclib
+import appdirs
 #import logging
 
 #logger = ssh.util.logging.getLogger()
@@ -132,9 +134,11 @@ class MyFrame(wx.Frame):
         #widgetWidth1 = 145
         widgetWidth1 = 180
         self.massiveHost = wx.TextCtrl(panel, -1, defaulthost,  (125, 15), size=(widgetWidth1, -1))
-        #projects = ['Monash016', 'Desc002']
 
+        global defaultProjectPlaceholder
+        defaultProjectPlaceholder = '[Use my default project]';
         projects = [
+            defaultProjectPlaceholder,
             'ASync001','ASync002','ASync003','ASync004','ASync005','ASync006',
             'ASync007','ASync008','ASync009','ASync010','ASync011','CSIRO001',
             'CSIRO002','CSIRO003','CSIRO004','CSIRO005','CSIRO006','CSIRO007',
@@ -157,18 +161,21 @@ class MyFrame(wx.Frame):
         if sys.platform.startswith("darwin"):
             widgetWidth2 = widgetWidth2 + 25
         self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
+        self.massiveProject.SetValue(defaultProjectPlaceholder)
         self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
         self.massiveUsername = wx.TextCtrl(panel, -1, '',  (125, 135), (widgetWidth1, -1))
         self.massivePassword = wx.TextCtrl(panel, -1, '',  (125, 175), (widgetWidth1, -1), style=wx.TE_PASSWORD)
+
+        self.massiveUsername.SetFocus()
 
         self.massiveHours.MoveAfterInTabOrder(self.massiveProject)
         self.massiveUsername.MoveAfterInTabOrder(self.massiveHours)
         self.massivePassword.MoveAfterInTabOrder(self.massiveUsername)
 
         #cancelButton = wx.Button(panel, 1, 'Cancel', (35, 225))
-        cancelButton = wx.Button(panel, 1, 'Cancel', (35+45, 225))
+        cancelButton = wx.Button(panel, 1, 'Cancel', (130, 225))
         #loginButton = wx.Button(panel, 2, 'Login', (145, 225))
-        loginButton = wx.Button(panel, 2, 'Login', (145+45, 225))
+        loginButton = wx.Button(panel, 2, 'Login', (230, 225))
         loginButton.SetDefault()
 
         self.Bind(wx.EVT_BUTTON, self.OnCancel, id=1)
@@ -426,11 +433,19 @@ class MyFrame(wx.Frame):
                 # Method for use by main thread to signal an abort
                 self._want_abort = 1
 
-        host = self.massiveHost.GetValue()
-        project = self.massiveProject.GetValue()
-        hours = str(self.massiveHours.GetValue())
         username = self.massiveUsername.GetValue()
         password = self.massivePassword.GetValue()
+        host = self.massiveHost.GetValue()
+        hours = str(self.massiveHours.GetValue())
+        project = self.massiveProject.GetValue()
+        if project == defaultProjectPlaceholder:
+            xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
+            # Get list of user's projects from Karaage:
+            # users_projects = xmlrpcServer.get_users_projects(username,password)
+            # projects = users_projects[1]
+            # Get user's default project from Karaage:
+            project = xmlrpcServer.get_project(username)
+            self.massiveProject.SetValue(project)
 
         logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
 
