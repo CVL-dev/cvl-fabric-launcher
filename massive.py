@@ -42,6 +42,7 @@ import StringIO
 import forward
 import xmlrpclib
 import appdirs
+import ConfigParser
 #import logging
 
 #logger = ssh.util.logging.getLogger()
@@ -53,6 +54,7 @@ defaultHost = "m2-login2.massive.org.au"
 host = ""
 project = ""
 hours = ""
+global username
 username = ""
 password = ""
 
@@ -135,7 +137,7 @@ class MyFrame(wx.Frame):
         widgetWidth2 = 180
         if sys.platform.startswith("darwin"):
             widgetWidth2 = widgetWidth2 + 25
-        #self.massiveHost = wx.TextCtrl(panel, -1, defaultHost,  (125, 15), size=(widgetWidth1, -1))
+
         massiveHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
             "m2-login1.massive.org.au", "m2-login2.massive.org.au"]
         self.massiveHost = wx.ComboBox(panel, -1, value=defaultHost, pos=(125, 15), size=(widgetWidth2, -1),choices=massiveHosts, style=wx.CB_DROPDOWN)
@@ -160,11 +162,44 @@ class MyFrame(wx.Frame):
             'pLaTr0011','pMelb0095','pMelb0100','pMelb0103','pMelb0104',
             'pMOSP','pRMIT0074','pRMIT0078','pVPAC0005','Training'
             ]
-
         self.massiveProject = wx.ComboBox(panel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
-        self.massiveProject.SetValue(defaultProjectPlaceholder)
+        global project
+        if config.has_section("MASSIVE Launcher Preferences"):
+            if config.has_option("MASSIVE Launcher Preferences", "project"):
+                project = config.get("MASSIVE Launcher Preferences", "project")
+            else:
+                config.set("MASSIVE Launcher Preferences","project","")
+                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                    config.write(massiveLauncherPreferencesFileObject)
+        else:
+            config.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                config.write(massiveLauncherPreferencesFileObject)
+        if project.strip()!="":
+            self.massiveProject.SetValue(project)
+        else:
+            self.massiveProject.SetValue(defaultProjectPlaceholder)
+
         self.massiveHours = wx.SpinCtrl(panel, -1, value='4', pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
-        self.massiveUsername = wx.TextCtrl(panel, -1, '',  (125, 135), (widgetWidth1, -1))
+
+        global config
+        global massiveLauncherPreferencesFilePath
+        global username
+        if config.has_section("MASSIVE Launcher Preferences"):
+            if config.has_option("MASSIVE Launcher Preferences", "username"):
+                username = config.get("MASSIVE Launcher Preferences", "username")
+            else:
+                config.set("MASSIVE Launcher Preferences","username","")
+                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                    config.write(massiveLauncherPreferencesFileObject)
+        else:
+            config.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                config.write(massiveLauncherPreferencesFileObject)
+        self.massiveUsername = wx.TextCtrl(panel, -1, username,  (125, 135), (widgetWidth1, -1))
+        if username.strip()!="":
+            self.massiveUsername.SelectAll()
+
         self.massivePassword = wx.TextCtrl(panel, -1, '',  (125, 175), (widgetWidth1, -1), style=wx.TE_PASSWORD)
 
         self.massiveUsername.SetFocus()
@@ -173,9 +208,7 @@ class MyFrame(wx.Frame):
         self.massiveUsername.MoveAfterInTabOrder(self.massiveHours)
         self.massivePassword.MoveAfterInTabOrder(self.massiveUsername)
 
-        #cancelButton = wx.Button(panel, 1, 'Cancel', (35, 225))
         cancelButton = wx.Button(panel, 1, 'Cancel', (130, 225))
-        #loginButton = wx.Button(panel, 2, 'Login', (145, 225))
         loginButton = wx.Button(panel, 2, 'Login', (230, 225))
         loginButton.SetDefault()
 
@@ -448,6 +481,13 @@ class MyFrame(wx.Frame):
             project = xmlrpcServer.get_project(username)
             self.massiveProject.SetValue(project)
 
+        global config
+        global massiveLauncherPreferencesFilePath
+        config.set("MASSIVE Launcher Preferences","username",username)
+        config.set("MASSIVE Launcher Preferences","project",project)
+        with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+            config.write(massiveLauncherPreferencesFileObject)
+
         logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
 
         if sys.platform.startswith("win"):
@@ -489,6 +529,19 @@ class MyStatusBar(wx.StatusBar):
 
 class MyApp(wx.App):
     def OnInit(self):
+
+        appDirs = appdirs.AppDirs("MASSIVE Launcher", "Monash University")
+        appUserDataDir = appDirs.user_data_dir
+        # Add trailing slash:
+        appUserDataDir = os.path.join(appUserDataDir,"")
+        if not os.path.exists(appUserDataDir):
+            os.makedirs(appUserDataDir)
+        global config
+        config = ConfigParser.RawConfigParser(allow_no_value=True)
+        global massiveLauncherPreferencesFilePath
+        massiveLauncherPreferencesFilePath = os.path.join(appUserDataDir,"MASSIVE Launcher Preferences.cfg")
+        if os.path.exists(massiveLauncherPreferencesFilePath):
+            config.read(massiveLauncherPreferencesFilePath)
 
         frame = MyFrame(None, -1, 'MASSIVE Launcher')
         frame.Show(True)
