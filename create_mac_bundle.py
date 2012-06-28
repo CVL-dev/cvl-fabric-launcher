@@ -13,13 +13,6 @@ import sys
 
 import massive_launcher_version_number
 
-if sys.platform == 'darwin':
-    buildstyle = 'app'
-elif sys.platform == 'win32':
-    import py2exe
-    # buildstyle = 'console'
-    buildstyle = 'windows'
-
 setup(
     options=dict(py2app=dict(
         plist=dict(
@@ -37,6 +30,5 @@ setup(
     data_files=["MASSIVE.icns"],
     name="MASSIVE Launcher",
     setup_requires=["py2app"],
-    #**{buildstyle : ['massive.py']}
     app=['massive.py']
 )
