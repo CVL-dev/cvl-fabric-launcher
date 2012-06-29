@@ -233,9 +233,12 @@ class MyFrame(wx.Frame):
         self.SetStatusBar(self.statusbar)
         self.Centre()
 
+        #massiveLauncherURL = "https://mnhs-massive-dev.med.monash.edu/index.php?option=com_content&view=article&id=121"
+        massiveLauncherURL = "https://mnhs-web14-v02.med.monash.edu/index.php?option=com_content&view=article&id=121"
+
         try:
             myHtmlParser = MyHtmlParser()
-            feed = urllib.urlopen("https://mnhs-massive-dev.med.monash.edu/index.php?option=com_content&view=article&id=121")
+            feed = urllib.urlopen(massiveLauncherURL)
             html = feed.read()
             myHtmlParser.feed(html)
             myHtmlParser.close()
@@ -254,7 +257,8 @@ class MyFrame(wx.Frame):
             dlg = wx.MessageDialog(self, 
                 "You are running version " + massive_launcher_version_number.version_number + "\n\n" +
                 "The latest version is " + myHtmlParser.data[0] + "\n\n" +
-                "Please download a new version from:\n\nhttps://mnhs-massive-dev.med.monash.edu/index.php?option=com_content&view=article&id=121\n\n" +
+                "Please download a new version from:\n\n" +
+                massiveLauncherURL + "\n\n" +
                 "For queries, please contact:\n\nhelp@massive.org.au\njames.wettenhall@monash.edu\n",
                 "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
