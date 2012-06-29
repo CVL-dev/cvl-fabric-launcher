@@ -516,7 +516,7 @@ class MyFrame(wx.Frame):
                     # thread to tell it to exit.
 
                     sshClient.close()
-                    system.exit(0)
+                    sys.exit(0)
 
                 except:
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
