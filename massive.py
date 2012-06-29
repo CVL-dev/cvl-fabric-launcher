@@ -485,7 +485,7 @@ class MyFrame(wx.Frame):
                             proc.communicate()
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
-                        arrowCursor = wx.StockCursor(wx.CURSOR_WAIT)
+                        arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
                         loginDialogFrame.SetCursor(arrowCursor)
                         loginDialogPanel.SetCursor(arrowCursor)
                         massiveHostLabel.SetCursor(arrowCursor)
@@ -494,15 +494,15 @@ class MyFrame(wx.Frame):
                         massiveUsernameLabel.SetCursor(arrowCursor)
                         massivePasswordLabel.SetCursor(arrowCursor)
                         massiveHostComboBox.SetCursor(arrowCursor)
-                        massiveProjectComboBoxSetCursor(arrowCursor)
+                        massiveProjectComboBox.SetCursor(arrowCursor)
                         massiveHoursField.SetCursor(arrowCursor)
                         massiveUsernameTextField.SetCursor(arrowCursor)
                         massivePasswordField.SetCursor(arrowCursor)
                         cancelButton.SetCursor(arrowCursor)
                         loginButton.SetCursor(arrowCursor)
 
-                    except BaseException, err:
-                        wx.CallAfter(sys.stdout.write,str(err))
+                    except:
+                        wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     # Execution probably won't get to this point.
                     # Closing the MASSIVE Desktop will kill the SSH tunnel,
@@ -515,9 +515,7 @@ class MyFrame(wx.Frame):
                     system.exit(0)
 
                 except:
-                    #traceback.print_exc()
-                    #print "Unexpected error:", sys.exc_info()[0]
-                    sys.exc_info()
+                    wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                 # Example of using wx.PostEvent to post an event from a thread:
                 #wx.PostEvent(self._notify_window, ResultEvent(10))
@@ -606,6 +604,6 @@ class MyApp(wx.App):
         loginDialogFrame.Show(True)
         return True
 
-app = MyApp(0)
+app = MyApp(False) # Don't automatically redirect sys.stdout and sys.stderr to a Window.
 app.MainLoop()
 
