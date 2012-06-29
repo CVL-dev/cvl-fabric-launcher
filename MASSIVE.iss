@@ -1,11 +1,8 @@
-; -- Example1.iss --
-; Demonstrates copying 3 files and creating an icon.
-
-; SEE THE DOCUMENTATION FOR DETAILS ON CREATING .ISS SCRIPT FILES!
+;MASSIVE Launcher InnoSetup script
 
 [Setup]
 AppName=MASSIVE Launcher
-AppVersion=0.0.2
+AppVersion=0.0.5
 DefaultDirName={pf}\MASSIVE Launcher
 DefaultGroupName=MASSIVE Launcher
 UninstallDisplayIcon={app}\MASSIVE Launcher.exe
