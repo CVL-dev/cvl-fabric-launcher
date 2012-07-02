@@ -9,10 +9,13 @@ If you wish to run MASSIVE Launcher using an icon on your desktop, or using a
 menu item, you will need to copy the "MASSIVE Launcher.desktop" file to your 
 ~/Desktop/ and adjust the executable and icon paths specified in 
 "MASSIVE Launcher.desktop" to wherever you choose to install MASSIVE Launcher, 
-e.g. /opt/MassiveLauncher/.
+(/opt/MassiveLauncher/ is recommended). If using a custom installation 
+directory, you will need to update the LD_LIBRARY_PATH set in the 
+MassiveLauncher/massiveLauncher.sh wrapper script.
 
 If you want to make the MASSIVE Launcher for all users, you can copy
 "MASSIVE Launcher.desktop" to /usr/share/applications/ and copy the icon files
-into appropriate subdirectories within /usr/share/icons/hicolor/ 
+from MasiveLauncher/icons/ into appropriate subdirectories within 
+/usr/share/icons/hicolor/ 
 
 
