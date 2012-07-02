@@ -3,7 +3,7 @@ MASSIVE Launcher for Linux
 The Linux binary distribution of the MASSIVE Launcher doesn't require any
 installation. After extracting, the "massive" binary file can be run using:
 
-	./massive
+	LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ./massive
 
 If you wish to run MASSIVE Launcher using an icon on your desktop, or using a
 menu item, you will need to copy the "MASSIVE Launcher.desktop" file to your 

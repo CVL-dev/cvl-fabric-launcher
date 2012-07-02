@@ -3,7 +3,7 @@ Version=1.0
 Type=Application
 Terminal=false
 Name[en_US]=MASSIVE Launcher
-Exec=LD_LIBRARY_PATH=/opt/MassiveLauncher:$LD_LIBRARY_PATH /opt/MassiveLauncher/massive
+Exec=/opt/MassiveLauncher/massiveLauncher.sh
 Name=MASSIVE Launcher
 Icon=/opt/MassiveLauncher/icons/MASSIVElogoTransparent128x128.png
 
