@@ -468,10 +468,42 @@ class MyFrame(wx.Frame):
 
                     vnc = "/opt/TurboVNC/bin/vncviewer"
                     if sys.platform.startswith("win"):
-                        key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
-                        queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
-                        vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                    if os.path.exists(vnc):
+                        key = None
+                        queryResult = None
+                        foundTurboVncInRegistry = False
+                        try:
+                            key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
+                            queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                            vnc = os.path.join(queryResult[0], "vncviewer.exe")
+                            foundTurboVncInRegistry = True
+                        except:
+                            foundTurboVncInRegistry = False
+                        if not foundTurboVncInRegistry:
+                            try:
+                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                vnc = os.path.join(queryResult[0], "vncviewer.exe")
+                                foundTurboVncInRegistry = True
+                            except:
+                                foundTurboVncInRegistry = False
+                        if not foundTurboVncInRegistry:
+                            try:
+                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                vnc = os.path.join(queryResult[0], "vncviewer.exe")
+                                foundTurboVncInRegistry = True
+                            except:
+                                foundTurboVncInRegistry = False
+                        if not foundTurboVncInRegistry:
+                            try:
+                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                vnc = os.path.join(queryResult[0], "vncviewer.exe")
+                                foundTurboVncInRegistry = True
+                            except:
+                                foundTurboVncInRegistry = False
+                
+                    if foundTurboVncInRegistry and os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
                         wx.CallAfter(sys.stdout.write, "Error: TurboVNC was not found in " + vnc + "\n")
