@@ -1,0 +1,17 @@
+MASSIVE Launcher for Linux
+
+The Linux binary distribution of the MASSIVE Launcher doesn't require any
+installation. After extracting, the "massive" binary file can be run using:
+
+	./massive
+
+If you wish to run MASSIVE Launcher using an icon on your desktop, or using a
+menu item, you will need to adjust the executable and icon paths specified in 
+"MASSIVE Launcher.desktop" to wherever you choose to install MASSIVE Launcher, 
+e.g. /opt/MassiveLauncher/.
+
+If you want to make the MASSIVE Launcher for all users, you can copy
+"MASSIVE Launcher.desktop" to /usr/share/applications/ and copy the icon files
+into appropriate subdirectories within /usr/share/icons/hicolor/ 
+
+
