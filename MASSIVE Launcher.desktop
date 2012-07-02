@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=0.0.5
+Type=Application
+Terminal=false
+Name[en_US]=MASSIVE Launcher
+Exec=/opt/MassiveLauncher/massive
+Name=MASSIVE Launcher
+Icon=/opt/MassiveLauncher/icons/MASSIVElogoTransparent128x128.png
+
