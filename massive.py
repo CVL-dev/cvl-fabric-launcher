@@ -476,7 +476,10 @@ class MyFrame(wx.Frame):
                     tunnelThread.start()
                     time.sleep(2)
 
-                    vnc = "/opt/TurboVNC/bin/vncviewer"
+                    if sys.platform.startswith("win"):
+                        vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
+                    else:
+                        vnc = "/opt/TurboVNC/bin/vncviewer"
                     if sys.platform.startswith("win"):
                         key = None
                         queryResult = None
