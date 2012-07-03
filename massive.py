@@ -415,7 +415,7 @@ class MyFrame(wx.Frame):
                                         if not "00:00:00" in stdoutRead:
                                             wx.CallAfter(sys.stdout.write, "showstart " + jobNumber + "...\n")
                                             wx.CallAfter(sys.stdout.write, stderrRead)
-                                            wx.CallAfter(sys.stdout.write, stdoutRead())
+                                            wx.CallAfter(sys.stdout.write, stdoutRead)
                                         sshClient2.close()
 
                                     showStartThread = threading.Thread(target=showStart)
@@ -567,8 +567,9 @@ class MyFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
-                while True:
-                    time.sleep(1)
+                if sys.platform.startswith("win"):
+                    while True:
+                        time.sleep(1)
 
                 # Example of using wx.PostEvent to post an event from a thread:
                 #wx.PostEvent(self._notify_window, ResultEvent(10))
