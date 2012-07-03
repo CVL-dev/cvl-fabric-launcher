@@ -404,7 +404,7 @@ class MyFrame(wx.Frame):
                                 # wx.CallAfter(sys.stdout.write, "Read time out?\n") # Throw exception here?
                                 # return False
                                 if (not checkedShowStart) and jobNumber!="0.m2-m":
-				    checkedShowStart = True
+                                    checkedShowStart = True
                                     def showStart():
                                         sshClient2 = ssh.SSHClient()
                                         sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
@@ -566,10 +566,6 @@ class MyFrame(wx.Frame):
                 except:
                     wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
-
-                if sys.platform.startswith("win"):
-                    while True:
-                        time.sleep(1)
 
                 # Example of using wx.PostEvent to post an event from a thread:
                 #wx.PostEvent(self._notify_window, ResultEvent(10))
