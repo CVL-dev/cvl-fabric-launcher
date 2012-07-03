@@ -433,7 +433,7 @@ class MyFrame(wx.Frame):
                                 if "waiting for job" in line:
                                     wx.CallAfter(sys.stdout.write, line + "\n")
                                     lineSplit = line.split(" ")
-                                    jobNumber = lineSplit[4] # e.g. 3050964.m2-m
+                                    jobNumber = lineSplit[4] # e.g. 3050965.m2-m
                                 if "Starting XServer on the following nodes" in line:
                                     startingXServerLineNumber = lineNumber
                                 if lineNumber == (startingXServerLineNumber + 1): # vis node
