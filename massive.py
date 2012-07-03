@@ -513,7 +513,7 @@ class MyFrame(wx.Frame):
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
-                
+
                     if os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
@@ -549,6 +549,7 @@ class MyFrame(wx.Frame):
                         loginButton.SetCursor(arrowCursor)
 
                     except:
+                        wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
                         wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     # Execution probably won't get to this point.
@@ -562,6 +563,7 @@ class MyFrame(wx.Frame):
                     sys.exit(0)
 
                 except:
+                    wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                 # Example of using wx.PostEvent to post an event from a thread:
