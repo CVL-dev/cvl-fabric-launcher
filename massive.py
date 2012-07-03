@@ -95,11 +95,10 @@ class MyFrame(wx.Frame):
         # If you remove wx.RESIZE_BORDER from it, you'll get a frame which cannot be resized.
         # wx.Frame(parent, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
-
-        if sys.platform.startswith("win"):
-            wx.Frame.__init__(self, parent, id, title, size=(350, 350), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
-        else:
+        if sys.platform.startswith("darwin"):
             wx.Frame.__init__(self, parent, id, title, size=(350, 310), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+        else:
+            wx.Frame.__init__(self, parent, id, title, size=(350, 350), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         self.menu_bar  = wx.MenuBar()
 
@@ -141,7 +140,7 @@ class MyFrame(wx.Frame):
 
         widgetWidth1 = 180
         widgetWidth2 = 180
-        if sys.platform.startswith("darwin"):
+        if not sys.platform.startswith("win"):
             widgetWidth2 = widgetWidth2 + 25
 
         massiveHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
@@ -391,6 +390,8 @@ class MyFrame(wx.Frame):
                     startingXServerLineNumber = -1
                     breakOutOfMainLoop = False
                     lineFragment = ""
+                    checkedShowStart = False
+                    jobNumber = "0.m2-m"
 
                     while True:
                         tCheck = 0
@@ -400,15 +401,24 @@ class MyFrame(wx.Frame):
                             time.sleep(1)
                             tCheck+=1
                             if tCheck >= 10:
-                                #wx.CallAfter(sys.stdout.write, "Read time out?\n") # TODO: add exception here
+                                # wx.CallAfter(sys.stdout.write, "Read time out?\n") # Throw exception here?
                                 # return False
+                                if not checkedShowStart and jobNumber!="0.m2-m":
+                                    sshClient2 = ssh.SSHClient()
+                                    sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                                    sshClient2.connect(host,username=username,password=password)
+                                    stdin,stdout,stderr = sshClient2.exec_command("showstart " + jobNumber)
+                                    wx.CallAfter(sys.stdout.write, stderr.read())
+                                    wx.CallAfter(sys.stdout.write, stdout.read())
+                                    sshClient2.close()
+                                    checkedShowStart = True
                                 break
                         if (channel.recv_stderr_ready()):
                             out = channel.recv_stderr(1024)
                             buff = StringIO.StringIO(out)
                             line = lineFragment + buff.readline()
                             while line != "":
-                                wx.CallAfter(sys.stdout.write, "ERROR: " + line)
+                                wx.CallAfter(sys.stdout.write, "ERROR: " + line + "\n")
                         if (channel.recv_ready()):
                             out = channel.recv(1024)
                             buff = StringIO.StringIO(out)
@@ -421,7 +431,9 @@ class MyFrame(wx.Frame):
                                 else:
                                     lineFragment = ""
                                 if "waiting for job" in line:
-                                    wx.CallAfter(sys.stdout.write, line)
+                                    wx.CallAfter(sys.stdout.write, line + "\n")
+                                    lineSplit = line.split(" ")
+                                    jobNumber = lineSplit[4] # e.g. 3050964.m2-m
                                 if "Starting XServer on the following nodes" in line:
                                     startingXServerLineNumber = lineNumber
                                 if lineNumber == (startingXServerLineNumber + 1): # vis node
@@ -430,8 +442,6 @@ class MyFrame(wx.Frame):
                                 line = buff.readline()
                         if breakOutOfMainLoop:
                             break
-
-                    wx.CallAfter(sys.stdout.write, "\n")
 
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
 
@@ -471,13 +481,14 @@ class MyFrame(wx.Frame):
                         key = None
                         queryResult = None
                         foundTurboVncInRegistry = False
-                        try:
-                            key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
-                            queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
-                            vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                            foundTurboVncInRegistry = True
-                        except:
-                            foundTurboVncInRegistry = False
+                        if not foundTurboVncInRegistry:
+                            try:
+                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                vnc = os.path.join(queryResult[0], "vncviewer.exe")
+                                foundTurboVncInRegistry = True
+                            except:
+                                foundTurboVncInRegistry = False
                         if not foundTurboVncInRegistry:
                             try:
                                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0, _winreg.KEY_ALL_ACCESS)
@@ -496,14 +507,14 @@ class MyFrame(wx.Frame):
                                 foundTurboVncInRegistry = False
                         if not foundTurboVncInRegistry:
                             try:
-                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
                 
-                    if foundTurboVncInRegistry and os.path.exists(vnc):
+                    if os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
                         wx.CallAfter(sys.stdout.write, "Error: TurboVNC was not found in " + vnc + "\n")
@@ -590,10 +601,10 @@ class MyFrame(wx.Frame):
         gs = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
         gs.Add(logTextCtrl, 0, wx.EXPAND)
         logWindow.SetSizer(gs)
-        if sys.platform.startswith("win"):
-            font1 = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-        else:
+        if sys.platform.startswith("darwin"):
             font1 = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        else:
+            font1 = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         logTextCtrl.SetFont(font1)
         logWindow.Show(True)
 
