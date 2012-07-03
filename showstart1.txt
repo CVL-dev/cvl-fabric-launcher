@@ -1,0 +1,6 @@
+job 3741037 requires 12 procs for 4:00:00
+
+Estimated Rsv based start in 1:42:59 on Mon Jul 2 18:03:18
+Estimated Rsv based completion in 5:42:59 on Mon Jul 2 22:03:18
+
+Best Partition: M2 
