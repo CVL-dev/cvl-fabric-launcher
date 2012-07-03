@@ -403,15 +403,23 @@ class MyFrame(wx.Frame):
                             if tCheck >= 10:
                                 # wx.CallAfter(sys.stdout.write, "Read time out?\n") # Throw exception here?
                                 # return False
-                                if not checkedShowStart and jobNumber!="0.m2-m":
-                                    sshClient2 = ssh.SSHClient()
-                                    sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                                    sshClient2.connect(host,username=username,password=password)
-                                    stdin,stdout,stderr = sshClient2.exec_command("showstart " + jobNumber)
-                                    wx.CallAfter(sys.stdout.write, stderr.read())
-                                    wx.CallAfter(sys.stdout.write, stdout.read())
-                                    sshClient2.close()
-                                    checkedShowStart = True
+                                if (not checkedShowStart) and jobNumber!="0.m2-m":
+				    checkedShowStart = True
+                                    def showStart():
+                                        sshClient2 = ssh.SSHClient()
+                                        sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                                        sshClient2.connect(host,username=username,password=password)
+                                        stdin,stdout,stderr = sshClient2.exec_command("showstart " + jobNumber)
+                                        stderrRead = stderr.read()
+                                        stdoutRead = stdout.read()
+                                        if not "00:00:00" in stdoutRead:
+                                            wx.CallAfter(sys.stdout.write, "showstart " + jobNumber + "...\n")
+                                            wx.CallAfter(sys.stdout.write, stderrRead)
+                                            wx.CallAfter(sys.stdout.write, stdoutRead())
+                                        sshClient2.close()
+
+                                    showStartThread = threading.Thread(target=showStart)
+                                    showStartThread.start()
                                 break
                         if (channel.recv_stderr_ready()):
                             out = channel.recv_stderr(1024)
@@ -486,7 +494,7 @@ class MyFrame(wx.Frame):
                         foundTurboVncInRegistry = False
                         if not foundTurboVncInRegistry:
                             try:
-                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_ALL_ACCESS)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 foundTurboVncInRegistry = True
@@ -494,7 +502,7 @@ class MyFrame(wx.Frame):
                                 foundTurboVncInRegistry = False
                         if not foundTurboVncInRegistry:
                             try:
-                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_ALL_ACCESS)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 foundTurboVncInRegistry = True
@@ -532,7 +540,7 @@ class MyFrame(wx.Frame):
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             proc.communicate(input=password)
-                            proc.communicate()
+                            #proc.communicate()
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
@@ -555,19 +563,12 @@ class MyFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
                         wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
-                    # Execution probably won't get to this point.
-                    # Closing the MASSIVE Desktop will kill the SSH tunnel,
-                    # and the SSH tunnel thread will call os._exit(0),
-                    # because it's too complicated to catch the exception
-                    # nicely, and then send a message back to the main 
-                    # thread to tell it to exit.
-
-                    sshClient.close()
-                    sys.exit(0)
-
                 except:
                     wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
+
+                while True:
+                    time.sleep(1)
 
                 # Example of using wx.PostEvent to post an event from a thread:
                 #wx.PostEvent(self._notify_window, ResultEvent(10))
