@@ -354,8 +354,15 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Checking quota...")
 
-                    wx.CallAfter(sys.stdout.write, "mybalance --hours\n")
+                    #wx.CallAfter(sys.stdout.write, "mybalance --hours\n")
                     stdin,stdout,stderr = sshClient.exec_command("mybalance --hours")
+                    wx.CallAfter(sys.stdout.write, stderr.read())
+                    wx.CallAfter(sys.stdout.write, stdout.read())
+
+                    wx.CallAfter(sys.stdout.write, "\n")
+
+                    #wx.CallAfter(sys.stdout.write, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use\n")
+                    stdin,stdout,stderr = sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
                     wx.CallAfter(sys.stdout.write, stderr.read())
                     wx.CallAfter(sys.stdout.write, stdout.read())
 
@@ -439,9 +446,11 @@ class MyFrame(wx.Frame):
                                 else:
                                     lineFragment = ""
                                 if "waiting for job" in line:
-                                    wx.CallAfter(sys.stdout.write, line + "\n")
+                                    wx.CallAfter(sys.stdout.write, line)
                                     lineSplit = line.split(" ")
                                     jobNumber = lineSplit[4] # e.g. 3050965.m2-m
+                                    jobNumberSplit = jobNumber.split(".")
+                                    jobNumber = jobNumberSplit[0]
                                 if "Starting XServer on the following nodes" in line:
                                     startingXServerLineNumber = lineNumber
                                 if lineNumber == (startingXServerLineNumber + 1): # vis node
@@ -463,12 +472,14 @@ class MyFrame(wx.Frame):
                     # We can use sys.platform to check the OS.  
                     # Typical return values include 'darwin' (Mac OS X), 'win32', 'linux2', ...
 
+                    if  sys.platform.startswith("win"):
+                        wx.CallAfter(sys.stdout.write, "Warning: The Windows version of MASSIVE Launcher is currently not able to check for and remove existing SSH tunnel(s) using local port 5901...\n\n")
                     if not sys.platform.startswith("win"):
-                        wx.CallAfter(sys.stdout.write, "Checking for and removing any existing ssh tunnel(s) using local port 5901...\n\n")
+                        wx.CallAfter(sys.stdout.write, "Checking for and removing any existing SSH tunnel(s) using local port 5901...\n\n")
                         os.system("ps ax | grep \"5901\\:\" | grep ssh | awk '{print $1}' | xargs kill")
 
                     def createTunnel():
-                        wx.CallAfter(sys.stdout.write, "Starting tunnelled ssh session...\n")
+                        wx.CallAfter(sys.stdout.write, "Starting tunnelled SSH session...\n")
                         wx.CallAfter(sys.stdout.write, "ssh -L 5901:"+visnode+":5901 "+username+"@"+host+"\n\n")
 
                         try:
