@@ -270,70 +270,84 @@ class MyFrame(wx.Frame):
                 import MASSIVE_icon
                 newVersionAlertDialog.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
 
-            newVersionAlertDialogPanel = wx.Panel(newVersionAlertDialog)
+            massiveIconPanel = wx.Panel(newVersionAlertDialog)
 
             import MASSIVE_icon
             massiveIconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
-            wx.StaticBitmap(newVersionAlertDialogPanel, -1, 
+            wx.StaticBitmap(massiveIconPanel, -1, 
                 massiveIconAsBitmap,
                 (0, 50),
                 (massiveIconAsBitmap.GetWidth(), massiveIconAsBitmap.GetHeight())) 
 
-            newVersionAlertTitleLabel = wx.StaticText(newVersionAlertDialogPanel,
-                label = "MASSIVE Launcher", pos=(125,30))
+            newVersionAlertTextPanel = wx.Panel(newVersionAlertDialog)
+
+            gs = wx.FlexGridSizer(rows=4, cols=1, vgap=5, hgap=5)
+            newVersionAlertTextPanel.SetSizer(gs)
+
+            newVersionAlertTitleLabel = wx.StaticText(newVersionAlertTextPanel,
+                label = "MASSIVE Launcher")
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             font.SetPointSize(14)
             font.SetWeight(wx.BOLD)
             newVersionAlertTitleLabel.SetFont(font)
+            gs.Add(wx.StaticText(newVersionAlertTextPanel))
+            gs.Add(newVersionAlertTitleLabel, flag=wx.EXPAND)
+            gs.Add(wx.StaticText(newVersionAlertTextPanel))
 
-            newVersionAlertTextLabel1 = wx.StaticText(newVersionAlertDialogPanel, 
+            newVersionAlertTextLabel1 = wx.StaticText(newVersionAlertTextPanel, 
                 label = 
                 "You are running version " + massive_launcher_version_number.version_number + "\n\n" +
                 "The latest version is " + myHtmlParser.data[0] + "\n\n" +
-                "Please download a new version from:\n\n",
-                pos = (125,60))
+                "Please download a new version from:\n\n")
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             if sys.platform.startswith("darwin"):
                 font.SetPointSize(11)
             else:
                 font.SetPointSize(9)
             newVersionAlertTextLabel1.SetFont(font)
+            gs.Add(newVersionAlertTextLabel1, flag=wx.EXPAND)
 
-            if sys.platform.startswith("win"):
-                hyperlinkPos = (125,138)
-            else:
-                hyperlinkPos = (78,135)
-
-            newVersionAlertHyperlink = wx.HyperlinkCtrl(newVersionAlertDialogPanel, 
+            newVersionAlertHyperlink = wx.HyperlinkCtrl(newVersionAlertTextPanel, 
                 id = wx.ID_ANY,
                 label = massiveLauncherURL,
-                url = massiveLauncherURL,
-                pos = hyperlinkPos)
+                url = massiveLauncherURL)
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             if sys.platform.startswith("darwin"):
                 font.SetPointSize(11)
             else:
                 font.SetPointSize(8)
             newVersionAlertHyperlink.SetFont(font)
+            gs.Add(newVersionAlertHyperlink, flag=wx.EXPAND)
+            gs.Add(wx.StaticText(newVersionAlertTextPanel))
 
-            newVersionAlertTextLabel2 = wx.StaticText(newVersionAlertDialogPanel, 
+            newVersionAlertTextLabel2 = wx.StaticText(newVersionAlertTextPanel, 
                 label = 
-                "For queries, please contact:\n\nhelp@massive.org.au\njames.wettenhall@monash.edu\n",
-                pos = (125,160))
+                "For queries, please contact:\n\nhelp@massive.org.au\njames.wettenhall@monash.edu\n")
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             if sys.platform.startswith("darwin"):
                 font.SetPointSize(11)
             else:
                 font.SetPointSize(9)
             newVersionAlertTextLabel2.SetFont(font)
+            gs.Add(newVersionAlertTextLabel2, flag=wx.EXPAND)
 
             def OnOK(event):
                 sys.exit(1)
 
-            okButton = wx.Button(newVersionAlertDialogPanel, 1, ' OK ', (570, 230))
+            okButton = wx.Button(newVersionAlertTextPanel, 1, ' OK ')
             okButton.SetDefault()
+            gs.Add(okButton, flag=wx.ALIGN_RIGHT)
+            gs.Add(wx.StaticText(newVersionAlertTextPanel))
+            gs.Fit(newVersionAlertTextPanel)
 
             newVersionAlertDialog.Bind(wx.EVT_BUTTON, OnOK, id=1)
+
+            gs = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=5)
+            gs.Add(massiveIconPanel, flag=wx.EXPAND)
+            gs.Add(newVersionAlertTextPanel, flag=wx.EXPAND)
+            gs.Add(wx.StaticText(newVersionAlertDialog,label="       "))
+            newVersionAlertDialog.SetSizer(gs)
+            gs.Fit(newVersionAlertDialog)
 
             # http://wxpython-users.1045709.n5.nabble.com/wx-Dialog-comes-up-blank-in-Windows-if-panel-is-not-sized-td2371532.html
             # A Panel doesn't automatically size to its parent Dialog on
@@ -348,8 +362,8 @@ class MyFrame(wx.Frame):
             # change the size of the dialog after it has been created and populated
             # with child widgets (explicitly call SetSize, or do something like
             # sizer.Fit(), etc.) or calling SendSizeEvent will probably do it too. 
-            newVersionAlertDialog.SetSize((680,290))
-            newVersionAlertDialogPanel.SetSize((680,290))
+            #newVersionAlertDialog.SetSize((680,290))
+            #newVersionAlertTextPanel.SetSize((680,290))
 
             newVersionAlertDialog.ShowModal()
             newVersionAlertDialog.Destroy()
