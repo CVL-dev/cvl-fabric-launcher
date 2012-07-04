@@ -55,6 +55,8 @@ host = ""
 project = ""
 hours = ""
 global username
+global loginDialogFrame
+loginDialogFrame = None
 username = ""
 password = ""
 
@@ -102,12 +104,13 @@ class MyFrame(wx.Frame):
 
         self.menu_bar  = wx.MenuBar()
 
-        if sys.platform.startswith("win"):
+        if sys.platform.startswith("win") or sys.platform.startswith("linux"):
             self.file_menu = wx.Menu()
             self.file_menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window and exit program.")
             self.Bind(wx.EVT_MENU, self.OnExit, id=wx.ID_EXIT)
             self.menu_bar.Append(self.file_menu, "&File")
 
+        if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
             self.SetIcon(_icon)
 
@@ -257,15 +260,110 @@ class MyFrame(wx.Frame):
         latestVersion = myHtmlParser.data[0].strip()
 
         if latestVersion!=massive_launcher_version_number.version_number:
-            dlg = wx.MessageDialog(self, 
+            newVersionAlertDialog = wx.Dialog(loginDialogFrame, title="MASSIVE Launcher", name="MASSIVE Launcher",pos=(200,150),size=(680,290))
+
+            if sys.platform.startswith("win"):
+                _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+                newVersionAlertDialog.SetIcon(_icon)
+
+            if sys.platform.startswith("linux"):
+                import MASSIVE_icon
+                newVersionAlertDialog.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+
+            newVersionAlertDialogPanel = wx.Panel(newVersionAlertDialog)
+
+            import MASSIVE_icon
+            massiveIconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
+            wx.StaticBitmap(newVersionAlertDialogPanel, -1, 
+                massiveIconAsBitmap,
+                (0, 50),
+                (massiveIconAsBitmap.GetWidth(), massiveIconAsBitmap.GetHeight())) 
+
+            newVersionAlertTitleLabel = wx.StaticText(newVersionAlertDialogPanel,
+                label = "MASSIVE Launcher", pos=(125,30))
+            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+            font.SetPointSize(14)
+            font.SetWeight(wx.BOLD)
+            newVersionAlertTitleLabel.SetFont(font)
+
+            newVersionAlertTextLabel1 = wx.StaticText(newVersionAlertDialogPanel, 
+                label = 
                 "You are running version " + massive_launcher_version_number.version_number + "\n\n" +
                 "The latest version is " + myHtmlParser.data[0] + "\n\n" +
-                "Please download a new version from:\n\n" +
-                massiveLauncherURL + "\n\n" +
+                "Please download a new version from:\n\n",
+                pos = (125,60))
+            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+            if sys.platform.startswith("darwin"):
+                font.SetPointSize(11)
+            else:
+                font.SetPointSize(9)
+            newVersionAlertTextLabel1.SetFont(font)
+
+            if sys.platform.startswith("darwin"):
+                hyperlinkPos = (78,135)
+            else:
+                hyperlinkPos = (125,138)
+
+            newVersionAlertHyperlink = wx.HyperlinkCtrl(newVersionAlertDialogPanel, 
+                id = wx.ID_ANY,
+                label = massiveLauncherURL,
+                url = massiveLauncherURL,
+                pos = hyperlinkPos)
+            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+            if sys.platform.startswith("darwin"):
+                font.SetPointSize(11)
+            else:
+                font.SetPointSize(8)
+            newVersionAlertHyperlink.SetFont(font)
+
+            newVersionAlertTextLabel2 = wx.StaticText(newVersionAlertDialogPanel, 
+                label = 
                 "For queries, please contact:\n\nhelp@massive.org.au\njames.wettenhall@monash.edu\n",
-                "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
-            dlg.ShowModal()
-            dlg.Destroy()
+                pos = (125,160))
+            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+            if sys.platform.startswith("darwin"):
+                font.SetPointSize(11)
+            else:
+                font.SetPointSize(9)
+            newVersionAlertTextLabel2.SetFont(font)
+
+            def OnOK(event):
+                sys.exit(1)
+
+            okButton = wx.Button(newVersionAlertDialogPanel, 1, ' OK ', (570, 230))
+            okButton.SetDefault()
+
+            newVersionAlertDialog.Bind(wx.EVT_BUTTON, OnOK, id=1)
+
+            # http://wxpython-users.1045709.n5.nabble.com/wx-Dialog-comes-up-blank-in-Windows-if-panel-is-not-sized-td2371532.html
+            # A Panel doesn't automatically size to its parent Dialog on
+            # Windows, and so ends up clipping all its contents.  On the Mac and in a
+            # Frame, it either auto-resizes, or doesn't clip.
+
+            # Robin Dunn:
+            # The root of the problem is that dialogs on Windows do not get an initial
+            # size event when they are shown (frames do) and since all the layout
+            # magic happens in the EVT_SIZE handler then it doesn't happen by default
+            # for the dialog.  You can work around this by doing something that will
+            # change the size of the dialog after it has been created and populated
+            # with child widgets (explicitly call SetSize, or do something like
+            # sizer.Fit(), etc.) or calling SendSizeEvent will probably do it too. 
+            newVersionAlertDialog.SetSize((680,290))
+            newVersionAlertDialogPanel.SetSize((680,290))
+
+            newVersionAlertDialog.ShowModal()
+            newVersionAlertDialog.Destroy()
+
+            #dlg = wx.MessageDialog(self, 
+                #"You are running version " + massive_launcher_version_number.version_number + "\n\n" +
+                #"The latest version is " + myHtmlParser.data[0] + "\n\n" +
+                #"Please download a new version from:\n\n" +
+                #massiveLauncherURL + "\n\n" +
+                #"For queries, please contact:\n\nhelp@massive.org.au\njames.wettenhall@monash.edu\n",
+                #"MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
+            #dlg.ShowModal()
+            #dlg.Destroy()
+
             sys.exit(1)
  
     def OnAbout(self, event):
@@ -656,10 +754,10 @@ class MyFrame(wx.Frame):
         gs.Add(logTextCtrl, 0, wx.EXPAND)
         logWindow.SetSizer(gs)
         if sys.platform.startswith("darwin"):
-            font1 = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+            font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         else:
-            font1 = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-        logTextCtrl.SetFont(font1)
+            font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        logTextCtrl.SetFont(font)
         logWindow.Show(True)
 
         sys.stdout = logTextCtrl
