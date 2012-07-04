@@ -299,10 +299,10 @@ class MyFrame(wx.Frame):
                 font.SetPointSize(9)
             newVersionAlertTextLabel1.SetFont(font)
 
-            if sys.platform.startswith("darwin"):
-                hyperlinkPos = (78,135)
-            else:
+            if sys.platform.startswith("win"):
                 hyperlinkPos = (125,138)
+            else:
+                hyperlinkPos = (78,135)
 
             newVersionAlertHyperlink = wx.HyperlinkCtrl(newVersionAlertDialogPanel, 
                 id = wx.ID_ANY,
