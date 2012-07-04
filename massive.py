@@ -111,6 +111,11 @@ class MyFrame(wx.Frame):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
             self.SetIcon(_icon)
 
+        if sys.platform.startswith("linux"):
+            import MASSIVE_icon
+            _icon = wx.Icon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon, wx.BITMAP_TYPE_ICO)
+            self.SetIcon(_icon)
+
         self.help_menu = wx.Menu()
         self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE Launcher")
         self.Bind(wx.EVT_MENU, self.OnAbout, id=wx.ID_ABOUT)
@@ -641,6 +646,11 @@ class MyFrame(wx.Frame):
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+            logWindow.SetIcon(_icon)
+
+        if sys.platform.startswith("linux"):
+            import MASSIVE_icon
+            _icon = wx.Icon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon, wx.BITMAP_TYPE_ICO)
             logWindow.SetIcon(_icon)
 
         logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
