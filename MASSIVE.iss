@@ -2,7 +2,7 @@
 
 [Setup]
 AppName=MASSIVE Launcher
-AppVersion=0.0.8
+AppVersion=0.0.9
 DefaultDirName={pf}\MASSIVE Launcher
 DefaultGroupName=MASSIVE Launcher
 UninstallDisplayIcon={app}\MASSIVE Launcher.exe
