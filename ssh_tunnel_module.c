@@ -36,7 +36,7 @@ static PyMethodDef SshTunnelMethods[] = {
 // The init<modulename> function, should be the only non-static
 // item defined in the module file.
 PyMODINIT_FUNC
-init_ssh_tunnel(void)
+initssh_tunnel(void)
 {
     PyObject *m;
 
@@ -58,5 +58,5 @@ int main(int argc, char *argv[])
     Py_Initialize();
 
     /* Add a static module */
-    init_ssh_tunnel();
+    initssh_tunnel();
 }
