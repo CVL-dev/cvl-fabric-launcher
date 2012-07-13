@@ -25,6 +25,8 @@ them to the user as clearly as possible.
  
 """
 
+import ssh_tunnel # ssh_tunnel_module.c
+ssh_tunnel.system("ls -l")
 import sys
 if sys.platform.startswith("win"):
     import _winreg
@@ -34,7 +36,9 @@ import time
 import traceback
 import threading
 import os
-import ssh
+import ssh # Pure Python-based ssh module, based on Paramiko, published on PyPi
+import socket
+#import libssh2 # Unpublished SSH module (Python bindings for libssh2) by Sebastian Noack: git clone git://github.com/wallunit/ssh4py
 import HTMLParser
 import urllib
 import massive_launcher_version_number
@@ -51,7 +55,7 @@ import ConfigParser
 #defaultHost = "m2.massive.org.au"
 defaultHost = "m2-login2.massive.org.au"
 
-host = ""
+massiveLoginHost = ""
 project = ""
 hours = ""
 global username
@@ -240,7 +244,8 @@ class MyFrame(wx.Frame):
         self.Centre()
 
         #massiveLauncherURL = "https://mnhs-massive-dev.med.monash.edu/index.php?option=com_content&view=article&id=121"
-        massiveLauncherURL = "https://mnhs-web14-v02.med.monash.edu/index.php?option=com_content&view=article&id=121"
+        #massiveLauncherURL = "https://mnhs-web14-v02.med.monash.edu/index.php?option=com_content&view=article&id=121"
+        massiveLauncherURL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
 
         try:
             myHtmlParser = MyHtmlParser()
@@ -432,19 +437,19 @@ class MyFrame(wx.Frame):
                     desiredWidth = displaySize[0] * 0.99
                     desiredHeight = displaySize[1] * 0.85
 
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Logging in to " + host)
-                    wx.CallAfter(sys.stdout.write, "Attempting to log in to " + host + "...\n")
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Logging in to " + massiveLoginHost)
+                    wx.CallAfter(sys.stdout.write, "Attempting to log in to " + massiveLoginHost + "...\n")
                     
                     sshClient = ssh.SSHClient()
                     sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                    sshClient.connect(host,username=username,password=password)
+                    sshClient.connect(massiveLoginHost,username=username,password=password)
 
                     wx.CallAfter(sys.stdout.write, "First login done.\n")
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Setting display resolution...")
-                    stdin,stdout,stderr = sshClient.exec_command("if ! [ -f ~/.vnc/turbovncserver.conf ]; then cp /etc/turbovncserver.conf  ~/.vnc/; fi")
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/bash -c \"if ! [ -f ~/.vnc/turbovncserver.conf ]; then cp /etc/turbovncserver.conf  ~/.vnc/; fi\"")
                     stderrRead = stderr.read()
                     if len(stderrRead) > 0:
                         wx.CallAfter(sys.stdout.write, stderrRead)
@@ -459,7 +464,7 @@ class MyFrame(wx.Frame):
                         if len(stderrRead) > 0:
                             wx.CallAfter(sys.stdout.write, stderrRead)
                     else:
-                        wx.CallAfter(sys.stdout.write, "$geometry = ... was not found in ~/.vnc/turbovncserver.conf")
+                        #wx.CallAfter(sys.stdout.write, "$geometry = ... was not found in ~/.vnc/turbovncserver.conf")
                         stdin,stdout,stderr = sshClient.exec_command(
                             "echo '$geometry = \"%dx%d\"' >> ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight))
                         stderrRead = stderr.read()
@@ -531,7 +536,7 @@ class MyFrame(wx.Frame):
                                     def showStart():
                                         sshClient2 = ssh.SSHClient()
                                         sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                                        sshClient2.connect(host,username=username,password=password)
+                                        sshClient2.connect(massiveLoginHost,username=username,password=password)
                                         stdin,stdout,stderr = sshClient2.exec_command("showstart " + jobNumber)
                                         stderrRead = stderr.read()
                                         stdoutRead = stdout.read()
@@ -596,10 +601,14 @@ class MyFrame(wx.Frame):
 
                     def createTunnel():
                         wx.CallAfter(sys.stdout.write, "Starting tunnelled SSH session...\n")
-                        wx.CallAfter(sys.stdout.write, "ssh -L 5901:"+visnode+":5901 "+username+"@"+host+"\n\n")
+                        #wx.CallAfter(sys.stdout.write, "ssh -L 5901:"+visnode+":5901 "+username+"@"+massiveLoginHost+"\n\n")
+                        wx.CallAfter(sys.stdout.write, "ssh -L 5901:"+visnode+"-ib:5901 "+username+"@"+massiveLoginHost+"\n\n")
 
                         try:
-                            forward.forward_tunnel(5901, visnode, 5901, sshClient.get_transport())
+                            # The current forward.py module is too slow.
+                            # It will soon be replaced by ssh_tunnel_module.c
+                            #forward.forward_tunnel(5901, visnode, 5901, sshClient.get_transport())
+                            forward.forward_tunnel(5901, visnode + "-ib", 5901, sshClient.get_transport())
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
                             ###sys.exit(0)
@@ -670,6 +679,15 @@ class MyFrame(wx.Frame):
                             #proc.communicate()
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
+
+                            # The via stuff below didn't work, because the launcher doesn't have
+                            # access to the STDIN of the SSH process spawned by TurboVNC.
+                            #subprocess.call("echo \"" + password + "\" | " + vnc + " -via " + massiveLoginHost + " -user " + username + " -autopass " + visnode + ":1",shell=True)
+                            #proc = subprocess.Popen("echo \"" + password + "\" | " + vnc + " -via " + massiveLoginHost + " -user " + username + " -autopass " + visnode + "-ib:1",
+                                #stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                #universal_newlines=True)
+                            #proc.communicate(input=password)
+
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
                         loginDialogFrame.SetCursor(arrowCursor)
                         loginDialogPanel.SetCursor(arrowCursor)
@@ -736,7 +754,7 @@ class MyFrame(wx.Frame):
 
         username = massiveUsernameTextField.GetValue()
         password = massivePasswordField.GetValue()
-        host = massiveHostComboBox.GetValue()
+        massiveLoginHost = massiveHostComboBox.GetValue()
         hours = str(massiveHoursField.GetValue())
         project = massiveProjectComboBox.GetValue()
         if project == defaultProjectPlaceholder:
