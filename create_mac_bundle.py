@@ -8,10 +8,11 @@ Use this command to build the .app and collect the other needed files:
 Traditionally, this script would be named setup.py
 """
 
-from setuptools import setup
-import sys
+from setuptools import setup, Extension
 
 import massive_launcher_version_number
+
+ssh_tunnel_module = Extension("ssh_tunnel", sources = ["ssh_tunnel_module.c"])
 
 setup(
     options=dict(py2app=dict(
@@ -30,5 +31,6 @@ setup(
     data_files=["MASSIVE.icns"],
     name="MASSIVE Launcher",
     setup_requires=["py2app"],
-    app=['massive.py']
+    app=['massive.py'],
+    ext_modules = [ssh_tunnel_module]
 )

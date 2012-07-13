@@ -9,21 +9,17 @@
 # If everything works well, you should find a subdirectory named 'dist'
 # containing some files, including an exe file and some DLLs.
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 import py2exe
+
+ssh_tunnel_module = Extension("ssh_tunnel", sources = ["ssh_tunnel_module.c"])
 
 import massive_launcher_version_number
 
 setup(
-    # The first three parameters are not required, if at least a
-    # 'version' is given, then a versioninfo resource is built from
-    # them and added to the executables.
-    version = massive_launcher_version_number.version_number,
-    description = "MASSIVE Launcher",
     name = "MASSIVE Launcher",
-
-    # targets to build
-    #windows = ["massive.py"],
+    description = "MASSIVE Launcher",
+    version = massive_launcher_version_number.version_number,
     windows = [
         {
             "script": "massive.py",
@@ -31,4 +27,5 @@ setup(
             "dest_base": "MASSIVE Launcher"
         }
     ],
+    ext_modules = [ssh_tunnel_module]
     )
