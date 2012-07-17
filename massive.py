@@ -25,8 +25,16 @@ them to the user as clearly as possible.
  
 """
 
-import ssh_tunnel # ssh_tunnel_module.c
-ssh_tunnel.system("ls -l")
+# The ssh_tunnel module was a compiled C module I was writing (using libssh2),
+# which aimed to speed up the SSH tunneling, (compared with PyPi ssh / paramiko).
+# This approach presents obstacles I don't have time to deal with right now,
+# so I'm putting it aside, and may return to it later.
+# libssh2 is quite immature - there is no support for cipher specification, or
+# -oProxyCommand, and there is no good example of server-to-client port-forwarding.
+# Also, libssh2 is challenging to install on Windows.
+#import ssh_tunnel # ssh_tunnel_module.c
+#ssh_tunnel.system("ls -l")
+
 import sys
 if sys.platform.startswith("win"):
     import _winreg
@@ -54,11 +62,13 @@ import ConfigParser
 
 #defaultHost = "m2.massive.org.au"
 defaultHost = "m2-login2.massive.org.au"
-
+global processors_per_node # ppn
+processors_per_node = 12 # ppn
 massiveLoginHost = ""
 project = ""
 hours = ""
 global username
+global privateKeyFile
 global loginDialogFrame
 loginDialogFrame = None
 username = ""
@@ -160,7 +170,7 @@ class MyFrame(wx.Frame):
         massiveHostComboBox = wx.ComboBox(loginDialogPanel, -1, value=defaultHost, pos=(125, 15), size=(widgetWidth2, -1),choices=massiveHosts, style=wx.CB_DROPDOWN)
 
         global defaultProjectPlaceholder
-        defaultProjectPlaceholder = '[Use my default project]';
+        defaultProjectPlaceholder = '[Use my default project]'
         projects = [
             defaultProjectPlaceholder,
             'ASync001','ASync002','ASync003','ASync004','ASync005','ASync006',
@@ -392,10 +402,16 @@ class MyFrame(wx.Frame):
         dlg.Destroy()
 
     def OnExit(self, event):
-        os._exit(0)
+        try:
+            privateKeyFile.close() # Automatically removes the temporary file.
+        finally:
+            os._exit(0)
 
     def OnCancel(self, event):
-        os._exit(0)
+        try:
+            privateKeyFile.close() # Automatically removes the temporary file.
+        finally:
+            os._exit(0)
 
     def OnLogin(self, event):
         class LoginThread(threading.Thread):
@@ -491,7 +507,7 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
 
-                    qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
+                    qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn="+str(processors_per_node)+":gpus=2,pmem=16000MB"
 
                     wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
                     wx.CallAfter(sys.stdout.write, "\n")
@@ -585,13 +601,47 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
 
-                    # Note that the use of system calls to "ps" etc. below is not portable to the Windows platform.
-                    # An alternative could be to use the psutil module - see http://stackoverflow.com/questions/6780035/python-how-to-run-ps-cax-grep-something-in-python and http://code.google.com/p/psutil/.
-                    # Probably a better way to check for use of port 5901 on Mac is to use: "lsof -i tcp:5901"
-                    # On Unix systems with fuser installed, you can use: "fuser -v -n tcp 5901"
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Generating SSH key-pair for tunnel...")
 
-                    # We can use sys.platform to check the OS.  
-                    # Typical return values include 'darwin' (Mac OS X), 'win32', 'linux2', ...
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair*")
+                    if len(stderr.read()) > 0:
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                    stdin,stdout,stderr = sshClient.exec_command("/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
+                    if len(stderr.read()) > 0:
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/touch ~/.ssh/authorized_keys")
+                    if len(stderr.read()) > 0:
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys")
+                    if len(stderr.read()) > 0:
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys")
+                    if len(stderr.read()) > 0:
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair.pub")
+                    if len(stderr.read()) > 0:
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/cat MassiveLauncherKeyPair")
+                    if len(stderr.read()) > 0:
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+
+                    privateKeyString = stdout.read()
+
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair")
+                    if len(stderr.read()) > 0:
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+
+                    import tempfile
+                    privateKeyFile = tempfile.NamedTemporaryFile(mode='w+t')
+                    privateKeyFile.write(privateKeyString)
+                    privateKeyFile.flush()
+
+                    # wx.CallAfter(sys.stdout.write, "Private key file = \n" + privateKeyFile.name)
+
+                    # ALL OF THE CHECKING FOR EXISTING PROCESSES USING PORT 5901
+                    # AND TERMINATING THEM STUFF CAN BE REPLACED BY USE OF 
+                    # EPHEMERAL PORTS:
+                    # https://jira-vre.its.monash.edu.au/browse/CVL-30
 
                     if  sys.platform.startswith("win"):
                         wx.CallAfter(sys.stdout.write, "Warning: The Windows version of MASSIVE Launcher is currently not able to check for and remove existing SSH tunnel(s) using local port 5901...\n\n")
@@ -601,24 +651,53 @@ class MyFrame(wx.Frame):
 
                     def createTunnel():
                         wx.CallAfter(sys.stdout.write, "Starting tunnelled SSH session...\n")
-                        #wx.CallAfter(sys.stdout.write, "ssh -L 5901:"+visnode+":5901 "+username+"@"+massiveLoginHost+"\n\n")
-                        wx.CallAfter(sys.stdout.write, "ssh -L 5901:"+visnode+"-ib:5901 "+username+"@"+massiveLoginHost+"\n\n")
 
                         try:
                             # The current forward.py module is too slow.
-                            # It will soon be replaced by ssh_tunnel_module.c
-                            #forward.forward_tunnel(5901, visnode, 5901, sshClient.get_transport())
-                            forward.forward_tunnel(5901, visnode + "-ib", 5901, sshClient.get_transport())
+                            # It was temporarily replaced by ssh_tunnel_module.c
+                            # which is not yet working.
+                            # ssh_tunnel.create_tunnel(username, password, 5901, visnode, 5901, massiveLoginHost)
+
+                            #forward.forward_tunnel(5901, visnode + "-ib", 5901, sshClient.get_transport())
+
+                            if sys.platform.startswith("win"):
+                                forward.forward_tunnel(5901, visnode, 5901, sshClient.get_transport())
+                            else:
+                                cipher = "arcfour128"
+                                proxyCommand = "-oProxyCommand=\"ssh -c " + cipher + " -i " + privateKeyFile.name +" "+username+"@"+massiveLoginHost+" 'nc %h %p'\""
+                                # On Windows, try: DETACHED_PROCESS = 0x00000008
+                                # subprocess.Popen(... , creationflags=DETACHED_PROCESS , ...)
+
+                                #"-L 5901:"+visnode+"-ib:5901" + " " + username+"@"+massiveLoginHost
+
+                                #tunnel_cmd = "/usr/bin/ssh -i " + privateKeyFile.name + " -c " + cipher + " " \
+                                    #"-oStrictHostKeyChecking=no " \
+                                    #"-A " + proxyCommand + " " \
+                                    #"-L 5901:localhost:5901" + " -l " + username+" "+visnode+"-ib"
+
+                                tunnel_cmd = "/usr/bin/ssh -i " + privateKeyFile.name + " -c " + cipher + " " \
+                                    "-oStrictHostKeyChecking=no " \
+                                    "-L 5901:"+visnode+"-ib:5901" + " -l " + username+" "+massiveLoginHost
+
+                                wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
+                                proc = subprocess.Popen(tunnel_cmd,
+                                    universal_newlines=True,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
-                            ###sys.exit(0)
+                            try:
+                                privateKeyFile.close() # Automatically removes the temporary file.
+                            finally:
+                                os._exit(0)
+                        except:
+                            wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
+                            wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     tunnelThread = threading.Thread(target=createTunnel)
 
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
                     tunnelThread.start()
-                    time.sleep(2)
+                    time.sleep(5)
 
                     if sys.platform.startswith("win"):
                         vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
@@ -679,6 +758,11 @@ class MyFrame(wx.Frame):
                             #proc.communicate()
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
+
+                            try:
+                                privateKeyFile.close() # Automatically removes the temporary file.
+                            finally:
+                                os._exit(0)
 
                             # The via stuff below didn't work, because the launcher doesn't have
                             # access to the STDIN of the SSH process spawned by TurboVNC.
