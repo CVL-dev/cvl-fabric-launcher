@@ -769,19 +769,10 @@ class MyFrame(wx.Frame):
                             #proc.communicate()
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
-
-                            try:
-                                privateKeyFile.close() # Automatically removes the temporary file.
-                            finally:
-                                os._exit(0)
-
-                            # The via stuff below didn't work, because the launcher doesn't have
-                            # access to the STDIN of the SSH process spawned by TurboVNC.
-                            #subprocess.call("echo \"" + password + "\" | " + vnc + " -via " + massiveLoginHost + " -user " + username + " -autopass " + visnode + ":1",shell=True)
-                            #proc = subprocess.Popen("echo \"" + password + "\" | " + vnc + " -via " + massiveLoginHost + " -user " + username + " -autopass " + visnode + "-ib:1",
-                                #stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                                #universal_newlines=True)
-                            #proc.communicate(input=password)
+                        try:
+                            privateKeyFile.close() # Automatically removes the temporary file.
+                        finally:
+                            os._exit(0)
 
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
                         loginDialogFrame.SetCursor(arrowCursor)
