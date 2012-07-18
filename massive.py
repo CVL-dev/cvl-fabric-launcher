@@ -491,42 +491,24 @@ class MyFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write, "\n")
 
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Setting display resolution...")
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/bash -c \"if ! [ -f ~/.vnc/turbovncserver.conf ]; then cp /etc/turbovncserver.conf  ~/.vnc/; fi\"")
+
+                    set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + resolution
+                    wx.CallAfter(sys.stdout.write, set_display_resolution_cmd + "\n")
+                    stdin,stdout,stderr = sshClient.exec_command(set_display_resolution_cmd)
                     stderrRead = stderr.read()
                     if len(stderrRead) > 0:
                         wx.CallAfter(sys.stdout.write, stderrRead)
-                    stdin,stdout,stderr = sshClient.exec_command("grep \"^\w*\$geometry\" ~/.vnc/turbovncserver.conf")
-                    stderrRead = stderr.read()
-                    stdoutRead = stdout.read()
-                    if len(stdoutRead)>0 and stdoutRead.strip().startswith("$"):
-                        #sed_cmd = "sed -i -e 's/^\\w*\\$geometry.*/$geometry = \"%dx%d\";/g' ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight)
-                        sed_cmd = "sed -i -e 's/^\\w*\\$geometry.*/$geometry = \"%s\";/g' ~/.vnc/turbovncserver.conf" % (resolution)
-                        wx.CallAfter(sys.stdout.write, sed_cmd + "\n")
-                        stdin,stdout,stderr = sshClient.exec_command(sed_cmd)
-                        stderrRead = stderr.read()
-                        if len(stderrRead) > 0:
-                            wx.CallAfter(sys.stdout.write, stderrRead)
-                    else:
-                        #wx.CallAfter(sys.stdout.write, "$geometry = ... was not found in ~/.vnc/turbovncserver.conf")
-                        stdin,stdout,stderr = sshClient.exec_command(
-                            #"echo '$geometry = \"%dx%d\"' >> ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight))
-                            "echo '$geometry = \"%s\"' >> ~/.vnc/turbovncserver.conf" % (resolution))
-                        stderrRead = stderr.read()
-                        if len(stderrRead) > 0:
-                            wx.CallAfter(sys.stdout.write, stderrRead)
                     
                     wx.CallAfter(sys.stdout.write, "\n")
 
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Checking quota...")
 
-                    #wx.CallAfter(sys.stdout.write, "mybalance --hours\n")
                     stdin,stdout,stderr = sshClient.exec_command("mybalance --hours")
                     wx.CallAfter(sys.stdout.write, stderr.read())
                     wx.CallAfter(sys.stdout.write, stdout.read())
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
-                    #wx.CallAfter(sys.stdout.write, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use\n")
                     stdin,stdout,stderr = sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
                     wx.CallAfter(sys.stdout.write, stderr.read())
                     wx.CallAfter(sys.stdout.write, stdout.read())
