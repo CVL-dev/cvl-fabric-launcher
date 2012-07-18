@@ -5,9 +5,9 @@
   
 # check if we are called correctly and show usage if not 
 if [ $# -lt 1 ] ; then
- echo "Usage: set_display_resolution.sh <widthxheight>"
+ echo "Usage: set_display_resolution.sh <WIDTHxHEIGHT>"
  echo "  Where:"
- echo "    <widthxheight> Display resoultion e.g. 1440x900"
+ echo "    <WIDTHxHEIGHT> Display resoultion e.g. 1440x900"
  exit 0
  fi
  
