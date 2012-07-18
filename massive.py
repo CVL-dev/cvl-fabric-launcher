@@ -57,10 +57,12 @@ defaultHost = "m2-login2.massive.org.au"
 massiveLoginHost = ""
 global project
 project = ""
-global resolution
-resolution = ""
 global hours
 hours = ""
+global resolution
+resolution = ""
+global cipher
+cipher = ""
 global username
 username = ""
 password = ""
@@ -108,9 +110,9 @@ class MyFrame(wx.Frame):
         # wx.Frame(parent, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         if sys.platform.startswith("darwin"):
-            wx.Frame.__init__(self, parent, id, title, size=(350, 350), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
-        else:
             wx.Frame.__init__(self, parent, id, title, size=(350, 390), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+        else:
+            wx.Frame.__init__(self, parent, id, title, size=(350, 430), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         self.menu_bar  = wx.MenuBar()
 
@@ -152,10 +154,12 @@ class MyFrame(wx.Frame):
         massiveHoursLabel = wx.StaticText(loginDialogPanel, -1, 'Hours requested', (10, 100))
         global massiveDisplayResolutionLabel
         massiveDisplayResolutionLabel = wx.StaticText(loginDialogPanel, -1, 'Resolution', (10, 140))
+        global sshTunnelCipherLabel
+        sshTunnelCipherLabel = wx.StaticText(loginDialogPanel, -1, 'SSH tunnel cipher', (10, 180))
         global massiveUsernameLabel
-        massiveUsernameLabel = wx.StaticText(loginDialogPanel, -1, 'Username', (10, 180))
+        massiveUsernameLabel = wx.StaticText(loginDialogPanel, -1, 'Username', (10, 220))
         global massivePasswordLabel
-        massivePasswordLabel = wx.StaticText(loginDialogPanel, -1, 'Password', (10, 220))
+        massivePasswordLabel = wx.StaticText(loginDialogPanel, -1, 'Password', (10, 260))
 
         widgetWidth1 = 180
         widgetWidth2 = 180
@@ -250,6 +254,30 @@ class MyFrame(wx.Frame):
         else:
             massiveResolutionComboBox.SetValue(defaultResolution)
 
+        if sys.platform.startswith("win"):
+            cipher = "arcfour"
+            ciphers = ["3des-cbc", "blowfish-cbc", "arcfour"]
+        else:
+            cipher = "arcfour128"
+            ciphers = ["3des-cbc", "blowfish-cbc", "arcfour128"]
+        global sshTunnelCipherComboBox
+        sshTunnelCipherComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 175), size=(widgetWidth2, -1),choices=ciphers, style=wx.CB_DROPDOWN)
+        if config.has_section("MASSIVE Launcher Preferences"):
+            if config.has_option("MASSIVE Launcher Preferences", "cipher"):
+                cipher = config.get("MASSIVE Launcher Preferences", "cipher")
+            else:
+                config.set("MASSIVE Launcher Preferences","cipher","")
+                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                    config.write(massiveLauncherPreferencesFileObject)
+        else:
+            config.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                config.write(massiveLauncherPreferencesFileObject)
+        if cipher.strip()!="":
+            sshTunnelCipherComboBox.SetValue(cipher)
+        else:
+            sshTunnelCipherComboBox.SetValue(defaultCipher)
+
         global username
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "username"):
@@ -263,13 +291,13 @@ class MyFrame(wx.Frame):
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
         global massiveUsernameTextField
-        massiveUsernameTextField = wx.TextCtrl(loginDialogPanel, -1, username,  (125, 175), (widgetWidth1, -1))
+        massiveUsernameTextField = wx.TextCtrl(loginDialogPanel, -1, username,  (125, 215), (widgetWidth1, -1))
         massiveUsernameTextField = massiveUsernameTextField
         if username.strip()!="":
             massiveUsernameTextField.SelectAll()
 
         global massivePasswordField
-        massivePasswordField = wx.TextCtrl(loginDialogPanel, -1, '',  (125, 215), (widgetWidth1, -1), style=wx.TE_PASSWORD)
+        massivePasswordField = wx.TextCtrl(loginDialogPanel, -1, '',  (125, 255), (widgetWidth1, -1), style=wx.TE_PASSWORD)
 
         massiveUsernameTextField.SetFocus()
 
@@ -278,9 +306,9 @@ class MyFrame(wx.Frame):
         massivePasswordField.MoveAfterInTabOrder(massiveUsernameTextField)
 
         global cancelButton
-        cancelButton = wx.Button(loginDialogPanel, 1, 'Cancel', (130, 265))
+        cancelButton = wx.Button(loginDialogPanel, 1, 'Cancel', (130, 305))
         global loginButton
-        loginButton = wx.Button(loginDialogPanel, 2, 'Login', (230, 265))
+        loginButton = wx.Button(loginDialogPanel, 2, 'Login', (230, 305))
         loginButton.SetDefault()
 
         self.Bind(wx.EVT_BUTTON, self.OnCancel, id=1)
@@ -674,10 +702,10 @@ class MyFrame(wx.Frame):
                             else:
                                 sshBinary = "/usr/bin/ssh"
 
-                            if sys.platform.startswith("win"):
-                                cipher = "arcfour"
-                            else:
-                                cipher = "arcfour128"
+                            #if sys.platform.startswith("win"):
+                                #cipher = "arcfour"
+                            #else:
+                                #cipher = "arcfour128"
                             proxyCommand = "-oProxyCommand=\"ssh -c " + cipher + " -i " + privateKeyFile.name +" "+username+"@"+massiveLoginHost+" 'nc %h %p'\""
                             # On Windows, try: DETACHED_PROCESS = 0x00000008
                             # subprocess.Popen(... , creationflags=DETACHED_PROCESS , ...)
@@ -867,11 +895,13 @@ class MyFrame(wx.Frame):
             project = xmlrpcServer.get_project(username)
             massiveProjectComboBox.SetValue(project)
         resolution = massiveResolutionComboBox.GetValue()
+        cipher = sshTunnelCipherComboBox.GetValue()
 
         config.set("MASSIVE Launcher Preferences","username",username)
         config.set("MASSIVE Launcher Preferences","project",project)
         config.set("MASSIVE Launcher Preferences","hours",hours)
         config.set("MASSIVE Launcher Preferences","resolution",resolution)
+        config.set("MASSIVE Launcher Preferences","cipher",cipher)
         with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
             config.write(massiveLauncherPreferencesFileObject)
 
