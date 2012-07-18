@@ -14,14 +14,8 @@ ACKNOWLEDGEMENT
 
 Thanks to Michael Eager for a concise, non-GUI Python script
 which demonstrated the use of the Python pexpect module to 
-automate SSH logins and to automate calling TurboVNC.  This
-wxPython version aims to be more user-friendly, particularly on 
-Mac OS X and Windows, and aims to be develop a sophisticated
-knowledge of things which can wrong when attempting to launch
-the MASSIVE Desktop, e.g. an SSH Tunnel is already open on 
-Port 5901, and to provide an appropriate balance between
-resolving problems automatically for the user and reporting
-them to the user as clearly as possible.
+automate SSH logins and to automate calling TurboVNC 
+on Linux and on Mac OS X.
  
 """
 
@@ -50,7 +44,6 @@ import HTMLParser
 import urllib
 import massive_launcher_version_number
 import StringIO
-#import forward
 import xmlrpclib
 import appdirs
 import ConfigParser
@@ -73,6 +66,8 @@ hours = ""
 global username
 username = ""
 password = ""
+global localPortNumber
+localPortNumber = 5901
 global privateKeyFile
 global loginDialogFrame
 loginDialogFrame = None
@@ -664,30 +659,10 @@ class MyFrame(wx.Frame):
                     privateKeyFile.write(privateKeyString)
                     privateKeyFile.flush()
 
-                    # wx.CallAfter(sys.stdout.write, "Private key file = \n" + privateKeyFile.name)
-
-                    # ALL OF THE CHECKING FOR EXISTING PROCESSES USING PORT 5901
-                    # AND TERMINATING THEM STUFF CAN BE REPLACED BY USE OF 
-                    # EPHEMERAL PORTS:
-                    # https://jira-vre.its.monash.edu.au/browse/CVL-30
-
-                    if  sys.platform.startswith("win"):
-                        wx.CallAfter(sys.stdout.write, "Warning: The Windows version of MASSIVE Launcher is currently not able to check for and remove existing SSH tunnel(s) using local port 5901...\n\n")
-                    if not sys.platform.startswith("win"):
-                        wx.CallAfter(sys.stdout.write, "Checking for and removing any existing SSH tunnel(s) using local port 5901...\n\n")
-                        os.system("ps ax | grep \"5901\\:\" | grep ssh | awk '{print $1}' | xargs kill")
-
                     def createTunnel():
                         wx.CallAfter(sys.stdout.write, "Starting tunnelled SSH session...\n")
 
                         try:
-                            # The current forward.py module is too slow.
-                            # It was temporarily replaced by ssh_tunnel_module.c
-                            # which is not yet working.
-                            # ssh_tunnel.create_tunnel(username, password, 5901, visnode, 5901, massiveLoginHost)
-
-                            #forward.forward_tunnel(5901, visnode + "-ib", 5901, sshClient.get_transport())
-
                             if sys.platform.startswith("win"):
                                 sshBinary = "ssh.exe"
                                 if hasattr(sys, 'frozen'):
@@ -708,16 +683,27 @@ class MyFrame(wx.Frame):
                             # On Windows, try: DETACHED_PROCESS = 0x00000008
                             # subprocess.Popen(... , creationflags=DETACHED_PROCESS , ...)
 
-                            #"-L 5901:"+visnode+"-ib:5901" + " " + username+"@"+massiveLoginHost
+                            wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
+
+                            localPortNumber = 5901
+                            # Request an ephemeral port from the operating system (by specifying port 0) :
+                            import socket
+                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+                            sock.bind(('localhost', 0)) 
+                            localPortNumber = sock.getsockname()[1]
+                            sock.close()
+                            localPortNumber = str(localPortNumber)
+
+                            wx.CallAfter(loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
                             #tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
                                 #"-oStrictHostKeyChecking=no " \
                                 #"-A " + proxyCommand + " " \
-                                #"-L 5901:localhost:5901" + " -l " + username+" "+visnode+"-ib"
+                                #"-L " + localPortNumber + ":localhost:5901" + " -l " + username+" "+visnode+"-ib"
 
                             tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
                                 "-oStrictHostKeyChecking=no " \
-                                "-L 5901:"+visnode+"-ib:5901" + " -l " + username+" "+massiveLoginHost
+                                "-L " + localPortNumber + ":"+visnode+"-ib:5901" + " -l " + username+" "+massiveLoginHost
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
                             proc = subprocess.Popen(tunnel_cmd,
@@ -791,13 +777,13 @@ class MyFrame(wx.Frame):
 
                     try:
                         if sys.platform.startswith("win"):
-                            proc = subprocess.Popen("\""+vnc+"\" /user "+username+" /autopass localhost:1", 
+                            proc = subprocess.Popen("\""+vnc+"\" /user "+username+" /autopass localhost:" + localPortNumber, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             proc.communicate(input=password)
                             #proc.communicate()
                         else:
-                            subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:1",shell=True)
+                            subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:" + localPortNumber,shell=True)
                         try:
                             privateKeyFile.close() # Automatically removes the temporary file.
                         finally:
