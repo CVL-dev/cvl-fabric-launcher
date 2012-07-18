@@ -67,7 +67,7 @@ global username
 username = ""
 password = ""
 global localPortNumber
-localPortNumber = 5901
+localPortNumber = "5901"
 global privateKeyFile
 global loginDialogFrame
 loginDialogFrame = None
@@ -685,7 +685,8 @@ class MyFrame(wx.Frame):
 
                             wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
 
-                            localPortNumber = 5901
+                            global localPortNumber
+                            localPortNumber = "5901"
                             # Request an ephemeral port from the operating system (by specifying port 0) :
                             import socket
                             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
