@@ -51,7 +51,7 @@ import HTMLParser
 import urllib
 import massive_launcher_version_number
 import StringIO
-import forward
+#import forward
 import xmlrpclib
 import appdirs
 import ConfigParser
@@ -661,27 +661,39 @@ class MyFrame(wx.Frame):
                             #forward.forward_tunnel(5901, visnode + "-ib", 5901, sshClient.get_transport())
 
                             if sys.platform.startswith("win"):
-                                forward.forward_tunnel(5901, visnode, 5901, sshClient.get_transport())
+                                sshBinary = "ssh.exe"
+                                if hasattr(sys, 'frozen'):
+                                    massiveLauncherBinary = sys.executable
+                                    massiveLauncherPath = os.path.dirname(massiveLauncherBinary)
+                                    sshBinary = os.path.join(massiveLauncherPath, sshBinary)
+                                else:
+                                    sshBinary = os.path.join(os.getcwd(),"sshwindows",sshBinary)
+
+                            else:
+                                sshBinary = "/usr/bin/ssh"
+
+                            if sys.platform.startswith("win"):
+                                cipher = "arcfour"
                             else:
                                 cipher = "arcfour128"
-                                proxyCommand = "-oProxyCommand=\"ssh -c " + cipher + " -i " + privateKeyFile.name +" "+username+"@"+massiveLoginHost+" 'nc %h %p'\""
-                                # On Windows, try: DETACHED_PROCESS = 0x00000008
-                                # subprocess.Popen(... , creationflags=DETACHED_PROCESS , ...)
+                            proxyCommand = "-oProxyCommand=\"ssh -c " + cipher + " -i " + privateKeyFile.name +" "+username+"@"+massiveLoginHost+" 'nc %h %p'\""
+                            # On Windows, try: DETACHED_PROCESS = 0x00000008
+                            # subprocess.Popen(... , creationflags=DETACHED_PROCESS , ...)
 
-                                #"-L 5901:"+visnode+"-ib:5901" + " " + username+"@"+massiveLoginHost
+                            #"-L 5901:"+visnode+"-ib:5901" + " " + username+"@"+massiveLoginHost
 
-                                #tunnel_cmd = "/usr/bin/ssh -i " + privateKeyFile.name + " -c " + cipher + " " \
-                                    #"-oStrictHostKeyChecking=no " \
-                                    #"-A " + proxyCommand + " " \
-                                    #"-L 5901:localhost:5901" + " -l " + username+" "+visnode+"-ib"
+                            #tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
+                                #"-oStrictHostKeyChecking=no " \
+                                #"-A " + proxyCommand + " " \
+                                #"-L 5901:localhost:5901" + " -l " + username+" "+visnode+"-ib"
 
-                                tunnel_cmd = "/usr/bin/ssh -i " + privateKeyFile.name + " -c " + cipher + " " \
-                                    "-oStrictHostKeyChecking=no " \
-                                    "-L 5901:"+visnode+"-ib:5901" + " -l " + username+" "+massiveLoginHost
+                            tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
+                                "-oStrictHostKeyChecking=no " \
+                                "-L 5901:"+visnode+"-ib:5901" + " -l " + username+" "+massiveLoginHost
 
-                                wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
-                                proc = subprocess.Popen(tunnel_cmd,
-                                    universal_newlines=True,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+                            wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
+                            proc = subprocess.Popen(tunnel_cmd,
+                                universal_newlines=True,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
                             try:
