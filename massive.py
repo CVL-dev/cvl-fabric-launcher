@@ -629,6 +629,8 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
 
+                    wx.CallAfter(sys.stdout.write, "Generating SSH key-pair for tunnel...\n\n")
+
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Generating SSH key-pair for tunnel...")
 
                     stdin,stdout,stderr = sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair*")
