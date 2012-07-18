@@ -65,6 +65,7 @@ global processors_per_node # ppn
 processors_per_node = 12 # ppn
 massiveLoginHost = ""
 project = ""
+resolution = ""
 hours = ""
 global username
 global privateKeyFile
@@ -111,9 +112,9 @@ class MyFrame(wx.Frame):
         # wx.Frame(parent, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         if sys.platform.startswith("darwin"):
-            wx.Frame.__init__(self, parent, id, title, size=(350, 310), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
-        else:
             wx.Frame.__init__(self, parent, id, title, size=(350, 350), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+        else:
+            wx.Frame.__init__(self, parent, id, title, size=(350, 390), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         self.menu_bar  = wx.MenuBar()
 
@@ -153,10 +154,12 @@ class MyFrame(wx.Frame):
         massiveProjectLabel = wx.StaticText(loginDialogPanel, -1, 'MASSIVE project', (10, 60))
         global massiveHoursLabel
         massiveHoursLabel = wx.StaticText(loginDialogPanel, -1, 'Hours requested', (10, 100))
+        global massiveDisplayResolutionLabel
+        massiveDisplayResolutionLabel = wx.StaticText(loginDialogPanel, -1, 'Resolution', (10, 140))
         global massiveUsernameLabel
-        massiveUsernameLabel = wx.StaticText(loginDialogPanel, -1, 'Username', (10, 140))
+        massiveUsernameLabel = wx.StaticText(loginDialogPanel, -1, 'Username', (10, 180))
         global massivePasswordLabel
-        massivePasswordLabel = wx.StaticText(loginDialogPanel, -1, 'Password', (10, 180))
+        massivePasswordLabel = wx.StaticText(loginDialogPanel, -1, 'Password', (10, 220))
 
         widgetWidth1 = 180
         widgetWidth2 = 180
@@ -210,6 +213,34 @@ class MyFrame(wx.Frame):
         global massiveHoursField
         massiveHoursField = wx.SpinCtrl(loginDialogPanel, -1, value='4', pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
 
+        global defaultResolution
+        displaySize = wx.DisplaySize()
+        desiredWidth = displaySize[0] * 0.99
+        desiredHeight = displaySize[1] * 0.85
+        defaultResolution = str(int(desiredWidth)) + "x" + str(int(desiredHeight))
+        global resolution
+        resolution = defaultResolution
+        resolutions = [
+            defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
+            ]
+        global massiveResolutionComboBox
+        massiveResolutionComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 135), size=(widgetWidth2, -1),choices=resolutions, style=wx.CB_DROPDOWN)
+        if config.has_section("MASSIVE Launcher Preferences"):
+            if config.has_option("MASSIVE Launcher Preferences", "resolution"):
+                resolution = config.get("MASSIVE Launcher Preferences", "resolution")
+            else:
+                config.set("MASSIVE Launcher Preferences","resolution","")
+                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                    config.write(massiveLauncherPreferencesFileObject)
+        else:
+            config.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                config.write(massiveLauncherPreferencesFileObject)
+        if resolution.strip()!="":
+            massiveResolutionComboBox.SetValue(resolution)
+        else:
+            massiveResolutionComboBox.SetValue(defaultResolution)
+
         global username
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "username"):
@@ -223,13 +254,13 @@ class MyFrame(wx.Frame):
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
         global massiveUsernameTextField
-        massiveUsernameTextField = wx.TextCtrl(loginDialogPanel, -1, username,  (125, 135), (widgetWidth1, -1))
+        massiveUsernameTextField = wx.TextCtrl(loginDialogPanel, -1, username,  (125, 175), (widgetWidth1, -1))
         massiveUsernameTextField = massiveUsernameTextField
         if username.strip()!="":
             massiveUsernameTextField.SelectAll()
 
         global massivePasswordField
-        massivePasswordField = wx.TextCtrl(loginDialogPanel, -1, '',  (125, 175), (widgetWidth1, -1), style=wx.TE_PASSWORD)
+        massivePasswordField = wx.TextCtrl(loginDialogPanel, -1, '',  (125, 215), (widgetWidth1, -1), style=wx.TE_PASSWORD)
 
         massiveUsernameTextField.SetFocus()
 
@@ -238,9 +269,9 @@ class MyFrame(wx.Frame):
         massivePasswordField.MoveAfterInTabOrder(massiveUsernameTextField)
 
         global cancelButton
-        cancelButton = wx.Button(loginDialogPanel, 1, 'Cancel', (130, 225))
+        cancelButton = wx.Button(loginDialogPanel, 1, 'Cancel', (130, 265))
         global loginButton
-        loginButton = wx.Button(loginDialogPanel, 2, 'Login', (230, 225))
+        loginButton = wx.Button(loginDialogPanel, 2, 'Login', (230, 265))
         loginButton.SetDefault()
 
         self.Bind(wx.EVT_BUTTON, self.OnCancel, id=1)
@@ -448,10 +479,6 @@ class MyFrame(wx.Frame):
                 global loginDialogStatusBar
 
                 try:
-                    displaySize = wx.DisplaySize()
-                    desiredWidth = displaySize[0] * 0.99
-                    desiredHeight = displaySize[1] * 0.85
-
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Logging in to " + massiveLoginHost)
                     wx.CallAfter(sys.stdout.write, "Attempting to log in to " + massiveLoginHost + "...\n")
                     
@@ -472,7 +499,8 @@ class MyFrame(wx.Frame):
                     stderrRead = stderr.read()
                     stdoutRead = stdout.read()
                     if len(stdoutRead)>0 and stdoutRead.strip().startswith("$"):
-                        sed_cmd = "sed -i -e 's/^\\w*\\$geometry.*/$geometry = \"%dx%d\";/g' ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight)
+                        #sed_cmd = "sed -i -e 's/^\\w*\\$geometry.*/$geometry = \"%dx%d\";/g' ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight)
+                        sed_cmd = "sed -i -e 's/^\\w*\\$geometry.*/$geometry = \"%s\";/g' ~/.vnc/turbovncserver.conf" % (resolution)
                         wx.CallAfter(sys.stdout.write, sed_cmd + "\n")
                         stdin,stdout,stderr = sshClient.exec_command(sed_cmd)
                         stderrRead = stderr.read()
@@ -481,7 +509,8 @@ class MyFrame(wx.Frame):
                     else:
                         #wx.CallAfter(sys.stdout.write, "$geometry = ... was not found in ~/.vnc/turbovncserver.conf")
                         stdin,stdout,stderr = sshClient.exec_command(
-                            "echo '$geometry = \"%dx%d\"' >> ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight))
+                            #"echo '$geometry = \"%dx%d\"' >> ~/.vnc/turbovncserver.conf" % (desiredWidth,desiredHeight))
+                            "echo '$geometry = \"%s\"' >> ~/.vnc/turbovncserver.conf" % (resolution))
                         stderrRead = stderr.read()
                         if len(stderrRead) > 0:
                             wx.CallAfter(sys.stdout.write, stderrRead)
@@ -851,9 +880,11 @@ class MyFrame(wx.Frame):
             # Get user's default project from Karaage:
             project = xmlrpcServer.get_project(username)
             massiveProjectComboBox.SetValue(project)
+        resolution = massiveResolutionComboBox.GetValue()
 
         config.set("MASSIVE Launcher Preferences","username",username)
         config.set("MASSIVE Launcher Preferences","project",project)
+        config.set("MASSIVE Launcher Preferences","resolution",resolution)
         with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
             config.write(massiveLauncherPreferencesFileObject)
 
