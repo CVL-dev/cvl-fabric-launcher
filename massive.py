@@ -64,15 +64,18 @@ defaultHost = "m2-login2.massive.org.au"
 global processors_per_node # ppn
 processors_per_node = 12 # ppn
 massiveLoginHost = ""
+global project
 project = ""
+global resolution
 resolution = ""
+global hours
 hours = ""
 global username
+username = ""
+password = ""
 global privateKeyFile
 global loginDialogFrame
 loginDialogFrame = None
-username = ""
-password = ""
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self):
@@ -193,7 +196,6 @@ class MyFrame(wx.Frame):
             ]
         global massiveProjectComboBox
         massiveProjectComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
-        global project
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "project"):
                 project = config.get("MASSIVE Launcher Preferences", "project")
@@ -210,15 +212,29 @@ class MyFrame(wx.Frame):
         else:
             massiveProjectComboBox.SetValue(defaultProjectPlaceholder)
 
+        global hours
+        hours = "4"
+        if config.has_section("MASSIVE Launcher Preferences"):
+            if config.has_option("MASSIVE Launcher Preferences", "hours"):
+                hours = config.get("MASSIVE Launcher Preferences", "hours")
+                if hours.strip() == "":
+                    hours = "4"
+            else:
+                config.set("MASSIVE Launcher Preferences","hours","")
+                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                    config.write(massiveLauncherPreferencesFileObject)
+        else:
+            config.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                config.write(massiveLauncherPreferencesFileObject)
         global massiveHoursField
-        massiveHoursField = wx.SpinCtrl(loginDialogPanel, -1, value='4', pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
+        massiveHoursField = wx.SpinCtrl(loginDialogPanel, -1, value=hours, pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
 
         global defaultResolution
         displaySize = wx.DisplaySize()
         desiredWidth = displaySize[0] * 0.99
         desiredHeight = displaySize[1] * 0.85
         defaultResolution = str(int(desiredWidth)) + "x" + str(int(desiredHeight))
-        global resolution
         resolution = defaultResolution
         resolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
@@ -868,6 +884,7 @@ class MyFrame(wx.Frame):
 
         config.set("MASSIVE Launcher Preferences","username",username)
         config.set("MASSIVE Launcher Preferences","project",project)
+        config.set("MASSIVE Launcher Preferences","hours",hours)
         config.set("MASSIVE Launcher Preferences","resolution",resolution)
         with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
             config.write(massiveLauncherPreferencesFileObject)
