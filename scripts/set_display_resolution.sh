@@ -39,9 +39,9 @@ if grep -q "\$geometry" ~/.vnc/turbovncserver.conf; then
   LINE_NUMBER_OF_LAST_GEOMETRY=$(echo "$TOTAL_LINES $LINES_FROM_END - 1 + p" | dc)
  
   # Add the new geometry line
-  sed -i $LINE_NUMBER_OF_LAST_GEOMETRY"a\$geometry = $1; # MASSIVE Launcher Display Resolution" ~/.vnc/turbovncserver.conf
+  sed -i $LINE_NUMBER_OF_LAST_GEOMETRY"a\$geometry = \"$1\"; # MASSIVE Launcher Display Resolution" ~/.vnc/turbovncserver.conf
 
 else
-  echo "\$geometry = $1; # MASSIVE Launcher Display Resolution" >> ~/.vnc/turbovncserver.conf
+  echo "\$geometry = \"$1\"; # MASSIVE Launcher Display Resolution" >> ~/.vnc/turbovncserver.conf
 fi
 
