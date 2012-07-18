@@ -736,9 +736,9 @@ class MyFrame(wx.Frame):
                                 if hasattr(sys, 'frozen'):
                                     massiveLauncherBinary = sys.executable
                                     massiveLauncherPath = os.path.dirname(massiveLauncherBinary)
-                                    sshBinary = os.path.join(massiveLauncherPath, sshBinary)
+                                    sshBinary = "\"" + os.path.join(massiveLauncherPath, sshBinary) + "\""
                                 else:
-                                    sshBinary = os.path.join(os.getcwd(),"sshwindows",sshBinary)
+                                    sshBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", sshBinary) + "\""
 
                             else:
                                 sshBinary = "/usr/bin/ssh"
