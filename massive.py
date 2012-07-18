@@ -45,7 +45,6 @@ import traceback
 import threading
 import os
 import ssh # Pure Python-based ssh module, based on Paramiko, published on PyPi
-import socket
 #import libssh2 # Unpublished SSH module (Python bindings for libssh2) by Sebastian Noack: git clone git://github.com/wallunit/ssh4py
 import HTMLParser
 import urllib
