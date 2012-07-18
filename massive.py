@@ -114,6 +114,14 @@ class MyFrame(wx.Frame):
         else:
             wx.Frame.__init__(self, parent, id, title, size=(350, 430), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
+        if sys.platform.startswith("win"):
+            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+            self.SetIcon(_icon)
+
+        if sys.platform.startswith("linux"):
+            import MASSIVE_icon
+            self.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+
         self.menu_bar  = wx.MenuBar()
 
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
@@ -122,13 +130,23 @@ class MyFrame(wx.Frame):
             self.Bind(wx.EVT_MENU, self.OnExit, id=wx.ID_EXIT)
             self.menu_bar.Append(self.file_menu, "&File")
 
-        if sys.platform.startswith("win"):
-            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
-            self.SetIcon(_icon)
-
-        if sys.platform.startswith("linux"):
-            import MASSIVE_icon
-            self.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+        if sys.platform.startswith("darwin"):
+            # Only do this for Mac OS X, because other platforms have
+            # a right-click pop-up menu for wx.TextCtrl with Copy,
+            # Select All etc. Plus, the menu doesn't look that good on
+            # the MASSIVE Launcher main dialog, and doesn't work for
+            # non Mac platforms, because of FindFocus() will always
+            # find the window/dialog which contains the menu.
+            self.edit_menu = wx.Menu()
+            self.edit_menu.Append(wx.ID_CUT, "Cut", "Cut the selected text")
+            self.Bind(wx.EVT_MENU, self.OnCut, id=wx.ID_CUT)
+            self.edit_menu.Append(wx.ID_COPY, "Copy", "Copy the selected text")
+            self.Bind(wx.EVT_MENU, self.OnCopy, id=wx.ID_COPY)
+            self.edit_menu.Append(wx.ID_PASTE, "Paste", "Paste text from the clipboard")
+            self.Bind(wx.EVT_MENU, self.OnPaste, id=wx.ID_PASTE)
+            self.edit_menu.Append(wx.ID_SELECTALL, "Select All")
+            self.Bind(wx.EVT_MENU, self.OnSelectAll, id=wx.ID_SELECTALL)
+            self.menu_bar.Append(self.edit_menu, "&Edit")
 
         self.help_menu = wx.Menu()
         self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE Launcher")
@@ -479,6 +497,26 @@ class MyFrame(wx.Frame):
             privateKeyFile.close() # Automatically removes the temporary file.
         finally:
             os._exit(0)
+
+    def OnCut(self, event):
+        textCtrl = self.FindFocus()
+        if textCtrl is not None:
+            textCtrl.Cut()
+
+    def OnCopy(self, event):
+        textCtrl = self.FindFocus()
+        if textCtrl is not None:
+            textCtrl.Copy()
+
+    def OnPaste(self, event):
+        textCtrl = self.FindFocus()
+        if textCtrl is not None:
+            textCtrl.Paste()
+
+    def OnSelectAll(self, event):
+        textCtrl = self.FindFocus()
+        if textCtrl is not None:
+            textCtrl.SelectAll()
 
     def OnLogin(self, event):
         class LoginThread(threading.Thread):
