@@ -3,6 +3,11 @@
 
 # Mostly copied from Paul McIntosh's /usr/local/desktop/massive_desktop script.
 
+# The MASSIVE Launcher assumes that this script is available (and executable)
+#   on the MASSIVE login nodes as:
+#
+#   /usr/local/desktop/request_visnode.sh
+
 # check if we are called correctly and show usage if not
 if [ $# -lt 2 ] ; then
  echo "Usage: massive_desktop <project> <hours>"

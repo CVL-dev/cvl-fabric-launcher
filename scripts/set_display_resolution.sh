@@ -2,7 +2,12 @@
 # James Wettenhall james.wettenhall@monash.edu 2012
  
 # Some material copied from Paul McIntosh's /usr/local/desktop/massive_desktop script.
-  
+
+# The MASSIVE Launcher assumes that this script is available (and executable)
+#   on the MASSIVE login nodes as:
+#
+#   /usr/local/desktop/set_display_resolution.sh
+
 # check if we are called correctly and show usage if not 
 if [ $# -lt 1 ] ; then
  echo "Usage: set_display_resolution.sh <WIDTHxHEIGHT>"
