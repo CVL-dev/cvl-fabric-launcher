@@ -54,8 +54,6 @@ import ConfigParser
 
 #defaultHost = "m2.massive.org.au"
 defaultHost = "m2-login2.massive.org.au"
-global processors_per_node # ppn
-processors_per_node = 12 # ppn
 massiveLoginHost = ""
 global project
 project = ""
@@ -528,7 +526,8 @@ class MyFrame(wx.Frame):
 
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
 
-                    qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn="+str(processors_per_node)+":gpus=2,pmem=16000MB"
+                    #qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
+                    qsubcmd = "/usr/local/desktop/request_visnode.sh " + project + " " + hours
 
                     wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
                     wx.CallAfter(sys.stdout.write, "\n")
