@@ -319,8 +319,11 @@ class MyFrame(wx.Frame):
 
         massiveUsernameTextField.SetFocus()
 
+        massiveProjectComboBox.MoveAfterInTabOrder(massiveHostComboBox)
         massiveHoursField.MoveAfterInTabOrder(massiveProjectComboBox)
-        massiveUsernameTextField.MoveAfterInTabOrder(massiveHoursField)
+        massiveResolutionComboBox.MoveAfterInTabOrder(massiveHoursField)
+        sshTunnelCipherComboBox.MoveAfterInTabOrder(massiveResolutionComboBox)
+        massiveUsernameTextField.MoveAfterInTabOrder(sshTunnelCipherComboBox)
         massivePasswordField.MoveAfterInTabOrder(massiveUsernameTextField)
 
         global cancelButton
