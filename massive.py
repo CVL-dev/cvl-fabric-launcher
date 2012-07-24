@@ -29,7 +29,13 @@ on Linux and on Mac OS X.
 #import ssh_tunnel # ssh_tunnel_module.c
 #ssh_tunnel.system("ls -l")
 
+# Later, STDERR will be redirected to logTextCtrl
+# For now, we just want make sure that the Launcher doesn't attempt 
+# to write to MASSIVE Launcher.exe.log, because it might not have
+# permission to do so.
 import sys
+sys.stderr = sys.stdout
+
 if sys.platform.startswith("win"):
     import _winreg
 import subprocess
