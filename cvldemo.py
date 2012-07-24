@@ -30,11 +30,13 @@ parser = argparse.ArgumentParser(description="Create a user account on the CVL D
 
 parser.add_argument("-i", "--identity", action="store", default="<ssh_private_key_filename>",help="SSH private key file")
 parser.add_argument("-u", "--username", action="store", default="<username>", help="Username")
+parser.add_argument("-c", "--cipher", action="store", default=cipher, help="Cipher for SSH tunnel (man ssh_config).")
 
 options = parser.parse_args()
 
 ssh_private_key_filename = options.identity
 username = options.username
+cipher = options.cipher
 
 if ssh_private_key_filename == "<ssh_private_key_filename>":
     parser.print_help()
