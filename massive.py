@@ -740,15 +740,35 @@ class MyFrame(wx.Frame):
                         try:
                             if sys.platform.startswith("win"):
                                 sshBinary = "ssh.exe"
+                                chownBinary = "chown.exe"
+                                chmodBinary = "chmod.exe"
                                 if hasattr(sys, 'frozen'):
                                     massiveLauncherBinary = sys.executable
                                     massiveLauncherPath = os.path.dirname(massiveLauncherBinary)
                                     sshBinary = "\"" + os.path.join(massiveLauncherPath, sshBinary) + "\""
+                                    chownBinary = "\"" + os.path.join(massiveLauncherPath, chownBinary) + "\""
+                                    chmodBinary = "\"" + os.path.join(massiveLauncherPath, chmodBinary) + "\""
                                 else:
                                     sshBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", sshBinary) + "\""
-
+                                    chownBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", chownBinary) + "\""
+                                    chmodBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", chmodBinary) + "\""
+                            elif sys.platform.startswith("darwin"):
+                                sshBinary = "/usr/bin/ssh"
+                                chownBinary = "/usr/sbin/chown"
+                                chmodBinary = "/bin/chmod"
                             else:
                                 sshBinary = "/usr/bin/ssh"
+                                chownBinary = "/bin/chown"
+                                chmodBinary = "/bin/chmod"
+
+                            import getpass
+                            chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + privateKeyFile.name
+                            wx.CallAfter(sys.stdout.write, chown_cmd + "\n")
+                            subprocess.call(chown_cmd, shell=True)
+
+                            chmod_cmd = chmodBinary + " 600 " + privateKeyFile.name
+                            wx.CallAfter(sys.stdout.write, chmod_cmd + "\n")
+                            subprocess.call(chmod_cmd, shell=True)
 
                             #if sys.platform.startswith("win"):
                                 #cipher = "arcfour"
