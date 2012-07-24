@@ -815,6 +815,7 @@ class MyFrame(wx.Frame):
                                 line = proc.stdout.readline()
                                 if "Welcome to MASSIVE" in line:
                                     sshTunnelReady = True
+                                    break
 
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
