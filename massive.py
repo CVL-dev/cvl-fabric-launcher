@@ -72,6 +72,8 @@ cipher = ""
 global username
 username = ""
 password = ""
+global sshTunnelReady
+sshTunnelReady = False
 global localPortNumber
 localPortNumber = "5901"
 global privateKeyFile
@@ -798,12 +800,22 @@ class MyFrame(wx.Frame):
                                 #"-L " + localPortNumber + ":localhost:5901" + " -l " + username+" "+visnode+"-ib"
 
                             tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
+                                "-t -t " \
                                 "-oStrictHostKeyChecking=no " \
                                 "-L " + localPortNumber + ":"+visnode+"-ib:5901" + " -l " + username+" "+massiveLoginHost
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
                             proc = subprocess.Popen(tunnel_cmd,
                                 universal_newlines=True,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+
+                            global sshTunnelReady
+                            sshTunnelReady = False
+                            while True:
+                                time.sleep(1)
+                                line = proc.stdout.readline()
+                                if "Welcome to MASSIVE" in line:
+                                    sshTunnelReady = True
+
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
                             try:
@@ -819,7 +831,14 @@ class MyFrame(wx.Frame):
                     wx.CallAfter(loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
                     tunnelThread.start()
-                    time.sleep(5)
+
+                    count = 1
+                    while not sshTunnelReady and count < 30:
+                        time.sleep(1)
+                        count = count + 1
+
+                    if count < 5:
+                        time.sleep (5-count)
 
                     if sys.platform.startswith("win"):
                         vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
@@ -861,6 +880,8 @@ class MyFrame(wx.Frame):
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
+
+                    wx.CallAfter(sys.stdout.write, "\n")
 
                     if os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
