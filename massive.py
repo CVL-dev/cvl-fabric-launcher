@@ -491,13 +491,13 @@ class MyFrame(wx.Frame):
 
     def OnExit(self, event):
         try:
-            privateKeyFile.close() # Automatically removes the temporary file.
+            os.unlink(privateKeyFile)
         finally:
             os._exit(0)
 
     def OnCancel(self, event):
         try:
-            privateKeyFile.close() # Automatically removes the temporary file.
+            os.unlink(privateKeyFile)
         finally:
             os._exit(0)
 
@@ -723,9 +723,10 @@ class MyFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, stderr.read())
 
                     import tempfile
-                    privateKeyFile = tempfile.NamedTemporaryFile(mode='w+t')
+                    privateKeyFile = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
                     privateKeyFile.write(privateKeyString)
                     privateKeyFile.flush()
+                    privateKeyFile.close()
 
                     def createTunnel():
                         wx.CallAfter(sys.stdout.write, "Starting tunnelled SSH session...\n")
@@ -780,7 +781,7 @@ class MyFrame(wx.Frame):
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
                             try:
-                                privateKeyFile.close() # Automatically removes the temporary file.
+                                os.unlink(privateKeyFile)
                             finally:
                                 os._exit(0)
                         except:
@@ -854,7 +855,7 @@ class MyFrame(wx.Frame):
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:" + localPortNumber,shell=True)
                         try:
-                            privateKeyFile.close() # Automatically removes the temporary file.
+                            os.unlink(privateKeyFile)
                         finally:
                             os._exit(0)
 
