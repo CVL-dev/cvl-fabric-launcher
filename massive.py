@@ -497,13 +497,13 @@ class MyFrame(wx.Frame):
 
     def OnExit(self, event):
         try:
-            os.unlink(privateKeyFile)
+            os.unlink(privateKeyFile.name)
         finally:
             os._exit(0)
 
     def OnCancel(self, event):
         try:
-            os.unlink(privateKeyFile)
+            os.unlink(privateKeyFile.name)
         finally:
             os._exit(0)
 
@@ -807,7 +807,7 @@ class MyFrame(wx.Frame):
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
                             try:
-                                os.unlink(privateKeyFile)
+                                os.unlink(privateKeyFile.name)
                             finally:
                                 os._exit(0)
                         except:
@@ -881,7 +881,7 @@ class MyFrame(wx.Frame):
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:" + localPortNumber,shell=True)
                         try:
-                            os.unlink(privateKeyFile)
+                            os.unlink(privateKeyFile.name)
                         finally:
                             os._exit(0)
 
