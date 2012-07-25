@@ -72,6 +72,8 @@ cipher = ""
 global username
 username = ""
 password = ""
+global sshTunnelProcess
+sshTunnelProcess = None
 global sshTunnelReady
 sshTunnelReady = False
 global localPortNumber
@@ -764,9 +766,14 @@ class MyFrame(wx.Frame):
                                 chmodBinary = "/bin/chmod"
 
                             import getpass
-                            chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + privateKeyFile.name
-                            wx.CallAfter(sys.stdout.write, chown_cmd + "\n")
-                            subprocess.call(chown_cmd, shell=True)
+                            if sys.platform.startswith("win"):
+                                # On Windows Vista/7, the private key file,
+                                # will initially be created without any owner.
+                                # We must set the file's owner before we
+                                # can change the permissions to -rw------.
+                                chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + privateKeyFile.name
+                                wx.CallAfter(sys.stdout.write, chown_cmd + "\n")
+                                subprocess.call(chown_cmd, shell=True)
 
                             chmod_cmd = chmodBinary + " 600 " + privateKeyFile.name
                             wx.CallAfter(sys.stdout.write, chmod_cmd + "\n")
@@ -805,14 +812,15 @@ class MyFrame(wx.Frame):
                                 "-L " + localPortNumber + ":"+visnode+"-ib:5901" + " -l " + username+" "+massiveLoginHost
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
-                            proc = subprocess.Popen(tunnel_cmd,
+                            global sshTunnelProcess
+                            sshTunnelProcess = subprocess.Popen(tunnel_cmd,
                                 universal_newlines=True,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
 
                             global sshTunnelReady
                             sshTunnelReady = False
                             while True:
                                 time.sleep(1)
-                                line = proc.stdout.readline()
+                                line = sshTunnelProcess.stdout.readline()
                                 if "Welcome to MASSIVE" in line:
                                     sshTunnelReady = True
                                     break
@@ -903,6 +911,8 @@ class MyFrame(wx.Frame):
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:" + localPortNumber,shell=True)
                         try:
+                            global sshTunnelProcess
+                            sshTunnelProcess.terminate()
                             os.unlink(privateKeyFile.name)
                         finally:
                             os._exit(0)
