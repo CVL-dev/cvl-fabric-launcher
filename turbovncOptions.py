@@ -269,7 +269,7 @@ class MainWindow(wx.Frame):
 
         self.globalsTopPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsTopPanel, flag=wx.EXPAND)
-        self.globalsTopPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=15)
+        self.globalsTopPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=15)
 
         self.globalsMiddlePanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsMiddlePanel, flag=wx.EXPAND)
@@ -293,7 +293,7 @@ class MainWindow(wx.Frame):
         self.interfaceOptionsPanel.SetSizer(self.interfaceOptionsGroupBoxSizer)
 
         self.innerInterfaceOptionsPanel = wx.Panel(self.interfaceOptionsPanel, wx.ID_ANY)
-        self.innerInterfaceOptionsPanelSizer = wx.FlexGridSizer(rows=4, cols =1, vgap=5,hgap=5)
+        self.innerInterfaceOptionsPanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5,hgap=5)
         self.innerInterfaceOptionsPanel.SetSizer(self.innerInterfaceOptionsPanelSizer)
 
         self.showToolbarsByDefaultCheckBox = wx.CheckBox(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Show toolbars by default")
@@ -315,9 +315,101 @@ class MainWindow(wx.Frame):
         self.clearTheListOfSavedConnectionsButton.SetFont(smallFont)
         
         self.innerInterfaceOptionsPanel.SetSizerAndFit(self.innerInterfaceOptionsPanelSizer)
-        self.innerInterfaceOptionsPanel.SetSizerAndFit(self.innerInterfaceOptionsPanelSizer)
         self.interfaceOptionsGroupBoxSizer.Add(self.innerInterfaceOptionsPanel, flag=wx.EXPAND)
         self.interfaceOptionsPanel.SetSizerAndFit(self.interfaceOptionsGroupBoxSizer)
+
+        # Local cursor shape group box
+
+        self.localCursorShapePanel = wx.Panel(self.globalsTopPanel, wx.ID_ANY)
+        self.globalsTopPanelSizer.Add(self.localCursorShapePanel, flag=wx.EXPAND)
+
+        self.localCursorShapeGroupBox = wx.StaticBox(self.localCursorShapePanel, wx.ID_ANY, label="Local cursor shape")
+        self.localCursorShapeGroupBox.SetFont(smallFont)
+        self.localCursorShapeGroupBoxSizer = wx.StaticBoxSizer(self.localCursorShapeGroupBox, wx.VERTICAL)
+        self.localCursorShapePanel.SetSizer(self.localCursorShapeGroupBoxSizer)
+
+        self.innerLocalCursorShapePanel = wx.Panel(self.localCursorShapePanel, wx.ID_ANY)
+        self.innerLocalCursorShapePanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5,hgap=5)
+        self.innerLocalCursorShapePanel.SetSizer(self.innerLocalCursorShapePanelSizer)
+
+        self.dotCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Dot cursor")
+        self.dotCursorRadioButton.SetValue(True)
+        self.innerLocalCursorShapePanelSizer.Add(self.dotCursorRadioButton)
+        self.dotCursorRadioButton.SetFont(smallFont)
+        
+        self.smallDotCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Small dot cursor")
+        self.innerLocalCursorShapePanelSizer.Add(self.smallDotCursorRadioButton)
+        self.smallDotCursorRadioButton.SetFont(smallFont)
+        
+        self.normalArrowRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Normal arrow")
+        self.innerLocalCursorShapePanelSizer.Add(self.normalArrowRadioButton)
+        self.normalArrowRadioButton.SetFont(smallFont)
+        
+        self.noLocalCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "No local cursor")
+        self.innerLocalCursorShapePanelSizer.Add(self.noLocalCursorRadioButton)
+        self.noLocalCursorRadioButton.SetFont(smallFont)
+
+        self.innerLocalCursorShapePanel.SetSizerAndFit(self.innerLocalCursorShapePanelSizer)
+        self.localCursorShapeGroupBoxSizer.Add(self.innerLocalCursorShapePanel, flag=wx.EXPAND)
+        self.localCursorShapePanel.SetSizerAndFit(self.localCursorShapeGroupBoxSizer)
+
+        # Listening mode group box
+
+        self.listeningModePanel = wx.Panel(self.globalsMiddlePanel, wx.ID_ANY)
+        self.globalsMiddlePanelSizer.Add(self.listeningModePanel, flag=wx.EXPAND)
+
+        self.listeningModeGroupBox = wx.StaticBox(self.listeningModePanel, wx.ID_ANY, label="Listening mode")
+        self.listeningModeGroupBox.SetFont(smallFont)
+        self.listeningModeGroupBoxSizer = wx.StaticBoxSizer(self.listeningModeGroupBox, wx.VERTICAL)
+        self.listeningModePanel.SetSizer(self.listeningModeGroupBoxSizer)
+
+        self.innerListeningModePanel = wx.Panel(self.listeningModePanel, wx.ID_ANY)
+        self.innerListeningModePanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5,hgap=5)
+        self.innerListeningModePanel.SetSizer(self.innerListeningModePanelSizer)
+
+        self.acceptReverseVncConnectionsOnTcpPortLabel = wx.StaticText(self.innerListeningModePanel, wx.ID_ANY, "Accept reverse VNC connection on TCP port:")
+        self.innerListeningModePanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortLabel)
+        self.acceptReverseVncConnectionsOnTcpPortLabel.SetFont(smallFont)
+
+        self.innerListeningModePanel.SetSizerAndFit(self.innerListeningModePanelSizer)
+        self.listeningModeGroupBoxSizer.Add(self.innerListeningModePanel, flag=wx.EXPAND)
+        self.listeningModePanel.SetSizerAndFit(self.listeningModeGroupBoxSizer)
+
+        # Logging group box
+
+        self.loggingPanel = wx.Panel(self.globalsBottomPanel, wx.ID_ANY)
+        self.globalsBottomPanelSizer.Add(self.loggingPanel, flag=wx.EXPAND)
+
+        self.loggingGroupBox = wx.StaticBox(self.loggingPanel, wx.ID_ANY, label="Logging")
+        self.loggingGroupBox.SetFont(smallFont)
+        self.loggingGroupBoxSizer = wx.StaticBoxSizer(self.loggingGroupBox, wx.VERTICAL)
+        self.loggingPanel.SetSizer(self.loggingGroupBoxSizer)
+
+        self.innerLoggingPanel = wx.Panel(self.loggingPanel, wx.ID_ANY)
+        self.innerLoggingPanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=5,hgap=5)
+        self.innerLoggingPanel.SetSizer(self.innerLoggingPanelSizer)
+
+        self.writeLogToAFileCheckBox = wx.CheckBox(self.innerLoggingPanel, wx.ID_ANY, "Write log to a file:")
+        self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox)
+        self.writeLogToAFileCheckBox.SetFont(smallFont)
+
+        self.vncViewerLogFilenameTextField = wx.StaticText(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log")
+        self.innerLoggingPanelSizer.Add(self.vncViewerLogFilenameTextField)
+        self.vncViewerLogFilenameTextField.SetFont(smallFont)
+
+        self.browseButton = wx.Button(self.innerLoggingPanel, wx.ID_ANY, "Browse...")
+        self.browseButton.Disable()
+        self.innerLoggingPanelSizer.Add(self.browseButton)
+        self.browseButton.SetFont(smallFont)
+
+        self.verbosityLevelLabel = wx.StaticText(self.innerLoggingPanel, wx.ID_ANY, "Verbosity level:")
+        self.verbosityLevelLabel.Disable()
+        self.innerLoggingPanelSizer.Add(self.verbosityLevelLabel)
+        self.verbosityLevelLabel.SetFont(smallFont)
+
+        self.innerLoggingPanel.SetSizerAndFit(self.innerLoggingPanelSizer)
+        self.loggingGroupBoxSizer.Add(self.innerLoggingPanel, flag=wx.EXPAND)
+        self.loggingPanel.SetSizerAndFit(self.loggingGroupBoxSizer)
 
         # Globals panels
 
