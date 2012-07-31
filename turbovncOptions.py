@@ -5,7 +5,7 @@ ID_Exit = 101
 
 class MainWindow(wx.Frame):
     def __init__(self, parent, id, title):
-        wx.Frame.__init__(self, parent, id, title, size=(640,480),
+        wx.Frame.__init__(self, parent, id, title, size=(680,480),
             style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
        
         self.Center()
@@ -70,12 +70,20 @@ class MainWindow(wx.Frame):
         self.encodingMethodLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "Encoding method:")
         self.innerEncodingPanelSizer.Add(self.encodingMethodLabel)
         self.encodingMethodLabel.SetFont(smallFont)
-        
+       
+        self.encodingMethodsPanel = wx.Panel(self.innerEncodingPanel, wx.ID_ANY)
+        self.encodingMethodsPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5,hgap=5)
+        self.encodingMethodsPanel.SetSizer(self.encodingMethodsPanelSizer)
+        emptySpace = wx.StaticText(self.encodingMethodsPanel, wx.ID_ANY, "   ")
+        self.encodingMethodsPanelSizer.Add(emptySpace, flag=wx.EXPAND)
+
         encodingMethods = ['Tight + Perceptually Lossless JPEG (LAN)', '???', '???', '???', '???']
-        self.encodingMethodsComboBox = wx.Choice(self.innerEncodingPanel, wx.ID_ANY,
+        self.encodingMethodsComboBox = wx.Choice(self.encodingMethodsPanel, wx.ID_ANY,
             choices=encodingMethods, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.encodingMethodsComboBox.SetFont(smallFont)
-        self.innerEncodingPanelSizer.Add(self.encodingMethodsComboBox, flag=wx.EXPAND)
+        self.encodingMethodsPanelSizer.Add(self.encodingMethodsComboBox, wx.EXPAND)
+        self.encodingMethodsPanel.SetSizerAndFit(self.encodingMethodsPanelSizer)
+        self.innerEncodingPanelSizer.Add(self.encodingMethodsPanel)
 
         self.jpegCompressionCheckBox = wx.CheckBox(self.innerEncodingPanel, wx.ID_ANY, "Allow JPEG compression")
         self.jpegCompressionCheckBox.SetValue(True)
