@@ -72,7 +72,7 @@ class MainWindow(wx.Frame):
         self.encodingMethodLabel.SetFont(smallFont)
        
         self.encodingMethodsPanel = wx.Panel(self.innerEncodingPanel, wx.ID_ANY)
-        self.encodingMethodsPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5,hgap=5)
+        self.encodingMethodsPanelSizer = wx.FlexGridSizer(rows=2, cols=2, vgap=5,hgap=5)
         self.encodingMethodsPanel.SetSizer(self.encodingMethodsPanelSizer)
         emptySpace = wx.StaticText(self.encodingMethodsPanel, wx.ID_ANY, "   ")
         self.encodingMethodsPanelSizer.Add(emptySpace, flag=wx.EXPAND)
@@ -81,9 +81,11 @@ class MainWindow(wx.Frame):
         self.encodingMethodsComboBox = wx.Choice(self.encodingMethodsPanel, wx.ID_ANY,
             choices=encodingMethods, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.encodingMethodsComboBox.SetFont(smallFont)
-        self.encodingMethodsPanelSizer.Add(self.encodingMethodsComboBox, wx.EXPAND)
+        self.encodingMethodsPanelSizer.Add(self.encodingMethodsComboBox, flag=wx.EXPAND)
+        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
+        self.encodingMethodsPanelSizer.Add(wx.Panel(self.encodingMethodsPanel))
         self.encodingMethodsPanel.SetSizerAndFit(self.encodingMethodsPanelSizer)
-        self.innerEncodingPanelSizer.Add(self.encodingMethodsPanel)
+        self.innerEncodingPanelSizer.Add(self.encodingMethodsPanel, flag=wx.EXPAND)
 
         self.jpegCompressionCheckBox = wx.CheckBox(self.innerEncodingPanel, wx.ID_ANY, "Allow JPEG compression")
         self.jpegCompressionCheckBox.SetValue(True)
@@ -94,15 +96,53 @@ class MainWindow(wx.Frame):
         self.jpegChrominanceSubsamplingLabel.SetFont(smallFont)
         self.innerEncodingPanelSizer.Add(self.jpegChrominanceSubsamplingLabel)
 
-        self.jpegChrominanceSubsamplingSlider = wx.Slider(self.innerEncodingPanel, wx.ID_ANY, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
-        self.innerEncodingPanelSizer.Add(self.jpegChrominanceSubsamplingSlider)
+        self.jpegChrominanceSubsamplingPanel = wx.Panel(self.innerEncodingPanel, wx.ID_ANY)
+        self.jpegChrominanceSubsamplingPanelSizer = wx.FlexGridSizer(rows=2, cols=4, vgap=5,hgap=5)
+        self.jpegChrominanceSubsamplingPanel.SetSizer(self.jpegChrominanceSubsamplingPanelSizer)
+        emptySpace = wx.StaticText(self.jpegChrominanceSubsamplingPanel, wx.ID_ANY, "   ")
+        self.jpegChrominanceSubsamplingPanelSizer.Add(emptySpace, flag=wx.EXPAND)
+
+        self.fastLabel = wx.StaticText(self.jpegChrominanceSubsamplingPanel, wx.ID_ANY, "fast")
+        self.fastLabel.SetFont(smallFont)
+        self.jpegChrominanceSubsamplingPanelSizer.Add(self.fastLabel, flag=wx.EXPAND)
+
+        self.jpegChrominanceSubsamplingSlider = wx.Slider(self.jpegChrominanceSubsamplingPanel, wx.ID_ANY, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.jpegChrominanceSubsamplingPanelSizer.Add(self.jpegChrominanceSubsamplingSlider)
+
+        self.bestLabel = wx.StaticText(self.jpegChrominanceSubsamplingPanel, wx.ID_ANY, "best")
+        self.bestLabel.SetFont(smallFont)
+        self.jpegChrominanceSubsamplingPanelSizer.Add(self.bestLabel, flag=wx.EXPAND)
+
+        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
+        self.jpegChrominanceSubsamplingPanelSizer.Add(wx.Panel(self.jpegChrominanceSubsamplingPanel, wx.ID_ANY))
+        self.jpegChrominanceSubsamplingPanel.SetSizerAndFit(self.jpegChrominanceSubsamplingPanelSizer)
+        self.innerEncodingPanelSizer.Add(self.jpegChrominanceSubsamplingPanel, flag=wx.EXPAND)
 
         self.jpegImageQualityLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "JPEG image quality:    95")
         self.jpegImageQualityLabel.SetFont(smallFont)
         self.innerEncodingPanelSizer.Add(self.jpegImageQualityLabel)
 
-        self.jpegImageQualitySlider = wx.Slider(self.innerEncodingPanel, wx.ID_ANY, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
-        self.innerEncodingPanelSizer.Add(self.jpegImageQualitySlider)
+        self.jpegImageQualityPanel = wx.Panel(self.innerEncodingPanel, wx.ID_ANY)
+        self.jpegImageQualityPanelSizer = wx.FlexGridSizer(rows=2, cols=4, vgap=5,hgap=5)
+        self.jpegImageQualityPanel.SetSizer(self.jpegImageQualityPanelSizer)
+        emptySpace = wx.StaticText(self.jpegImageQualityPanel, wx.ID_ANY, "   ")
+        self.jpegImageQualityPanelSizer.Add(emptySpace, flag=wx.EXPAND)
+
+        self.poorImageQualityLabel = wx.StaticText(self.jpegImageQualityPanel, wx.ID_ANY, "poor")
+        self.poorImageQualityLabel.SetFont(smallFont)
+        self.jpegImageQualityPanelSizer.Add(self.poorImageQualityLabel, flag=wx.EXPAND)
+
+        self.jpegImageQualitySlider = wx.Slider(self.jpegImageQualityPanel, wx.ID_ANY, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.jpegImageQualityPanelSizer.Add(self.jpegImageQualitySlider)
+
+        self.bestImageQualityLabel = wx.StaticText(self.jpegImageQualityPanel, wx.ID_ANY, "best")
+        self.bestImageQualityLabel.SetFont(smallFont)
+        self.jpegImageQualityPanelSizer.Add(self.bestImageQualityLabel, flag=wx.EXPAND)
+
+        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
+        self.jpegImageQualityPanelSizer.Add(wx.Panel(self.jpegImageQualityPanel, wx.ID_ANY))
+        self.jpegImageQualityPanel.SetSizerAndFit(self.jpegImageQualityPanelSizer)
+        self.innerEncodingPanelSizer.Add(self.jpegImageQualityPanel, flag=wx.EXPAND)
 
         self.zlibCompressionLevelLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "Zlib compression level:    1")
         self.zlibCompressionLevelLabel.Disable()
