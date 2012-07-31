@@ -1,13 +1,4 @@
-#! /usr/bin/env python
-
-# wx11vnc 0.2
-# A graphical tool to set up a vnc server with x11vnc.
-
 import wx
-import os
-import socket
-import commands
-from urllib2 import urlopen
 
 ID_About = 100
 ID_Exit = 101
@@ -15,16 +6,9 @@ ID_Exit = 101
 class MainWindow(wx.Frame):
     def __init__(self, parent, id, title):
         wx.Frame.__init__(self, parent, id, title, size=(640,480),
-                        style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
+            style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
        
         self.Center()
-        self.CreateStatusBar()
-        #self.SetStatusText("VNC Server")
-        output = commands.getoutput('ps -A')
-        if "x11vnc" in output:
-            self.SetStatusText("Server Status: Running")
-        else:
-            self.SetStatusText("Server Status: Stopped")
         
         menuFile = wx.Menu()
         menuFile.Append(ID_Exit, "E&xit")
@@ -41,10 +25,10 @@ class MainWindow(wx.Frame):
        
         self.notebookContainerPanel = wx.Panel(self, wx.ID_ANY)
 
-        self.tabbed = wx.Notebook(self.notebookContainerPanel, wx.ID_ANY, style=(wx.NB_TOP))
+        self.tabbedView = wx.Notebook(self.notebookContainerPanel, wx.ID_ANY, style=(wx.NB_TOP))
         notebookContainerPanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=15, hgap=15)
         notebookContainerPanelSizer.Add(wx.StaticText(self.notebookContainerPanel, wx.ID_ANY, "     "))
-        notebookContainerPanelSizer.Add(self.tabbed, flag=wx.EXPAND)
+        notebookContainerPanelSizer.Add(self.tabbedView, flag=wx.EXPAND)
         notebookContainerPanelSizer.Add(wx.StaticText(self.notebookContainerPanel, wx.ID_ANY, "     "))
 
         smallFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
@@ -52,7 +36,7 @@ class MainWindow(wx.Frame):
 
         # Connection tab
 
-        self.connectionPanel = wx.Panel(self.tabbed, wx.ID_ANY)
+        self.connectionPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
         self.connectionPanelSizer = wx.FlexGridSizer(rows=1, cols=4, vgap=15, hgap=15)
 
         self.connectionLeftBorderPanel = wx.Panel(self.connectionPanel, wx.ID_ANY)
@@ -127,9 +111,7 @@ class MainWindow(wx.Frame):
         self.innerEncodingPanelSizer.Add(self.copyRectEncodingCheckBox)
 
         self.innerEncodingPanel.SetSizerAndFit(self.innerEncodingPanelSizer)
-
         self.encodingGroupBoxSizer.Add(self.innerEncodingPanel, flag=wx.EXPAND)
-
         self.encodingPanel.SetSizerAndFit(self.encodingGroupBoxSizer)
 
         # Restrictions group box
@@ -143,7 +125,7 @@ class MainWindow(wx.Frame):
         self.restrictionsPanel.SetSizer(self.restrictionsGroupBoxSizer)
 
         self.innerRestrictionsPanel = wx.Panel(self.restrictionsPanel, wx.ID_ANY)
-        self.innerRestrictionsPanelSizer = wx.FlexGridSizer(rows=10, cols = 1, vgap=5,hgap=5)
+        self.innerRestrictionsPanelSizer = wx.FlexGridSizer(rows=2, cols = 1, vgap=5,hgap=5)
         self.innerRestrictionsPanel.SetSizer(self.innerRestrictionsPanelSizer)
 
         self.viewOnlyCheckBox = wx.CheckBox(self.innerRestrictionsPanel, wx.ID_ANY, "View only (inputs ignored)")
@@ -157,9 +139,7 @@ class MainWindow(wx.Frame):
         self.disableClipboardTransferCheckBox.SetFont(smallFont)
         
         self.innerRestrictionsPanel.SetSizerAndFit(self.innerRestrictionsPanelSizer)
-
         self.restrictionsGroupBoxSizer.Add(self.innerRestrictionsPanel, flag=wx.EXPAND)
-
         self.restrictionsPanel.SetSizerAndFit(self.restrictionsGroupBoxSizer)
 
         # Bottom border panel
@@ -178,7 +158,7 @@ class MainWindow(wx.Frame):
         self.displayPanel.SetSizer(self.displayGroupBoxSizer)
 
         self.innerDisplayPanel = wx.Panel(self.displayPanel, wx.ID_ANY)
-        self.innerDisplayPanelSizer = wx.FlexGridSizer(rows=10, cols = 1, vgap=5,hgap=5)
+        self.innerDisplayPanelSizer = wx.FlexGridSizer(rows=5, cols = 1, vgap=5,hgap=5)
         self.innerDisplayPanel.SetSizer(self.innerDisplayPanelSizer)
 
         scaleOptions = ['100', '???', '???', '???', '???']
@@ -207,9 +187,7 @@ class MainWindow(wx.Frame):
         self.deiconifyOnRemoteBellEventCheckBox.SetFont(smallFont)
         
         self.innerDisplayPanel.SetSizerAndFit(self.innerDisplayPanelSizer)
-
         self.displayGroupBoxSizer.Add(self.innerDisplayPanel, flag=wx.EXPAND)
-
         self.displayPanel.SetSizerAndFit(self.displayGroupBoxSizer)
 
         # Mouse group box
@@ -223,7 +201,7 @@ class MainWindow(wx.Frame):
         self.mousePanel.SetSizer(self.mouseGroupBoxSizer)
 
         self.innerMousePanel = wx.Panel(self.mousePanel)
-        self.innerMousePanelSizer = wx.FlexGridSizer(rows=10, cols = 1, vgap=5,hgap=5)
+        self.innerMousePanelSizer = wx.FlexGridSizer(rows=2, cols = 1, vgap=5,hgap=5)
         self.innerMousePanel.SetSizer(self.innerMousePanelSizer)
 
         self.emulate3ButtonsWith2ButtonClickCheckBox = wx.CheckBox(self.innerMousePanel, wx.ID_ANY, "Emulate 3 buttons (with 2-button click)")
@@ -237,9 +215,7 @@ class MainWindow(wx.Frame):
         self.swapMouseButtons2And3CheckBox.SetFont(smallFont)
         
         self.innerMousePanel.SetSizerAndFit(self.innerMousePanelSizer)
-
         self.mouseGroupBoxSizer.Add(self.innerMousePanel, flag=wx.EXPAND)
-
         self.mousePanel.SetSizerAndFit(self.mouseGroupBoxSizer)
 
         # Mouse cursor group box
@@ -253,7 +229,7 @@ class MainWindow(wx.Frame):
         self.mouseCursorPanel.SetSizer(self.mouseCursorGroupBoxSizer)
 
         self.innerMouseCursorPanel = wx.Panel(self.mouseCursorPanel, wx.ID_ANY)
-        self.innerMouseCursorPanelSizer = wx.FlexGridSizer(rows=10, cols = 1, vgap=5,hgap=5)
+        self.innerMouseCursorPanelSizer = wx.FlexGridSizer(rows=3, cols = 1, vgap=5,hgap=5)
         self.innerMouseCursorPanel.SetSizer(self.innerMouseCursorPanelSizer)
 
         self.trackRemoteCursorLocallyRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Track remote cursor locally")
@@ -272,10 +248,10 @@ class MainWindow(wx.Frame):
         self.dontShowRemoteCursorRadioButton.SetFont(smallFont)
         
         self.innerMouseCursorPanel.SetSizerAndFit(self.innerMouseCursorPanelSizer)
-
         self.mouseCursorGroupBoxSizer.Add(self.innerMouseCursorPanel, flag=wx.EXPAND)
-
         self.mouseCursorPanel.SetSizerAndFit(self.mouseCursorGroupBoxSizer)
+
+        print "Don't forget to add Request shared session checkbox."
 
         # Connection panels
 
@@ -285,9 +261,74 @@ class MainWindow(wx.Frame):
 
         # Globals tab
         
-        self.globalsPanel = wx.Panel(self.tabbed, wx.ID_ANY)
-        self.tabbed.AddPage(self.connectionPanel, "Connection")
-        self.tabbed.AddPage(self.globalsPanel, "Globals")
+        self.globalsPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
+        self.globalsPanelSizer = wx.FlexGridSizer(rows=5, cols=1, vgap=15, hgap=15)
+
+        self.globalsTopBorderPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
+        self.globalsPanelSizer.Add(self.globalsTopBorderPanel)
+
+        self.globalsTopPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
+        self.globalsPanelSizer.Add(self.globalsTopPanel, flag=wx.EXPAND)
+        self.globalsTopPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=15)
+
+        self.globalsMiddlePanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
+        self.globalsPanelSizer.Add(self.globalsMiddlePanel, flag=wx.EXPAND)
+        self.globalsMiddlePanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
+
+        self.globalsBottomPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
+        self.globalsPanelSizer.Add(self.globalsBottomPanel, flag=wx.EXPAND)
+        self.globalsBottomPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
+
+        self.globalsBottomBorderPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
+        self.globalsPanelSizer.Add(self.globalsBottomBorderPanel)
+
+        # Interface options group box
+
+        self.interfaceOptionsPanel = wx.Panel(self.globalsTopPanel, wx.ID_ANY)
+        self.globalsTopPanelSizer.Add(self.interfaceOptionsPanel, flag=wx.EXPAND)
+
+        self.interfaceOptionsGroupBox = wx.StaticBox(self.interfaceOptionsPanel, wx.ID_ANY, label="Interface Options")
+        self.interfaceOptionsGroupBox.SetFont(smallFont)
+        self.interfaceOptionsGroupBoxSizer = wx.StaticBoxSizer(self.interfaceOptionsGroupBox, wx.VERTICAL)
+        self.interfaceOptionsPanel.SetSizer(self.interfaceOptionsGroupBoxSizer)
+
+        self.innerInterfaceOptionsPanel = wx.Panel(self.interfaceOptionsPanel, wx.ID_ANY)
+        self.innerInterfaceOptionsPanelSizer = wx.FlexGridSizer(rows=4, cols =1, vgap=5,hgap=5)
+        self.innerInterfaceOptionsPanel.SetSizer(self.innerInterfaceOptionsPanelSizer)
+
+        self.showToolbarsByDefaultCheckBox = wx.CheckBox(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Show toolbars by default")
+        self.showToolbarsByDefaultCheckBox.SetValue(True)
+        self.innerInterfaceOptionsPanelSizer.Add(self.showToolbarsByDefaultCheckBox)
+        self.showToolbarsByDefaultCheckBox.SetFont(smallFont)
+        
+        self.warnWhenSwitchingToFullScreenModeCheckBox = wx.CheckBox(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Warn when switching to full-screen mode")
+        self.warnWhenSwitchingToFullScreenModeCheckBox.SetValue(True)
+        self.innerInterfaceOptionsPanelSizer.Add(self.warnWhenSwitchingToFullScreenModeCheckBox)
+        self.warnWhenSwitchingToFullScreenModeCheckBox.SetFont(smallFont)
+        
+        self.numberOfConnectionsToRememberLabel = wx.StaticText(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Number of connections to remember:")
+        self.innerInterfaceOptionsPanelSizer.Add(self.numberOfConnectionsToRememberLabel)
+        self.numberOfConnectionsToRememberLabel.SetFont(smallFont)
+        
+        self.clearTheListOfSavedConnectionsButton = wx.Button(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Clear the list of saved connections")
+        self.innerInterfaceOptionsPanelSizer.Add(self.clearTheListOfSavedConnectionsButton)
+        self.clearTheListOfSavedConnectionsButton.SetFont(smallFont)
+        
+        self.innerInterfaceOptionsPanel.SetSizerAndFit(self.innerInterfaceOptionsPanelSizer)
+        self.innerInterfaceOptionsPanel.SetSizerAndFit(self.innerInterfaceOptionsPanelSizer)
+        self.interfaceOptionsGroupBoxSizer.Add(self.innerInterfaceOptionsPanel, flag=wx.EXPAND)
+        self.interfaceOptionsPanel.SetSizerAndFit(self.interfaceOptionsGroupBoxSizer)
+
+        # Globals panels
+
+        self.globalsTopPanel.SetSizerAndFit(self.globalsTopPanelSizer)
+        self.globalsMiddlePanel.SetSizerAndFit(self.globalsMiddlePanelSizer)
+        self.globalsBottomPanel.SetSizerAndFit(self.globalsBottomPanelSizer)
+        self.globalsPanel.SetSizerAndFit(self.globalsPanelSizer)
+
+        # Adding Connection tab and Globals tab to tabbed view
+        self.tabbedView.AddPage(self.connectionPanel, "Connection")
+        self.tabbedView.AddPage(self.globalsPanel, "Globals")
        
         # Buttons panel
 
