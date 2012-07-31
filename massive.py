@@ -282,11 +282,12 @@ class MyFrame(wx.Frame):
         else:
             massiveResolutionComboBox.SetValue(defaultResolution)
 
+        cipher = ""
         if sys.platform.startswith("win"):
-            cipher = "arcfour"
+            defaultCipher = "arcfour"
             ciphers = ["3des-cbc", "blowfish-cbc", "arcfour"]
         else:
-            cipher = "arcfour128"
+            defaultCipher = "arcfour128"
             ciphers = ["3des-cbc", "blowfish-cbc", "arcfour128"]
         global sshTunnelCipherComboBox
         sshTunnelCipherComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 175), size=(widgetWidth2, -1),choices=ciphers, style=wx.CB_DROPDOWN)
@@ -320,7 +321,6 @@ class MyFrame(wx.Frame):
                 config.write(massiveLauncherPreferencesFileObject)
         global massiveUsernameTextField
         massiveUsernameTextField = wx.TextCtrl(loginDialogPanel, -1, username,  (125, 215), (widgetWidth1, -1))
-        massiveUsernameTextField = massiveUsernameTextField
         if username.strip()!="":
             massiveUsernameTextField.SelectAll()
 
