@@ -571,6 +571,7 @@ class MainWindow(wx.Frame):
         self.browseButton.Disable()
         self.innerLoggingPanelSizer.Add(self.browseButton, flag=wx.EXPAND)
         self.browseButton.SetFont(smallFont)
+        self.browseButton.Bind(wx.EVT_BUTTON, self.onBrowse)
 
         self.verbosityLevelLabel = wx.StaticText(self.innerLoggingPanel, wx.ID_ANY, "Verbosity level:")
         self.verbosityLevelLabel.Disable()
@@ -640,6 +641,13 @@ class MainWindow(wx.Frame):
         self.verbosityLevelLabel.Enable(self.writeLogToAFileCheckBox.GetValue())
         self.verbosityLevelSpinCtrl.Enable(self.writeLogToAFileCheckBox.GetValue())
 
+    def onBrowse(self, event):
+        filters = 'TurboVNC log files (*.log)|*.log'
+        saveFileDialog = wx.FileDialog ( None, message = 'TurboVNC log file...', wildcard = filters, style = wx.SAVE)
+        if saveFileDialog.ShowModal() == wx.ID_OK:
+            global turboVncLogFilePath
+            turboVncLogFilePath = saveFileDialog.GetPath()
+            self.vncViewerLogFilenameTextField.WriteText(turboVncLogFilePath)
 
 class wx11vnc(wx.App):
     def OnInit(self):
