@@ -376,45 +376,24 @@ class MainWindow(wx.Frame):
         
         self.globalsPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
         self.globalsPanelSizer = wx.FlexGridSizer(rows=5, cols=1, vgap=15, hgap=15)
-        #self.globalsPanelSizer = wx.FlexGridSizer(rows=5, cols=3, vgap=15, hgap=15)
-
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of top-border row
 
         self.globalsTopBorderPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsTopBorderPanel, flag=wx.EXPAND)
 
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of top-border row
-
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of top row
-
         self.globalsTopPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsTopPanel, flag=wx.EXPAND)
-        self.globalsTopPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=15)
-
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of top row
-
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of middle row
+        self.globalsTopPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=15)
 
         self.globalsMiddlePanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsMiddlePanel, flag=wx.EXPAND)
         self.globalsMiddlePanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
 
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of middle row
-
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of bottom row
-
         self.globalsBottomPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsBottomPanel, flag=wx.EXPAND)
         self.globalsBottomPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
 
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of bottom row
-
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of bottom-border row
-
         self.globalsBottomBorderPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsBottomBorderPanel, flag=wx.EXPAND)
-
-        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of bottom-border row
 
         self.globalsPanelSizer.SetFlexibleDirection(wx.VERTICAL)
         self.globalsTopPanelSizer.SetFlexibleDirection(wx.VERTICAL)
@@ -562,7 +541,7 @@ class MainWindow(wx.Frame):
         self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox, flag=wx.EXPAND)
         self.writeLogToAFileCheckBox.SetFont(smallFont)
 
-        self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(300,-1))
+        self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(400,-1))
         self.vncViewerLogFilenameTextField.Disable()
         self.innerLoggingPanelSizer.Add(self.vncViewerLogFilenameTextField, flag=wx.EXPAND)
         self.vncViewerLogFilenameTextField.SetFont(smallFont)
