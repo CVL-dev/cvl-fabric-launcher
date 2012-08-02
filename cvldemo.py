@@ -90,7 +90,7 @@ try:
         elif not "Retype new password" in stderrRead:
             raise Exception(stderrRead)
 
-    stdin,stdout,stderr = sshClient.exec_command("su centos -c \"vncserver\"")
+    stdin,stdout,stderr = sshClient.exec_command("su " + username + " -c \"vncserver\"")
     stderrRead = stderr.read()
     stderrLines = stderrRead.split("\n")
     stderrLinesSplit = stderrLines[1].split(":")

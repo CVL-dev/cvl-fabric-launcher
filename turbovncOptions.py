@@ -82,8 +82,10 @@ class MainWindow(wx.Frame):
             choices=encodingMethods, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.encodingMethodsComboBox.SetFont(smallFont)
         self.encodingMethodsPanelSizer.Add(self.encodingMethodsComboBox, flag=wx.EXPAND)
+
         # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
-        self.encodingMethodsPanelSizer.Add(wx.Panel(self.encodingMethodsPanel))
+        self.encodingMethodsPanelSizer.Add(wx.Panel(self.encodingMethodsPanel, wx.ID_ANY))
+
         self.encodingMethodsPanel.SetSizerAndFit(self.encodingMethodsPanelSizer)
         self.innerEncodingPanelSizer.Add(self.encodingMethodsPanel, flag=wx.EXPAND)
 
@@ -113,8 +115,6 @@ class MainWindow(wx.Frame):
         self.bestLabel.SetFont(smallFont)
         self.jpegChrominanceSubsamplingPanelSizer.Add(self.bestLabel, flag=wx.EXPAND)
 
-        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
-        self.jpegChrominanceSubsamplingPanelSizer.Add(wx.Panel(self.jpegChrominanceSubsamplingPanel, wx.ID_ANY))
         self.jpegChrominanceSubsamplingPanel.SetSizerAndFit(self.jpegChrominanceSubsamplingPanelSizer)
         self.innerEncodingPanelSizer.Add(self.jpegChrominanceSubsamplingPanel, flag=wx.EXPAND)
 
@@ -139,19 +139,37 @@ class MainWindow(wx.Frame):
         self.bestImageQualityLabel.SetFont(smallFont)
         self.jpegImageQualityPanelSizer.Add(self.bestImageQualityLabel, flag=wx.EXPAND)
 
-        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
-        self.jpegImageQualityPanelSizer.Add(wx.Panel(self.jpegImageQualityPanel, wx.ID_ANY))
         self.jpegImageQualityPanel.SetSizerAndFit(self.jpegImageQualityPanelSizer)
         self.innerEncodingPanelSizer.Add(self.jpegImageQualityPanel, flag=wx.EXPAND)
 
-        self.zlibCompressionLevelLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "Zlib compression level:    1")
-        self.zlibCompressionLevelLabel.Disable()
+        self.zlibCompressionLevelLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "Zlib compression level:     1")
         self.zlibCompressionLevelLabel.SetFont(smallFont)
+        self.zlibCompressionLevelLabel.Disable()
         self.innerEncodingPanelSizer.Add(self.zlibCompressionLevelLabel)
 
-        self.zlibCompressionLevelSlider = wx.Slider(self.innerEncodingPanel, wx.ID_ANY, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.zlibCompressionLevelPanel = wx.Panel(self.innerEncodingPanel, wx.ID_ANY)
+        self.zlibCompressionLevelPanelSizer = wx.FlexGridSizer(rows=1, cols=4, vgap=5,hgap=5)
+        self.zlibCompressionLevelPanel.SetSizer(self.zlibCompressionLevelPanelSizer)
+        emptySpace = wx.StaticText(self.zlibCompressionLevelPanel, wx.ID_ANY, "   ")
+        self.zlibCompressionLevelPanelSizer.Add(emptySpace, flag=wx.EXPAND)
+
+        self.fastZlibCompressionLabel = wx.StaticText(self.zlibCompressionLevelPanel, wx.ID_ANY, "fast")
+        self.fastZlibCompressionLabel.SetFont(smallFont)
+        self.fastZlibCompressionLabel.Disable()
+        self.zlibCompressionLevelPanelSizer.Add(self.fastZlibCompressionLabel, flag=wx.EXPAND)
+
+        self.zlibCompressionLevelSlider = wx.Slider(self.zlibCompressionLevelPanel, wx.ID_ANY, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
         self.zlibCompressionLevelSlider.Disable()
-        self.innerEncodingPanelSizer.Add(self.zlibCompressionLevelSlider)
+        self.zlibCompressionLevelPanelSizer.Add(self.zlibCompressionLevelSlider)
+
+        self.bestZlibCompressionLabel = wx.StaticText(self.zlibCompressionLevelPanel, wx.ID_ANY, "best")
+        self.bestZlibCompressionLabel.SetFont(smallFont)
+        self.bestZlibCompressionLabel.Disable()
+        self.zlibCompressionLevelPanelSizer.Add(self.bestZlibCompressionLabel, flag=wx.EXPAND)
+
+        self.zlibCompressionLevelPanel.SetSizerAndFit(self.zlibCompressionLevelPanelSizer)
+        self.zlibCompressionLevelPanel.Disable()
+        self.innerEncodingPanelSizer.Add(self.zlibCompressionLevelPanel, flag=wx.EXPAND)
 
         self.copyRectEncodingCheckBox = wx.CheckBox(self.innerEncodingPanel, wx.ID_ANY, "Allow CopyRect encoding")
         self.copyRectEncodingCheckBox.SetValue(True)
@@ -209,10 +227,29 @@ class MainWindow(wx.Frame):
         self.innerDisplayPanelSizer = wx.FlexGridSizer(rows=5, cols = 1, vgap=5,hgap=5)
         self.innerDisplayPanel.SetSizer(self.innerDisplayPanelSizer)
 
+        self.scaleByPanel = wx.Panel(self.innerDisplayPanel, wx.ID_ANY)
+        self.scaleByPanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=5,hgap=5)
+        self.scaleByPanel.SetSizer(self.scaleByPanelSizer)
+
+        self.scaleByLabel = wx.StaticText(self.scaleByPanel, wx.ID_ANY, "Scale by:   ")
+        self.scaleByLabel.SetFont(smallFont)
+        self.scaleByPanelSizer.Add(self.scaleByLabel, flag=wx.ALIGN_CENTER)
+
         scaleOptions = ['100', '???', '???', '???', '???']
-        self.scaleByComboBox = wx.Choice(self.innerDisplayPanel, wx.ID_ANY, choices=scaleOptions, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.scaleByComboBox = wx.Choice(self.scaleByPanel, wx.ID_ANY,
+            choices=scaleOptions, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.scaleByComboBox.SetFont(smallFont)
-        self.innerDisplayPanelSizer.Add(self.scaleByComboBox, flag=wx.EXPAND)
+        self.scaleByPanelSizer.Add(self.scaleByComboBox, flag=wx.EXPAND)
+
+        self.percentageSignLabel = wx.StaticText(self.scaleByPanel, wx.ID_ANY, "  %")
+        self.percentageSignLabel.SetFont(smallFont)
+        self.scaleByPanelSizer.Add(self.percentageSignLabel, flag=wx.ALIGN_CENTER)
+
+        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
+        self.scaleByPanelSizer.Add(wx.Panel(self.scaleByPanel, wx.ID_ANY))
+
+        self.scaleByPanel.SetSizerAndFit(self.scaleByPanelSizer)
+        self.innerDisplayPanelSizer.Add(self.scaleByPanel, flag=wx.EXPAND)
 
         self.doubleBufferingCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Double buffering")
         self.doubleBufferingCheckBox.SetValue(True)
