@@ -889,6 +889,8 @@ class MassiveLauncherMainFrame(wx.Frame):
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
                         if 'fullScreen' in vncOptions and vncOptions['fullScreen']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "fullscreen"
+                        if 'deiconifyOnRemoteBellEvent' in vncOptions and vncOptions['deiconifyOnRemoteBellEvent']==False:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noraiseonbeep"
 
                         if sys.platform.startswith("win"):
                             vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost::" + localPortNumber

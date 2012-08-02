@@ -305,6 +305,8 @@ class TurboVncOptions(wx.Dialog):
 
         self.deiconifyOnRemoteBellEventCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Deiconify on remote Bell event")
         self.deiconifyOnRemoteBellEventCheckBox.SetValue(False)
+        if 'deiconifyOnRemoteBellEvent' in vncOptions:
+            self.deiconifyOnRemoteBellEventCheckBox.SetValue(vncOptions['deiconifyOnRemoteBellEvent'])
         self.innerDisplayPanelSizer.Add(self.deiconifyOnRemoteBellEventCheckBox)
         self.deiconifyOnRemoteBellEventCheckBox.SetFont(smallFont)
         
@@ -651,6 +653,7 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['viewOnly'] = self.viewOnlyCheckBox.GetValue()
         self.vncOptions['doubleBuffer'] = self.doubleBufferCheckBox.GetValue()
         self.vncOptions['fullScreen'] = self.fullScreenCheckBox.GetValue()
+        self.vncOptions['deiconifyOnRemoteBellEvent'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()
         self.Close(True)
         
     def onToggleWriteLogToAFileCheckBox(self, event):
