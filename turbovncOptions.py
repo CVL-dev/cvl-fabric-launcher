@@ -562,12 +562,9 @@ class MainWindow(wx.Frame):
         self.buttonsPanel.SetAutoLayout(True)
         self.buttonsPanel.SetSizerAndFit(buttonsPanelSizer) 
 
-        # Button stays pressed, can't stop server
         okButton.Bind(wx.EVT_BUTTON, self.onOK)
         cancelButton.Bind(wx.EVT_BUTTON, self.onCancel)
      
-        ###
-
         self.notebookContainerPanel.SetSizer(notebookContainerPanelSizer)
 
         self.Layout()
