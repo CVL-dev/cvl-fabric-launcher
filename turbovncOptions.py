@@ -560,6 +560,9 @@ class MainWindow(wx.Frame):
         self.writeLogToAFileCheckBox = wx.CheckBox(self.innerLoggingPanel, wx.ID_ANY, "Write log to a file:")
         self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox, flag=wx.EXPAND)
         self.writeLogToAFileCheckBox.SetFont(smallFont)
+        def onToggleWriteLogToAFileCheckBox(self, event):
+            self.Close(True)
+        self.writeLogToAFileCheckBox.Bind(wx.EVT_BUTTON, self.onToggleWriteLogToAFileCheckBox)
 
         self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(400,-1))
         self.vncViewerLogFilenameTextField.Disable()
