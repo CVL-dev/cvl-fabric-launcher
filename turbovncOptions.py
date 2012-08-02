@@ -72,7 +72,7 @@ class MainWindow(wx.Frame):
         self.encodingMethodLabel.SetFont(smallFont)
        
         self.encodingMethodsPanel = wx.Panel(self.innerEncodingPanel, wx.ID_ANY)
-        self.encodingMethodsPanelSizer = wx.FlexGridSizer(rows=2, cols=2, vgap=5,hgap=5)
+        self.encodingMethodsPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5,hgap=5)
         self.encodingMethodsPanel.SetSizer(self.encodingMethodsPanelSizer)
         emptySpace = wx.StaticText(self.encodingMethodsPanel, wx.ID_ANY, "   ")
         self.encodingMethodsPanelSizer.Add(emptySpace, flag=wx.EXPAND)
@@ -81,10 +81,7 @@ class MainWindow(wx.Frame):
         self.encodingMethodsComboBox = wx.Choice(self.encodingMethodsPanel, wx.ID_ANY,
             choices=encodingMethods, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.encodingMethodsComboBox.SetFont(smallFont)
-        self.encodingMethodsPanelSizer.Add(self.encodingMethodsComboBox, flag=wx.EXPAND)
-
-        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
-        self.encodingMethodsPanelSizer.Add(wx.Panel(self.encodingMethodsPanel, wx.ID_ANY))
+        self.encodingMethodsPanelSizer.Add(self.encodingMethodsComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
         self.encodingMethodsPanel.SetSizerAndFit(self.encodingMethodsPanelSizer)
         self.innerEncodingPanelSizer.Add(self.encodingMethodsPanel, flag=wx.EXPAND)
@@ -228,7 +225,7 @@ class MainWindow(wx.Frame):
         self.innerDisplayPanel.SetSizer(self.innerDisplayPanelSizer)
 
         self.scaleByPanel = wx.Panel(self.innerDisplayPanel, wx.ID_ANY)
-        self.scaleByPanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=5,hgap=5)
+        self.scaleByPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5,hgap=5)
         self.scaleByPanel.SetSizer(self.scaleByPanelSizer)
 
         self.scaleByLabel = wx.StaticText(self.scaleByPanel, wx.ID_ANY, "Scale by:   ")
@@ -239,14 +236,11 @@ class MainWindow(wx.Frame):
         self.scaleByComboBox = wx.Choice(self.scaleByPanel, wx.ID_ANY,
             choices=scaleOptions, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.scaleByComboBox.SetFont(smallFont)
-        self.scaleByPanelSizer.Add(self.scaleByComboBox, flag=wx.EXPAND)
+        self.scaleByPanelSizer.Add(self.scaleByComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
         self.percentageSignLabel = wx.StaticText(self.scaleByPanel, wx.ID_ANY, "  %")
         self.percentageSignLabel.SetFont(smallFont)
         self.scaleByPanelSizer.Add(self.percentageSignLabel, flag=wx.ALIGN_CENTER)
-
-        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
-        self.scaleByPanelSizer.Add(wx.Panel(self.scaleByPanel, wx.ID_ANY))
 
         self.scaleByPanel.SetSizerAndFit(self.scaleByPanelSizer)
         self.innerDisplayPanelSizer.Add(self.scaleByPanel, flag=wx.EXPAND)
@@ -262,7 +256,7 @@ class MainWindow(wx.Frame):
         self.fullScreenModeCheckBox.SetFont(smallFont)
         
         self.spanModePanel = wx.Panel(self.innerDisplayPanel, wx.ID_ANY)
-        self.spanModePanelSizer = wx.FlexGridSizer(rows=2, cols=2, vgap=5,hgap=5)
+        self.spanModePanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5,hgap=5)
         self.spanModePanel.SetSizer(self.spanModePanelSizer)
 
         self.spanModeLabel = wx.StaticText(self.spanModePanel, wx.ID_ANY, "Span mode:   ")
@@ -273,10 +267,7 @@ class MainWindow(wx.Frame):
         self.spanModeComboBox = wx.Choice(self.spanModePanel, wx.ID_ANY,
             choices=spanModes, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.spanModeComboBox.SetFont(smallFont)
-        self.spanModePanelSizer.Add(self.spanModeComboBox, flag=wx.EXPAND)
-
-        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
-        self.spanModePanelSizer.Add(wx.Panel(self.spanModePanel, wx.ID_ANY))
+        self.spanModePanelSizer.Add(self.spanModeComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
         self.spanModePanel.SetSizerAndFit(self.spanModePanelSizer)
         self.innerDisplayPanelSizer.Add(self.spanModePanel, flag=wx.EXPAND)
@@ -385,24 +376,55 @@ class MainWindow(wx.Frame):
         
         self.globalsPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
         self.globalsPanelSizer = wx.FlexGridSizer(rows=5, cols=1, vgap=15, hgap=15)
+        #self.globalsPanelSizer = wx.FlexGridSizer(rows=5, cols=3, vgap=15, hgap=15)
+
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of top-border row
 
         self.globalsTopBorderPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
-        self.globalsPanelSizer.Add(self.globalsTopBorderPanel)
+        self.globalsPanelSizer.Add(self.globalsTopBorderPanel, flag=wx.EXPAND)
+
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of top-border row
+
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of top row
 
         self.globalsTopPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsTopPanel, flag=wx.EXPAND)
         self.globalsTopPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=15)
 
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of top row
+
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of middle row
+
         self.globalsMiddlePanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsMiddlePanel, flag=wx.EXPAND)
         self.globalsMiddlePanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
+
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of middle row
+
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of bottom row
 
         self.globalsBottomPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsBottomPanel, flag=wx.EXPAND)
         self.globalsBottomPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
 
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of bottom row
+
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Left border of bottom-border row
+
         self.globalsBottomBorderPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
-        self.globalsPanelSizer.Add(self.globalsBottomBorderPanel)
+        self.globalsPanelSizer.Add(self.globalsBottomBorderPanel, flag=wx.EXPAND)
+
+        #self.globalsPanelSizer.Add(wx.Panel(self.globalsPanel, wx.ID_ANY, size=(20,-1))) # Right border of bottom-border row
+
+        self.globalsPanelSizer.SetFlexibleDirection(wx.VERTICAL)
+        self.globalsTopPanelSizer.SetFlexibleDirection(wx.VERTICAL)
+        self.globalsMiddlePanelSizer.SetFlexibleDirection(wx.VERTICAL)
+        self.globalsBottomPanelSizer.SetFlexibleDirection(wx.VERTICAL)
+
+        self.globalsPanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
+        self.globalsTopPanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
+        self.globalsMiddlePanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
+        self.globalsBottomPanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
 
         # Interface options group box
 
@@ -429,7 +451,7 @@ class MainWindow(wx.Frame):
         self.warnWhenSwitchingToFullScreenModeCheckBox.SetFont(smallFont)
         
         self.numberOfConnectionsToRememberPanel = wx.Panel(self.innerInterfaceOptionsPanel, wx.ID_ANY)
-        self.numberOfConnectionsToRememberPanelSizer = wx.FlexGridSizer(rows=2, cols=2, vgap=5,hgap=5)
+        self.numberOfConnectionsToRememberPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5,hgap=5)
         self.numberOfConnectionsToRememberPanel.SetSizer(self.numberOfConnectionsToRememberPanelSizer)
 
         self.numberOfConnectionsToRememberLabel = wx.StaticText(self.numberOfConnectionsToRememberPanel, wx.ID_ANY, "Number of connections to remember:   ")
@@ -438,11 +460,8 @@ class MainWindow(wx.Frame):
 
         self.numberOfConnectionsToRememberSpinCtrl = wx.SpinCtrl(self.numberOfConnectionsToRememberPanel, value='32')
         self.numberOfConnectionsToRememberSpinCtrl.SetFont(smallFont)
-        self.numberOfConnectionsToRememberPanelSizer.Add(self.numberOfConnectionsToRememberSpinCtrl)
+        self.numberOfConnectionsToRememberPanelSizer.Add(self.numberOfConnectionsToRememberSpinCtrl, wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
         
-        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
-        self.numberOfConnectionsToRememberPanelSizer.Add(wx.Panel(self.numberOfConnectionsToRememberPanel, wx.ID_ANY))
-
         self.numberOfConnectionsToRememberPanel.SetSizerAndFit(self.numberOfConnectionsToRememberPanelSizer)
         self.innerInterfaceOptionsPanelSizer.Add(self.numberOfConnectionsToRememberPanel, flag=wx.EXPAND)
 
@@ -506,7 +525,7 @@ class MainWindow(wx.Frame):
         self.innerListeningModePanel.SetSizer(self.innerListeningModePanelSizer)
 
         self.acceptReverseVncConnectionsOnTcpPortPanel = wx.Panel(self.innerListeningModePanel, wx.ID_ANY)
-        self.acceptReverseVncConnectionsOnTcpPortPanelSizer = wx.FlexGridSizer(rows=2, cols=2, vgap=5,hgap=5)
+        self.acceptReverseVncConnectionsOnTcpPortPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5,hgap=5)
         self.acceptReverseVncConnectionsOnTcpPortPanel.SetSizer(self.acceptReverseVncConnectionsOnTcpPortPanelSizer)
 
         self.acceptReverseVncConnectionsOnTcpPortLabel = wx.StaticText(self.acceptReverseVncConnectionsOnTcpPortPanel, wx.ID_ANY, "Accept reverse VNC connection on TCP port:   ")
@@ -515,11 +534,9 @@ class MainWindow(wx.Frame):
 
         self.acceptReverseVncConnectionsOnTcpPortSpinCtrl = wx.SpinCtrl(self.acceptReverseVncConnectionsOnTcpPortPanel, value='5500', size=(70,-1))
         self.acceptReverseVncConnectionsOnTcpPortSpinCtrl.SetFont(smallFont)
-        self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortSpinCtrl)
+        self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortSpinCtrl, flag=wx.TOP|wx.BOTTOM,border=2)
+        self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(wx.Panel(self.acceptReverseVncConnectionsOnTcpPortPanel, wx.ID_ANY), flag=wx.EXPAND)
         
-        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
-        self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(wx.Panel(self.acceptReverseVncConnectionsOnTcpPortPanel, wx.ID_ANY))
-
         self.acceptReverseVncConnectionsOnTcpPortPanel.SetSizerAndFit(self.acceptReverseVncConnectionsOnTcpPortPanelSizer)
         self.innerListeningModePanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortPanel, flag=wx.EXPAND)
 
@@ -542,23 +559,29 @@ class MainWindow(wx.Frame):
         self.innerLoggingPanel.SetSizer(self.innerLoggingPanelSizer)
 
         self.writeLogToAFileCheckBox = wx.CheckBox(self.innerLoggingPanel, wx.ID_ANY, "Write log to a file:")
-        self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox)
+        self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox, flag=wx.EXPAND)
         self.writeLogToAFileCheckBox.SetFont(smallFont)
 
-        self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log")
-        self.innerLoggingPanelSizer.Add(self.vncViewerLogFilenameTextField)
+        self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(300,-1))
+        self.vncViewerLogFilenameTextField.Disable()
+        self.innerLoggingPanelSizer.Add(self.vncViewerLogFilenameTextField, flag=wx.EXPAND)
         self.vncViewerLogFilenameTextField.SetFont(smallFont)
 
         self.browseButton = wx.Button(self.innerLoggingPanel, wx.ID_ANY, "Browse...")
         self.browseButton.Disable()
-        self.innerLoggingPanelSizer.Add(self.browseButton)
+        self.innerLoggingPanelSizer.Add(self.browseButton, flag=wx.EXPAND)
         self.browseButton.SetFont(smallFont)
 
         self.verbosityLevelLabel = wx.StaticText(self.innerLoggingPanel, wx.ID_ANY, "Verbosity level:")
         self.verbosityLevelLabel.Disable()
-        self.innerLoggingPanelSizer.Add(self.verbosityLevelLabel)
+        self.innerLoggingPanelSizer.Add(self.verbosityLevelLabel, flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
         self.verbosityLevelLabel.SetFont(smallFont)
 
+        self.verbosityLevelSpinCtrl = wx.SpinCtrl(self.innerLoggingPanel, value='0')
+        self.verbosityLevelSpinCtrl.Disable()
+        self.verbosityLevelSpinCtrl.SetFont(smallFont)
+        self.innerLoggingPanelSizer.Add(self.verbosityLevelSpinCtrl)
+        
         self.innerLoggingPanel.SetSizerAndFit(self.innerLoggingPanelSizer)
         self.loggingGroupBoxSizer.Add(self.innerLoggingPanel, flag=wx.EXPAND)
         self.loggingPanel.SetSizerAndFit(self.loggingGroupBoxSizer)
