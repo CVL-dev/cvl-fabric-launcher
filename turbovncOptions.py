@@ -505,9 +505,23 @@ class MainWindow(wx.Frame):
         self.innerListeningModePanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5,hgap=5)
         self.innerListeningModePanel.SetSizer(self.innerListeningModePanelSizer)
 
-        self.acceptReverseVncConnectionsOnTcpPortLabel = wx.StaticText(self.innerListeningModePanel, wx.ID_ANY, "Accept reverse VNC connection on TCP port:")
-        self.innerListeningModePanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortLabel)
+        self.acceptReverseVncConnectionsOnTcpPortPanel = wx.Panel(self.innerListeningModePanel, wx.ID_ANY)
+        self.acceptReverseVncConnectionsOnTcpPortPanelSizer = wx.FlexGridSizer(rows=2, cols=2, vgap=5,hgap=5)
+        self.acceptReverseVncConnectionsOnTcpPortPanel.SetSizer(self.acceptReverseVncConnectionsOnTcpPortPanelSizer)
+
+        self.acceptReverseVncConnectionsOnTcpPortLabel = wx.StaticText(self.acceptReverseVncConnectionsOnTcpPortPanel, wx.ID_ANY, "Accept reverse VNC connection on TCP port:   ")
         self.acceptReverseVncConnectionsOnTcpPortLabel.SetFont(smallFont)
+        self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortLabel, flag=wx.ALIGN_CENTER_VERTICAL)
+
+        self.acceptReverseVncConnectionsOnTcpPortSpinCtrl = wx.SpinCtrl(self.acceptReverseVncConnectionsOnTcpPortPanel, value='5500', size=(70,-1))
+        self.acceptReverseVncConnectionsOnTcpPortSpinCtrl.SetFont(smallFont)
+        self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortSpinCtrl)
+        
+        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
+        self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(wx.Panel(self.acceptReverseVncConnectionsOnTcpPortPanel, wx.ID_ANY))
+
+        self.acceptReverseVncConnectionsOnTcpPortPanel.SetSizerAndFit(self.acceptReverseVncConnectionsOnTcpPortPanelSizer)
+        self.innerListeningModePanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortPanel, flag=wx.EXPAND)
 
         self.innerListeningModePanel.SetSizerAndFit(self.innerListeningModePanelSizer)
         self.listeningModeGroupBoxSizer.Add(self.innerListeningModePanel, flag=wx.EXPAND)
