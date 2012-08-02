@@ -351,7 +351,29 @@ class MainWindow(wx.Frame):
         self.mouseCursorGroupBoxSizer.Add(self.innerMouseCursorPanel, flag=wx.EXPAND)
         self.mouseCursorPanel.SetSizerAndFit(self.mouseCursorGroupBoxSizer)
 
-        print "Don't forget to add Request shared session checkbox."
+        # Request shared session checkbox.
+
+        self.requestSharedSessionPanel = wx.Panel(self.connectionRightPanel, wx.ID_ANY)
+        self.connectionRightPanelSizer.Add(self.requestSharedSessionPanel, flag=wx.EXPAND)
+
+        self.requestSharedSessionPanel = wx.Panel(self.requestSharedSessionPanel, wx.ID_ANY)
+        self.requestSharedSessionPanelSizer = wx.FlexGridSizer(rows=3, cols=2, vgap=5, hgap=5)
+        self.requestSharedSessionPanel.SetSizer(self.requestSharedSessionPanelSizer)
+
+        self.requestSharedSessionPanelSizer.Add(wx.Panel(self.requestSharedSessionPanel, wx.ID_ANY))
+        self.requestSharedSessionPanelSizer.Add(wx.Panel(self.requestSharedSessionPanel, wx.ID_ANY))
+
+        self.requestSharedSessionPanelSizer.Add(wx.StaticText(self.requestSharedSessionPanel, wx.ID_ANY, "  "))
+
+        self.requestSharedSessionCheckBox = wx.CheckBox(self.requestSharedSessionPanel, wx.ID_ANY, "Request shared session")
+        self.requestSharedSessionCheckBox.SetValue(True)
+        self.requestSharedSessionPanelSizer.Add(self.requestSharedSessionCheckBox)
+        self.requestSharedSessionCheckBox.SetFont(smallFont)
+        
+        self.requestSharedSessionPanelSizer.Add(wx.Panel(self.requestSharedSessionPanel, wx.ID_ANY))
+        self.requestSharedSessionPanelSizer.Add(wx.Panel(self.requestSharedSessionPanel, wx.ID_ANY))
+
+        self.requestSharedSessionPanel.SetSizerAndFit(self.requestSharedSessionPanelSizer)
 
         # Connection panels
 
@@ -526,7 +548,7 @@ class MainWindow(wx.Frame):
 
         notebookContainerPanelSizer.Add(wx.StaticText(self.notebookContainerPanel, wx.ID_ANY, "     "))
         self.buttonsPanel = wx.Panel(self.notebookContainerPanel, wx.ID_ANY)
-        notebookContainerPanelSizer.Add(self.buttonsPanel, flag=wx.ALIGN_RIGHT)
+        notebookContainerPanelSizer.Add(self.buttonsPanel, flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
         notebookContainerPanelSizer.Add(wx.StaticText(self.notebookContainerPanel, wx.ID_ANY, "     "))
 
         okButton = wx.Button(self.buttonsPanel, wx.ID_ANY, "OK")
