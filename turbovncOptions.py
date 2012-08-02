@@ -545,7 +545,7 @@ class MainWindow(wx.Frame):
         self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox)
         self.writeLogToAFileCheckBox.SetFont(smallFont)
 
-        self.vncViewerLogFilenameTextField = wx.StaticText(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log")
+        self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log")
         self.innerLoggingPanelSizer.Add(self.vncViewerLogFilenameTextField)
         self.vncViewerLogFilenameTextField.SetFont(smallFont)
 
