@@ -1,15 +1,34 @@
 # massive.py
 """
-A wxPython GUI to provide easy login to the MASSIVE Desktop, 
-initially on Mac OS X.  It can be run using "python massive.py",
-assuming that you have a 32-bit version of Python installed,
+A wxPython GUI to provide easy login to the MASSIVE Desktop.
+It can be run using "python massive.py", assuming that you 
+have a 32-bit (*) version of Python installed,
 wxPython, and the dependent Python modules imported below.
 
-The py2app module is required to build the MASSIVE.app 
-application bundle, which can be built as follows:
+(*) wxPython on Mac OS X doesn't yet work nicely in 64-bit mode.
 
-   python create_massive_bundle.py py2app
+The py2app module is required to build the "MASSIVE Launcher.app"
+application bundle on Mac OS X, which can be built as follows:
+
+   python create_mac_bundle.py py2app
+
+See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Mac+OS+X+build+instructions
   
+The py2exe module is required to build the "MASSIVE Launcher.exe"
+executable on Windows, which can be built as follows:
+
+   python create_windows_bundle.py py2exe
+
+See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Windows+build+instructions
+
+A Windows installation wizard can be built using InnoSetup,
+and the MASSIVE.iss script.
+
+A self-contained Linux binary distribution can be built using
+PyInstaller, as described on the following wiki page.
+
+See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Linux+build+instructions
+
 ACKNOWLEDGEMENT
 
 Thanks to Michael Eager for a concise, non-GUI Python script
@@ -18,16 +37,6 @@ automate SSH logins and to automate calling TurboVNC
 on Linux and on Mac OS X.
  
 """
-
-# The ssh_tunnel module was a compiled C module I was writing (using libssh2),
-# which aimed to speed up the SSH tunneling, (compared with PyPi ssh / paramiko).
-# This approach presents obstacles I don't have time to deal with right now,
-# so I'm putting it aside, and may return to it later.
-# libssh2 is quite immature - there is no support for cipher specification, or
-# -oProxyCommand, and there is no good example of server-to-client port-forwarding.
-# Also, libssh2 is challenging to install on Windows.
-#import ssh_tunnel # ssh_tunnel_module.c
-#ssh_tunnel.system("ls -l")
 
 # Later, STDERR will be redirected to logTextCtrl
 # For now, we just want make sure that the Launcher doesn't attempt 
@@ -45,7 +54,6 @@ import traceback
 import threading
 import os
 import ssh # Pure Python-based ssh module, based on Paramiko, published on PyPi
-#import libssh2 # Unpublished SSH module (Python bindings for libssh2) by Sebastian Noack: git clone git://github.com/wallunit/ssh4py
 import HTMLParser
 import urllib
 import massive_launcher_version_number
@@ -115,10 +123,6 @@ class MyFrame(wx.Frame):
 
         global logTextCtrl
 
-        # The default window style is wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.RESIZE_BORDER | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX | wx.CLIP_CHILDREN
-        # If you remove wx.RESIZE_BORDER from it, you'll get a frame which cannot be resized.
-        # wx.Frame(parent, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
-
         if sys.platform.startswith("darwin"):
             wx.Frame.__init__(self, parent, id, title, size=(350, 390), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         else:
@@ -166,10 +170,6 @@ class MyFrame(wx.Frame):
         self.SetTitle("MASSIVE Launcher")
 
         self.SetMenuBar(self.menu_bar)
-
-        # Let's implement the About menu using py2app instead,
-        # so that we can easily insert the version number.
-        # We may need to treat different OS's differently.
 
         global loginDialogPanel
         loginDialogPanel = wx.Panel(self)
@@ -351,8 +351,6 @@ class MyFrame(wx.Frame):
         self.SetStatusBar(self.statusbar)
         self.Centre()
 
-        #massiveLauncherURL = "https://mnhs-massive-dev.med.monash.edu/index.php?option=com_content&view=article&id=121"
-        #massiveLauncherURL = "https://mnhs-web14-v02.med.monash.edu/index.php?option=com_content&view=article&id=121"
         massiveLauncherURL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
 
         try:
@@ -462,34 +460,8 @@ class MyFrame(wx.Frame):
             newVersionAlertDialog.SetSizer(gs)
             gs.Fit(newVersionAlertDialog)
 
-            # http://wxpython-users.1045709.n5.nabble.com/wx-Dialog-comes-up-blank-in-Windows-if-panel-is-not-sized-td2371532.html
-            # A Panel doesn't automatically size to its parent Dialog on
-            # Windows, and so ends up clipping all its contents.  On the Mac and in a
-            # Frame, it either auto-resizes, or doesn't clip.
-
-            # Robin Dunn:
-            # The root of the problem is that dialogs on Windows do not get an initial
-            # size event when they are shown (frames do) and since all the layout
-            # magic happens in the EVT_SIZE handler then it doesn't happen by default
-            # for the dialog.  You can work around this by doing something that will
-            # change the size of the dialog after it has been created and populated
-            # with child widgets (explicitly call SetSize, or do something like
-            # sizer.Fit(), etc.) or calling SendSizeEvent will probably do it too. 
-            #newVersionAlertDialog.SetSize((680,290))
-            #newVersionAlertTextPanel.SetSize((680,290))
-
             newVersionAlertDialog.ShowModal()
             newVersionAlertDialog.Destroy()
-
-            #dlg = wx.MessageDialog(self, 
-                #"You are running version " + massive_launcher_version_number.version_number + "\n\n" +
-                #"The latest version is " + myHtmlParser.data[0] + "\n\n" +
-                #"Please download a new version from:\n\n" +
-                #massiveLauncherURL + "\n\n" +
-                #"For queries, please contact:\n\nhelp@massive.org.au\njames.wettenhall@monash.edu\n",
-                #"MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
-            #dlg.ShowModal()
-            #dlg.Destroy()
 
             sys.exit(1)
  
@@ -538,14 +510,10 @@ class MyFrame(wx.Frame):
                 """Init Worker Thread Class."""
                 threading.Thread.__init__(self)
                 self._notify_window = notify_window
-                self._want_abort = 0
-                # This starts the thread running on creation, but you could
-                # also make the GUI thread responsible for calling this
                 self.start()
 
             def run(self):
                 """Run Worker Thread."""
-                # This is the time-consuming code executing in the new thread. 
 
                 waitCursor = wx.StockCursor(wx.CURSOR_WAIT)
                 loginDialogFrame.SetCursor(waitCursor)
@@ -611,12 +579,6 @@ class MyFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
                     wx.CallAfter(sys.stdout.write, "\n")
                   
-                    # An ssh channel can be used to execute a command, 
-                    # and you can use it in a select statement to find out when data can be read.
-                    # The channel object can be read from and written to, connecting with 
-                    # stdout and stdin of the remote command. You can get at stderr by calling 
-                    # channel.makefile_stderr(...).
-
                     transport = sshClient.get_transport()
                     channel = transport.open_session()
                     channel.get_pty()
@@ -624,10 +586,6 @@ class MyFrame(wx.Frame):
                     channel.invoke_shell()
                     out = ""
                     channel.send(qsubcmd + "\n")
-
-                    # From: http://www.lag.net/paramiko/docs/paramiko.Channel-class.html#recv_stderr_ready
-                    # "Only channels using exec_command or invoke_shell without a pty 
-                    #  will ever have data on the stderr stream."
 
                     lineNumber = 0
                     startingXServerLineNumber = -1
@@ -644,8 +602,7 @@ class MyFrame(wx.Frame):
                             time.sleep(1)
                             tCheck+=1
                             if tCheck >= 10:
-                                # wx.CallAfter(sys.stdout.write, "Read time out?\n") # Throw exception here?
-                                # return False
+                                # After 10 seconds, we still haven't obtained a visnode...
                                 if (not checkedShowStart) and jobNumber!="0.m2-m":
                                     checkedShowStart = True
                                     def showStart():
@@ -779,14 +736,7 @@ class MyFrame(wx.Frame):
                             wx.CallAfter(sys.stdout.write, chmod_cmd + "\n")
                             subprocess.call(chmod_cmd, shell=True)
 
-                            #if sys.platform.startswith("win"):
-                                #cipher = "arcfour"
-                            #else:
-                                #cipher = "arcfour128"
                             proxyCommand = "-oProxyCommand=\"ssh -c " + cipher + " -i " + privateKeyFile.name +" "+username+"@"+massiveLoginHost+" 'nc %h %p'\""
-                            # On Windows, try: DETACHED_PROCESS = 0x00000008
-                            # subprocess.Popen(... , creationflags=DETACHED_PROCESS , ...)
-
                             wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
 
                             global localPortNumber
@@ -907,7 +857,6 @@ class MyFrame(wx.Frame):
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             proc.communicate(input=password)
-                            #proc.communicate()
                         else:
                             subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:" + localPortNumber,shell=True)
                         try:
@@ -973,14 +922,6 @@ class MyFrame(wx.Frame):
                     cancelButton.SetCursor(arrowCursor)
                     loginButton.SetCursor(arrowCursor)
 
-                # Example of using wx.PostEvent to post an event from a thread:
-                #wx.PostEvent(self._notify_window, ResultEvent(10))
-
-            def abort(self):
-                """abort worker thread."""
-                # Method for use by main thread to signal an abort
-                self._want_abort = 1
-
         username = massiveUsernameTextField.GetValue()
         password = massivePasswordField.GetValue()
         massiveLoginHost = massiveHostComboBox.GetValue()
@@ -1039,14 +980,6 @@ class MyStatusBar(wx.StatusBar):
         self.SetFieldsCount(2)
         self.SetStatusText('Welcome to MASSIVE', 0)
         self.SetStatusWidths([-5, -2])
-        #self.Bind(wx.EVT_SIZE, self.OnSize)
-
-    #def PlaceIcon(self):
-        #rect = self.GetFieldRect(1)
-        #self.icon.SetPosition((rect.x+3, rect.y+3))
-
-    #def OnSize(self, event):
-        #self.PlaceIcon()
 
 class MyApp(wx.App):
     def OnInit(self):
