@@ -877,20 +877,26 @@ class MassiveLauncherMainFrame(wx.Frame):
                         vncOptionsString = ""
                         if 'requestSharedSession' in vncOptions and vncOptions['requestSharedSession']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
-                        if 'jpegImageQuality' in vncOptions:
+                        defaultJpegImageQuality = 95
+                        if 'jpegImageQuality' in vncOptions and vncOptions['jpegImageQuality']!=defaultJpegImageQuality:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + vncOptions['jpegImageQuality']
-                        if 'jpegChrominanceSubsampling' in vncOptions:
+                        defaultJpegChrominanceSubsampling = "1x"
+                        if 'jpegChrominanceSubsampling' in vncOptions and vncOptions['jpegChrominanceSubsampling']!=defaultJpegChrominanceSubsampling:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + vncOptions['jpegChrominanceSubsampling']
+                        if 'viewOnly' in vncOptions and vncOptions['viewOnly']==True:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "viewonly"
+                        if 'doubleBuffer' in vncOptions and vncOptions['doubleBuffer']==False:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
 
                         if sys.platform.startswith("win"):
-                            vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost:" + localPortNumber
+                            vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost::" + localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             proc.communicate(input=password)
                         else:
-                            vncCommandString = "echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass " + vncOptionsString + " localhost:" + localPortNumber
+                            vncCommandString = "echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass " + vncOptionsString + " localhost::" + localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             subprocess.call(vncCommandString,shell=True)
                         try:

@@ -202,6 +202,8 @@ class TurboVncOptions(wx.Dialog):
 
         self.viewOnlyCheckBox = wx.CheckBox(self.innerRestrictionsPanel, wx.ID_ANY, "View only (inputs ignored)")
         self.viewOnlyCheckBox.SetValue(False)
+        if 'viewOnly' in vncOptions:
+            self.self.viewOnlyCheckBox.SetValue(vncOptions['viewOnly'])
         self.innerRestrictionsPanelSizer.Add(self.viewOnlyCheckBox)
         self.viewOnlyCheckBox.SetFont(smallFont)
         
@@ -267,6 +269,8 @@ class TurboVncOptions(wx.Dialog):
 
         self.doubleBufferingCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Double buffering")
         self.doubleBufferingCheckBox.SetValue(True)
+        if 'doubleBuffer' in vncOptions:
+            self.doubleBufferCheckBox.SetValue(vncOptions['doubleBuffer'])
         self.innerDisplayPanelSizer.Add(self.doubleBufferingCheckBox)
         self.doubleBufferingCheckBox.SetFont(smallFont)
         
@@ -642,6 +646,8 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['requestSharedSession'] = self.requestSharedSessionCheckBox.GetValue()
         self.vncOptions['jpegImageQuality'] = self.jpegImageQualitySlider.GetValue()
         self.vncOptions['jpegChrominanceSubsampling'] = self.jpegChrominanceSubsamplingCommandLineString[self.jpegChrominanceSubsamplingSlider.GetValue()]
+        self.vncOptions['viewOnly'] = self.viewOnlyCheckBox.GetValue()
+        self.vncOptions['doubleBuffer'] = self.doubleBufferCheckBox.GetValue()
         self.Close(True)
         
     def onToggleWriteLogToAFileCheckBox(self, event):
@@ -679,7 +685,7 @@ class turboVncOptions(wx.App):
     def OnInit(self):
         frame = wx.Frame(None, wx.ID_ANY)
         frame.Show(True)
-        vncOptions = {'requestSharedSession': True}
+        vncOptions = {}
         dialog = TurboVncOptions(frame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
         dialog.ShowModal()
         return True
