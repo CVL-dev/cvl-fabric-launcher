@@ -77,7 +77,11 @@ class MainWindow(wx.Frame):
         emptySpace = wx.StaticText(self.encodingMethodsPanel, wx.ID_ANY, "   ")
         self.encodingMethodsPanelSizer.Add(emptySpace, flag=wx.EXPAND)
 
-        encodingMethods = ['Tight + Perceptually Lossless JPEG (LAN)', '???', '???', '???', '???']
+        encodingMethods = ['Tight + Perceptually Lossless JPEG (LAN)', 
+            'Tight + Medium Quality JPEG', 
+            'Tight + Low Quality JPEG (WAN)', 
+            'Lossless Tight (Gigabit)', 
+            'Lossless Tight + Zlib (WAN)']
         self.encodingMethodsComboBox = wx.Choice(self.encodingMethodsPanel, wx.ID_ANY,
             choices=encodingMethods, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.encodingMethodsComboBox.SetFont(smallFont)
@@ -232,9 +236,20 @@ class MainWindow(wx.Frame):
         self.scaleByLabel.SetFont(smallFont)
         self.scaleByPanelSizer.Add(self.scaleByLabel, flag=wx.ALIGN_CENTER)
 
-        scaleOptions = ['100', '???', '???', '???', '???']
+        scaleOptions = [
+            '25',
+            '50',
+            '75',
+            '90',
+            '100', 
+            '125', 
+            '150',
+            '200',
+            'Auto']
         self.scaleByComboBox = wx.Choice(self.scaleByPanel, wx.ID_ANY,
             choices=scaleOptions, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        SCALE_OPTION_100_PERCENT = 4
+        self.scaleByComboBox.SetSelection(SCALE_OPTION_100_PERCENT)
         self.scaleByComboBox.SetFont(smallFont)
         self.scaleByPanelSizer.Add(self.scaleByComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
@@ -263,9 +278,14 @@ class MainWindow(wx.Frame):
         self.spanModeLabel.SetFont(smallFont)
         self.spanModePanelSizer.Add(self.spanModeLabel, flag=wx.ALIGN_CENTER)
 
-        spanModes = ['Automatic', '???', '???', '???', '???']
+        spanModes = [
+            'Primary monitor only',
+            'All monitors',
+            'Automatic']
         self.spanModeComboBox = wx.Choice(self.spanModePanel, wx.ID_ANY,
             choices=spanModes, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        SPAN_MODE_AUTOMATIC = 2
+        self.spanModeComboBox.SetSelection(SPAN_MODE_AUTOMATIC)
         self.spanModeComboBox.SetFont(smallFont)
         self.spanModePanelSizer.Add(self.spanModeComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
