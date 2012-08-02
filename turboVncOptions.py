@@ -1,28 +1,14 @@
 import wx
 
-ID_About = 100
-ID_Exit = 101
-
-class MainWindow(wx.Frame):
+#class MainWindow(wx.Frame):
+class TurboVncOptions(wx.Dialog):
     def __init__(self, parent, id, title):
-        wx.Frame.__init__(self, parent, id, title, size=(680,480),
+        #wx.Frame.__init__(self, parent, id, title, size=(680,480),
+        wx.Dialog.__init__(self, parent, id, title, size=(680,480),
             style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
        
         self.Center()
         
-        menuFile = wx.Menu()
-        menuFile.Append(ID_Exit, "E&xit")
-        
-        menuHelp = wx.Menu()
-        menuHelp.Append(ID_About, "&About")
-        
-        menu_bar = wx.MenuBar()
-        menu_bar.Append(menuFile, "&File")
-        menu_bar.Append(menuHelp, "&Help")
-        self.SetMenuBar(menu_bar)
-        
-        wx.EVT_MENU(self, ID_Exit, self.onExit)
-       
         self.notebookContainerPanel = wx.Panel(self, wx.ID_ANY)
 
         self.tabbedView = wx.Notebook(self.notebookContainerPanel, wx.ID_ANY, style=(wx.NB_TOP))
@@ -649,13 +635,16 @@ class MainWindow(wx.Frame):
             turboVncLogFilePath = saveFileDialog.GetPath()
             self.vncViewerLogFilenameTextField.WriteText(turboVncLogFilePath)
 
-class wx11vnc(wx.App):
+class turboVncOptions(wx.App):
     def OnInit(self):
-        frame = MainWindow(None, wx.ID_ANY, "TurboVNC Viewer Options")
+        #frame = MainWindow(None, wx.ID_ANY, "TurboVNC Viewer Options")
+        frame = wx.Frame(None, wx.ID_ANY)
         frame.Show(True)
-        self.SetTopWindow(frame)
+        dialog = TurboVncOptions(frame, wx.ID_ANY, "TurboVNC Viewer Options")
+        dialog.ShowModal()
+        #self.SetTopWindow(frame)
         return True
 
-app = wx11vnc(0)
-app.MainLoop()  
+#app = turboVncOptions(False)
+#app.MainLoop()  
 

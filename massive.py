@@ -87,8 +87,8 @@ sshTunnelReady = False
 global localPortNumber
 localPortNumber = "5901"
 global privateKeyFile
-global loginDialogFrame
-loginDialogFrame = None
+global massiveLauncherMainFrame
+massiveLauncherMainFrame = None
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self):
@@ -117,7 +117,7 @@ class MyHtmlParser(HTMLParser.HTMLParser):
     if self.recording:
       self.data.append(data)
 
-class MyFrame(wx.Frame):
+class MassiveLauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
 
@@ -337,7 +337,7 @@ class MyFrame(wx.Frame):
         massivePasswordField.MoveAfterInTabOrder(massiveUsernameTextField)
 
         global optionsButton
-        optionsButton = wx.Button(loginDialogPanel, 1, 'Options...', (30, 305))
+        optionsButton = wx.Button(loginDialogPanel, 1, 'Options...', (15, 305))
 
         global cancelButton
         cancelButton = wx.Button(loginDialogPanel, 2, 'Cancel', (130, 305))
@@ -376,7 +376,7 @@ class MyFrame(wx.Frame):
         latestVersion = myHtmlParser.data[0].strip()
 
         if latestVersion!=massive_launcher_version_number.version_number:
-            newVersionAlertDialog = wx.Dialog(loginDialogFrame, title="MASSIVE Launcher", name="MASSIVE Launcher",pos=(200,150),size=(680,290))
+            newVersionAlertDialog = wx.Dialog(massiveLauncherMainFrame, title="MASSIVE Launcher", name="MASSIVE Launcher",pos=(200,150),size=(680,290))
 
             if sys.platform.startswith("win"):
                 _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -484,6 +484,8 @@ class MyFrame(wx.Frame):
 
     def OnOptions(self, event):
         import turboVncOptions
+        turboVncOptionsDialog = turboVncOptions.TurboVncOptions(massiveLauncherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options")
+        turboVncOptionsDialog.ShowModal()
 
     def OnCancel(self, event):
         try:
@@ -524,7 +526,7 @@ class MyFrame(wx.Frame):
                 """Run Worker Thread."""
 
                 waitCursor = wx.StockCursor(wx.CURSOR_WAIT)
-                loginDialogFrame.SetCursor(waitCursor)
+                massiveLauncherMainFrame.SetCursor(waitCursor)
                 loginDialogPanel.SetCursor(waitCursor)
                 massiveHostLabel.SetCursor(waitCursor)
                 massiveProjectLabel.SetCursor(waitCursor)
@@ -875,7 +877,7 @@ class MyFrame(wx.Frame):
                             os._exit(0)
 
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
-                        loginDialogFrame.SetCursor(arrowCursor)
+                        massiveLauncherMainFrame.SetCursor(arrowCursor)
                         loginDialogPanel.SetCursor(arrowCursor)
                         massiveHostLabel.SetCursor(arrowCursor)
                         massiveProjectLabel.SetCursor(arrowCursor)
@@ -895,7 +897,7 @@ class MyFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
-                        loginDialogFrame.SetCursor(arrowCursor)
+                        massiveLauncherMainFrame.SetCursor(arrowCursor)
                         loginDialogPanel.SetCursor(arrowCursor)
                         massiveHostLabel.SetCursor(arrowCursor)
                         massiveProjectLabel.SetCursor(arrowCursor)
@@ -915,7 +917,7 @@ class MyFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
-                    loginDialogFrame.SetCursor(arrowCursor)
+                    massiveLauncherMainFrame.SetCursor(arrowCursor)
                     loginDialogPanel.SetCursor(arrowCursor)
                     massiveHostLabel.SetCursor(arrowCursor)
                     massiveProjectLabel.SetCursor(arrowCursor)
@@ -1005,9 +1007,9 @@ class MyApp(wx.App):
         if os.path.exists(massiveLauncherPreferencesFilePath):
             config.read(massiveLauncherPreferencesFilePath)
 
-        global loginDialogFrame
-        loginDialogFrame = MyFrame(None, -1, 'MASSIVE Launcher')
-        loginDialogFrame.Show(True)
+        global massiveLauncherMainFrame
+        massiveLauncherMainFrame = MassiveLauncherMainFrame(None, -1, 'MASSIVE Launcher')
+        massiveLauncherMainFrame.Show(True)
         return True
 
 app = MyApp(False) # Don't automatically redirect sys.stdout and sys.stderr to a Window.
