@@ -261,10 +261,25 @@ class MainWindow(wx.Frame):
         self.innerDisplayPanelSizer.Add(self.fullScreenModeCheckBox)
         self.fullScreenModeCheckBox.SetFont(smallFont)
         
+        self.spanModePanel = wx.Panel(self.innerDisplayPanel, wx.ID_ANY)
+        self.spanModePanelSizer = wx.FlexGridSizer(rows=2, cols=2, vgap=5,hgap=5)
+        self.spanModePanel.SetSizer(self.spanModePanelSizer)
+
+        self.spanModeLabel = wx.StaticText(self.spanModePanel, wx.ID_ANY, "Span mode:   ")
+        self.spanModeLabel.SetFont(smallFont)
+        self.spanModePanelSizer.Add(self.spanModeLabel, flag=wx.ALIGN_CENTER)
+
         spanModes = ['Automatic', '???', '???', '???', '???']
-        self.spanModeComboBox = wx.Choice(self.innerDisplayPanel, wx.ID_ANY, choices=spanModes, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.spanModeComboBox = wx.Choice(self.spanModePanel, wx.ID_ANY,
+            choices=spanModes, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.spanModeComboBox.SetFont(smallFont)
-        self.innerDisplayPanelSizer.Add(self.spanModeComboBox, flag=wx.EXPAND)
+        self.spanModePanelSizer.Add(self.spanModeComboBox, flag=wx.EXPAND)
+
+        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
+        self.spanModePanelSizer.Add(wx.Panel(self.spanModePanel, wx.ID_ANY))
+
+        self.spanModePanel.SetSizerAndFit(self.spanModePanelSizer)
+        self.innerDisplayPanelSizer.Add(self.spanModePanel, flag=wx.EXPAND)
 
         self.deiconifyOnRemoteBellEventCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Deiconify on remote Bell event")
         self.deiconifyOnRemoteBellEventCheckBox.SetValue(False)
