@@ -486,7 +486,6 @@ class MassiveLauncherMainFrame(wx.Frame):
 
     def onOptions(self, event):
         import turboVncOptions
-        #vncOptions = {'encodingMethod': 'Tight + Perceptually Lossless JPEG (LAN)', 'requestSharedSession': False}
         global vncOptions
         turboVncOptionsDialog = turboVncOptions.TurboVncOptions(massiveLauncherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
         turboVncOptionsDialog.ShowModal()
@@ -878,6 +877,10 @@ class MassiveLauncherMainFrame(wx.Frame):
                         vncOptionsString = ""
                         if 'requestSharedSession' in vncOptions and vncOptions['requestSharedSession']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
+                        if 'jpegImageQuality' in vncOptions:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + vncOptions['jpegImageQuality']
+                        if 'jpegChrominanceSubsampling' in vncOptions:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + vncOptions['jpegChrominanceSubsampling']
 
                         if sys.platform.startswith("win"):
                             vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost:" + localPortNumber

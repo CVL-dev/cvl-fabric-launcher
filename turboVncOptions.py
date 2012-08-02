@@ -105,9 +105,16 @@ class TurboVncOptions(wx.Dialog):
         self.jpegChrominanceSubsamplingPanelSizer.Add(self.bestLabel, flag=wx.EXPAND)
 
         self.jpegChrominanceSubsamplingPanel.SetSizerAndFit(self.jpegChrominanceSubsamplingPanelSizer)
+        self.jpegChrominanceSubsamplingSlider.SetMin(0)
+        self.jpegChrominanceSubsamplingSlider.SetMax(4)
+        self.jpegChrominanceSubsamplingSlider.SetValue(1)
+        if 'jpegChrominanceSubsampling' in vncOptions:
+            self.jpegChrominanceSubsamplingSlider.SetValue(vncOptions['jpegChrominanceSubsamplingSlider'])
+            self.jpegChrominanceSubsamplingSlider.SetLabel("JPEG chrominance subsampling:    " + str(self.jpegChrominanceSubsamplingSlider.GetValue()))
+        self.jpegChrominanceSubsamplingSlider.Bind(wx.EVT_SLIDER, self.onAdjustJpegChrominanceSubsamplingSlider)
         self.innerEncodingPanelSizer.Add(self.jpegChrominanceSubsamplingPanel, flag=wx.EXPAND)
 
-        self.jpegImageQualityLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "JPEG image quality:    95")
+        self.jpegImageQualityLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "JPEG image quality:    95", style=wx.TE_READONLY)
         self.jpegImageQualityLabel.SetFont(smallFont)
         self.innerEncodingPanelSizer.Add(self.jpegImageQualityLabel)
 
@@ -122,6 +129,13 @@ class TurboVncOptions(wx.Dialog):
         self.jpegImageQualityPanelSizer.Add(self.poorImageQualityLabel, flag=wx.EXPAND)
 
         self.jpegImageQualitySlider = wx.Slider(self.jpegImageQualityPanel, wx.ID_ANY, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.jpegImageQualitySlider.SetMin(1)
+        self.jpegImageQualitySlider.SetMax(100)
+        self.jpegImageQualitySlider.SetValue(95)
+        if 'jpegImageQuality' in vncOptions:
+            self.jpegImageQualitySlider.SetValue(vncOptions['jpegImageQuality'])
+            self.jpegImageQualityLabel.SetLabel("JPEG image quality:    " + str(self.jpegImageQualitySlider.GetValue()))
+        self.jpegImageQualitySlider.Bind(wx.EVT_SLIDER, self.onAdjustJpegImageQualitySlider)
         self.jpegImageQualityPanelSizer.Add(self.jpegImageQualitySlider)
 
         self.bestImageQualityLabel = wx.StaticText(self.jpegImageQualityPanel, wx.ID_ANY, "best")
@@ -595,13 +609,13 @@ class TurboVncOptions(wx.Dialog):
         notebookContainerPanelSizer.Add(self.buttonsPanel, flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
         notebookContainerPanelSizer.Add(wx.StaticText(self.notebookContainerPanel, wx.ID_ANY, "     "))
 
-        okButton = wx.Button(self.buttonsPanel, wx.ID_ANY, "OK")
         cancelButton = wx.Button(self.buttonsPanel, wx.ID_ANY, "Cancel")
+        okButton = wx.Button(self.buttonsPanel, wx.ID_ANY, "OK")
         
         buttonsPanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=5, hgap=5)
         buttonsPanelSizer.Add(wx.StaticText(self.buttonsPanel, wx.ID_ANY, "     "))
-        buttonsPanelSizer.Add(okButton)
         buttonsPanelSizer.Add(cancelButton)
+        buttonsPanelSizer.Add(okButton)
         buttonsPanelSizer.Add(wx.StaticText(self.buttonsPanel, wx.ID_ANY, "     "))
         self.buttonsPanel.SetAutoLayout(True)
         self.buttonsPanel.SetSizerAndFit(buttonsPanelSizer) 
@@ -616,20 +630,28 @@ class TurboVncOptions(wx.Dialog):
     def getVncOptions(self):
         return self.vncOptions
 
-    def onOK(self, event):
-        self.okClicked = True
-        self.vncOptions['requestSharedSession'] = self.requestSharedSessionCheckBox.GetValue()
-        self.Close(True)
-        
     def onCancel(self, event):
         self.okClicked = False
         self.Close(True)
 
+    def onOK(self, event):
+        self.okClicked = True
+        self.vncOptions['requestSharedSession'] = self.requestSharedSessionCheckBox.GetValue()
+        self.vncOptions['jpegImageQuality'] = self.jpegImageQualitySlider.GetValue()
+        self.vncOptions['jpegChrominanceSubsampling'] = self.jpegChrominanceSubsamplingSlider.GetValue()
+        self.Close(True)
+        
     def onToggleWriteLogToAFileCheckBox(self, event):
         self.vncViewerLogFilenameTextField.Enable(self.writeLogToAFileCheckBox.GetValue())
         self.browseButton.Enable(self.writeLogToAFileCheckBox.GetValue())
         self.verbosityLevelLabel.Enable(self.writeLogToAFileCheckBox.GetValue())
         self.verbosityLevelSpinCtrl.Enable(self.writeLogToAFileCheckBox.GetValue())
+
+    def onAdjustJpegImageQualitySlider(self, event):
+        self.jpegImageQualityLabel.SetLabel("JPEG image quality:    " + str(self.jpegImageQualitySlider.GetValue()))
+
+    def onAdjustJpegChrominanceSubsamplingSlider(self, event):
+        self.jpegChrominanceSubsamplingLabel.SetLabel("JPEG chrominance subsampling:    " + str(self.jpegChrominanceSubsamplingSlider.GetValue()))
 
     def onBrowse(self, event):
         filters = 'TurboVNC log files (*.log)|*.log'
