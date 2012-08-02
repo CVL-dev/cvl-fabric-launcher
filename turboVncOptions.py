@@ -358,16 +358,22 @@ class TurboVncOptions(wx.Dialog):
 
         self.trackRemoteCursorLocallyRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Track remote cursor locally")
         self.trackRemoteCursorLocallyRadioButton.SetValue(True)
+        if 'trackRemoteCursorLocally' in vncOptions:
+            self.trackRemoteCursorLocallyRadioButton.SetValue(vncOptions['trackRemoteCursorLocally'])
         self.innerMouseCursorPanelSizer.Add(self.trackRemoteCursorLocallyRadioButton)
         self.trackRemoteCursorLocallyRadioButton.SetFont(smallFont)
         
         self.letRemoteServerDealWithMouseCursorRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Let remote server deal with mouse cursor")
         self.letRemoteServerDealWithMouseCursorRadioButton.SetValue(False)
+        if 'letRemoteServerDealWithMouseCursor' in vncOptions:
+            self.letRemoteServerDealWithMouseCursorRadioButton.SetValue(vncOptions['letRemoteServerDealWithMouseCursor'])
         self.innerMouseCursorPanelSizer.Add(self.letRemoteServerDealWithMouseCursorRadioButton)
         self.letRemoteServerDealWithMouseCursorRadioButton.SetFont(smallFont)
         
         self.dontShowRemoteCursorRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Don't show remote cursor")
         self.dontShowRemoteCursorRadioButton.SetValue(False)
+        if 'dontShowRemoteCursor' in vncOptions:
+            self.dontShowRemoteCursorRadioButton.SetValue(vncOptions['dontShowRemoteCursor'])
         self.innerMouseCursorPanelSizer.Add(self.dontShowRemoteCursorRadioButton)
         self.dontShowRemoteCursorRadioButton.SetFont(smallFont)
         
@@ -654,6 +660,9 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['doubleBuffer'] = self.doubleBufferCheckBox.GetValue()
         self.vncOptions['fullScreen'] = self.fullScreenCheckBox.GetValue()
         self.vncOptions['deiconifyOnRemoteBellEvent'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()
+        self.vncOptions['trackRemoteCursorLocally'] = self.trackRemoteCursorLocallyRadioButton.GetValue()
+        self.vncOptions['letRemoteServerDealWithMouseCursor'] = self.letRemoteServerDealWithMouseCursorRadioButton.GetValue()
+        self.vncOptions['dontShowRemoteCursor'] = self.dontShowRemoteCursorRadioButton.GetValue()
         self.Close(True)
         
     def onToggleWriteLogToAFileCheckBox(self, event):
