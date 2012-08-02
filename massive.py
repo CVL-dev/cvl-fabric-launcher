@@ -336,14 +336,19 @@ class MyFrame(wx.Frame):
         massiveUsernameTextField.MoveAfterInTabOrder(sshTunnelCipherComboBox)
         massivePasswordField.MoveAfterInTabOrder(massiveUsernameTextField)
 
+        global optionsButton
+        optionsButton = wx.Button(loginDialogPanel, 1, 'Options...', (30, 305))
+
         global cancelButton
-        cancelButton = wx.Button(loginDialogPanel, 1, 'Cancel', (130, 305))
+        cancelButton = wx.Button(loginDialogPanel, 2, 'Cancel', (130, 305))
+
         global loginButton
-        loginButton = wx.Button(loginDialogPanel, 2, 'Login', (230, 305))
+        loginButton = wx.Button(loginDialogPanel, 3, 'Login', (230, 305))
         loginButton.SetDefault()
 
-        self.Bind(wx.EVT_BUTTON, self.OnCancel, id=1)
-        self.Bind(wx.EVT_BUTTON, self.OnLogin, id=2)
+        self.Bind(wx.EVT_BUTTON, self.OnOptions, id=1)
+        self.Bind(wx.EVT_BUTTON, self.OnCancel, id=2)
+        self.Bind(wx.EVT_BUTTON, self.OnLogin, id=3)
 
         self.statusbar = MyStatusBar(self)
         global loginDialogStatusBar
@@ -476,6 +481,9 @@ class MyFrame(wx.Frame):
             os.unlink(privateKeyFile.name)
         finally:
             os._exit(0)
+
+    def OnOptions(self, event):
+        import turboVncOptions
 
     def OnCancel(self, event):
         try:
