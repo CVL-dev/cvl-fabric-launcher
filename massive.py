@@ -887,6 +887,8 @@ class MassiveLauncherMainFrame(wx.Frame):
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "viewonly"
                         if 'doubleBuffer' in vncOptions and vncOptions['doubleBuffer']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
+                        if 'fullScreen' in vncOptions and vncOptions['fullScreen']==True:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "fullscreen"
 
                         if sys.platform.startswith("win"):
                             vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost::" + localPortNumber

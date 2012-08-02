@@ -203,7 +203,7 @@ class TurboVncOptions(wx.Dialog):
         self.viewOnlyCheckBox = wx.CheckBox(self.innerRestrictionsPanel, wx.ID_ANY, "View only (inputs ignored)")
         self.viewOnlyCheckBox.SetValue(False)
         if 'viewOnly' in vncOptions:
-            self.self.viewOnlyCheckBox.SetValue(vncOptions['viewOnly'])
+            self.viewOnlyCheckBox.SetValue(vncOptions['viewOnly'])
         self.innerRestrictionsPanelSizer.Add(self.viewOnlyCheckBox)
         self.viewOnlyCheckBox.SetFont(smallFont)
         
@@ -276,6 +276,8 @@ class TurboVncOptions(wx.Dialog):
         
         self.fullScreenModeCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Full-screen mode")
         self.fullScreenModeCheckBox.SetValue(False)
+        if 'fullScreen' in vncOptions:
+            self.fullScreenCheckBox.SetValue(vncOptions['fullScreen'])
         self.innerDisplayPanelSizer.Add(self.fullScreenModeCheckBox)
         self.fullScreenModeCheckBox.SetFont(smallFont)
         
@@ -648,6 +650,7 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['jpegChrominanceSubsampling'] = self.jpegChrominanceSubsamplingCommandLineString[self.jpegChrominanceSubsamplingSlider.GetValue()]
         self.vncOptions['viewOnly'] = self.viewOnlyCheckBox.GetValue()
         self.vncOptions['doubleBuffer'] = self.doubleBufferCheckBox.GetValue()
+        self.vncOptions['fullScreen'] = self.fullScreenCheckBox.GetValue()
         self.Close(True)
         
     def onToggleWriteLogToAFileCheckBox(self, event):
