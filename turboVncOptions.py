@@ -1,11 +1,13 @@
 import wx
 
-#class MainWindow(wx.Frame):
 class TurboVncOptions(wx.Dialog):
-    def __init__(self, parent, id, title):
-        #wx.Frame.__init__(self, parent, id, title, size=(680,480),
+    def __init__(self, parent, id, title, vncOptions):
         wx.Dialog.__init__(self, parent, id, title, size=(680,480),
             style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
+
+        self.vncOptions = vncOptions
+
+        self.okClicked = False
        
         self.Center()
         
@@ -364,6 +366,8 @@ class TurboVncOptions(wx.Dialog):
 
         self.requestSharedSessionCheckBox = wx.CheckBox(self.requestSharedSessionPanel, wx.ID_ANY, "Request shared session")
         self.requestSharedSessionCheckBox.SetValue(True)
+        if 'requestSharedSession' in vncOptions:
+            self.requestSharedSessionCheckBox.SetValue(vncOptions['requestSharedSession'])
         self.requestSharedSessionPanelSizer.Add(self.requestSharedSessionCheckBox)
         self.requestSharedSessionCheckBox.SetFont(smallFont)
         
@@ -609,17 +613,17 @@ class TurboVncOptions(wx.Dialog):
 
         self.Layout()
 
-        
-    def onExit(self, event):
-        self.Close(True)
-    
+    def getVncOptions(self):
+        return self.vncOptions
+
     def onOK(self, event):
+        self.okClicked = True
+        self.vncOptions['requestSharedSession'] = self.requestSharedSessionCheckBox.GetValue()
         self.Close(True)
         
     def onCancel(self, event):
+        self.okClicked = False
         self.Close(True)
-        #import sys
-        #sys.exit(0)
 
     def onToggleWriteLogToAFileCheckBox(self, event):
         self.vncViewerLogFilenameTextField.Enable(self.writeLogToAFileCheckBox.GetValue())
@@ -637,14 +641,10 @@ class TurboVncOptions(wx.Dialog):
 
 class turboVncOptions(wx.App):
     def OnInit(self):
-        #frame = MainWindow(None, wx.ID_ANY, "TurboVNC Viewer Options")
         frame = wx.Frame(None, wx.ID_ANY)
         frame.Show(True)
-        dialog = TurboVncOptions(frame, wx.ID_ANY, "TurboVNC Viewer Options")
+        vncOptions = {'requestSharedSession': True}
+        dialog = TurboVncOptions(frame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
         dialog.ShowModal()
-        #self.SetTopWindow(frame)
         return True
-
-#app = turboVncOptions(False)
-#app.MainLoop()  
 

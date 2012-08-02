@@ -66,6 +66,8 @@ import ConfigParser
 #logger = ssh.util.logging.getLogger()
 #logger.setLevel(logging.WARN)
 
+global vncOptions
+vncOptions = {}
 #defaultHost = "m2.massive.org.au"
 defaultHost = "m2-login2.massive.org.au"
 massiveLoginHost = ""
@@ -141,7 +143,7 @@ class MassiveLauncherMainFrame(wx.Frame):
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
             self.file_menu = wx.Menu()
             self.file_menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window and exit program.")
-            self.Bind(wx.EVT_MENU, self.OnExit, id=wx.ID_EXIT)
+            self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
             self.menu_bar.Append(self.file_menu, "&File")
 
         if sys.platform.startswith("darwin"):
@@ -153,18 +155,18 @@ class MassiveLauncherMainFrame(wx.Frame):
             # find the window/dialog which contains the menu.
             self.edit_menu = wx.Menu()
             self.edit_menu.Append(wx.ID_CUT, "Cut", "Cut the selected text")
-            self.Bind(wx.EVT_MENU, self.OnCut, id=wx.ID_CUT)
+            self.Bind(wx.EVT_MENU, self.onCut, id=wx.ID_CUT)
             self.edit_menu.Append(wx.ID_COPY, "Copy", "Copy the selected text")
-            self.Bind(wx.EVT_MENU, self.OnCopy, id=wx.ID_COPY)
+            self.Bind(wx.EVT_MENU, self.onCopy, id=wx.ID_COPY)
             self.edit_menu.Append(wx.ID_PASTE, "Paste", "Paste text from the clipboard")
-            self.Bind(wx.EVT_MENU, self.OnPaste, id=wx.ID_PASTE)
+            self.Bind(wx.EVT_MENU, self.onPaste, id=wx.ID_PASTE)
             self.edit_menu.Append(wx.ID_SELECTALL, "Select All")
-            self.Bind(wx.EVT_MENU, self.OnSelectAll, id=wx.ID_SELECTALL)
+            self.Bind(wx.EVT_MENU, self.onSelectAll, id=wx.ID_SELECTALL)
             self.menu_bar.Append(self.edit_menu, "&Edit")
 
         self.help_menu = wx.Menu()
         self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE Launcher")
-        self.Bind(wx.EVT_MENU, self.OnAbout, id=wx.ID_ABOUT)
+        self.Bind(wx.EVT_MENU, self.onAbout, id=wx.ID_ABOUT)
         self.menu_bar.Append(self.help_menu, "&Help")
 
         self.SetTitle("MASSIVE Launcher")
@@ -346,9 +348,9 @@ class MassiveLauncherMainFrame(wx.Frame):
         loginButton = wx.Button(loginDialogPanel, 3, 'Login', (230, 305))
         loginButton.SetDefault()
 
-        self.Bind(wx.EVT_BUTTON, self.OnOptions, id=1)
-        self.Bind(wx.EVT_BUTTON, self.OnCancel, id=2)
-        self.Bind(wx.EVT_BUTTON, self.OnLogin, id=3)
+        self.Bind(wx.EVT_BUTTON, self.onOptions, id=1)
+        self.Bind(wx.EVT_BUTTON, self.onCancel, id=2)
+        self.Bind(wx.EVT_BUTTON, self.onLogin, id=3)
 
         self.statusbar = MyStatusBar(self)
         global loginDialogStatusBar
@@ -447,7 +449,7 @@ class MassiveLauncherMainFrame(wx.Frame):
             newVersionAlertTextLabel2.SetFont(font)
             gs.Add(newVersionAlertTextLabel2, flag=wx.EXPAND)
 
-            def OnOK(event):
+            def onOK(event):
                 sys.exit(1)
 
             okButton = wx.Button(newVersionAlertTextPanel, 1, ' OK ')
@@ -456,7 +458,7 @@ class MassiveLauncherMainFrame(wx.Frame):
             gs.Add(wx.StaticText(newVersionAlertTextPanel))
             gs.Fit(newVersionAlertTextPanel)
 
-            newVersionAlertDialog.Bind(wx.EVT_BUTTON, OnOK, id=1)
+            newVersionAlertDialog.Bind(wx.EVT_BUTTON, onOK, id=1)
 
             gs = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=5)
             gs.Add(massiveIconPanel, flag=wx.EXPAND)
@@ -470,50 +472,57 @@ class MassiveLauncherMainFrame(wx.Frame):
 
             sys.exit(1)
  
-    def OnAbout(self, event):
+    def onAbout(self, event):
         dlg = wx.MessageDialog(self, "Version " + massive_launcher_version_number.version_number + "\n",
                                 "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 
-    def OnExit(self, event):
+    def onExit(self, event):
         try:
             os.unlink(privateKeyFile.name)
         finally:
             os._exit(0)
 
-    def OnOptions(self, event):
+    def onOptions(self, event):
         import turboVncOptions
-        turboVncOptionsDialog = turboVncOptions.TurboVncOptions(massiveLauncherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options")
+        #vncOptions = {'encodingMethod': 'Tight + Perceptually Lossless JPEG (LAN)', 'requestSharedSession': False}
+        global vncOptions
+        turboVncOptionsDialog = turboVncOptions.TurboVncOptions(massiveLauncherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
         turboVncOptionsDialog.ShowModal()
+        if turboVncOptionsDialog.okClicked:
+            vncOptions = turboVncOptionsDialog.getVncOptions()
+            #import pprint
+            #vncOptionsDictionaryString = pprint.pformat(vncOptions)
+            #wx.CallAfter(sys.stdout.write, vncOptionsDictionaryString + "\n")
 
-    def OnCancel(self, event):
+    def onCancel(self, event):
         try:
             os.unlink(privateKeyFile.name)
         finally:
             os._exit(0)
 
-    def OnCut(self, event):
+    def onCut(self, event):
         textCtrl = self.FindFocus()
         if textCtrl is not None:
             textCtrl.Cut()
 
-    def OnCopy(self, event):
+    def onCopy(self, event):
         textCtrl = self.FindFocus()
         if textCtrl is not None:
             textCtrl.Copy()
 
-    def OnPaste(self, event):
+    def onPaste(self, event):
         textCtrl = self.FindFocus()
         if textCtrl is not None:
             textCtrl.Paste()
 
-    def OnSelectAll(self, event):
+    def onSelectAll(self, event):
         textCtrl = self.FindFocus()
         if textCtrl is not None:
             textCtrl.SelectAll()
 
-    def OnLogin(self, event):
+    def onLogin(self, event):
         class LoginThread(threading.Thread):
             """Login Thread Class."""
             def __init__(self, notify_window):
@@ -863,12 +872,24 @@ class MassiveLauncherMainFrame(wx.Frame):
 
                     try:
                         if sys.platform.startswith("win"):
-                            proc = subprocess.Popen("\""+vnc+"\" /user "+username+" /autopass localhost:" + localPortNumber, 
+                            optionPrefixCharacter = "/"
+                        else:
+                            optionPrefixCharacter = "-"
+                        vncOptionsString = ""
+                        if 'requestSharedSession' in vncOptions and vncOptions['requestSharedSession']==False:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
+
+                        if sys.platform.startswith("win"):
+                            vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost:" + localPortNumber
+                            wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
+                            proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             proc.communicate(input=password)
                         else:
-                            subprocess.call("echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass localhost:" + localPortNumber,shell=True)
+                            vncCommandString = "echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass " + vncOptionsString + " localhost:" + localPortNumber
+                            wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
+                            subprocess.call(vncCommandString,shell=True)
                         try:
                             global sshTunnelProcess
                             sshTunnelProcess.terminate()
