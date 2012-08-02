@@ -885,19 +885,17 @@ class MassiveLauncherMainFrame(wx.Frame):
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + vncOptions['jpegChrominanceSubsampling']
                         if 'viewOnly' in vncOptions and vncOptions['viewOnly']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "viewonly"
-                        if 'doubleBuffer' in vncOptions and vncOptions['doubleBuffer']==False:
+                        if 'doubleBuffering' in vncOptions and vncOptions['doubleBuffering']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
-                        if 'fullScreen' in vncOptions and vncOptions['fullScreen']==True:
+                        if 'fullScreenMode' in vncOptions and vncOptions['fullScreenMode']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "fullscreen"
                         if 'deiconifyOnRemoteBellEvent' in vncOptions and vncOptions['deiconifyOnRemoteBellEvent']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noraiseonbeep"
                         if 'dontShowRemoteCursor' in vncOptions and vncOptions['dontShowRemoteCursor']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nocursorshape"
-                        else if 'letRemoteServerDealWithCursor' in vncOptions and vncOptions['letRemoteServerDealWithCursor']==True:
+                        elif 'letRemoteServerDealWithCursor' in vncOptions and vncOptions['letRemoteServerDealWithCursor']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "x11cursor"
                             
-
-
                         if sys.platform.startswith("win"):
                             vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost::" + localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
@@ -906,9 +904,9 @@ class MassiveLauncherMainFrame(wx.Frame):
                                 universal_newlines=True)
                             proc.communicate(input=password)
                         else:
-                            vncCommandString = "echo \"" + password + "\" | " + vnc + " -user " + username + " -autopass " + vncOptionsString + " localhost::" + localPortNumber
+                            vncCommandString = vnc + " -user " + username + " -autopass " + vncOptionsString + " localhost::" + localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
-                            subprocess.call(vncCommandString,shell=True)
+                            subprocess.call("echo \"" + password + "\" | " + vncCommandString,shell=True)
                         try:
                             global sshTunnelProcess
                             sshTunnelProcess.terminate()

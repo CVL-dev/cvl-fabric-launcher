@@ -269,15 +269,15 @@ class TurboVncOptions(wx.Dialog):
 
         self.doubleBufferingCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Double buffering")
         self.doubleBufferingCheckBox.SetValue(True)
-        if 'doubleBuffer' in vncOptions:
-            self.doubleBufferCheckBox.SetValue(vncOptions['doubleBuffer'])
+        if 'doubleBuffering' in vncOptions:
+            self.doubleBufferingCheckBox.SetValue(vncOptions['doubleBuffering'])
         self.innerDisplayPanelSizer.Add(self.doubleBufferingCheckBox)
         self.doubleBufferingCheckBox.SetFont(smallFont)
         
         self.fullScreenModeCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Full-screen mode")
         self.fullScreenModeCheckBox.SetValue(False)
-        if 'fullScreen' in vncOptions:
-            self.fullScreenCheckBox.SetValue(vncOptions['fullScreen'])
+        if 'fullScreenMode' in vncOptions:
+            self.fullScreenModeCheckBox.SetValue(vncOptions['fullScreenMode'])
         self.innerDisplayPanelSizer.Add(self.fullScreenModeCheckBox)
         self.fullScreenModeCheckBox.SetFont(smallFont)
         
@@ -304,7 +304,8 @@ class TurboVncOptions(wx.Dialog):
         self.innerDisplayPanelSizer.Add(self.spanModePanel, flag=wx.EXPAND)
 
         self.deiconifyOnRemoteBellEventCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Deiconify on remote Bell event")
-        self.deiconifyOnRemoteBellEventCheckBox.SetValue(False)
+        #self.deiconifyOnRemoteBellEventCheckBox.SetValue(False)
+        self.deiconifyOnRemoteBellEventCheckBox.SetValue(True)
         if 'deiconifyOnRemoteBellEvent' in vncOptions:
             self.deiconifyOnRemoteBellEventCheckBox.SetValue(vncOptions['deiconifyOnRemoteBellEvent'])
         self.innerDisplayPanelSizer.Add(self.deiconifyOnRemoteBellEventCheckBox)
@@ -657,8 +658,8 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['jpegImageQuality'] = self.jpegImageQualitySlider.GetValue()
         self.vncOptions['jpegChrominanceSubsampling'] = self.jpegChrominanceSubsamplingCommandLineString[self.jpegChrominanceSubsamplingSlider.GetValue()]
         self.vncOptions['viewOnly'] = self.viewOnlyCheckBox.GetValue()
-        self.vncOptions['doubleBuffer'] = self.doubleBufferCheckBox.GetValue()
-        self.vncOptions['fullScreen'] = self.fullScreenCheckBox.GetValue()
+        self.vncOptions['doubleBuffering'] = self.doubleBufferingCheckBox.GetValue()
+        self.vncOptions['fullScreenMode'] = self.fullScreenModeCheckBox.GetValue()
         self.vncOptions['deiconifyOnRemoteBellEvent'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()
         self.vncOptions['trackRemoteCursorLocally'] = self.trackRemoteCursorLocallyRadioButton.GetValue()
         self.vncOptions['letRemoteServerDealWithMouseCursor'] = self.letRemoteServerDealWithMouseCursorRadioButton.GetValue()
