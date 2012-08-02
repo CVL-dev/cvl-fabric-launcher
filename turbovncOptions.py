@@ -560,9 +560,7 @@ class MainWindow(wx.Frame):
         self.writeLogToAFileCheckBox = wx.CheckBox(self.innerLoggingPanel, wx.ID_ANY, "Write log to a file:")
         self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox, flag=wx.EXPAND)
         self.writeLogToAFileCheckBox.SetFont(smallFont)
-        def onToggleWriteLogToAFileCheckBox(self, event):
-            self.Close(True)
-        self.writeLogToAFileCheckBox.Bind(wx.EVT_BUTTON, self.onToggleWriteLogToAFileCheckBox)
+        self.writeLogToAFileCheckBox.Bind(wx.EVT_CHECKBOX, self.onToggleWriteLogToAFileCheckBox)
 
         self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(400,-1))
         self.vncViewerLogFilenameTextField.Disable()
@@ -635,6 +633,12 @@ class MainWindow(wx.Frame):
         self.Close(True)
         #import sys
         #sys.exit(0)
+
+    def onToggleWriteLogToAFileCheckBox(self, event):
+        self.vncViewerLogFilenameTextField.Enable(self.writeLogToAFileCheckBox.GetValue())
+        self.browseButton.Enable(self.writeLogToAFileCheckBox.GetValue())
+        self.verbosityLevelLabel.Enable(self.writeLogToAFileCheckBox.GetValue())
+        self.verbosityLevelSpinCtrl.Enable(self.writeLogToAFileCheckBox.GetValue())
 
 
 class wx11vnc(wx.App):
