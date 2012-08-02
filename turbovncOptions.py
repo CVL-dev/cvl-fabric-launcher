@@ -415,7 +415,7 @@ class MainWindow(wx.Frame):
         self.interfaceOptionsPanel.SetSizer(self.interfaceOptionsGroupBoxSizer)
 
         self.innerInterfaceOptionsPanel = wx.Panel(self.interfaceOptionsPanel, wx.ID_ANY)
-        self.innerInterfaceOptionsPanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5,hgap=5)
+        self.innerInterfaceOptionsPanelSizer = wx.FlexGridSizer(rows=5, cols=1, vgap=5,hgap=5)
         self.innerInterfaceOptionsPanel.SetSizer(self.innerInterfaceOptionsPanelSizer)
 
         self.showToolbarsByDefaultCheckBox = wx.CheckBox(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Show toolbars by default")
@@ -428,14 +428,30 @@ class MainWindow(wx.Frame):
         self.innerInterfaceOptionsPanelSizer.Add(self.warnWhenSwitchingToFullScreenModeCheckBox)
         self.warnWhenSwitchingToFullScreenModeCheckBox.SetFont(smallFont)
         
-        self.numberOfConnectionsToRememberLabel = wx.StaticText(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Number of connections to remember:")
-        self.innerInterfaceOptionsPanelSizer.Add(self.numberOfConnectionsToRememberLabel)
+        self.numberOfConnectionsToRememberPanel = wx.Panel(self.innerInterfaceOptionsPanel, wx.ID_ANY)
+        self.numberOfConnectionsToRememberPanelSizer = wx.FlexGridSizer(rows=2, cols=2, vgap=5,hgap=5)
+        self.numberOfConnectionsToRememberPanel.SetSizer(self.numberOfConnectionsToRememberPanelSizer)
+
+        self.numberOfConnectionsToRememberLabel = wx.StaticText(self.numberOfConnectionsToRememberPanel, wx.ID_ANY, "Number of connections to remember:   ")
         self.numberOfConnectionsToRememberLabel.SetFont(smallFont)
+        self.numberOfConnectionsToRememberPanelSizer.Add(self.numberOfConnectionsToRememberLabel, flag=wx.ALIGN_CENTER_VERTICAL)
+
+        self.numberOfConnectionsToRememberSpinCtrl = wx.SpinCtrl(self.numberOfConnectionsToRememberPanel, value='32')
+        self.numberOfConnectionsToRememberSpinCtrl.SetFont(smallFont)
+        self.numberOfConnectionsToRememberPanelSizer.Add(self.numberOfConnectionsToRememberSpinCtrl)
         
+        # This shouldn't be necessary but, otherwise the bottom border of the combo-box is clipped on my Mac.
+        self.numberOfConnectionsToRememberPanelSizer.Add(wx.Panel(self.numberOfConnectionsToRememberPanel, wx.ID_ANY))
+
+        self.numberOfConnectionsToRememberPanel.SetSizerAndFit(self.numberOfConnectionsToRememberPanelSizer)
+        self.innerInterfaceOptionsPanelSizer.Add(self.numberOfConnectionsToRememberPanel, flag=wx.EXPAND)
+
         self.clearTheListOfSavedConnectionsButton = wx.Button(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Clear the list of saved connections")
         self.innerInterfaceOptionsPanelSizer.Add(self.clearTheListOfSavedConnectionsButton)
         self.clearTheListOfSavedConnectionsButton.SetFont(smallFont)
         
+        self.innerInterfaceOptionsPanelSizer.Add(wx.Panel(self.innerInterfaceOptionsPanel, wx.ID_ANY))
+
         self.innerInterfaceOptionsPanel.SetSizerAndFit(self.innerInterfaceOptionsPanelSizer)
         self.interfaceOptionsGroupBoxSizer.Add(self.innerInterfaceOptionsPanel, flag=wx.EXPAND)
         self.interfaceOptionsPanel.SetSizerAndFit(self.interfaceOptionsGroupBoxSizer)
