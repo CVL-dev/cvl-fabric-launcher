@@ -70,7 +70,8 @@ global vncOptions
 vncOptions = {}
 #defaultHost = "m2.massive.org.au"
 defaultHost = "m2-login2.massive.org.au"
-massiveLoginHost = ""
+global vncLoginHost
+vncLoginHost = ""
 global project
 project = ""
 global hours
@@ -89,8 +90,8 @@ sshTunnelReady = False
 global localPortNumber
 localPortNumber = "5901"
 global privateKeyFile
-global massiveLauncherMainFrame
-massiveLauncherMainFrame = None
+global launcherMainFrame
+launcherMainFrame = None
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self):
@@ -169,37 +170,51 @@ class MassiveLauncherMainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onAbout, id=wx.ID_ABOUT)
         self.menu_bar.Append(self.help_menu, "&Help")
 
-        self.SetTitle("MASSIVE Launcher")
+        self.SetTitle("MASSIVE / CVL Launcher")
 
         self.SetMenuBar(self.menu_bar)
 
         global loginDialogPanel
         loginDialogPanel = wx.Panel(self)
 
-        global massiveHostLabel
-        massiveHostLabel = wx.StaticText(loginDialogPanel, -1, 'MASSIVE host', (10, 20))
+        global vncLoginHostLabel
+        #vncLoginHostLabel = wx.StaticText(loginDialogPanel, -1, 'MASSIVE host', (10, 20))
+        vncLoginHostLabel = wx.StaticText(loginDialogPanel, -1, 'Host', (10, 20))
         global massiveProjectLabel
         massiveProjectLabel = wx.StaticText(loginDialogPanel, -1, 'MASSIVE project', (10, 60))
         global massiveHoursLabel
         massiveHoursLabel = wx.StaticText(loginDialogPanel, -1, 'Hours requested', (10, 100))
-        global massiveDisplayResolutionLabel
-        massiveDisplayResolutionLabel = wx.StaticText(loginDialogPanel, -1, 'Resolution', (10, 140))
+        global vncDisplayResolutionLabel
+        vncDisplayResolutionLabel = wx.StaticText(loginDialogPanel, -1, 'Resolution', (10, 140))
         global sshTunnelCipherLabel
         sshTunnelCipherLabel = wx.StaticText(loginDialogPanel, -1, 'SSH tunnel cipher', (10, 180))
-        global massiveUsernameLabel
-        massiveUsernameLabel = wx.StaticText(loginDialogPanel, -1, 'Username', (10, 220))
-        global massivePasswordLabel
-        massivePasswordLabel = wx.StaticText(loginDialogPanel, -1, 'Password', (10, 260))
+        global usernameLabel
+        usernameLabel = wx.StaticText(loginDialogPanel, -1, 'Username', (10, 220))
+        global passwordLabel
+        passwordLabel = wx.StaticText(loginDialogPanel, -1, 'Password', (10, 260))
 
         widgetWidth1 = 180
         widgetWidth2 = 180
         if not sys.platform.startswith("win"):
             widgetWidth2 = widgetWidth2 + 25
 
-        massiveHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
-            "m2-login1.massive.org.au", "m2-login2.massive.org.au"]
-        global massiveHostComboBox
-        massiveHostComboBox = wx.ComboBox(loginDialogPanel, -1, value=defaultHost, pos=(125, 15), size=(widgetWidth2, -1),choices=massiveHosts, style=wx.CB_DROPDOWN)
+        vncLoginHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
+            "m2-login1.massive.org.au", "m2-login2.massive.org.au","cvldemo"]
+        global vncLoginHostComboBox
+        vncLoginHostComboBox = wx.ComboBox(loginDialogPanel, -1, value=defaultHost, pos=(125, 15), size=(widgetWidth2, -1),choices=vncLoginHosts, style=wx.CB_DROPDOWN)
+        if config.has_section("MASSIVE Launcher Preferences"):
+            if config.has_option("MASSIVE Launcher Preferences", "vncLoginHost"):
+                vncLoginHost = config.get("MASSIVE Launcher Preferences", "vncLoginHost")
+            else:
+                config.set("MASSIVE Launcher Preferences","vncLoginHost","")
+                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                    config.write(massiveLauncherPreferencesFileObject)
+        else:
+            config.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                config.write(massiveLauncherPreferencesFileObject)
+        if vncLoginHost.strip()!="":
+            vncLoginHostComboBox.SetValue(vncLoginHost)
 
         global defaultProjectPlaceholder
         defaultProjectPlaceholder = '[Use my default project]'
@@ -321,22 +336,22 @@ class MassiveLauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        global massiveUsernameTextField
-        massiveUsernameTextField = wx.TextCtrl(loginDialogPanel, -1, username,  (125, 215), (widgetWidth1, -1))
+        global usernameTextField
+        usernameTextField = wx.TextCtrl(loginDialogPanel, -1, username,  (125, 215), (widgetWidth1, -1))
         if username.strip()!="":
-            massiveUsernameTextField.SelectAll()
+            usernameTextField.SelectAll()
 
-        global massivePasswordField
-        massivePasswordField = wx.TextCtrl(loginDialogPanel, -1, '',  (125, 255), (widgetWidth1, -1), style=wx.TE_PASSWORD)
+        global passwordField
+        passwordField = wx.TextCtrl(loginDialogPanel, -1, '',  (125, 255), (widgetWidth1, -1), style=wx.TE_PASSWORD)
 
-        massiveUsernameTextField.SetFocus()
+        usernameTextField.SetFocus()
 
-        massiveProjectComboBox.MoveAfterInTabOrder(massiveHostComboBox)
+        massiveProjectComboBox.MoveAfterInTabOrder(vncLoginHostComboBox)
         massiveHoursField.MoveAfterInTabOrder(massiveProjectComboBox)
         massiveResolutionComboBox.MoveAfterInTabOrder(massiveHoursField)
         sshTunnelCipherComboBox.MoveAfterInTabOrder(massiveResolutionComboBox)
-        massiveUsernameTextField.MoveAfterInTabOrder(sshTunnelCipherComboBox)
-        massivePasswordField.MoveAfterInTabOrder(massiveUsernameTextField)
+        usernameTextField.MoveAfterInTabOrder(sshTunnelCipherComboBox)
+        passwordField.MoveAfterInTabOrder(usernameTextField)
 
         global optionsButton
         optionsButton = wx.Button(loginDialogPanel, 1, 'Options...', (15, 305))
@@ -378,7 +393,7 @@ class MassiveLauncherMainFrame(wx.Frame):
         latestVersion = myHtmlParser.data[0].strip()
 
         if latestVersion!=massive_launcher_version_number.version_number:
-            newVersionAlertDialog = wx.Dialog(massiveLauncherMainFrame, title="MASSIVE Launcher", name="MASSIVE Launcher",pos=(200,150),size=(680,290))
+            newVersionAlertDialog = wx.Dialog(launcherMainFrame, title="MASSIVE Launcher", name="MASSIVE Launcher",pos=(200,150),size=(680,290))
 
             if sys.platform.startswith("win"):
                 _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -487,7 +502,7 @@ class MassiveLauncherMainFrame(wx.Frame):
     def onOptions(self, event):
         import turboVncOptions
         global vncOptions
-        turboVncOptionsDialog = turboVncOptions.TurboVncOptions(massiveLauncherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
+        turboVncOptionsDialog = turboVncOptions.TurboVncOptions(launcherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
         turboVncOptionsDialog.ShowModal()
         if turboVncOptionsDialog.okClicked:
             vncOptions = turboVncOptionsDialog.getVncOptions()
@@ -534,18 +549,18 @@ class MassiveLauncherMainFrame(wx.Frame):
                 """Run Worker Thread."""
 
                 waitCursor = wx.StockCursor(wx.CURSOR_WAIT)
-                massiveLauncherMainFrame.SetCursor(waitCursor)
+                launcherMainFrame.SetCursor(waitCursor)
                 loginDialogPanel.SetCursor(waitCursor)
-                massiveHostLabel.SetCursor(waitCursor)
+                vncLoginHostLabel.SetCursor(waitCursor)
                 massiveProjectLabel.SetCursor(waitCursor)
                 massiveHoursLabel.SetCursor(waitCursor)
-                massiveUsernameLabel.SetCursor(waitCursor)
-                massivePasswordLabel.SetCursor(waitCursor)
-                massiveHostComboBox.SetCursor(waitCursor)
+                usernameLabel.SetCursor(waitCursor)
+                passwordLabel.SetCursor(waitCursor)
+                vncLoginHostComboBox.SetCursor(waitCursor)
                 massiveProjectComboBox.SetCursor(waitCursor)
                 massiveHoursField.SetCursor(waitCursor)
-                massiveUsernameTextField.SetCursor(waitCursor)
-                massivePasswordField.SetCursor(waitCursor)
+                usernameTextField.SetCursor(waitCursor)
+                passwordField.SetCursor(waitCursor)
                 cancelButton.SetCursor(waitCursor)
                 loginButton.SetCursor(waitCursor)
 
@@ -553,12 +568,12 @@ class MassiveLauncherMainFrame(wx.Frame):
                 global loginDialogStatusBar
 
                 try:
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Logging in to " + massiveLoginHost)
-                    wx.CallAfter(sys.stdout.write, "Attempting to log in to " + massiveLoginHost + "...\n")
+                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Logging in to " + vncLoginHost)
+                    wx.CallAfter(sys.stdout.write, "Attempting to log in to " + vncLoginHost + "...\n")
                     
                     sshClient = ssh.SSHClient()
                     sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                    sshClient.connect(massiveLoginHost,username=username,password=password)
+                    sshClient.connect(vncLoginHost,username=username,password=password)
 
                     wx.CallAfter(sys.stdout.write, "First login done.\n")
 
@@ -575,105 +590,110 @@ class MassiveLauncherMainFrame(wx.Frame):
                     
                     wx.CallAfter(sys.stdout.write, "\n")
 
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Checking quota...")
+                    if "massive" in vncLoginHost:
+                        # Begin if "massive" in vncLoginHost:
 
-                    stdin,stdout,stderr = sshClient.exec_command("mybalance --hours")
-                    wx.CallAfter(sys.stdout.write, stderr.read())
-                    wx.CallAfter(sys.stdout.write, stdout.read())
+                        wx.CallAfter(loginDialogStatusBar.SetStatusText, "Checking quota...")
 
-                    wx.CallAfter(sys.stdout.write, "\n")
+                        stdin,stdout,stderr = sshClient.exec_command("mybalance --hours")
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                        wx.CallAfter(sys.stdout.write, stdout.read())
 
-                    stdin,stdout,stderr = sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
-                    wx.CallAfter(sys.stdout.write, stderr.read())
-                    wx.CallAfter(sys.stdout.write, stdout.read())
+                        wx.CallAfter(sys.stdout.write, "\n")
 
-                    wx.CallAfter(sys.stdout.write, "\n")
+                        stdin,stdout,stderr = sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                        wx.CallAfter(sys.stdout.write, stdout.read())
 
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
+                        wx.CallAfter(sys.stdout.write, "\n")
 
-                    #qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
-                    qsubcmd = "/usr/local/desktop/request_visnode.sh " + project + " " + hours
+                        wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
 
-                    wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
-                    wx.CallAfter(sys.stdout.write, "\n")
-                  
-                    transport = sshClient.get_transport()
-                    channel = transport.open_session()
-                    channel.get_pty()
-                    channel.setblocking(0)
-                    channel.invoke_shell()
-                    out = ""
-                    channel.send(qsubcmd + "\n")
+                        #qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
+                        qsubcmd = "/usr/local/desktop/request_visnode.sh " + project + " " + hours
 
-                    lineNumber = 0
-                    startingXServerLineNumber = -1
-                    breakOutOfMainLoop = False
-                    lineFragment = ""
-                    checkedShowStart = False
-                    jobNumber = "0.m2-m"
+                        wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
+                        wx.CallAfter(sys.stdout.write, "\n")
+                      
+                        transport = sshClient.get_transport()
+                        channel = transport.open_session()
+                        channel.get_pty()
+                        channel.setblocking(0)
+                        channel.invoke_shell()
+                        out = ""
+                        channel.send(qsubcmd + "\n")
 
-                    while True:
-                        tCheck = 0
-                        while not channel.recv_ready() and not channel.recv_stderr_ready():
-                            #Use asterisks to simulate progress bar:
-                            #wx.CallAfter(sys.stdout.write, "*")
-                            time.sleep(1)
-                            tCheck+=1
-                            if tCheck >= 10:
-                                # After 10 seconds, we still haven't obtained a visnode...
-                                if (not checkedShowStart) and jobNumber!="0.m2-m":
-                                    checkedShowStart = True
-                                    def showStart():
-                                        sshClient2 = ssh.SSHClient()
-                                        sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                                        sshClient2.connect(massiveLoginHost,username=username,password=password)
-                                        stdin,stdout,stderr = sshClient2.exec_command("showstart " + jobNumber)
-                                        stderrRead = stderr.read()
-                                        stdoutRead = stdout.read()
-                                        if not "00:00:00" in stdoutRead:
-                                            wx.CallAfter(sys.stdout.write, "showstart " + jobNumber + "...\n")
-                                            wx.CallAfter(sys.stdout.write, stderrRead)
-                                            wx.CallAfter(sys.stdout.write, stdoutRead)
-                                        sshClient2.close()
+                        lineNumber = 0
+                        startingXServerLineNumber = -1
+                        breakOutOfMainLoop = False
+                        lineFragment = ""
+                        checkedShowStart = False
+                        jobNumber = "0.m2-m"
 
-                                    showStartThread = threading.Thread(target=showStart)
-                                    showStartThread.start()
-                                break
-                        if (channel.recv_stderr_ready()):
-                            out = channel.recv_stderr(1024)
-                            buff = StringIO.StringIO(out)
-                            line = lineFragment + buff.readline()
-                            while line != "":
-                                wx.CallAfter(sys.stdout.write, "ERROR: " + line + "\n")
-                        if (channel.recv_ready()):
-                            out = channel.recv(1024)
-                            buff = StringIO.StringIO(out)
-                            line = lineFragment + buff.readline()
-                            while line != "":
-                                lineNumber += 1
-                                if not line.endswith("\n") and not line.endswith("\r"):
-                                    lineFragment = line
+                        while True:
+                            tCheck = 0
+                            while not channel.recv_ready() and not channel.recv_stderr_ready():
+                                #Use asterisks to simulate progress bar:
+                                #wx.CallAfter(sys.stdout.write, "*")
+                                time.sleep(1)
+                                tCheck+=1
+                                if tCheck >= 10:
+                                    # After 10 seconds, we still haven't obtained a visnode...
+                                    if (not checkedShowStart) and jobNumber!="0.m2-m":
+                                        checkedShowStart = True
+                                        def showStart():
+                                            sshClient2 = ssh.SSHClient()
+                                            sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                                            sshClient2.connect(vncLoginHost,username=username,password=password)
+                                            stdin,stdout,stderr = sshClient2.exec_command("showstart " + jobNumber)
+                                            stderrRead = stderr.read()
+                                            stdoutRead = stdout.read()
+                                            if not "00:00:00" in stdoutRead:
+                                                wx.CallAfter(sys.stdout.write, "showstart " + jobNumber + "...\n")
+                                                wx.CallAfter(sys.stdout.write, stderrRead)
+                                                wx.CallAfter(sys.stdout.write, stdoutRead)
+                                            sshClient2.close()
+
+                                        showStartThread = threading.Thread(target=showStart)
+                                        showStartThread.start()
                                     break
-                                else:
-                                    lineFragment = ""
-                                if "waiting for job" in line:
-                                    wx.CallAfter(sys.stdout.write, line)
-                                    lineSplit = line.split(" ")
-                                    jobNumber = lineSplit[4] # e.g. 3050965.m2-m
-                                    jobNumberSplit = jobNumber.split(".")
-                                    jobNumber = jobNumberSplit[0]
-                                if "Starting XServer on the following nodes" in line:
-                                    startingXServerLineNumber = lineNumber
-                                if lineNumber == (startingXServerLineNumber + 1): # vis node
-                                    visnode = line.strip()
-                                    breakOutOfMainLoop = True
-                                line = buff.readline()
-                        if breakOutOfMainLoop:
-                            break
+                            if (channel.recv_stderr_ready()):
+                                out = channel.recv_stderr(1024)
+                                buff = StringIO.StringIO(out)
+                                line = lineFragment + buff.readline()
+                                while line != "":
+                                    wx.CallAfter(sys.stdout.write, "ERROR: " + line + "\n")
+                            if (channel.recv_ready()):
+                                out = channel.recv(1024)
+                                buff = StringIO.StringIO(out)
+                                line = lineFragment + buff.readline()
+                                while line != "":
+                                    lineNumber += 1
+                                    if not line.endswith("\n") and not line.endswith("\r"):
+                                        lineFragment = line
+                                        break
+                                    else:
+                                        lineFragment = ""
+                                    if "waiting for job" in line:
+                                        wx.CallAfter(sys.stdout.write, line)
+                                        lineSplit = line.split(" ")
+                                        jobNumber = lineSplit[4] # e.g. 3050965.m2-m
+                                        jobNumberSplit = jobNumber.split(".")
+                                        jobNumber = jobNumberSplit[0]
+                                    if "Starting XServer on the following nodes" in line:
+                                        startingXServerLineNumber = lineNumber
+                                    if lineNumber == (startingXServerLineNumber + 1): # vis node
+                                        visnode = line.strip()
+                                        breakOutOfMainLoop = True
+                                    line = buff.readline()
+                            if breakOutOfMainLoop:
+                                break
 
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
+                        wx.CallAfter(loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
 
-                    wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
+                        wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
+
+                        # End if "massive" in vncLoginHost:
 
                     wx.CallAfter(sys.stdout.write, "Generating SSH key-pair for tunnel...\n\n")
 
@@ -685,7 +705,10 @@ class MassiveLauncherMainFrame(wx.Frame):
                     stdin,stdout,stderr = sshClient.exec_command("/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/mkdir ~/.ssh")
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/chmod 700 ~/.ssh")
                     stdin,stdout,stderr = sshClient.exec_command("/bin/touch ~/.ssh/authorized_keys")
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/chmod 600 ~/.ssh/authorized_keys")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
                     stdin,stdout,stderr = sshClient.exec_command("/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys")
@@ -754,7 +777,7 @@ class MassiveLauncherMainFrame(wx.Frame):
                             wx.CallAfter(sys.stdout.write, chmod_cmd + "\n")
                             subprocess.call(chmod_cmd, shell=True)
 
-                            proxyCommand = "-oProxyCommand=\"ssh -c " + cipher + " -i " + privateKeyFile.name +" "+username+"@"+massiveLoginHost+" 'nc %h %p'\""
+                            proxyCommand = "-oProxyCommand=\"ssh -c " + cipher + " -i " + privateKeyFile.name +" "+username+"@"+vncLoginHost+" 'nc %h %p'\""
                             wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
 
                             global localPortNumber
@@ -774,10 +797,16 @@ class MassiveLauncherMainFrame(wx.Frame):
                                 #"-A " + proxyCommand + " " \
                                 #"-L " + localPortNumber + ":localhost:5901" + " -l " + username+" "+visnode+"-ib"
 
-                            tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
-                                "-t -t " \
-                                "-oStrictHostKeyChecking=no " \
-                                "-L " + localPortNumber + ":"+visnode+"-ib:5901" + " -l " + username+" "+massiveLoginHost
+                            if "massive" in vncLoginHost:
+                                tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
+                                    "-t -t " \
+                                    "-oStrictHostKeyChecking=no " \
+                                    "-L " + localPortNumber + ":"+visnode+"-ib:5901" + " -l " + username+" "+vncLoginHost
+                            else:
+                                tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
+                                    "-t -t " \
+                                    "-oStrictHostKeyChecking=no " \
+                                    "-L " + localPortNumber + ":localhost:5901" + " -l " + username+" "+vncLoginHost
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
                             global sshTunnelProcess
@@ -786,12 +815,16 @@ class MassiveLauncherMainFrame(wx.Frame):
 
                             global sshTunnelReady
                             sshTunnelReady = False
-                            while True:
-                                time.sleep(1)
-                                line = sshTunnelProcess.stdout.readline()
-                                if "Welcome to MASSIVE" in line:
-                                    sshTunnelReady = True
-                                    break
+                            print "Need to determine a way (independent of MASSIVE) to check whether SSH tunnel is ready."
+                            if "massive" in vncLoginHost:
+                                while True:
+                                    time.sleep(1)
+                                    line = sshTunnelProcess.stdout.readline()
+                                    if "Welcome to MASSIVE" in line:
+                                        sshTunnelReady = True
+                                        break
+                            else:
+                                sshTunnelReady = True
 
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
@@ -810,7 +843,7 @@ class MassiveLauncherMainFrame(wx.Frame):
                     tunnelThread.start()
 
                     count = 1
-                    while not sshTunnelReady and count < 30:
+                    while not sshTunnelReady and count < 30 and "massive" in vncLoginHost:
                         time.sleep(1)
                         count = count + 1
 
@@ -915,18 +948,18 @@ class MassiveLauncherMainFrame(wx.Frame):
                             os._exit(0)
 
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
-                        massiveLauncherMainFrame.SetCursor(arrowCursor)
+                        launcherMainFrame.SetCursor(arrowCursor)
                         loginDialogPanel.SetCursor(arrowCursor)
-                        massiveHostLabel.SetCursor(arrowCursor)
+                        vncLoginHostLabel.SetCursor(arrowCursor)
                         massiveProjectLabel.SetCursor(arrowCursor)
                         massiveHoursLabel.SetCursor(arrowCursor)
-                        massiveUsernameLabel.SetCursor(arrowCursor)
-                        massivePasswordLabel.SetCursor(arrowCursor)
-                        massiveHostComboBox.SetCursor(arrowCursor)
+                        usernameLabel.SetCursor(arrowCursor)
+                        passwordLabel.SetCursor(arrowCursor)
+                        vncLoginHostComboBox.SetCursor(arrowCursor)
                         massiveProjectComboBox.SetCursor(arrowCursor)
                         massiveHoursField.SetCursor(arrowCursor)
-                        massiveUsernameTextField.SetCursor(arrowCursor)
-                        massivePasswordField.SetCursor(arrowCursor)
+                        usernameTextField.SetCursor(arrowCursor)
+                        passwordField.SetCursor(arrowCursor)
                         cancelButton.SetCursor(arrowCursor)
                         loginButton.SetCursor(arrowCursor)
 
@@ -935,18 +968,18 @@ class MassiveLauncherMainFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
-                        massiveLauncherMainFrame.SetCursor(arrowCursor)
+                        launcherMainFrame.SetCursor(arrowCursor)
                         loginDialogPanel.SetCursor(arrowCursor)
-                        massiveHostLabel.SetCursor(arrowCursor)
+                        vncLoginHostLabel.SetCursor(arrowCursor)
                         massiveProjectLabel.SetCursor(arrowCursor)
                         massiveHoursLabel.SetCursor(arrowCursor)
-                        massiveUsernameLabel.SetCursor(arrowCursor)
-                        massivePasswordLabel.SetCursor(arrowCursor)
-                        massiveHostComboBox.SetCursor(arrowCursor)
+                        usernameLabel.SetCursor(arrowCursor)
+                        passwordLabel.SetCursor(arrowCursor)
+                        vncLoginHostComboBox.SetCursor(arrowCursor)
                         massiveProjectComboBox.SetCursor(arrowCursor)
                         massiveHoursField.SetCursor(arrowCursor)
-                        massiveUsernameTextField.SetCursor(arrowCursor)
-                        massivePasswordField.SetCursor(arrowCursor)
+                        usernameTextField.SetCursor(arrowCursor)
+                        passwordField.SetCursor(arrowCursor)
                         cancelButton.SetCursor(arrowCursor)
                         loginButton.SetCursor(arrowCursor)
 
@@ -955,24 +988,24 @@ class MassiveLauncherMainFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
-                    massiveLauncherMainFrame.SetCursor(arrowCursor)
+                    launcherMainFrame.SetCursor(arrowCursor)
                     loginDialogPanel.SetCursor(arrowCursor)
-                    massiveHostLabel.SetCursor(arrowCursor)
+                    vncLoginHostLabel.SetCursor(arrowCursor)
                     massiveProjectLabel.SetCursor(arrowCursor)
                     massiveHoursLabel.SetCursor(arrowCursor)
-                    massiveUsernameLabel.SetCursor(arrowCursor)
-                    massivePasswordLabel.SetCursor(arrowCursor)
-                    massiveHostComboBox.SetCursor(arrowCursor)
+                    usernameLabel.SetCursor(arrowCursor)
+                    passwordLabel.SetCursor(arrowCursor)
+                    vncLoginHostComboBox.SetCursor(arrowCursor)
                     massiveProjectComboBox.SetCursor(arrowCursor)
                     massiveHoursField.SetCursor(arrowCursor)
-                    massiveUsernameTextField.SetCursor(arrowCursor)
-                    massivePasswordField.SetCursor(arrowCursor)
+                    usernameTextField.SetCursor(arrowCursor)
+                    passwordField.SetCursor(arrowCursor)
                     cancelButton.SetCursor(arrowCursor)
                     loginButton.SetCursor(arrowCursor)
 
-        username = massiveUsernameTextField.GetValue()
-        password = massivePasswordField.GetValue()
-        massiveLoginHost = massiveHostComboBox.GetValue()
+        username = usernameTextField.GetValue()
+        password = passwordField.GetValue()
+        vncLoginHost = vncLoginHostComboBox.GetValue()
         hours = str(massiveHoursField.GetValue())
         project = massiveProjectComboBox.GetValue()
         if project == defaultProjectPlaceholder:
@@ -987,6 +1020,7 @@ class MassiveLauncherMainFrame(wx.Frame):
         cipher = sshTunnelCipherComboBox.GetValue()
 
         config.set("MASSIVE Launcher Preferences","username",username)
+        config.set("MASSIVE Launcher Preferences","host",vncLoginHost)
         config.set("MASSIVE Launcher Preferences","project",project)
         config.set("MASSIVE Launcher Preferences","hours",hours)
         config.set("MASSIVE Launcher Preferences","resolution",resolution)
@@ -994,7 +1028,12 @@ class MassiveLauncherMainFrame(wx.Frame):
         with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
             config.write(massiveLauncherPreferencesFileObject)
 
-        logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
+        if "massive" in vncLoginHost:
+            logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
+        elif "cvl" in vncLoginHost:
+            logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
+        else:
+            logWindow = wx.Frame(self, title="Launcher Log Window", name="Launcher Log Window",pos=(200,150),size=(700,450))
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -1045,9 +1084,9 @@ class MyApp(wx.App):
         if os.path.exists(massiveLauncherPreferencesFilePath):
             config.read(massiveLauncherPreferencesFilePath)
 
-        global massiveLauncherMainFrame
-        massiveLauncherMainFrame = MassiveLauncherMainFrame(None, -1, 'MASSIVE Launcher')
-        massiveLauncherMainFrame.Show(True)
+        global launcherMainFrame
+        launcherMainFrame = MassiveLauncherMainFrame(None, -1, 'MASSIVE Launcher')
+        launcherMainFrame.Show(True)
         return True
 
 app = MyApp(False) # Don't automatically redirect sys.stdout and sys.stderr to a Window.
