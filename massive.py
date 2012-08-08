@@ -911,12 +911,15 @@ class MassiveLauncherMainFrame(wx.Frame):
                         vncOptionsString = ""
                         if 'requestSharedSession' in vncOptions and vncOptions['requestSharedSession']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
-                        defaultJpegImageQuality = 95
+                        defaultJpegImageQuality = "95"
                         if 'jpegImageQuality' in vncOptions and vncOptions['jpegImageQuality']!=defaultJpegImageQuality:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + vncOptions['jpegImageQuality']
                         defaultJpegChrominanceSubsampling = "1x"
                         if 'jpegChrominanceSubsampling' in vncOptions and vncOptions['jpegChrominanceSubsampling']!=defaultJpegChrominanceSubsampling:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + vncOptions['jpegChrominanceSubsampling']
+                        if 'zlibCompressionEnabled' in vncOptions and vncOptions['zlibCompressionEnabled']==True:
+                            if 'zlibCompressionLevel' in vncOptions:
+                                vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + vncOptions['zlibCompressionLevel']
                         if 'viewOnly' in vncOptions and vncOptions['viewOnly']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "viewonly"
                         if 'doubleBuffering' in vncOptions and vncOptions['doubleBuffering']==False:
