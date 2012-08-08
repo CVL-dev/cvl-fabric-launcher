@@ -198,6 +198,7 @@ class MassiveLauncherMainFrame(wx.Frame):
         if not sys.platform.startswith("win"):
             widgetWidth2 = widgetWidth2 + 25
 
+        global vncLoginHost
         vncLoginHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
             "m2-login1.massive.org.au", "m2-login2.massive.org.au","cvldemo"]
         global vncLoginHostComboBox
