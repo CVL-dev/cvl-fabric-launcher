@@ -955,6 +955,14 @@ class MassiveLauncherMainFrame(wx.Frame):
                         if sys.platform.startswith("win"):
                             if 'toolbar' in vncOptions and vncOptions['toolbar']==False:
                                 vncOptionsString = vncOptionsString + " /notoolbar"
+                            if 'dotcursor' in vncOptions and vncOptions['dotcursor']==True:
+                                vncOptionsString = vncOptionsString + " /dotcursor"
+                            if 'smalldotcursor' in vncOptions and vncOptions['smalldotcursor']==True:
+                                vncOptionsString = vncOptionsString + " /smalldotcursor"
+                            if 'normalcursor' in vncOptions and vncOptions['normalcursor']==True:
+                                vncOptionsString = vncOptionsString + " /normalcursor"
+                            if 'nocursor' in vncOptions and vncOptions['nocursor']==True:
+                                vncOptionsString = vncOptionsString + " /nocursor"
                             
                         if sys.platform.startswith("win"):
                             vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost::" + localPortNumber

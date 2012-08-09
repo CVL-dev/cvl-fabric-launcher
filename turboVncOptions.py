@@ -642,21 +642,33 @@ class TurboVncOptions(wx.Dialog):
         self.innerLocalCursorShapePanel.SetSizer(self.innerLocalCursorShapePanelSizer)
 
         self.dotCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Dot cursor")
-        self.dotCursorRadioButton.SetValue(True)
+        if sys.platform.startswith("win"):
+            self.dotCursorRadioButton.SetValue(True)
+            if 'dotcursor' in vncOptions:
+                self.dotCursorRadioButton.SetValue(vncOptions['dotcursor'])
         self.innerLocalCursorShapePanelSizer.Add(self.dotCursorRadioButton)
         self.dotCursorRadioButton.SetFont(smallFont)
         
         self.smallDotCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Small dot cursor")
         self.innerLocalCursorShapePanelSizer.Add(self.smallDotCursorRadioButton)
         self.smallDotCursorRadioButton.SetFont(smallFont)
+        if sys.platform.startswith("win"):
+            if 'smalldotcursor' in vncOptions:
+                self.smallDotCursorRadioButton.SetValue(vncOptions['smalldotcursor'])
         
         self.normalArrowRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Normal arrow")
         self.innerLocalCursorShapePanelSizer.Add(self.normalArrowRadioButton)
         self.normalArrowRadioButton.SetFont(smallFont)
+        if sys.platform.startswith("win"):
+            if 'normalcursor' in vncOptions:
+                self.normalArrowRadioButton.SetValue(vncOptions['normalcursor'])
         
         self.noLocalCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "No local cursor")
         self.innerLocalCursorShapePanelSizer.Add(self.noLocalCursorRadioButton)
         self.noLocalCursorRadioButton.SetFont(smallFont)
+        if sys.platform.startswith("win"):
+            if 'nocursor' in vncOptions:
+                self.noLocalCursorRadioButton.SetValue(vncOptions['nocursor'])
 
         self.innerLocalCursorShapePanel.SetSizerAndFit(self.innerLocalCursorShapePanelSizer)
         self.localCursorShapeGroupBoxSizer.Add(self.innerLocalCursorShapePanel, flag=wx.EXPAND)
@@ -815,18 +827,25 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['zlibCompressionLevel'] = self.zlibCompressionLevelCommandLineString[self.zlibCompressionLevelSlider.GetValue()]
         self.vncOptions['viewOnly'] = self.viewOnlyCheckBox.GetValue()
         self.vncOptions['disableClipboardTransfer'] = self.disableClipboardTransferCheckBox.GetValue()
-        self.vncOptions['scale'] = self.scaleByComboBox.GetStringSelection()
-        self.vncOptions['span'] = self.spanModeCommandLineString[self.spanModeComboBox.GetSelection()]
+        if sys.platform.startswith("win"):
+            self.vncOptions['scale'] = self.scaleByComboBox.GetStringSelection()
+            self.vncOptions['span'] = self.spanModeCommandLineString[self.spanModeComboBox.GetSelection()]
         self.vncOptions['doubleBuffering'] = self.doubleBufferingCheckBox.GetValue()
         self.vncOptions['fullScreenMode'] = self.fullScreenModeCheckBox.GetValue()
         self.vncOptions['deiconifyOnRemoteBellEvent'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()
-        self.vncOptions['emulate3'] = self.emulate3ButtonsWith2ButtonClickCheckBox.GetValue()
-        self.vncOptions['swapmouse'] = self.swapMouseButtons2And3CheckBox.GetValue()
+        if sys.platform.startswith("win"):
+            self.vncOptions['emulate3'] = self.emulate3ButtonsWith2ButtonClickCheckBox.GetValue()
+            self.vncOptions['swapmouse'] = self.swapMouseButtons2And3CheckBox.GetValue()
         self.vncOptions['trackRemoteCursorLocally'] = self.trackRemoteCursorLocallyRadioButton.GetValue()
         self.vncOptions['letRemoteServerDealWithMouseCursor'] = self.letRemoteServerDealWithMouseCursorRadioButton.GetValue()
         self.vncOptions['dontShowRemoteCursor'] = self.dontShowRemoteCursorRadioButton.GetValue()
         self.vncOptions['requestSharedSession'] = self.requestSharedSessionCheckBox.GetValue()
-        self.vncOptions['toolbar'] = self.showToolbarsByDefaultCheckBox.GetValue()
+        if sys.platform.startswith("win"):
+            self.vncOptions['toolbar'] = self.showToolbarsByDefaultCheckBox.GetValue()
+            self.vncOptions['dotcursor'] = self.dotCursorRadioButton.GetValue()
+            self.vncOptions['smalldotcursor'] = self.smallDotCursorRadioButton.GetValue()
+            self.vncOptions['normalcursor'] = self.normalCursorRadioButton.GetValue()
+            self.vncOptions['nocursor'] = self.noLocalCursorRadioButton.GetValue()
         self.Close(True)
       
     def enableZlibCompressionLevelWidgets(self):
