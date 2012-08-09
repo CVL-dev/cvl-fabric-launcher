@@ -432,11 +432,16 @@ class TurboVncOptions(wx.Dialog):
         self.emulate3ButtonsWith2ButtonClickCheckBox = wx.CheckBox(self.innerMousePanel, wx.ID_ANY, "Emulate 3 buttons (with 2-button click)")
         if sys.platform.startswith("win"):
             self.emulate3ButtonsWith2ButtonClickCheckBox.SetValue(True)
+            if 'emulate3' in vncOptions:
+                self.emulate3ButtonsWith2ButtonClickCheckBox.SetValue(vncOptions['emulate3'])
         self.innerMousePanelSizer.Add(self.emulate3ButtonsWith2ButtonClickCheckBox)
         self.emulate3ButtonsWith2ButtonClickCheckBox.SetFont(smallFont)
         
         self.swapMouseButtons2And3CheckBox = wx.CheckBox(self.innerMousePanel, wx.ID_ANY, "Swap mouse buttons 2 and 3")
         self.swapMouseButtons2And3CheckBox.SetValue(False)
+        if sys.platform.startswith("win"):
+            if 'swapmouse' in vncOptions:
+                self.swapMouseButtons2And3CheckBox.SetValue(vncOptions['swapmouse'])
         self.innerMousePanelSizer.Add(self.swapMouseButtons2And3CheckBox)
         self.swapMouseButtons2And3CheckBox.SetFont(smallFont)
         
@@ -815,6 +820,8 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['doubleBuffering'] = self.doubleBufferingCheckBox.GetValue()
         self.vncOptions['fullScreenMode'] = self.fullScreenModeCheckBox.GetValue()
         self.vncOptions['deiconifyOnRemoteBellEvent'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()
+        self.vncOptions['emulate3'] = self.emulate3ButtonsWith2ButtonClickCheckBox.GetValue()
+        self.vncOptions['swapmouse'] = self.swapMouseButtons2And3CheckBox.GetValue()
         self.vncOptions['trackRemoteCursorLocally'] = self.trackRemoteCursorLocallyRadioButton.GetValue()
         self.vncOptions['letRemoteServerDealWithMouseCursor'] = self.letRemoteServerDealWithMouseCursorRadioButton.GetValue()
         self.vncOptions['dontShowRemoteCursor'] = self.dontShowRemoteCursorRadioButton.GetValue()

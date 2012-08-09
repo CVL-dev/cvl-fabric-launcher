@@ -941,6 +941,11 @@ class MassiveLauncherMainFrame(wx.Frame):
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "fullscreen"
                         if 'deiconifyOnRemoteBellEvent' in vncOptions and vncOptions['deiconifyOnRemoteBellEvent']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noraiseonbeep"
+                        if sys.platform.startswith("win"):
+                            if 'emulate3' in vncOptions and vncOptions['emulate3']==True:
+                                vncOptionsString = vncOptionsString + " /emulate3"
+                            if 'swapmouse' in vncOptions and vncOptions['swapmouse']==True:
+                                vncOptionsString = vncOptionsString + " /swapmouse"
                         if 'dontShowRemoteCursor' in vncOptions and vncOptions['dontShowRemoteCursor']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nocursorshape"
                         elif 'letRemoteServerDealWithCursor' in vncOptions and vncOptions['letRemoteServerDealWithCursor']==True:
