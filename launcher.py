@@ -392,7 +392,7 @@ class MassiveLauncherMainFrame(wx.Frame):
 
         latestVersion = myHtmlParser.data[0].strip()
 
-        if latestVersion!=massive_launcher_version_number.version_number:
+        if latestVersion!=launcher_version_number.version_number:
             newVersionAlertDialog = wx.Dialog(launcherMainFrame, title="MASSIVE Launcher", name="MASSIVE Launcher",pos=(200,150),size=(680,290))
 
             if sys.platform.startswith("win"):
@@ -429,7 +429,7 @@ class MassiveLauncherMainFrame(wx.Frame):
 
             newVersionAlertTextLabel1 = wx.StaticText(newVersionAlertTextPanel, 
                 label = 
-                "You are running version " + massive_launcher_version_number.version_number + "\n\n" +
+                "You are running version " + launcher_version_number.version_number + "\n\n" +
                 "The latest version is " + myHtmlParser.data[0] + "\n\n" +
                 "Please download a new version from:\n\n")
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
@@ -488,7 +488,7 @@ class MassiveLauncherMainFrame(wx.Frame):
             sys.exit(1)
  
     def onAbout(self, event):
-        dlg = wx.MessageDialog(self, "Version " + massive_launcher_version_number.version_number + "\n",
+        dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n",
                                 "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
@@ -833,7 +833,7 @@ class MassiveLauncherMainFrame(wx.Frame):
                             finally:
                                 os._exit(0)
                         except:
-                            wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
+                            wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + launcher_version_number.version_number + "\n")
                             wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     tunnelThread = threading.Thread(target=createTunnel)
@@ -986,7 +986,7 @@ class MassiveLauncherMainFrame(wx.Frame):
                         loginButton.SetCursor(arrowCursor)
 
                     except:
-                        wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
+                        wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + launcher_version_number.version_number + "\n")
                         wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
@@ -1006,7 +1006,7 @@ class MassiveLauncherMainFrame(wx.Frame):
                         loginButton.SetCursor(arrowCursor)
 
                 except:
-                    wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + massive_launcher_version_number.version_number + "\n")
+                    wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + launcher_version_number.version_number + "\n")
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
