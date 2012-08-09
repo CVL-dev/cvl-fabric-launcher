@@ -833,7 +833,7 @@ class MassiveLauncherMainFrame(wx.Frame):
                             finally:
                                 os._exit(0)
                         except:
-                            wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + launcher_version_number.version_number + "\n")
+                            wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                             wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     tunnelThread = threading.Thread(target=createTunnel)
@@ -986,7 +986,7 @@ class MassiveLauncherMainFrame(wx.Frame):
                         loginButton.SetCursor(arrowCursor)
 
                     except:
-                        wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + launcher_version_number.version_number + "\n")
+                        wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                         wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
@@ -1006,7 +1006,7 @@ class MassiveLauncherMainFrame(wx.Frame):
                         loginButton.SetCursor(arrowCursor)
 
                 except:
-                    wx.CallAfter(sys.stdout.write, "MASSIVE Launcher v" + launcher_version_number.version_number + "\n")
+                    wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
