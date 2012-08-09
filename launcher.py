@@ -815,14 +815,13 @@ class MassiveLauncherMainFrame(wx.Frame):
 
                             global sshTunnelReady
                             sshTunnelReady = False
-                            print "Need to determine a way (independent of MASSIVE) to check whether SSH tunnel is ready."
-                            if "massive" in vncLoginHost:
-                                while True:
-                                    time.sleep(1)
-                                    line = sshTunnelProcess.stdout.readline()
-                                    if "Welcome to MASSIVE" in line:
-                                        sshTunnelReady = True
-                                        break
+                            # Need to check whether SSH tunnel is ready:
+                            while True:
+                                time.sleep(1)
+                                line = sshTunnelProcess.stdout.readline()
+                                if "Last login" in line:
+                                    sshTunnelReady = True
+                                    break
                             else:
                                 sshTunnelReady = True
 
@@ -963,7 +962,7 @@ class MassiveLauncherMainFrame(wx.Frame):
                                 vncOptionsString = vncOptionsString + " /normalcursor"
                             if 'nocursor' in vncOptions and vncOptions['nocursor']==True:
                                 vncOptionsString = vncOptionsString + " /nocursor"
-                            
+
                         if sys.platform.startswith("win"):
                             vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost::" + localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
