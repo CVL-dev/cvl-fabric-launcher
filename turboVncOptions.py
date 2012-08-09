@@ -1,3 +1,4 @@
+import sys
 import wx
 
 class TurboVncOptions(wx.Dialog):
@@ -347,6 +348,12 @@ class TurboVncOptions(wx.Dialog):
         self.scaleByPanel.SetSizerAndFit(self.scaleByPanelSizer)
         self.innerDisplayPanelSizer.Add(self.scaleByPanel, flag=wx.EXPAND)
 
+        if not sys.platform.startswith("win"):
+            self.scaleByPanel.Disable()
+            self.scaleByLabel.Disable()
+            self.scaleByComboBox.Disable()
+            self.percentageSignLabel.Disable()
+
         self.doubleBufferingCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Double buffering")
         self.doubleBufferingCheckBox.SetValue(True)
         if 'doubleBuffering' in vncOptions:
@@ -382,6 +389,11 @@ class TurboVncOptions(wx.Dialog):
 
         self.spanModePanel.SetSizerAndFit(self.spanModePanelSizer)
         self.innerDisplayPanelSizer.Add(self.spanModePanel, flag=wx.EXPAND)
+
+        if not sys.platform.startswith("win"):
+            self.spanModePanel.Disable()
+            self.spanModeLabel.Disable()
+            self.spanModeComboBox.Disable()
 
         self.deiconifyOnRemoteBellEventCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Deiconify on remote Bell event")
         #self.deiconifyOnRemoteBellEventCheckBox.SetValue(False)
