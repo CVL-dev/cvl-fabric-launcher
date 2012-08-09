@@ -1,7 +1,7 @@
-# massive.py
+# launcher.py
 """
 A wxPython GUI to provide easy login to the MASSIVE Desktop.
-It can be run using "python massive.py", assuming that you 
+It can be run using "python launcher.py", assuming that you 
 have a 32-bit (*) version of Python installed,
 wxPython, and the dependent Python modules imported below.
 
@@ -56,7 +56,7 @@ import os
 import ssh # Pure Python-based ssh module, based on Paramiko, published on PyPi
 import HTMLParser
 import urllib
-import massive_launcher_version_number
+import launcher_version_number
 import StringIO
 import xmlrpclib
 import appdirs
@@ -68,8 +68,7 @@ import ConfigParser
 
 global vncOptions
 vncOptions = {}
-#defaultHost = "m2.massive.org.au"
-defaultHost = "m2-login2.massive.org.au"
+defaultMassiveHost = "m2-login2.massive.org.au"
 global vncLoginHost
 vncLoginHost = ""
 global project
@@ -202,7 +201,7 @@ class MassiveLauncherMainFrame(wx.Frame):
         vncLoginHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
             "m2-login1.massive.org.au", "m2-login2.massive.org.au","cvldemo"]
         global vncLoginHostComboBox
-        vncLoginHostComboBox = wx.ComboBox(loginDialogPanel, -1, value=defaultHost, pos=(125, 15), size=(widgetWidth2, -1),choices=vncLoginHosts, style=wx.CB_DROPDOWN)
+        vncLoginHostComboBox = wx.ComboBox(loginDialogPanel, -1, value=defaultMassiveHost, pos=(125, 15), size=(widgetWidth2, -1),choices=vncLoginHosts, style=wx.CB_DROPDOWN)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "vncLoginHost"):
                 vncLoginHost = config.get("MASSIVE Launcher Preferences", "vncLoginHost")
