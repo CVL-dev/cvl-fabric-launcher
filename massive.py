@@ -1088,7 +1088,7 @@ class MyStatusBar(wx.StatusBar):
         wx.StatusBar.__init__(self, parent)
 
         self.SetFieldsCount(2)
-        self.SetStatusText('Welcome to MASSIVE', 0)
+        #self.SetStatusText('Welcome to MASSIVE', 0)
         self.SetStatusWidths([-5, -2])
 
 class MyApp(wx.App):
