@@ -554,7 +554,12 @@ class TurboVncOptions(wx.Dialog):
         self.innerInterfaceOptionsPanel.SetSizer(self.innerInterfaceOptionsPanelSizer)
 
         self.showToolbarsByDefaultCheckBox = wx.CheckBox(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Show toolbars by default")
-        self.showToolbarsByDefaultCheckBox.SetValue(True)
+        if sys.platform.startswith("win") and 'toolbar' in vncOptions:
+            self.showToolbarsByDefaultCheckBox.SetValue(True)
+            self.showToolbarsByDefaultCheckBox.SetValue(vncOptions['toolbar'])
+        else:
+            self.showToolbarsByDefaultCheckBox.SetValue(False)
+            self.showToolbarsByDefaultCheckBox.Disable()
         self.innerInterfaceOptionsPanelSizer.Add(self.showToolbarsByDefaultCheckBox)
         self.showToolbarsByDefaultCheckBox.SetFont(smallFont)
         
@@ -571,7 +576,10 @@ class TurboVncOptions(wx.Dialog):
         self.numberOfConnectionsToRememberLabel.SetFont(smallFont)
         self.numberOfConnectionsToRememberPanelSizer.Add(self.numberOfConnectionsToRememberLabel, flag=wx.ALIGN_CENTER_VERTICAL)
 
-        self.numberOfConnectionsToRememberSpinCtrl = wx.SpinCtrl(self.numberOfConnectionsToRememberPanel, value='32')
+        if sys.platform.startswith("win"):
+            self.numberOfConnectionsToRememberSpinCtrl = wx.SpinCtrl(self.numberOfConnectionsToRememberPanel, value='32')
+        else:
+            self.numberOfConnectionsToRememberSpinCtrl = wx.SpinCtrl(self.numberOfConnectionsToRememberPanel, value='0')
         self.numberOfConnectionsToRememberSpinCtrl.SetFont(smallFont)
         self.numberOfConnectionsToRememberPanelSizer.Add(self.numberOfConnectionsToRememberSpinCtrl, wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
         
@@ -587,6 +595,16 @@ class TurboVncOptions(wx.Dialog):
         self.innerInterfaceOptionsPanel.SetSizerAndFit(self.innerInterfaceOptionsPanelSizer)
         self.interfaceOptionsGroupBoxSizer.Add(self.innerInterfaceOptionsPanel, flag=wx.EXPAND)
         self.interfaceOptionsPanel.SetSizerAndFit(self.interfaceOptionsGroupBoxSizer)
+
+        if not sys.platform.startswith("win"):
+            self.interfaceOptionsPanel.Disable()
+            self.interfaceOptionsGroupBox.Disable()
+            self.showToolbarsByDefaultCheckBox.Disable()
+        self.warnWhenSwitchingToFullScreenModeCheckBox.Disable()
+        self.numberOfConnectionsToRememberPanel.Disable()
+        self.numberOfConnectionsToRememberLabel.Disable()
+        self.numberOfConnectionsToRememberSpinCtrl.Disable()
+        self.clearTheListOfSavedConnectionsButton.Disable()
 
         # Local cursor shape group box
 
@@ -657,6 +675,12 @@ class TurboVncOptions(wx.Dialog):
         self.listeningModeGroupBoxSizer.Add(self.innerListeningModePanel, flag=wx.EXPAND)
         self.listeningModePanel.SetSizerAndFit(self.listeningModeGroupBoxSizer)
 
+        self.listeningModePanel.Disable()
+        self.listeningModeGroupBox.Disable()
+        self.acceptReverseVncConnectionsOnTcpPortPanel.Disable()
+        self.acceptReverseVncConnectionsOnTcpPortLabel.Disable()
+        self.acceptReverseVncConnectionsOnTcpPortSpinCtrl.Disable()
+        
         # Logging group box
 
         self.loggingPanel = wx.Panel(self.globalsBottomPanel, wx.ID_ANY)
@@ -746,7 +770,6 @@ class TurboVncOptions(wx.Dialog):
 
     def onOK(self, event):
         self.okClicked = True
-        self.vncOptions['requestSharedSession'] = self.requestSharedSessionCheckBox.GetValue()
         self.vncOptions['jpegCompression'] = self.jpegCompressionCheckBox.GetValue()
         self.vncOptions['jpegChrominanceSubsampling'] = self.jpegChrominanceSubsamplingCommandLineString[self.jpegChrominanceSubsamplingSlider.GetValue()]
         self.vncOptions['jpegImageQuality'] = str(self.jpegImageQualitySlider.GetValue())
@@ -761,6 +784,8 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['trackRemoteCursorLocally'] = self.trackRemoteCursorLocallyRadioButton.GetValue()
         self.vncOptions['letRemoteServerDealWithMouseCursor'] = self.letRemoteServerDealWithMouseCursorRadioButton.GetValue()
         self.vncOptions['dontShowRemoteCursor'] = self.dontShowRemoteCursorRadioButton.GetValue()
+        self.vncOptions['requestSharedSession'] = self.requestSharedSessionCheckBox.GetValue()
+        self.vncOptions['toolbar'] = self.showToolbarsByDefaultCheckBox.GetValue()
         self.Close(True)
       
     def enableZlibCompressionLevelWidgets(self):

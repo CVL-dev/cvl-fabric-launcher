@@ -909,8 +909,6 @@ class MassiveLauncherMainFrame(wx.Frame):
                         else:
                             optionPrefixCharacter = "-"
                         vncOptionsString = ""
-                        if 'requestSharedSession' in vncOptions and vncOptions['requestSharedSession']==False:
-                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
                         if 'jpegCompression' in vncOptions and vncOptions['jpegCompression']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nojpeg"
                         defaultJpegChrominanceSubsampling = "1x"
@@ -945,6 +943,11 @@ class MassiveLauncherMainFrame(wx.Frame):
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nocursorshape"
                         elif 'letRemoteServerDealWithCursor' in vncOptions and vncOptions['letRemoteServerDealWithCursor']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "x11cursor"
+                        if 'requestSharedSession' in vncOptions and vncOptions['requestSharedSession']==False:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
+                        if sys.platform.startswith("win"):
+                            if 'toolbar' in vncOptions and vncOptions['toolbar']==False:
+                                vncOptionsString = vncOptionsString + " /notoolbar"
                             
                         if sys.platform.startswith("win"):
                             vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost::" + localPortNumber
