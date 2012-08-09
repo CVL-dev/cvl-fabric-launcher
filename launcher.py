@@ -7,14 +7,14 @@ wxPython, and the dependent Python modules imported below.
 
 (*) wxPython on Mac OS X doesn't yet work nicely in 64-bit mode.
 
-The py2app module is required to build the "MASSIVE Launcher.app"
+The py2app module is required to build the "CVL Launcher.app"
 application bundle on Mac OS X, which can be built as follows:
 
    python create_mac_bundle.py py2app
 
 See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Mac+OS+X+build+instructions
   
-The py2exe module is required to build the "MASSIVE Launcher.exe"
+The py2exe module is required to build the "CVL Launcher.exe"
 executable on Windows, which can be built as follows:
 
    python create_windows_bundle.py py2exe
@@ -22,7 +22,7 @@ executable on Windows, which can be built as follows:
 See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Windows+build+instructions
 
 A Windows installation wizard can be built using InnoSetup,
-and the MASSIVE.iss script.
+and the CVL.iss script.
 
 A self-contained Linux binary distribution can be built using
 PyInstaller, as described on the following wiki page.
@@ -40,7 +40,7 @@ on Linux and on Mac OS X.
 
 # Later, STDERR will be redirected to logTextCtrl
 # For now, we just want make sure that the Launcher doesn't attempt 
-# to write to MASSIVE Launcher.exe.log, because it might not have
+# to write to CVL Launcher.exe.log, because it might not have
 # permission to do so.
 import sys
 sys.stderr = sys.stdout
@@ -165,7 +165,7 @@ class MassiveLauncherMainFrame(wx.Frame):
             self.menu_bar.Append(self.edit_menu, "&Edit")
 
         self.help_menu = wx.Menu()
-        self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE Launcher")
+        self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE/CVL Launcher")
         self.Bind(wx.EVT_MENU, self.onAbout, id=wx.ID_ABOUT)
         self.menu_bar.Append(self.help_menu, "&Help")
 
@@ -384,7 +384,7 @@ class MassiveLauncherMainFrame(wx.Frame):
         except:
             dlg = wx.MessageDialog(self, "Error: Unable to contact MASSIVE website to check version number.\n\n" +
                                         "The launcher cannot continue.\n",
-                                "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
+                                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
             sys.exit(1)
@@ -393,7 +393,7 @@ class MassiveLauncherMainFrame(wx.Frame):
         latestVersion = myHtmlParser.data[0].strip()
 
         if latestVersion!=launcher_version_number.version_number:
-            newVersionAlertDialog = wx.Dialog(launcherMainFrame, title="MASSIVE Launcher", name="MASSIVE Launcher",pos=(200,150),size=(680,290))
+            newVersionAlertDialog = wx.Dialog(launcherMainFrame, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
 
             if sys.platform.startswith("win"):
                 _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -418,7 +418,7 @@ class MassiveLauncherMainFrame(wx.Frame):
             newVersionAlertTextPanel.SetSizer(gs)
 
             newVersionAlertTitleLabel = wx.StaticText(newVersionAlertTextPanel,
-                label = "MASSIVE Launcher")
+                label = "MASSIVE/CVL Launcher")
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             font.SetPointSize(14)
             font.SetWeight(wx.BOLD)
@@ -489,7 +489,7 @@ class MassiveLauncherMainFrame(wx.Frame):
  
     def onAbout(self, event):
         dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n",
-                                "MASSIVE Launcher", wx.OK | wx.ICON_INFORMATION)
+                                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -1127,7 +1127,7 @@ class MyApp(wx.App):
             config.read(massiveLauncherPreferencesFilePath)
 
         global launcherMainFrame
-        launcherMainFrame = MassiveLauncherMainFrame(None, -1, 'MASSIVE Launcher')
+        launcherMainFrame = MassiveLauncherMainFrame(None, -1, 'MASSIVE/CVL Launcher')
         launcherMainFrame.Show(True)
         return True
 
