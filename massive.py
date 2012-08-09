@@ -911,6 +911,8 @@ class MassiveLauncherMainFrame(wx.Frame):
                         vncOptionsString = ""
                         if 'requestSharedSession' in vncOptions and vncOptions['requestSharedSession']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
+                        if 'jpegCompression' in vncOptions and vncOptions['jpegCompression']==False:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nojpeg"
                         defaultJpegImageQuality = "95"
                         if 'jpegImageQuality' in vncOptions and vncOptions['jpegImageQuality']!=defaultJpegImageQuality:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + vncOptions['jpegImageQuality']
