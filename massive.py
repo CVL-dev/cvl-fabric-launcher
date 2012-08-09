@@ -929,6 +929,12 @@ class MassiveLauncherMainFrame(wx.Frame):
                                 vncOptionsString = vncOptionsString + " /disableclipboard"
                             else:
                                 vncOptionsString = vncOptionsString + " -noclipboardsend -noclipboardrecv"
+                        if sys.platform.startswith("win"):
+                            if 'scale' in vncOptions:
+                                if vncOptions['scale']=="Auto":
+                                    vncOptionsString = vncOptionsString + " /fitwindow"
+                                else:
+                                    vncOptionsString = vncOptionsString + " /scale " + vncOptions['scale']
                         if 'doubleBuffering' in vncOptions and vncOptions['doubleBuffering']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
                         if 'fullScreenMode' in vncOptions and vncOptions['fullScreenMode']==True:

@@ -47,53 +47,53 @@ class TurboVncOptions(wx.Dialog):
         JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX = 4
         self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)'] = \
             { \
-                'jpegCompression': True \
+                'jpegCompression': True, \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX, \
                 'jpegImageQuality': 95, \
                 'enableZlibCompressionLevelWidgets': False, \
-                'zlibCompressionLevel': 0, \
+                'zlibCompressionLevel': 0 \
             }
         JPEG_CHROMINANCE_SUBSAMPLING_2X_COMBOBOX_INDEX = 3 
         self.encodingMethodsPresets['Tight + Medium Quality JPEG'] = \
             { \
-                'jpegCompression': True \
+                'jpegCompression': True, \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_2X_COMBOBOX_INDEX, \
                 'jpegImageQuality': 80, \
                 'enableZlibCompressionLevelWidgets': False, \
-                'zlibCompressionLevel': 0, \
+                'zlibCompressionLevel': 0 \
             }
         JPEG_CHROMINANCE_SUBSAMPLING_4X_COMBOBOX_INDEX = 2 
         self.encodingMethodsPresets['Tight + Low Quality JPEG (WAN)'] = \
             { \
-                'jpegCompression': True \
+                'jpegCompression': True, \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_4X_COMBOBOX_INDEX, \
                 'jpegImageQuality': 30, \
                 'enableZlibCompressionLevelWidgets': False, \
-                'zlibCompressionLevel': 0, \
+                'zlibCompressionLevel': 0 \
             }
         self.encodingMethodsPresets['Lossless Tight (Gigabit)'] = \
             { \
-                'jpegCompression': False \
+                'jpegCompression': False, \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX, \
                 'jpegImageQuality': 100, \
                 'enableZlibCompressionLevelWidgets': True, \
-                'zlibCompressionLevel': 0, \
+                'zlibCompressionLevel': 0 \
             }
         self.encodingMethodsPresets['Lossless Tight + Zlib (WAN)'] = \
             { \
-                'jpegCompression': False \
+                'jpegCompression': False, \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX, \
                 'jpegImageQuality': 100, \
                 'enableZlibCompressionLevelWidgets': True, \
-                'zlibCompressionLevel': 1, \
+                'zlibCompressionLevel': 1 \
             }
         self.encodingMethodsPresets['Custom'] = \
             { \
-                'jpegCompression': True \
+                'jpegCompression': True, \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX, \
                 'jpegImageQuality': 95, \
                 'enableZlibCompressionLevelWidgets': True, \
-                'zlibCompressionLevel': 0, \
+                'zlibCompressionLevel': 0 \
             }
 
         self.encodingPanel = wx.Panel(self.connectionLeftPanel, wx.ID_ANY)
@@ -335,6 +335,8 @@ class TurboVncOptions(wx.Dialog):
             choices=scaleOptions, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         SCALE_OPTION_100_PERCENT = 4
         self.scaleByComboBox.SetSelection(SCALE_OPTION_100_PERCENT)
+        if 'scale' in vncOptions:
+            self.scaleByComboBox.SetSelection.SetStringSelection(vncOptions['scale'])
         self.scaleByComboBox.SetFont(smallFont)
         self.scaleByPanelSizer.Add(self.scaleByComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
@@ -740,6 +742,7 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['zlibCompressionLevel'] = self.zlibCompressionLevelCommandLineString[self.zlibCompressionLevelSlider.GetValue()]
         self.vncOptions['viewOnly'] = self.viewOnlyCheckBox.GetValue()
         self.vncOptions['disableClipboardTransfer'] = self.disableClipboardTransferCheckBox.GetValue()
+        self.vncOptions['scale'] = self.scaleByComboBox.GetStringSelection()
         self.vncOptions['doubleBuffering'] = self.doubleBufferingCheckBox.GetValue()
         self.vncOptions['fullScreenMode'] = self.fullScreenModeCheckBox.GetValue()
         self.vncOptions['deiconifyOnRemoteBellEvent'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()
