@@ -47,53 +47,53 @@ class TurboVncOptions(wx.Dialog):
         JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX = 4
         self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)'] = \
             { \
+                'jpegCompression': True \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX, \
                 'jpegImageQuality': 95, \
                 'enableZlibCompressionLevelWidgets': False, \
                 'zlibCompressionLevel': 0, \
-                'jpegCompression': True \
             }
         JPEG_CHROMINANCE_SUBSAMPLING_2X_COMBOBOX_INDEX = 3 
         self.encodingMethodsPresets['Tight + Medium Quality JPEG'] = \
             { \
+                'jpegCompression': True \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_2X_COMBOBOX_INDEX, \
                 'jpegImageQuality': 80, \
                 'enableZlibCompressionLevelWidgets': False, \
                 'zlibCompressionLevel': 0, \
-                'jpegCompression': True \
             }
         JPEG_CHROMINANCE_SUBSAMPLING_4X_COMBOBOX_INDEX = 2 
         self.encodingMethodsPresets['Tight + Low Quality JPEG (WAN)'] = \
             { \
+                'jpegCompression': True \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_4X_COMBOBOX_INDEX, \
                 'jpegImageQuality': 30, \
                 'enableZlibCompressionLevelWidgets': False, \
                 'zlibCompressionLevel': 0, \
-                'jpegCompression': True \
             }
         self.encodingMethodsPresets['Lossless Tight (Gigabit)'] = \
             { \
+                'jpegCompression': False \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX, \
                 'jpegImageQuality': 100, \
                 'enableZlibCompressionLevelWidgets': True, \
                 'zlibCompressionLevel': 0, \
-                'jpegCompression': False \
             }
         self.encodingMethodsPresets['Lossless Tight + Zlib (WAN)'] = \
             { \
+                'jpegCompression': False \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX, \
                 'jpegImageQuality': 100, \
                 'enableZlibCompressionLevelWidgets': True, \
                 'zlibCompressionLevel': 1, \
-                'jpegCompression': False \
             }
         self.encodingMethodsPresets['Custom'] = \
             { \
+                'jpegCompression': True \
                 'jpegChrominanceSubsampling': JPEG_CHROMINANCE_SUBSAMPLING_NONE_COMBOBOX_INDEX, \
                 'jpegImageQuality': 95, \
                 'enableZlibCompressionLevelWidgets': True, \
                 'zlibCompressionLevel': 0, \
-                'jpegCompression': True \
             }
 
         self.encodingPanel = wx.Panel(self.connectionLeftPanel, wx.ID_ANY)
@@ -734,8 +734,8 @@ class TurboVncOptions(wx.Dialog):
         self.okClicked = True
         self.vncOptions['requestSharedSession'] = self.requestSharedSessionCheckBox.GetValue()
         self.vncOptions['jpegCompression'] = self.jpegCompressionCheckBox.GetValue()
-        self.vncOptions['jpegImageQuality'] = str(self.jpegImageQualitySlider.GetValue())
         self.vncOptions['jpegChrominanceSubsampling'] = self.jpegChrominanceSubsamplingCommandLineString[self.jpegChrominanceSubsamplingSlider.GetValue()]
+        self.vncOptions['jpegImageQuality'] = str(self.jpegImageQualitySlider.GetValue())
         self.vncOptions['zlibCompressionEnabled'] = self.zlibCompressionLevelSlider.IsEnabled()
         self.vncOptions['zlibCompressionLevel'] = self.zlibCompressionLevelCommandLineString[self.zlibCompressionLevelSlider.GetValue()]
         self.vncOptions['viewOnly'] = self.viewOnlyCheckBox.GetValue()
@@ -768,6 +768,7 @@ class TurboVncOptions(wx.Dialog):
  
     def onSelectEncodingMethodFromComboBox(self, event):
         encodingMethodPresetString = self.encodingMethodsComboBox.GetStringSelection()
+        self.jpegCompressionCheckBox.SetValue(self.encodingMethodsPresets[encodingMethodPresetString]['jpegCompression'])
         self.jpegChrominanceSubsamplingSlider.SetValue(self.encodingMethodsPresets[encodingMethodPresetString]['jpegChrominanceSubsampling'])
         self.jpegChrominanceSubsamplingLabel.SetLabel("JPEG chrominance subsampling:    " + self.jpegChrominanceSubsamplingLevel[self.encodingMethodsPresets[encodingMethodPresetString]['jpegChrominanceSubsampling']])
         self.jpegImageQualitySlider.SetValue(self.encodingMethodsPresets[encodingMethodPresetString]['jpegImageQuality'])
@@ -778,7 +779,6 @@ class TurboVncOptions(wx.Dialog):
             self.disableZlibCompressionLevelWidgets()
         self.zlibCompressionLevelSlider.SetValue(self.encodingMethodsPresets[encodingMethodPresetString]['zlibCompressionLevel'])
         self.zlibCompressionLevelLabel.SetLabel("Zlib compression level:     " + self.zlibCompressionLevel[self.encodingMethodsPresets[encodingMethodPresetString]['zlibCompressionLevel']])
-        self.jpegCompressionCheckBox.SetValue(self.encodingMethodsPresets[encodingMethodPresetString]['jpegCompression'])
 
     def onToggleWriteLogToAFileCheckBox(self, event):
         self.vncViewerLogFilenameTextField.Enable(self.writeLogToAFileCheckBox.GetValue())

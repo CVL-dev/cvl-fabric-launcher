@@ -913,12 +913,12 @@ class MassiveLauncherMainFrame(wx.Frame):
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
                         if 'jpegCompression' in vncOptions and vncOptions['jpegCompression']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nojpeg"
-                        defaultJpegImageQuality = "95"
-                        if 'jpegImageQuality' in vncOptions and vncOptions['jpegImageQuality']!=defaultJpegImageQuality:
-                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + vncOptions['jpegImageQuality']
                         defaultJpegChrominanceSubsampling = "1x"
                         if 'jpegChrominanceSubsampling' in vncOptions and vncOptions['jpegChrominanceSubsampling']!=defaultJpegChrominanceSubsampling:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + vncOptions['jpegChrominanceSubsampling']
+                        defaultJpegImageQuality = "95"
+                        if 'jpegImageQuality' in vncOptions and vncOptions['jpegImageQuality']!=defaultJpegImageQuality:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + vncOptions['jpegImageQuality']
                         if 'zlibCompressionEnabled' in vncOptions and vncOptions['zlibCompressionEnabled']==True:
                             if 'zlibCompressionLevel' in vncOptions:
                                 vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + vncOptions['zlibCompressionLevel']
