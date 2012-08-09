@@ -219,6 +219,8 @@ class TurboVncOptions(wx.Dialog):
         
         self.disableClipboardTransferCheckBox = wx.CheckBox(self.innerRestrictionsPanel, wx.ID_ANY, "Disable clipboard transfer")
         self.disableClipboardTransferCheckBox.SetValue(False)
+        if 'disableClipboardTransfer' in vncOptions:
+            self.disableClipboardTransferCheckBox.SetValue(vncOptions['disableClipboardTransfer'])
         self.innerRestrictionsPanelSizer.Add(self.disableClipboardTransferCheckBox)
         self.disableClipboardTransferCheckBox.SetFont(smallFont)
         
@@ -670,6 +672,7 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['zlibCompressionEnabled'] = self.zlibCompressionLevelSlider.IsEnabled()
         self.vncOptions['zlibCompressionLevel'] = self.zlibCompressionLevelCommandLineString[self.zlibCompressionLevelSlider.GetValue()]
         self.vncOptions['viewOnly'] = self.viewOnlyCheckBox.GetValue()
+        self.vncOptions['disableClipboardTransfer'] = self.disableClipboardTransferCheckBox.GetValue()
         self.vncOptions['doubleBuffering'] = self.doubleBufferingCheckBox.GetValue()
         self.vncOptions['fullScreenMode'] = self.fullScreenModeCheckBox.GetValue()
         self.vncOptions['deiconifyOnRemoteBellEvent'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()

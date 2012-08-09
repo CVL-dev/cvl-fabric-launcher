@@ -922,6 +922,11 @@ class MassiveLauncherMainFrame(wx.Frame):
                                 vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + vncOptions['zlibCompressionLevel']
                         if 'viewOnly' in vncOptions and vncOptions['viewOnly']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "viewonly"
+                        if 'disableClipboardTransfer' in vncOptions and vncOptions['disableClipboardTransfer']==True:
+                            if sys.platform.startswith("win"):
+                                vncOptionsString = vncOptionsString + " /disableclipboard"
+                            else:
+                                vncOptionsString = vncOptionsString + " -noclipboardsend -noclipboardrecv"
                         if 'doubleBuffering' in vncOptions and vncOptions['doubleBuffering']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
                         if 'fullScreenMode' in vncOptions and vncOptions['fullScreenMode']==True:
