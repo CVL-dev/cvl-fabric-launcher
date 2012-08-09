@@ -430,7 +430,8 @@ class TurboVncOptions(wx.Dialog):
         self.innerMousePanel.SetSizer(self.innerMousePanelSizer)
 
         self.emulate3ButtonsWith2ButtonClickCheckBox = wx.CheckBox(self.innerMousePanel, wx.ID_ANY, "Emulate 3 buttons (with 2-button click)")
-        self.emulate3ButtonsWith2ButtonClickCheckBox.SetValue(True)
+        if sys.platform.startswith("win"):
+            self.emulate3ButtonsWith2ButtonClickCheckBox.SetValue(True)
         self.innerMousePanelSizer.Add(self.emulate3ButtonsWith2ButtonClickCheckBox)
         self.emulate3ButtonsWith2ButtonClickCheckBox.SetFont(smallFont)
         
@@ -442,6 +443,13 @@ class TurboVncOptions(wx.Dialog):
         self.innerMousePanel.SetSizerAndFit(self.innerMousePanelSizer)
         self.mouseGroupBoxSizer.Add(self.innerMousePanel, flag=wx.EXPAND)
         self.mousePanel.SetSizerAndFit(self.mouseGroupBoxSizer)
+
+        if not sys.platform.startswith("win"):
+            self.mousePanel.Disable()
+            self.mouseGroupBox.Disable()
+            self.innerMousePanel.Disable()
+            self.emulate3ButtonsWith2ButtonClickCheckBox.Disable()
+            self.swapMouseButtons2And3CheckBox.Disable()
 
         # Mouse cursor group box
 
