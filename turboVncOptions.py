@@ -3,7 +3,7 @@ import wx
 
 class TurboVncOptions(wx.Dialog):
     def __init__(self, parent, id, title, vncOptions):
-        wx.Dialog.__init__(self, parent, id, title, size=(680,480),
+        wx.Dialog.__init__(self, parent, id, title, 
             style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
 
         self.vncOptions = vncOptions
@@ -15,13 +15,15 @@ class TurboVncOptions(wx.Dialog):
         self.notebookContainerPanel = wx.Panel(self, wx.ID_ANY)
 
         self.tabbedView = wx.Notebook(self.notebookContainerPanel, wx.ID_ANY, style=(wx.NB_TOP))
-        notebookContainerPanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=15, hgap=15)
-        notebookContainerPanelSizer.Add(wx.StaticText(self.notebookContainerPanel, wx.ID_ANY, "     "))
-        notebookContainerPanelSizer.Add(self.tabbedView, flag=wx.EXPAND)
-        notebookContainerPanelSizer.Add(wx.StaticText(self.notebookContainerPanel, wx.ID_ANY, "     "))
+        notebookContainerPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=15, hgap=5)
 
-        smallFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-        smallFont.SetPointSize(11)
+        notebookContainerPanelSizer.Add(self.tabbedView, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
+
+        self.smallFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        if sys.platform.startswith("win"):
+            self.smallFont.SetPointSize(10)
+        else:
+            self.smallFont.SetPointSize(11)
 
         # Connection tab
 
@@ -101,7 +103,7 @@ class TurboVncOptions(wx.Dialog):
         self.connectionLeftPanelSizer.Add(self.encodingPanel, flag=wx.EXPAND)
 
         self.encodingGroupBox = wx.StaticBox(self.encodingPanel, wx.ID_ANY, label="Encoding")
-        self.encodingGroupBox.SetFont(smallFont)
+        self.encodingGroupBox.SetFont(self.smallFont)
         self.encodingGroupBoxSizer = wx.StaticBoxSizer(self.encodingGroupBox, wx.VERTICAL)
         self.encodingPanel.SetSizer(self.encodingGroupBoxSizer)
 
@@ -111,7 +113,7 @@ class TurboVncOptions(wx.Dialog):
 
         self.encodingMethodLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "Encoding method:")
         self.innerEncodingPanelSizer.Add(self.encodingMethodLabel)
-        self.encodingMethodLabel.SetFont(smallFont)
+        self.encodingMethodLabel.SetFont(self.smallFont)
        
         self.encodingMethodsPanel = wx.Panel(self.innerEncodingPanel, wx.ID_ANY)
         self.encodingMethodsPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5,hgap=5)
@@ -125,7 +127,8 @@ class TurboVncOptions(wx.Dialog):
             'Lossless Tight (Gigabit)', 
             'Lossless Tight + Zlib (WAN)']
         self.encodingMethodsComboBox = wx.Choice(self.encodingMethodsPanel, wx.ID_ANY, choices=encodingMethods)
-        self.encodingMethodsComboBox.SetFont(smallFont)
+        self.encodingMethodsComboBox.SetFont(self.smallFont)
+        self.encodingMethodsComboBox.SetStringSelection('Tight + Perceptually Lossless JPEG (LAN)')
         self.encodingMethodsComboBox.Bind(wx.EVT_CHOICE, self.onSelectEncodingMethodFromComboBox)
         self.encodingMethodsPanelSizer.Add(self.encodingMethodsComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
@@ -137,7 +140,7 @@ class TurboVncOptions(wx.Dialog):
         self.jpegCompressionCheckBox.SetValue(self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)']['jpegCompression'])
         if 'jpegCompression' in vncOptions:
             self.jpegCompressionCheckBox.SetValue(vncOptions['jpegCompression'])
-        self.jpegCompressionCheckBox.SetFont(smallFont)
+        self.jpegCompressionCheckBox.SetFont(self.smallFont)
         self.innerEncodingPanelSizer.Add(self.jpegCompressionCheckBox)
 
         self.jpegChrominanceSubsamplingLevel = {1:"Gray", 2:"4x", 3:"2x", 4:"None"}
@@ -145,7 +148,7 @@ class TurboVncOptions(wx.Dialog):
 
         #self.jpegChrominanceSubsamplingLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "JPEG chrominance subsampling:    None")
         self.jpegChrominanceSubsamplingLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "JPEG chrominance subsampling:    " + self.jpegChrominanceSubsamplingLevel[self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)']['jpegChrominanceSubsampling']])
-        self.jpegChrominanceSubsamplingLabel.SetFont(smallFont)
+        self.jpegChrominanceSubsamplingLabel.SetFont(self.smallFont)
         self.innerEncodingPanelSizer.Add(self.jpegChrominanceSubsamplingLabel)
 
         self.jpegChrominanceSubsamplingPanel = wx.Panel(self.innerEncodingPanel, wx.ID_ANY)
@@ -155,14 +158,14 @@ class TurboVncOptions(wx.Dialog):
         self.jpegChrominanceSubsamplingPanelSizer.Add(emptySpace, flag=wx.EXPAND)
 
         self.fastLabel = wx.StaticText(self.jpegChrominanceSubsamplingPanel, wx.ID_ANY, "fast")
-        self.fastLabel.SetFont(smallFont)
+        self.fastLabel.SetFont(self.smallFont)
         self.jpegChrominanceSubsamplingPanelSizer.Add(self.fastLabel, flag=wx.EXPAND)
 
         self.jpegChrominanceSubsamplingSlider = wx.Slider(self.jpegChrominanceSubsamplingPanel, wx.ID_ANY, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
         self.jpegChrominanceSubsamplingPanelSizer.Add(self.jpegChrominanceSubsamplingSlider)
 
         self.bestLabel = wx.StaticText(self.jpegChrominanceSubsamplingPanel, wx.ID_ANY, "best")
-        self.bestLabel.SetFont(smallFont)
+        self.bestLabel.SetFont(self.smallFont)
         self.jpegChrominanceSubsamplingPanelSizer.Add(self.bestLabel, flag=wx.EXPAND)
 
         self.jpegChrominanceSubsamplingPanel.SetSizerAndFit(self.jpegChrominanceSubsamplingPanelSizer)
@@ -179,7 +182,7 @@ class TurboVncOptions(wx.Dialog):
 
         #self.jpegImageQualityLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "JPEG image quality:    95", style=wx.TE_READONLY)
         self.jpegImageQualityLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "JPEG image quality:    " + str(self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)']['jpegImageQuality']), style=wx.TE_READONLY)
-        self.jpegImageQualityLabel.SetFont(smallFont)
+        self.jpegImageQualityLabel.SetFont(self.smallFont)
         self.innerEncodingPanelSizer.Add(self.jpegImageQualityLabel)
 
         self.jpegImageQualityPanel = wx.Panel(self.innerEncodingPanel, wx.ID_ANY)
@@ -189,7 +192,7 @@ class TurboVncOptions(wx.Dialog):
         self.jpegImageQualityPanelSizer.Add(emptySpace, flag=wx.EXPAND)
 
         self.poorImageQualityLabel = wx.StaticText(self.jpegImageQualityPanel, wx.ID_ANY, "poor")
-        self.poorImageQualityLabel.SetFont(smallFont)
+        self.poorImageQualityLabel.SetFont(self.smallFont)
         self.jpegImageQualityPanelSizer.Add(self.poorImageQualityLabel, flag=wx.EXPAND)
 
         self.jpegImageQualitySlider = wx.Slider(self.jpegImageQualityPanel, wx.ID_ANY, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
@@ -204,7 +207,7 @@ class TurboVncOptions(wx.Dialog):
         self.jpegImageQualityPanelSizer.Add(self.jpegImageQualitySlider)
 
         self.bestImageQualityLabel = wx.StaticText(self.jpegImageQualityPanel, wx.ID_ANY, "best")
-        self.bestImageQualityLabel.SetFont(smallFont)
+        self.bestImageQualityLabel.SetFont(self.smallFont)
         self.jpegImageQualityPanelSizer.Add(self.bestImageQualityLabel, flag=wx.EXPAND)
 
         self.jpegImageQualityPanel.SetSizerAndFit(self.jpegImageQualityPanelSizer)
@@ -216,7 +219,7 @@ class TurboVncOptions(wx.Dialog):
         #self.zlibCompressionLevelLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "Zlib compression level:     1")
         #self.zlibCompressionLevelLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "Zlib compression level:     None")
         self.zlibCompressionLevelLabel = wx.StaticText(self.innerEncodingPanel, wx.ID_ANY, "Zlib compression level:     " + self.zlibCompressionLevel[self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)']['zlibCompressionLevel']])
-        self.zlibCompressionLevelLabel.SetFont(smallFont)
+        self.zlibCompressionLevelLabel.SetFont(self.smallFont)
         self.zlibCompressionLevelLabel.Disable()
         self.innerEncodingPanelSizer.Add(self.zlibCompressionLevelLabel)
 
@@ -227,7 +230,7 @@ class TurboVncOptions(wx.Dialog):
         self.zlibCompressionLevelPanelSizer.Add(emptySpace, flag=wx.EXPAND)
 
         self.fastZlibCompressionLabel = wx.StaticText(self.zlibCompressionLevelPanel, wx.ID_ANY, "fast")
-        self.fastZlibCompressionLabel.SetFont(smallFont)
+        self.fastZlibCompressionLabel.SetFont(self.smallFont)
         self.fastZlibCompressionLabel.Disable()
         self.zlibCompressionLevelPanelSizer.Add(self.fastZlibCompressionLabel, flag=wx.EXPAND)
 
@@ -245,7 +248,7 @@ class TurboVncOptions(wx.Dialog):
         self.zlibCompressionLevelPanelSizer.Add(self.zlibCompressionLevelSlider)
 
         self.bestZlibCompressionLabel = wx.StaticText(self.zlibCompressionLevelPanel, wx.ID_ANY, "best")
-        self.bestZlibCompressionLabel.SetFont(smallFont)
+        self.bestZlibCompressionLabel.SetFont(self.smallFont)
         self.bestZlibCompressionLabel.Disable()
         self.zlibCompressionLevelPanelSizer.Add(self.bestZlibCompressionLabel, flag=wx.EXPAND)
 
@@ -255,7 +258,7 @@ class TurboVncOptions(wx.Dialog):
 
         self.copyRectEncodingCheckBox = wx.CheckBox(self.innerEncodingPanel, wx.ID_ANY, "Allow CopyRect encoding")
         self.copyRectEncodingCheckBox.SetValue(True)
-        self.copyRectEncodingCheckBox.SetFont(smallFont)
+        self.copyRectEncodingCheckBox.SetFont(self.smallFont)
         self.innerEncodingPanelSizer.Add(self.copyRectEncodingCheckBox)
 
         self.innerEncodingPanel.SetSizerAndFit(self.innerEncodingPanelSizer)
@@ -268,7 +271,7 @@ class TurboVncOptions(wx.Dialog):
         self.connectionLeftPanelSizer.Add(self.restrictionsPanel, flag=wx.EXPAND)
 
         self.restrictionsGroupBox = wx.StaticBox(self.restrictionsPanel, wx.ID_ANY, label="Restrictions")
-        self.restrictionsGroupBox.SetFont(smallFont)
+        self.restrictionsGroupBox.SetFont(self.smallFont)
         self.restrictionsGroupBoxSizer = wx.StaticBoxSizer(self.restrictionsGroupBox, wx.VERTICAL)
         self.restrictionsPanel.SetSizer(self.restrictionsGroupBoxSizer)
 
@@ -281,14 +284,14 @@ class TurboVncOptions(wx.Dialog):
         if 'viewOnly' in vncOptions:
             self.viewOnlyCheckBox.SetValue(vncOptions['viewOnly'])
         self.innerRestrictionsPanelSizer.Add(self.viewOnlyCheckBox)
-        self.viewOnlyCheckBox.SetFont(smallFont)
+        self.viewOnlyCheckBox.SetFont(self.smallFont)
         
         self.disableClipboardTransferCheckBox = wx.CheckBox(self.innerRestrictionsPanel, wx.ID_ANY, "Disable clipboard transfer")
         self.disableClipboardTransferCheckBox.SetValue(False)
         if 'disableClipboardTransfer' in vncOptions:
             self.disableClipboardTransferCheckBox.SetValue(vncOptions['disableClipboardTransfer'])
         self.innerRestrictionsPanelSizer.Add(self.disableClipboardTransferCheckBox)
-        self.disableClipboardTransferCheckBox.SetFont(smallFont)
+        self.disableClipboardTransferCheckBox.SetFont(self.smallFont)
         
         self.innerRestrictionsPanel.SetSizerAndFit(self.innerRestrictionsPanelSizer)
         self.restrictionsGroupBoxSizer.Add(self.innerRestrictionsPanel, flag=wx.EXPAND)
@@ -305,7 +308,7 @@ class TurboVncOptions(wx.Dialog):
         self.connectionRightPanelSizer.Add(self.displayPanel, flag=wx.EXPAND)
 
         self.displayGroupBox = wx.StaticBox(self.displayPanel, wx.ID_ANY, label="Display")
-        self.displayGroupBox.SetFont(smallFont)
+        self.displayGroupBox.SetFont(self.smallFont)
         self.displayGroupBoxSizer = wx.StaticBoxSizer(self.displayGroupBox, wx.VERTICAL)
         self.displayPanel.SetSizer(self.displayGroupBoxSizer)
 
@@ -318,7 +321,7 @@ class TurboVncOptions(wx.Dialog):
         self.scaleByPanel.SetSizer(self.scaleByPanelSizer)
 
         self.scaleByLabel = wx.StaticText(self.scaleByPanel, wx.ID_ANY, "Scale by:   ")
-        self.scaleByLabel.SetFont(smallFont)
+        self.scaleByLabel.SetFont(self.smallFont)
         self.scaleByPanelSizer.Add(self.scaleByLabel, flag=wx.ALIGN_CENTER)
 
         scaleOptions = [
@@ -336,11 +339,11 @@ class TurboVncOptions(wx.Dialog):
         self.scaleByComboBox.SetSelection(SCALE_OPTION_100_PERCENT)
         if 'scale' in vncOptions:
             self.scaleByComboBox.SetStringSelection(vncOptions['scale'])
-        self.scaleByComboBox.SetFont(smallFont)
+        self.scaleByComboBox.SetFont(self.smallFont)
         self.scaleByPanelSizer.Add(self.scaleByComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
         self.percentageSignLabel = wx.StaticText(self.scaleByPanel, wx.ID_ANY, "  %")
-        self.percentageSignLabel.SetFont(smallFont)
+        self.percentageSignLabel.SetFont(self.smallFont)
         self.scaleByPanelSizer.Add(self.percentageSignLabel, flag=wx.ALIGN_CENTER)
 
         self.scaleByPanel.SetSizerAndFit(self.scaleByPanelSizer)
@@ -357,21 +360,21 @@ class TurboVncOptions(wx.Dialog):
         if 'doubleBuffering' in vncOptions:
             self.doubleBufferingCheckBox.SetValue(vncOptions['doubleBuffering'])
         self.innerDisplayPanelSizer.Add(self.doubleBufferingCheckBox)
-        self.doubleBufferingCheckBox.SetFont(smallFont)
+        self.doubleBufferingCheckBox.SetFont(self.smallFont)
         
         self.fullScreenModeCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Full-screen mode")
         self.fullScreenModeCheckBox.SetValue(False)
         if 'fullScreenMode' in vncOptions:
             self.fullScreenModeCheckBox.SetValue(vncOptions['fullScreenMode'])
         self.innerDisplayPanelSizer.Add(self.fullScreenModeCheckBox)
-        self.fullScreenModeCheckBox.SetFont(smallFont)
+        self.fullScreenModeCheckBox.SetFont(self.smallFont)
         
         self.spanModePanel = wx.Panel(self.innerDisplayPanel, wx.ID_ANY)
         self.spanModePanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5,hgap=5)
         self.spanModePanel.SetSizer(self.spanModePanelSizer)
 
         self.spanModeLabel = wx.StaticText(self.spanModePanel, wx.ID_ANY, "Span mode:   ")
-        self.spanModeLabel.SetFont(smallFont)
+        self.spanModeLabel.SetFont(self.smallFont)
         self.spanModePanelSizer.Add(self.spanModeLabel, flag=wx.ALIGN_CENTER)
 
         spanModes = [
@@ -389,7 +392,7 @@ class TurboVncOptions(wx.Dialog):
                 self.spanModeComboBox.SetStringSelection('All monitors')
             if vncOptions['span']=='auto':
                 self.spanModeComboBox.SetStringSelection('Automatic')
-        self.spanModeComboBox.SetFont(smallFont)
+        self.spanModeComboBox.SetFont(self.smallFont)
         self.spanModePanelSizer.Add(self.spanModeComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
         self.spanModePanel.SetSizerAndFit(self.spanModePanelSizer)
@@ -406,7 +409,7 @@ class TurboVncOptions(wx.Dialog):
         if 'deiconifyOnRemoteBellEvent' in vncOptions:
             self.deiconifyOnRemoteBellEventCheckBox.SetValue(vncOptions['deiconifyOnRemoteBellEvent'])
         self.innerDisplayPanelSizer.Add(self.deiconifyOnRemoteBellEventCheckBox)
-        self.deiconifyOnRemoteBellEventCheckBox.SetFont(smallFont)
+        self.deiconifyOnRemoteBellEventCheckBox.SetFont(self.smallFont)
         
         self.innerDisplayPanel.SetSizerAndFit(self.innerDisplayPanelSizer)
         self.displayGroupBoxSizer.Add(self.innerDisplayPanel, flag=wx.EXPAND)
@@ -418,7 +421,7 @@ class TurboVncOptions(wx.Dialog):
         self.connectionRightPanelSizer.Add(self.mousePanel, flag=wx.EXPAND)
 
         self.mouseGroupBox = wx.StaticBox(self.mousePanel, wx.ID_ANY, label="Mouse")
-        self.mouseGroupBox.SetFont(smallFont)
+        self.mouseGroupBox.SetFont(self.smallFont)
         self.mouseGroupBoxSizer = wx.StaticBoxSizer(self.mouseGroupBox, wx.VERTICAL)
         self.mousePanel.SetSizer(self.mouseGroupBoxSizer)
 
@@ -432,7 +435,7 @@ class TurboVncOptions(wx.Dialog):
             if 'emulate3' in vncOptions:
                 self.emulate3ButtonsWith2ButtonClickCheckBox.SetValue(vncOptions['emulate3'])
         self.innerMousePanelSizer.Add(self.emulate3ButtonsWith2ButtonClickCheckBox)
-        self.emulate3ButtonsWith2ButtonClickCheckBox.SetFont(smallFont)
+        self.emulate3ButtonsWith2ButtonClickCheckBox.SetFont(self.smallFont)
         
         self.swapMouseButtons2And3CheckBox = wx.CheckBox(self.innerMousePanel, wx.ID_ANY, "Swap mouse buttons 2 and 3")
         self.swapMouseButtons2And3CheckBox.SetValue(False)
@@ -440,7 +443,7 @@ class TurboVncOptions(wx.Dialog):
             if 'swapmouse' in vncOptions:
                 self.swapMouseButtons2And3CheckBox.SetValue(vncOptions['swapmouse'])
         self.innerMousePanelSizer.Add(self.swapMouseButtons2And3CheckBox)
-        self.swapMouseButtons2And3CheckBox.SetFont(smallFont)
+        self.swapMouseButtons2And3CheckBox.SetFont(self.smallFont)
         
         self.innerMousePanel.SetSizerAndFit(self.innerMousePanelSizer)
         self.mouseGroupBoxSizer.Add(self.innerMousePanel, flag=wx.EXPAND)
@@ -459,7 +462,7 @@ class TurboVncOptions(wx.Dialog):
         self.connectionRightPanelSizer.Add(self.mouseCursorPanel, flag=wx.EXPAND)
 
         self.mouseCursorGroupBox = wx.StaticBox(self.mouseCursorPanel, wx.ID_ANY, label="Mouse cursor")
-        self.mouseCursorGroupBox.SetFont(smallFont)
+        self.mouseCursorGroupBox.SetFont(self.smallFont)
         self.mouseCursorGroupBoxSizer = wx.StaticBoxSizer(self.mouseCursorGroupBox, wx.VERTICAL)
         self.mouseCursorPanel.SetSizer(self.mouseCursorGroupBoxSizer)
 
@@ -472,21 +475,21 @@ class TurboVncOptions(wx.Dialog):
         if 'trackRemoteCursorLocally' in vncOptions:
             self.trackRemoteCursorLocallyRadioButton.SetValue(vncOptions['trackRemoteCursorLocally'])
         self.innerMouseCursorPanelSizer.Add(self.trackRemoteCursorLocallyRadioButton)
-        self.trackRemoteCursorLocallyRadioButton.SetFont(smallFont)
+        self.trackRemoteCursorLocallyRadioButton.SetFont(self.smallFont)
         
         self.letRemoteServerDealWithMouseCursorRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Let remote server deal with mouse cursor")
         self.letRemoteServerDealWithMouseCursorRadioButton.SetValue(False)
         if 'letRemoteServerDealWithMouseCursor' in vncOptions:
             self.letRemoteServerDealWithMouseCursorRadioButton.SetValue(vncOptions['letRemoteServerDealWithMouseCursor'])
         self.innerMouseCursorPanelSizer.Add(self.letRemoteServerDealWithMouseCursorRadioButton)
-        self.letRemoteServerDealWithMouseCursorRadioButton.SetFont(smallFont)
+        self.letRemoteServerDealWithMouseCursorRadioButton.SetFont(self.smallFont)
         
         self.dontShowRemoteCursorRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Don't show remote cursor")
         self.dontShowRemoteCursorRadioButton.SetValue(False)
         if 'dontShowRemoteCursor' in vncOptions:
             self.dontShowRemoteCursorRadioButton.SetValue(vncOptions['dontShowRemoteCursor'])
         self.innerMouseCursorPanelSizer.Add(self.dontShowRemoteCursorRadioButton)
-        self.dontShowRemoteCursorRadioButton.SetFont(smallFont)
+        self.dontShowRemoteCursorRadioButton.SetFont(self.smallFont)
         
         self.innerMouseCursorPanel.SetSizerAndFit(self.innerMouseCursorPanelSizer)
         self.mouseCursorGroupBoxSizer.Add(self.innerMouseCursorPanel, flag=wx.EXPAND)
@@ -511,7 +514,7 @@ class TurboVncOptions(wx.Dialog):
         if 'requestSharedSession' in vncOptions:
             self.requestSharedSessionCheckBox.SetValue(vncOptions['requestSharedSession'])
         self.requestSharedSessionPanelSizer.Add(self.requestSharedSessionCheckBox)
-        self.requestSharedSessionCheckBox.SetFont(smallFont)
+        self.requestSharedSessionCheckBox.SetFont(self.smallFont)
         
         self.requestSharedSessionPanelSizer.Add(wx.Panel(self.requestSharedSessionPanel, wx.ID_ANY))
         self.requestSharedSessionPanelSizer.Add(wx.Panel(self.requestSharedSessionPanel, wx.ID_ANY))
@@ -563,7 +566,7 @@ class TurboVncOptions(wx.Dialog):
         self.globalsTopPanelSizer.Add(self.interfaceOptionsPanel, flag=wx.EXPAND)
 
         self.interfaceOptionsGroupBox = wx.StaticBox(self.interfaceOptionsPanel, wx.ID_ANY, label="Interface Options")
-        self.interfaceOptionsGroupBox.SetFont(smallFont)
+        self.interfaceOptionsGroupBox.SetFont(self.smallFont)
         self.interfaceOptionsGroupBoxSizer = wx.StaticBoxSizer(self.interfaceOptionsGroupBox, wx.VERTICAL)
         self.interfaceOptionsPanel.SetSizer(self.interfaceOptionsGroupBoxSizer)
 
@@ -579,26 +582,26 @@ class TurboVncOptions(wx.Dialog):
             self.showToolbarsByDefaultCheckBox.SetValue(False)
             self.showToolbarsByDefaultCheckBox.Disable()
         self.innerInterfaceOptionsPanelSizer.Add(self.showToolbarsByDefaultCheckBox)
-        self.showToolbarsByDefaultCheckBox.SetFont(smallFont)
+        self.showToolbarsByDefaultCheckBox.SetFont(self.smallFont)
         
         self.warnWhenSwitchingToFullScreenModeCheckBox = wx.CheckBox(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Warn when switching to full-screen mode")
         self.warnWhenSwitchingToFullScreenModeCheckBox.SetValue(True)
         self.innerInterfaceOptionsPanelSizer.Add(self.warnWhenSwitchingToFullScreenModeCheckBox)
-        self.warnWhenSwitchingToFullScreenModeCheckBox.SetFont(smallFont)
+        self.warnWhenSwitchingToFullScreenModeCheckBox.SetFont(self.smallFont)
         
         self.numberOfConnectionsToRememberPanel = wx.Panel(self.innerInterfaceOptionsPanel, wx.ID_ANY)
         self.numberOfConnectionsToRememberPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5,hgap=5)
         self.numberOfConnectionsToRememberPanel.SetSizer(self.numberOfConnectionsToRememberPanelSizer)
 
         self.numberOfConnectionsToRememberLabel = wx.StaticText(self.numberOfConnectionsToRememberPanel, wx.ID_ANY, "Number of connections to remember:   ")
-        self.numberOfConnectionsToRememberLabel.SetFont(smallFont)
+        self.numberOfConnectionsToRememberLabel.SetFont(self.smallFont)
         self.numberOfConnectionsToRememberPanelSizer.Add(self.numberOfConnectionsToRememberLabel, flag=wx.ALIGN_CENTER_VERTICAL)
 
         if sys.platform.startswith("win"):
             self.numberOfConnectionsToRememberSpinCtrl = wx.SpinCtrl(self.numberOfConnectionsToRememberPanel, value='32')
         else:
             self.numberOfConnectionsToRememberSpinCtrl = wx.SpinCtrl(self.numberOfConnectionsToRememberPanel, value='0')
-        self.numberOfConnectionsToRememberSpinCtrl.SetFont(smallFont)
+        self.numberOfConnectionsToRememberSpinCtrl.SetFont(self.smallFont)
         self.numberOfConnectionsToRememberPanelSizer.Add(self.numberOfConnectionsToRememberSpinCtrl, wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
         
         self.numberOfConnectionsToRememberPanel.SetSizerAndFit(self.numberOfConnectionsToRememberPanelSizer)
@@ -606,7 +609,7 @@ class TurboVncOptions(wx.Dialog):
 
         self.clearTheListOfSavedConnectionsButton = wx.Button(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Clear the list of saved connections")
         self.innerInterfaceOptionsPanelSizer.Add(self.clearTheListOfSavedConnectionsButton)
-        self.clearTheListOfSavedConnectionsButton.SetFont(smallFont)
+        self.clearTheListOfSavedConnectionsButton.SetFont(self.smallFont)
         
         self.innerInterfaceOptionsPanelSizer.Add(wx.Panel(self.innerInterfaceOptionsPanel, wx.ID_ANY))
 
@@ -630,7 +633,7 @@ class TurboVncOptions(wx.Dialog):
         self.globalsTopPanelSizer.Add(self.localCursorShapePanel, flag=wx.EXPAND)
 
         self.localCursorShapeGroupBox = wx.StaticBox(self.localCursorShapePanel, wx.ID_ANY, label="Local cursor shape")
-        self.localCursorShapeGroupBox.SetFont(smallFont)
+        self.localCursorShapeGroupBox.SetFont(self.smallFont)
         self.localCursorShapeGroupBoxSizer = wx.StaticBoxSizer(self.localCursorShapeGroupBox, wx.VERTICAL)
         self.localCursorShapePanel.SetSizer(self.localCursorShapeGroupBoxSizer)
 
@@ -644,25 +647,25 @@ class TurboVncOptions(wx.Dialog):
             if 'dotcursor' in vncOptions:
                 self.dotCursorRadioButton.SetValue(vncOptions['dotcursor'])
         self.innerLocalCursorShapePanelSizer.Add(self.dotCursorRadioButton)
-        self.dotCursorRadioButton.SetFont(smallFont)
+        self.dotCursorRadioButton.SetFont(self.smallFont)
         
         self.smallDotCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Small dot cursor")
         self.innerLocalCursorShapePanelSizer.Add(self.smallDotCursorRadioButton)
-        self.smallDotCursorRadioButton.SetFont(smallFont)
+        self.smallDotCursorRadioButton.SetFont(self.smallFont)
         if sys.platform.startswith("win"):
             if 'smalldotcursor' in vncOptions:
                 self.smallDotCursorRadioButton.SetValue(vncOptions['smalldotcursor'])
         
         self.normalArrowRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Normal arrow")
         self.innerLocalCursorShapePanelSizer.Add(self.normalArrowRadioButton)
-        self.normalArrowRadioButton.SetFont(smallFont)
+        self.normalArrowRadioButton.SetFont(self.smallFont)
         if sys.platform.startswith("win"):
             if 'normalcursor' in vncOptions:
                 self.normalArrowRadioButton.SetValue(vncOptions['normalcursor'])
         
         self.noLocalCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "No local cursor")
         self.innerLocalCursorShapePanelSizer.Add(self.noLocalCursorRadioButton)
-        self.noLocalCursorRadioButton.SetFont(smallFont)
+        self.noLocalCursorRadioButton.SetFont(self.smallFont)
         if sys.platform.startswith("win"):
             if 'nocursor' in vncOptions:
                 self.noLocalCursorRadioButton.SetValue(vncOptions['nocursor'])
@@ -685,7 +688,7 @@ class TurboVncOptions(wx.Dialog):
         self.globalsMiddlePanelSizer.Add(self.listeningModePanel, flag=wx.EXPAND)
 
         self.listeningModeGroupBox = wx.StaticBox(self.listeningModePanel, wx.ID_ANY, label="Listening mode")
-        self.listeningModeGroupBox.SetFont(smallFont)
+        self.listeningModeGroupBox.SetFont(self.smallFont)
         self.listeningModeGroupBoxSizer = wx.StaticBoxSizer(self.listeningModeGroupBox, wx.VERTICAL)
         self.listeningModePanel.SetSizer(self.listeningModeGroupBoxSizer)
 
@@ -698,11 +701,11 @@ class TurboVncOptions(wx.Dialog):
         self.acceptReverseVncConnectionsOnTcpPortPanel.SetSizer(self.acceptReverseVncConnectionsOnTcpPortPanelSizer)
 
         self.acceptReverseVncConnectionsOnTcpPortLabel = wx.StaticText(self.acceptReverseVncConnectionsOnTcpPortPanel, wx.ID_ANY, "Accept reverse VNC connection on TCP port:   ")
-        self.acceptReverseVncConnectionsOnTcpPortLabel.SetFont(smallFont)
+        self.acceptReverseVncConnectionsOnTcpPortLabel.SetFont(self.smallFont)
         self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortLabel, flag=wx.ALIGN_CENTER_VERTICAL)
 
         self.acceptReverseVncConnectionsOnTcpPortSpinCtrl = wx.SpinCtrl(self.acceptReverseVncConnectionsOnTcpPortPanel, value='5500', size=(70,-1))
-        self.acceptReverseVncConnectionsOnTcpPortSpinCtrl.SetFont(smallFont)
+        self.acceptReverseVncConnectionsOnTcpPortSpinCtrl.SetFont(self.smallFont)
         self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortSpinCtrl, flag=wx.TOP|wx.BOTTOM,border=2)
         self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(wx.Panel(self.acceptReverseVncConnectionsOnTcpPortPanel, wx.ID_ANY), flag=wx.EXPAND)
         
@@ -725,7 +728,7 @@ class TurboVncOptions(wx.Dialog):
         self.globalsBottomPanelSizer.Add(self.loggingPanel, flag=wx.EXPAND)
 
         self.loggingGroupBox = wx.StaticBox(self.loggingPanel, wx.ID_ANY, label="Logging")
-        self.loggingGroupBox.SetFont(smallFont)
+        self.loggingGroupBox.SetFont(self.smallFont)
         self.loggingGroupBoxSizer = wx.StaticBoxSizer(self.loggingGroupBox, wx.VERTICAL)
         self.loggingPanel.SetSizer(self.loggingGroupBoxSizer)
 
@@ -735,28 +738,28 @@ class TurboVncOptions(wx.Dialog):
 
         self.writeLogToAFileCheckBox = wx.CheckBox(self.innerLoggingPanel, wx.ID_ANY, "Write log to a file:")
         self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox, flag=wx.EXPAND)
-        self.writeLogToAFileCheckBox.SetFont(smallFont)
+        self.writeLogToAFileCheckBox.SetFont(self.smallFont)
         self.writeLogToAFileCheckBox.Bind(wx.EVT_CHECKBOX, self.onToggleWriteLogToAFileCheckBox)
 
         self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(400,-1))
         self.vncViewerLogFilenameTextField.Disable()
         self.innerLoggingPanelSizer.Add(self.vncViewerLogFilenameTextField, flag=wx.EXPAND)
-        self.vncViewerLogFilenameTextField.SetFont(smallFont)
+        self.vncViewerLogFilenameTextField.SetFont(self.smallFont)
 
         self.browseButton = wx.Button(self.innerLoggingPanel, wx.ID_ANY, "Browse...")
         self.browseButton.Disable()
         self.innerLoggingPanelSizer.Add(self.browseButton, flag=wx.EXPAND)
-        self.browseButton.SetFont(smallFont)
+        self.browseButton.SetFont(self.smallFont)
         self.browseButton.Bind(wx.EVT_BUTTON, self.onBrowse)
 
         self.verbosityLevelLabel = wx.StaticText(self.innerLoggingPanel, wx.ID_ANY, "Verbosity level:")
         self.verbosityLevelLabel.Disable()
         self.innerLoggingPanelSizer.Add(self.verbosityLevelLabel, flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
-        self.verbosityLevelLabel.SetFont(smallFont)
+        self.verbosityLevelLabel.SetFont(self.smallFont)
 
         self.verbosityLevelSpinCtrl = wx.SpinCtrl(self.innerLoggingPanel, value='0')
         self.verbosityLevelSpinCtrl.Disable()
-        self.verbosityLevelSpinCtrl.SetFont(smallFont)
+        self.verbosityLevelSpinCtrl.SetFont(self.smallFont)
         self.innerLoggingPanelSizer.Add(self.verbosityLevelSpinCtrl)
         
         self.innerLoggingPanel.SetSizerAndFit(self.innerLoggingPanelSizer)
@@ -785,10 +788,8 @@ class TurboVncOptions(wx.Dialog):
        
         # Buttons panel
 
-        notebookContainerPanelSizer.Add(wx.StaticText(self.notebookContainerPanel, wx.ID_ANY, "     "))
         self.buttonsPanel = wx.Panel(self.notebookContainerPanel, wx.ID_ANY)
-        notebookContainerPanelSizer.Add(self.buttonsPanel, flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
-        notebookContainerPanelSizer.Add(wx.StaticText(self.notebookContainerPanel, wx.ID_ANY, "     "))
+        notebookContainerPanelSizer.Add(self.buttonsPanel, flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, border=10)
 
         cancelButton = wx.Button(self.buttonsPanel, wx.ID_ANY, "Cancel")
         okButton = wx.Button(self.buttonsPanel, wx.ID_ANY, "OK")
@@ -804,7 +805,9 @@ class TurboVncOptions(wx.Dialog):
         okButton.Bind(wx.EVT_BUTTON, self.onOK)
         cancelButton.Bind(wx.EVT_BUTTON, self.onCancel)
      
-        self.notebookContainerPanel.SetSizer(notebookContainerPanelSizer)
+        self.notebookContainerPanel.SetSizerAndFit(notebookContainerPanelSizer)
+
+        self.Fit()
 
         self.Layout()
 
