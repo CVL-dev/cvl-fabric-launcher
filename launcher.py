@@ -969,11 +969,14 @@ class MassiveLauncherMainFrame(wx.Frame):
                             proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
-                            proc.communicate(input=password)
+                            proc.communicate(input=password + "\r\n")
                         else:
                             vncCommandString = vnc + " -user " + username + " -autopass " + vncOptionsString + " localhost::" + localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
-                            subprocess.call("echo \"" + password + "\" | " + vncCommandString,shell=True)
+                            proc = subprocess.Popen(vncCommandString, 
+                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                universal_newlines=True)
+                            proc.communicate(input=password + "\n")
                         try:
                             global sshTunnelProcess
                             sshTunnelProcess.terminate()

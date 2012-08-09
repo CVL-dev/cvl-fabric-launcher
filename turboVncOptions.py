@@ -124,8 +124,7 @@ class TurboVncOptions(wx.Dialog):
             'Tight + Low Quality JPEG (WAN)', 
             'Lossless Tight (Gigabit)', 
             'Lossless Tight + Zlib (WAN)']
-        self.encodingMethodsComboBox = wx.Choice(self.encodingMethodsPanel, wx.ID_ANY,
-            choices=encodingMethods, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.encodingMethodsComboBox = wx.Choice(self.encodingMethodsPanel, wx.ID_ANY, choices=encodingMethods)
         self.encodingMethodsComboBox.SetFont(smallFont)
         self.encodingMethodsComboBox.Bind(wx.EVT_CHOICE, self.onSelectEncodingMethodFromComboBox)
         self.encodingMethodsPanelSizer.Add(self.encodingMethodsComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
@@ -332,8 +331,7 @@ class TurboVncOptions(wx.Dialog):
             '150',
             '200',
             'Auto']
-        self.scaleByComboBox = wx.Choice(self.scaleByPanel, wx.ID_ANY,
-            choices=scaleOptions, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.scaleByComboBox = wx.Choice(self.scaleByPanel, wx.ID_ANY, choices=scaleOptions)
         SCALE_OPTION_100_PERCENT = 4
         self.scaleByComboBox.SetSelection(SCALE_OPTION_100_PERCENT)
         if 'scale' in vncOptions:
@@ -380,8 +378,7 @@ class TurboVncOptions(wx.Dialog):
             'Primary monitor only',
             'All monitors',
             'Automatic']
-        self.spanModeComboBox = wx.Choice(self.spanModePanel, wx.ID_ANY,
-            choices=spanModes, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.spanModeComboBox = wx.Choice(self.spanModePanel, wx.ID_ANY, choices=spanModes)
         SPAN_MODE_AUTOMATIC = 2
         self.spanModeComboBox.SetSelection(SPAN_MODE_AUTOMATIC)
         self.spanModeCommandLineString = {0:"primary", 1:"all", 2:"auto"}
