@@ -962,6 +962,11 @@ class MassiveLauncherMainFrame(wx.Frame):
                                 vncOptionsString = vncOptionsString + " /normalcursor"
                             if 'nocursor' in vncOptions and vncOptions['nocursor']==True:
                                 vncOptionsString = vncOptionsString + " /nocursor"
+                            if 'writelog' in vncOptions and vncOptions['writelog']==True:
+                                if 'loglevel' in vncOptions and vncOptions['loglevel']==True:
+                                    vncOptionsString = vncOptionsString + " /loglevel " + vncOptions['loglevel']
+                                if 'logfile' in vncOptions:
+                                    vncOptionsString = vncOptionsString + " /logfile \"" + vncOptions['logfile'] + "\""
 
                         if sys.platform.startswith("win"):
                             vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost::" + localPortNumber

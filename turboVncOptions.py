@@ -738,11 +738,15 @@ class TurboVncOptions(wx.Dialog):
         self.innerLoggingPanel.SetSizer(self.innerLoggingPanelSizer)
 
         self.writeLogToAFileCheckBox = wx.CheckBox(self.innerLoggingPanel, wx.ID_ANY, "Write log to a file:")
+        if 'writelog' in vncOptions:
+            self.writeLogToAFileCheckBox.SetValue(vncOptions['writelog'])
         self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox, flag=wx.EXPAND)
         self.writeLogToAFileCheckBox.SetFont(self.smallFont)
         self.writeLogToAFileCheckBox.Bind(wx.EVT_CHECKBOX, self.onToggleWriteLogToAFileCheckBox)
 
         self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(400,-1))
+        if 'logfile' in vncOptions:
+            self.vncViewerLogFilenameTextField.SetValue(vncOptions['logfile'])
         self.vncViewerLogFilenameTextField.Disable()
         self.innerLoggingPanelSizer.Add(self.vncViewerLogFilenameTextField, flag=wx.EXPAND)
         self.vncViewerLogFilenameTextField.SetFont(self.smallFont)
@@ -761,6 +765,8 @@ class TurboVncOptions(wx.Dialog):
         self.verbosityLevelSpinCtrl = wx.SpinCtrl(self.innerLoggingPanel, value='0')
         self.verbosityLevelSpinCtrl.Disable()
         self.verbosityLevelSpinCtrl.SetFont(self.smallFont)
+        if 'loglevel' in vncOptions:
+            self.verbosityLevelSpinCtrl.SetValue(vncOptions['loglevel'])
         self.innerLoggingPanelSizer.Add(self.verbosityLevelSpinCtrl)
         
         self.innerLoggingPanel.SetSizerAndFit(self.innerLoggingPanelSizer)
@@ -847,6 +853,9 @@ class TurboVncOptions(wx.Dialog):
             self.vncOptions['smalldotcursor'] = self.smallDotCursorRadioButton.GetValue()
             self.vncOptions['normalcursor'] = self.normalArrowRadioButton.GetValue()
             self.vncOptions['nocursor'] = self.noLocalCursorRadioButton.GetValue()
+            self.vncOptions['writelog'] = self.writeLogToAFileCheckBox.GetValue()
+            self.vncOptions['loglevel'] = str(self.verbosityLevelSpinCtrl.GetValue())
+            self.vncOptions['logfile'] = self.vncViewerLogFilenameTextField.GetValue()
         self.Close(True)
       
     def enableZlibCompressionLevelWidgets(self):
