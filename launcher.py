@@ -281,8 +281,8 @@ class LauncherMainFrame(wx.Frame):
         resolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        global massiveResolutionComboBox
-        massiveResolutionComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 135), size=(widgetWidth2, -1),choices=resolutions, style=wx.CB_DROPDOWN)
+        global vncDisplayResolutionComboBox
+        vncDisplayResolutionComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 135), size=(widgetWidth2, -1),choices=resolutions, style=wx.CB_DROPDOWN)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "resolution"):
                 resolution = config.get("MASSIVE Launcher Preferences", "resolution")
@@ -295,9 +295,9 @@ class LauncherMainFrame(wx.Frame):
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
         if resolution.strip()!="":
-            massiveResolutionComboBox.SetValue(resolution)
+            vncDisplayResolutionComboBox.SetValue(resolution)
         else:
-            massiveResolutionComboBox.SetValue(defaultResolution)
+            vncDisplayResolutionComboBox.SetValue(defaultResolution)
 
         cipher = ""
         if sys.platform.startswith("win"):
@@ -348,8 +348,8 @@ class LauncherMainFrame(wx.Frame):
 
         massiveProjectComboBox.MoveAfterInTabOrder(vncLoginHostComboBox)
         massiveHoursField.MoveAfterInTabOrder(massiveProjectComboBox)
-        massiveResolutionComboBox.MoveAfterInTabOrder(massiveHoursField)
-        sshTunnelCipherComboBox.MoveAfterInTabOrder(massiveResolutionComboBox)
+        vncDisplayResolutionComboBox.MoveAfterInTabOrder(massiveHoursField)
+        sshTunnelCipherComboBox.MoveAfterInTabOrder(vncDisplayResolutionComboBox)
         usernameTextField.MoveAfterInTabOrder(sshTunnelCipherComboBox)
         passwordField.MoveAfterInTabOrder(usernameTextField)
 
@@ -1059,7 +1059,7 @@ class LauncherMainFrame(wx.Frame):
                 # Get user's default project from Karaage:
                 project = xmlrpcServer.get_project(username)
                 massiveProjectComboBox.SetValue(project)
-        resolution = massiveResolutionComboBox.GetValue()
+        resolution = vncDisplayResolutionComboBox.GetValue()
         cipher = sshTunnelCipherComboBox.GetValue()
 
         config.set("MASSIVE Launcher Preferences", "username", username)
