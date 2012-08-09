@@ -119,7 +119,7 @@ class MyHtmlParser(HTMLParser.HTMLParser):
     if self.recording:
       self.data.append(data)
 
-class MassiveLauncherMainFrame(wx.Frame):
+class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
 
@@ -1129,7 +1129,7 @@ class MyApp(wx.App):
             config.read(massiveLauncherPreferencesFilePath)
 
         global launcherMainFrame
-        launcherMainFrame = MassiveLauncherMainFrame(None, -1, 'MASSIVE/CVL Launcher')
+        launcherMainFrame = LauncherMainFrame(None, -1, 'MASSIVE/CVL Launcher')
         launcherMainFrame.Show(True)
         return True
 
