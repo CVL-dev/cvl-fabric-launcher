@@ -641,6 +641,14 @@ class TurboVncOptions(wx.Dialog):
         self.localCursorShapeGroupBoxSizer.Add(self.innerLocalCursorShapePanel, flag=wx.EXPAND)
         self.localCursorShapePanel.SetSizerAndFit(self.localCursorShapeGroupBoxSizer)
 
+        if not sys.platform.startswith("win"):
+            self.localCursorShapePanel.Disable()
+            self.innerLocalCursorShapePanel.Disable()
+            self.dotCursorRadioButton.Disable()
+            self.smallDotCursorRadioButton.Disable()
+            self.normalArrowRadioButton.Disable()
+            self.noLocalCursorRadioButton.Disable()
+
         # Listening mode group box
 
         self.listeningModePanel = wx.Panel(self.globalsMiddlePanel, wx.ID_ANY)
@@ -724,6 +732,15 @@ class TurboVncOptions(wx.Dialog):
         self.innerLoggingPanel.SetSizerAndFit(self.innerLoggingPanelSizer)
         self.loggingGroupBoxSizer.Add(self.innerLoggingPanel, flag=wx.EXPAND)
         self.loggingPanel.SetSizerAndFit(self.loggingGroupBoxSizer)
+
+        if not sys.platform.startswith("win"):
+            self.loggingPanel.Disable()
+            self.loggingGroupBox.Disable()
+            self.innerLoggingPanel.Disable()
+            self.verbosityLevelLabel.Disable()
+            self.verbosityLevelSpinCtrl.Disable()
+            self.vncViewerLogFilenameTextField.Disable()
+            self.browseButton.Disable()
 
         # Globals panels
 
