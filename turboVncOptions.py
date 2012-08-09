@@ -575,9 +575,10 @@ class TurboVncOptions(wx.Dialog):
         self.innerInterfaceOptionsPanel.SetSizer(self.innerInterfaceOptionsPanelSizer)
 
         self.showToolbarsByDefaultCheckBox = wx.CheckBox(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Show toolbars by default")
-        if sys.platform.startswith("win") and 'toolbar' in vncOptions:
+        if sys.platform.startswith("win"):
             self.showToolbarsByDefaultCheckBox.SetValue(True)
-            self.showToolbarsByDefaultCheckBox.SetValue(vncOptions['toolbar'])
+            if 'toolbar' in vncOptions:
+                self.showToolbarsByDefaultCheckBox.SetValue(vncOptions['toolbar'])
         else:
             self.showToolbarsByDefaultCheckBox.SetValue(False)
             self.showToolbarsByDefaultCheckBox.Disable()
@@ -844,7 +845,7 @@ class TurboVncOptions(wx.Dialog):
             self.vncOptions['toolbar'] = self.showToolbarsByDefaultCheckBox.GetValue()
             self.vncOptions['dotcursor'] = self.dotCursorRadioButton.GetValue()
             self.vncOptions['smalldotcursor'] = self.smallDotCursorRadioButton.GetValue()
-            self.vncOptions['normalcursor'] = self.normalCursorRadioButton.GetValue()
+            self.vncOptions['normalcursor'] = self.normalArrowRadioButton.GetValue()
             self.vncOptions['nocursor'] = self.noLocalCursorRadioButton.GetValue()
         self.Close(True)
       
