@@ -1050,23 +1050,25 @@ class MassiveLauncherMainFrame(wx.Frame):
         vncLoginHost = vncLoginHostComboBox.GetValue()
         hours = str(massiveHoursField.GetValue())
         project = massiveProjectComboBox.GetValue()
-        if project == defaultProjectPlaceholder:
-            xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
-            # Get list of user's projects from Karaage:
-            # users_projects = xmlrpcServer.get_users_projects(username,password)
-            # projects = users_projects[1]
-            # Get user's default project from Karaage:
-            project = xmlrpcServer.get_project(username)
-            massiveProjectComboBox.SetValue(project)
+        if "massive" in vncLoginHost:
+            if project == defaultProjectPlaceholder:
+                xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
+                # Get list of user's projects from Karaage:
+                # users_projects = xmlrpcServer.get_users_projects(username, password)
+                # projects = users_projects[1]
+                # Get user's default project from Karaage:
+                project = xmlrpcServer.get_project(username)
+                massiveProjectComboBox.SetValue(project)
         resolution = massiveResolutionComboBox.GetValue()
         cipher = sshTunnelCipherComboBox.GetValue()
 
-        config.set("MASSIVE Launcher Preferences","username",username)
-        config.set("MASSIVE Launcher Preferences","host",vncLoginHost)
-        config.set("MASSIVE Launcher Preferences","project",project)
-        config.set("MASSIVE Launcher Preferences","hours",hours)
-        config.set("MASSIVE Launcher Preferences","resolution",resolution)
-        config.set("MASSIVE Launcher Preferences","cipher",cipher)
+        config.set("MASSIVE Launcher Preferences", "username", username)
+        config.set("MASSIVE Launcher Preferences", "host", vncLoginHost)
+        if "massive" in vncLoginHost:
+            config.set("MASSIVE Launcher Preferences", "project", project)
+            config.set("MASSIVE Launcher Preferences", "hours", hours)
+        config.set("MASSIVE Launcher Preferences", "resolution", resolution)
+        config.set("MASSIVE Launcher Preferences", "cipher", cipher)
         with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
             config.write(massiveLauncherPreferencesFileObject)
 
