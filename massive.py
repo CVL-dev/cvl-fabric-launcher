@@ -933,6 +933,9 @@ class MassiveLauncherMainFrame(wx.Frame):
                                     vncOptionsString = vncOptionsString + " /fitwindow"
                                 else:
                                     vncOptionsString = vncOptionsString + " /scale " + vncOptions['scale']
+                            defaultSpanMode = 'automatic'
+                            if 'span' in vncOptions and vncOptions['span']!=defaultSpanMode:
+                                vncOptionsString = vncOptionsString + " /span " + vncOptions['span']
                         if 'doubleBuffering' in vncOptions and vncOptions['doubleBuffering']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
                         if 'fullScreenMode' in vncOptions and vncOptions['fullScreenMode']==True:

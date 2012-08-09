@@ -337,7 +337,7 @@ class TurboVncOptions(wx.Dialog):
         SCALE_OPTION_100_PERCENT = 4
         self.scaleByComboBox.SetSelection(SCALE_OPTION_100_PERCENT)
         if 'scale' in vncOptions:
-            self.scaleByComboBox.SetSelection.SetStringSelection(vncOptions['scale'])
+            self.scaleByComboBox.SetStringSelection(vncOptions['scale'])
         self.scaleByComboBox.SetFont(smallFont)
         self.scaleByPanelSizer.Add(self.scaleByComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
@@ -384,6 +384,14 @@ class TurboVncOptions(wx.Dialog):
             choices=spanModes, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         SPAN_MODE_AUTOMATIC = 2
         self.spanModeComboBox.SetSelection(SPAN_MODE_AUTOMATIC)
+        self.spanModeCommandLineString = {0:"primary", 1:"all", 2:"auto"}
+        if 'span' in vncOptions:
+            if vncOptions['span']=='primary':
+                self.spanModeComboBox.SetStringSelection('Primary monitor only')
+            if vncOptions['span']=='all':
+                self.spanModeComboBox.SetStringSelection('All monitors')
+            if vncOptions['span']=='auto':
+                self.spanModeComboBox.SetStringSelection('Automatic')
         self.spanModeComboBox.SetFont(smallFont)
         self.spanModePanelSizer.Add(self.spanModeComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
@@ -795,6 +803,7 @@ class TurboVncOptions(wx.Dialog):
         self.vncOptions['viewOnly'] = self.viewOnlyCheckBox.GetValue()
         self.vncOptions['disableClipboardTransfer'] = self.disableClipboardTransferCheckBox.GetValue()
         self.vncOptions['scale'] = self.scaleByComboBox.GetStringSelection()
+        self.vncOptions['span'] = self.spanModeCommandLineString[self.spanModeComboBox.GetSelection()]
         self.vncOptions['doubleBuffering'] = self.doubleBufferingCheckBox.GetValue()
         self.vncOptions['fullScreenMode'] = self.fullScreenModeCheckBox.GetValue()
         self.vncOptions['deiconifyOnRemoteBellEvent'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()
