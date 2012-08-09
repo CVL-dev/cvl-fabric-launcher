@@ -373,11 +373,11 @@ class LauncherMainFrame(wx.Frame):
         self.SetStatusBar(self.statusbar)
         self.Centre()
 
-        massiveLauncherURL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
+        launcherURL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
 
         try:
             myHtmlParser = MyHtmlParser()
-            feed = urllib.urlopen(massiveLauncherURL)
+            feed = urllib.urlopen(launcherURL)
             html = feed.read()
             myHtmlParser.feed(html)
             myHtmlParser.close()
@@ -442,8 +442,8 @@ class LauncherMainFrame(wx.Frame):
 
             newVersionAlertHyperlink = wx.HyperlinkCtrl(newVersionAlertTextPanel, 
                 id = wx.ID_ANY,
-                label = massiveLauncherURL,
-                url = massiveLauncherURL)
+                label = launcherURL,
+                url = launcherURL)
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             if sys.platform.startswith("darwin"):
                 font.SetPointSize(11)
