@@ -20,25 +20,30 @@ class TurboVncOptions(wx.Dialog):
         notebookContainerPanelSizer.Add(self.tabbedView, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
 
         self.smallFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-        if sys.platform.startswith("win"):
-            self.smallFont.SetPointSize(10)
-        else:
+
+        if self.smallFont.GetPointSize() > 11:
             self.smallFont.SetPointSize(11)
 
         # Connection tab
 
         self.connectionPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
-        self.connectionPanelSizer = wx.FlexGridSizer(rows=1, cols=4, vgap=15, hgap=15)
+        self.connectionPanelSizer = wx.FlexGridSizer(rows=1, cols=4, vgap=15, hgap=25)
 
         self.connectionLeftBorderPanel = wx.Panel(self.connectionPanel, wx.ID_ANY)
         self.connectionPanelSizer.Add(self.connectionLeftBorderPanel)
 
         self.connectionLeftPanel = wx.Panel(self.connectionPanel, wx.ID_ANY)
-        self.connectionPanelSizer.Add(self.connectionLeftPanel, flag=wx.EXPAND)
+        if sys.platform.startswith("darwin"):
+            self.connectionPanelSizer.Add(self.connectionLeftPanel, flag=wx.EXPAND|wx.TOP, border=0)
+        else:
+            self.connectionPanelSizer.Add(self.connectionLeftPanel, flag=wx.EXPAND|wx.TOP, border=15)
         self.connectionLeftPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
 
         self.connectionRightPanel = wx.Panel(self.connectionPanel, wx.ID_ANY)
-        self.connectionPanelSizer.Add(self.connectionRightPanel, flag=wx.EXPAND)
+        if sys.platform.startswith("darwin"):
+            self.connectionPanelSizer.Add(self.connectionRightPanel, flag=wx.EXPAND|wx.TOP, border=0)
+        else:
+            self.connectionPanelSizer.Add(self.connectionRightPanel, flag=wx.EXPAND|wx.TOP, border=15)
         self.connectionRightPanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5, hgap=5)
 
         self.connectionRightBorderPanel = wx.Panel(self.connectionPanel, wx.ID_ANY)
@@ -199,6 +204,7 @@ class TurboVncOptions(wx.Dialog):
         self.jpegImageQualitySlider.SetMin(1)
         self.jpegImageQualitySlider.SetMax(100)
         #self.jpegImageQualitySlider.SetValue(95)
+        self.jpegImageQualitySlider.SetTickFreq(10)
         self.jpegImageQualitySlider.SetValue(self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)']['jpegImageQuality'])
         if 'jpegImageQuality' in vncOptions:
             self.jpegImageQualitySlider.SetValue(vncOptions['jpegImageQuality'])
@@ -526,6 +532,7 @@ class TurboVncOptions(wx.Dialog):
         self.connectionLeftPanel.SetSizerAndFit(self.connectionLeftPanelSizer)
         self.connectionRightPanel.SetSizerAndFit(self.connectionRightPanelSizer)
         self.connectionPanel.SetSizerAndFit(self.connectionPanelSizer)
+        self.connectionPanel.Layout()
 
         # Globals tab
         
@@ -537,7 +544,7 @@ class TurboVncOptions(wx.Dialog):
 
         self.globalsTopPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsTopPanel, flag=wx.EXPAND)
-        self.globalsTopPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=15)
+        self.globalsTopPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=25)
 
         self.globalsMiddlePanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsMiddlePanel, flag=wx.EXPAND)
@@ -550,15 +557,16 @@ class TurboVncOptions(wx.Dialog):
         self.globalsBottomBorderPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
         self.globalsPanelSizer.Add(self.globalsBottomBorderPanel, flag=wx.EXPAND)
 
-        self.globalsPanelSizer.SetFlexibleDirection(wx.VERTICAL)
-        self.globalsTopPanelSizer.SetFlexibleDirection(wx.VERTICAL)
-        self.globalsMiddlePanelSizer.SetFlexibleDirection(wx.VERTICAL)
-        self.globalsBottomPanelSizer.SetFlexibleDirection(wx.VERTICAL)
+        if sys.platform.startswith("darwin"):
+            self.globalsPanelSizer.SetFlexibleDirection(wx.VERTICAL)
+            self.globalsTopPanelSizer.SetFlexibleDirection(wx.VERTICAL)
+            self.globalsMiddlePanelSizer.SetFlexibleDirection(wx.VERTICAL)
+            self.globalsBottomPanelSizer.SetFlexibleDirection(wx.VERTICAL)
 
-        self.globalsPanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
-        self.globalsTopPanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
-        self.globalsMiddlePanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
-        self.globalsBottomPanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
+            self.globalsPanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
+            self.globalsTopPanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
+            self.globalsMiddlePanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
+            self.globalsBottomPanelSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_ALL)
 
         # Interface options group box
 
@@ -744,7 +752,10 @@ class TurboVncOptions(wx.Dialog):
         self.writeLogToAFileCheckBox.SetFont(self.smallFont)
         self.writeLogToAFileCheckBox.Bind(wx.EVT_CHECKBOX, self.onToggleWriteLogToAFileCheckBox)
 
-        self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(400,-1))
+        if sys.platform.startswith("win"):
+            self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(300,-1))
+        else:
+            self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(400,-1))
         if 'logfile' in vncOptions:
             self.vncViewerLogFilenameTextField.SetValue(vncOptions['logfile'])
         self.vncViewerLogFilenameTextField.Disable()
@@ -789,6 +800,8 @@ class TurboVncOptions(wx.Dialog):
         self.globalsBottomPanel.SetSizerAndFit(self.globalsBottomPanelSizer)
         self.globalsPanel.SetSizerAndFit(self.globalsPanelSizer)
 
+        self.globalsPanel.Layout()
+
         # Adding Connection tab and Globals tab to tabbed view
         self.tabbedView.AddPage(self.connectionPanel, "Connection")
         self.tabbedView.AddPage(self.globalsPanel, "Globals")
@@ -815,7 +828,6 @@ class TurboVncOptions(wx.Dialog):
         self.notebookContainerPanel.SetSizerAndFit(notebookContainerPanelSizer)
 
         self.Fit()
-
         self.Layout()
 
     def getVncOptions(self):
