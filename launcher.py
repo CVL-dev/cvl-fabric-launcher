@@ -102,9 +102,9 @@ class LauncherMainFrame(wx.Frame):
     def __init__(self, parent, id, title):
 
         if sys.platform.startswith("darwin"):
-            wx.Frame.__init__(self, parent, id, title, size=(350, 390), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+            wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         else:
-            wx.Frame.__init__(self, parent, id, title, size=(350, 430), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+            wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         self.vncOptions = {}
 
@@ -152,25 +152,27 @@ class LauncherMainFrame(wx.Frame):
         self.SetMenuBar(self.menu_bar)
 
         self.loginDialogPanel = wx.Panel(self)
+        #self.loginDialogPanelSizer = wx.FlexGridSizer(rows=3, cols=1, vgap=5, hgap=5)
+        self.loginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
 
-        self.vncLoginHostLabel = wx.StaticText(self.loginDialogPanel, -1, 'Host', (10, 20))
-        self.massiveProjectLabel = wx.StaticText(self.loginDialogPanel, -1, 'MASSIVE project', (10, 60))
-        self.massiveHoursLabel = wx.StaticText(self.loginDialogPanel, -1, 'Hours requested', (10, 100))
-        self.vncDisplayResolutionLabel = wx.StaticText(self.loginDialogPanel, -1, 'Resolution', (10, 140))
-        self.sshTunnelCipherLabel = wx.StaticText(self.loginDialogPanel, -1, 'SSH tunnel cipher', (10, 180))
-        self.usernameLabel = wx.StaticText(self.loginDialogPanel, -1, 'Username', (10, 220))
-        self.passwordLabel = wx.StaticText(self.loginDialogPanel, -1, 'Password', (10, 260))
+        self.loginFieldsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
+        self.loginFieldsPanelSizer = wx.FlexGridSizer(rows=7, cols=2, vgap=3, hgap=5)
+        self.loginFieldsPanel.SetSizer(self.loginFieldsPanelSizer)
 
         widgetWidth1 = 180
         widgetWidth2 = 180
         if not sys.platform.startswith("win"):
             widgetWidth2 = widgetWidth2 + 25
 
+        self.vncLoginHostLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Host')
+        self.loginFieldsPanelSizer.Add(self.vncLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
         self.vncLoginHost = ""
         vncLoginHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
             "m2-login1.massive.org.au", "m2-login2.massive.org.au","cvldemo"]
         defaultMassiveHost = "m2-login2.massive.org.au"
-        self.vncLoginHostComboBox = wx.ComboBox(self.loginDialogPanel, -1, value=defaultMassiveHost, pos=(125, 15), size=(widgetWidth2, -1),choices=vncLoginHosts, style=wx.CB_DROPDOWN)
+        self.vncLoginHostComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value=defaultMassiveHost, choices=vncLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.loginFieldsPanelSizer.Add(self.vncLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "vncLoginHost"):
                 self.vncLoginHost = config.get("MASSIVE Launcher Preferences", "vncLoginHost")
@@ -184,6 +186,9 @@ class LauncherMainFrame(wx.Frame):
                 config.write(massiveLauncherPreferencesFileObject)
         if self.vncLoginHost.strip()!="":
             self.vncLoginHostComboBox.SetValue(self.vncLoginHost)
+
+        self.massiveProjectLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'MASSIVE project')
+        self.loginFieldsPanelSizer.Add(self.massiveProjectLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.defaultProjectPlaceholder = '[Use my default project]'
         projects = [
@@ -204,7 +209,8 @@ class LauncherMainFrame(wx.Frame):
             'pLaTr0011','pMelb0095','pMelb0100','pMelb0103','pMelb0104',
             'pMOSP','pRMIT0074','pRMIT0078','pVPAC0005','Training'
             ]
-        self.massiveProjectComboBox = wx.ComboBox(self.loginDialogPanel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
+        self.massiveProjectComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=projects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.loginFieldsPanelSizer.Add(self.massiveProjectComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.project = ""
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "project"):
@@ -222,6 +228,9 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.massiveProjectComboBox.SetValue(self.defaultProjectPlaceholder)
 
+        self.massiveHoursLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Hours requested')
+        self.loginFieldsPanelSizer.Add(self.massiveHoursLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
         self.hours = "4"
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "hours"):
@@ -236,7 +245,13 @@ class LauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        self.massiveHoursField = wx.SpinCtrl(self.loginDialogPanel, -1, value=self.hours, pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
+        #self.massiveHoursField = wx.SpinCtrl(self.loginFieldsPanel, wx.ID_ANY, value=self.hours, pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
+        self.massiveHoursField = wx.SpinCtrl(self.loginFieldsPanel, wx.ID_ANY, value=self.hours, min=1,max=24)
+        self.loginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        #self.vncDisplayResolutionLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Resolution', (10, 140))
+        self.vncDisplayResolutionLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Resolution')
+        self.loginFieldsPanelSizer.Add(self.vncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         displaySize = wx.DisplaySize()
         desiredWidth = displaySize[0] * 0.99
@@ -246,7 +261,8 @@ class LauncherMainFrame(wx.Frame):
         resolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        self.vncDisplayResolutionComboBox = wx.ComboBox(self.loginDialogPanel, -1, value='', pos=(125, 135), size=(widgetWidth2, -1),choices=resolutions, style=wx.CB_DROPDOWN)
+        self.vncDisplayResolutionComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=resolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.loginFieldsPanelSizer.Add(self.vncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "resolution"):
                 self.resolution = config.get("MASSIVE Launcher Preferences", "resolution")
@@ -263,6 +279,9 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.vncDisplayResolutionComboBox.SetValue(defaultResolution)
 
+        self.sshTunnelCipherLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
+        self.loginFieldsPanelSizer.Add(self.sshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
         self.cipher = ""
         if sys.platform.startswith("win"):
             defaultCipher = "arcfour"
@@ -270,7 +289,8 @@ class LauncherMainFrame(wx.Frame):
         else:
             defaultCipher = "arcfour128"
             ciphers = ["3des-cbc", "blowfish-cbc", "arcfour128"]
-        self.sshTunnelCipherComboBox = wx.ComboBox(self.loginDialogPanel, -1, value='', pos=(125, 175), size=(widgetWidth2, -1),choices=ciphers, style=wx.CB_DROPDOWN)
+        self.sshTunnelCipherComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=ciphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.loginFieldsPanelSizer.Add(self.sshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "cipher"):
                 self.cipher = config.get("MASSIVE Launcher Preferences", "cipher")
@@ -287,6 +307,9 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.sshTunnelCipherComboBox.SetValue(defaultCipher)
 
+        self.usernameLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Username')
+        self.loginFieldsPanelSizer.Add(self.usernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
         self.username = ""
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "username"):
@@ -299,12 +322,17 @@ class LauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        self.usernameTextField = wx.TextCtrl(self.loginDialogPanel, -1, self.username,  (125, 215), (widgetWidth1, -1))
+        self.usernameTextField = wx.TextCtrl(self.loginFieldsPanel, wx.ID_ANY, self.username, size=(widgetWidth1, -1))
+        self.loginFieldsPanelSizer.Add(self.usernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
         if self.username.strip()!="":
             self.usernameTextField.SelectAll()
 
+        self.passwordLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Password')
+        self.loginFieldsPanelSizer.Add(self.passwordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
         self.password = ""
-        self.passwordField = wx.TextCtrl(self.loginDialogPanel, -1, self.password,  (125, 255), (widgetWidth1, -1), style=wx.TE_PASSWORD)
+        self.passwordField = wx.TextCtrl(self.loginFieldsPanel, wx.ID_ANY, self.password, size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
+        self.loginFieldsPanelSizer.Add(self.passwordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
 
         self.usernameTextField.SetFocus()
 
@@ -315,21 +343,45 @@ class LauncherMainFrame(wx.Frame):
         self.usernameTextField.MoveAfterInTabOrder(self.sshTunnelCipherComboBox)
         self.passwordField.MoveAfterInTabOrder(self.usernameTextField)
 
-        print "self.buttonsPanel = ...\n"
-        #self.buttonsPanel = 
+        self.loginFieldsPanel.SetSizerAndFit(self.loginFieldsPanelSizer)
 
-        self.optionsButton = wx.Button(self.loginDialogPanel, 1, 'Options...', (15, 305))
-        self.cancelButton = wx.Button(self.loginDialogPanel, 2, 'Cancel', (130, 305))
-        self.loginButton = wx.Button(self.loginDialogPanel, 3, 'Login', (230, 305))
+        self.loginDialogPanelSizer.Add(self.loginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
+
+        self.buttonsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
+
+        self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=10)
+        self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
+
+        self.optionsButton = wx.Button(self.buttonsPanel, 1, 'Options...')
+        self.buttonsPanelSizer.Add(self.optionsButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
+
+        self.cancelButton = wx.Button(self.buttonsPanel, 2, 'Cancel')
+        self.buttonsPanelSizer.Add(self.cancelButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
+
+        self.loginButton = wx.Button(self.buttonsPanel, 3, 'Login')
+        self.buttonsPanelSizer.Add(self.loginButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
+
+        self.buttonsPanel.SetSizerAndFit(self.buttonsPanelSizer)
+
+        self.loginDialogPanelSizer.Add(self.buttonsPanel, flag=wx.ALIGN_RIGHT|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=15)
+
         self.loginButton.SetDefault()
 
         self.Bind(wx.EVT_BUTTON, self.onOptions, id=1)
         self.Bind(wx.EVT_BUTTON, self.onCancel, id=2)
         self.Bind(wx.EVT_BUTTON, self.onLogin, id=3)
 
-        self.statusbar = MyStatusBar(self)
-        self.loginDialogStatusBar = self.statusbar
-        self.SetStatusBar(self.statusbar)
+        #self.loginDialogStatusBar = LauncherStatusBar(self.loginDialogPanel)
+        self.loginDialogStatusBar = LauncherStatusBar(self)
+        #self.loginDialogPanelSizer.Add(self.loginDialogStatusBar, flag=wx.EXPAND)
+        self.SetStatusBar(self.loginDialogStatusBar)
+
+        self.loginDialogPanel.SetSizerAndFit(self.loginDialogPanelSizer)
+        self.loginDialogPanel.Layout()
+
+        self.Fit()
+        self.Layout()
+
         self.Centre()
 
         launcherURL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
@@ -366,15 +418,15 @@ class LauncherMainFrame(wx.Frame):
 
             import MASSIVE_icon
             massiveIconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
-            wx.StaticBitmap(massiveIconPanel, -1, 
+            wx.StaticBitmap(massiveIconPanel, wx.ID_ANY, 
                 massiveIconAsBitmap,
                 (0, 50),
                 (massiveIconAsBitmap.GetWidth(), massiveIconAsBitmap.GetHeight())) 
 
             newVersionAlertTextPanel = wx.Panel(newVersionAlertDialog)
 
-            gs = wx.FlexGridSizer(rows=4, cols=1, vgap=5, hgap=5)
-            newVersionAlertTextPanel.SetSizer(gs)
+            newVersionAlertTextPanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5, hgap=5)
+            newVersionAlertTextPanel.SetSizer(newVersionAlertTextPanelSizer)
 
             newVersionAlertTitleLabel = wx.StaticText(newVersionAlertTextPanel,
                 label = "MASSIVE/CVL Launcher")
@@ -382,9 +434,9 @@ class LauncherMainFrame(wx.Frame):
             font.SetPointSize(14)
             font.SetWeight(wx.BOLD)
             newVersionAlertTitleLabel.SetFont(font)
-            gs.Add(wx.StaticText(newVersionAlertTextPanel))
-            gs.Add(newVersionAlertTitleLabel, flag=wx.EXPAND)
-            gs.Add(wx.StaticText(newVersionAlertTextPanel))
+            newVersionAlertTextPanelSizer.Add(wx.StaticText(newVersionAlertTextPanel))
+            newVersionAlertTextPanelSizer.Add(newVersionAlertTitleLabel, flag=wx.EXPAND)
+            newVersionAlertTextPanelSizer.Add(wx.StaticText(newVersionAlertTextPanel))
 
             newVersionAlertTextLabel1 = wx.StaticText(newVersionAlertTextPanel, 
                 label = 
@@ -397,7 +449,7 @@ class LauncherMainFrame(wx.Frame):
             else:
                 font.SetPointSize(9)
             newVersionAlertTextLabel1.SetFont(font)
-            gs.Add(newVersionAlertTextLabel1, flag=wx.EXPAND)
+            newVersionAlertTextPanelSizer.Add(newVersionAlertTextLabel1, flag=wx.EXPAND)
 
             newVersionAlertHyperlink = wx.HyperlinkCtrl(newVersionAlertTextPanel, 
                 id = wx.ID_ANY,
@@ -409,8 +461,8 @@ class LauncherMainFrame(wx.Frame):
             else:
                 font.SetPointSize(8)
             newVersionAlertHyperlink.SetFont(font)
-            gs.Add(newVersionAlertHyperlink, flag=wx.EXPAND)
-            gs.Add(wx.StaticText(newVersionAlertTextPanel))
+            newVersionAlertTextPanelSizer.Add(newVersionAlertHyperlink, flag=wx.EXPAND)
+            newVersionAlertTextPanelSizer.Add(wx.StaticText(newVersionAlertTextPanel))
 
             newVersionAlertTextLabel2 = wx.StaticText(newVersionAlertTextPanel, 
                 label = 
@@ -421,25 +473,25 @@ class LauncherMainFrame(wx.Frame):
             else:
                 font.SetPointSize(9)
             newVersionAlertTextLabel2.SetFont(font)
-            gs.Add(newVersionAlertTextLabel2, flag=wx.EXPAND)
+            newVersionAlertTextPanelSizer.Add(newVersionAlertTextLabel2, flag=wx.EXPAND)
 
             def onOK(event):
                 sys.exit(1)
 
             okButton = wx.Button(newVersionAlertTextPanel, 1, ' OK ')
             okButton.SetDefault()
-            gs.Add(okButton, flag=wx.ALIGN_RIGHT)
-            gs.Add(wx.StaticText(newVersionAlertTextPanel))
-            gs.Fit(newVersionAlertTextPanel)
+            newVersionAlertTextPanelSizer.Add(okButton, flag=wx.ALIGN_RIGHT)
+            newVersionAlertTextPanelSizer.Add(wx.StaticText(newVersionAlertTextPanel))
+            newVersionAlertTextPanelSizer.Fit(newVersionAlertTextPanel)
 
             newVersionAlertDialog.Bind(wx.EVT_BUTTON, onOK, id=1)
 
-            gs = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=5)
-            gs.Add(massiveIconPanel, flag=wx.EXPAND)
-            gs.Add(newVersionAlertTextPanel, flag=wx.EXPAND)
-            gs.Add(wx.StaticText(newVersionAlertDialog,label="       "))
-            newVersionAlertDialog.SetSizer(gs)
-            gs.Fit(newVersionAlertDialog)
+            newVersionAlertDialogSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=5)
+            newVersionAlertDialogSizer.Add(massiveIconPanel, flag=wx.EXPAND)
+            newVersionAlertDialogSizer.Add(newVersionAlertTextPanel, flag=wx.EXPAND)
+            newVersionAlertDialogSizer.Add(wx.StaticText(newVersionAlertDialog,label="       "))
+            newVersionAlertDialog.SetSizer(newVersionAlertDialogSizer)
+            newVersionAlertDialogSizer.Fit(newVersionAlertDialog)
 
             newVersionAlertDialog.ShowModal()
             newVersionAlertDialog.Destroy()
@@ -496,6 +548,8 @@ class LauncherMainFrame(wx.Frame):
 
     def SetCursor(self, cursor):
         self.loginDialogPanel.SetCursor(cursor)
+        self.loginFieldsPanel.SetCursor(cursor)
+        self.buttonsPanel.SetCursor(cursor)
         self.vncLoginHostLabel.SetCursor(cursor)
         self.massiveProjectLabel.SetCursor(cursor)
         self.massiveHoursLabel.SetCursor(cursor)
@@ -1004,9 +1058,9 @@ class LauncherMainFrame(wx.Frame):
             logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
 
         self.logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
-        gs = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
-        gs.Add(self.logTextCtrl, 0, wx.EXPAND)
-        logWindow.SetSizer(gs)
+        logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
+        logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
+        logWindow.SetSizer(logWindowSizer)
         if sys.platform.startswith("darwin"):
             font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         else:
@@ -1020,7 +1074,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.loginThread = LoginThread(self)
 
-class MyStatusBar(wx.StatusBar):
+class LauncherStatusBar(wx.StatusBar):
     def __init__(self, parent):
         wx.StatusBar.__init__(self, parent)
 
@@ -1045,7 +1099,7 @@ class MyApp(wx.App):
             config.read(massiveLauncherPreferencesFilePath)
 
         global launcherMainFrame
-        launcherMainFrame = LauncherMainFrame(None, -1, 'MASSIVE/CVL Launcher')
+        launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
         launcherMainFrame.Show(True)
         return True
 
