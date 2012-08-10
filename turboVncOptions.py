@@ -540,22 +540,22 @@ class TurboVncOptions(wx.Dialog):
         self.globalsPanelSizer = wx.FlexGridSizer(rows=5, cols=1, vgap=15, hgap=15)
 
         self.globalsTopBorderPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
-        self.globalsPanelSizer.Add(self.globalsTopBorderPanel, flag=wx.EXPAND)
+        self.globalsPanelSizer.Add(self.globalsTopBorderPanel, flag=wx.EXPAND|wx.LEFT|wx.RIGHT, border=25)
 
         self.globalsTopPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
-        self.globalsPanelSizer.Add(self.globalsTopPanel, flag=wx.EXPAND)
+        self.globalsPanelSizer.Add(self.globalsTopPanel, flag=wx.EXPAND|wx.LEFT|wx.RIGHT, border=25)
         self.globalsTopPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=25)
 
         self.globalsMiddlePanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
-        self.globalsPanelSizer.Add(self.globalsMiddlePanel, flag=wx.EXPAND)
+        self.globalsPanelSizer.Add(self.globalsMiddlePanel, flag=wx.EXPAND|wx.LEFT|wx.RIGHT, border=25)
         self.globalsMiddlePanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
 
         self.globalsBottomPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
-        self.globalsPanelSizer.Add(self.globalsBottomPanel, flag=wx.EXPAND)
+        self.globalsPanelSizer.Add(self.globalsBottomPanel, flag=wx.EXPAND|wx.LEFT|wx.RIGHT, border=25)
         self.globalsBottomPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
 
         self.globalsBottomBorderPanel = wx.Panel(self.globalsPanel, wx.ID_ANY)
-        self.globalsPanelSizer.Add(self.globalsBottomBorderPanel, flag=wx.EXPAND)
+        self.globalsPanelSizer.Add(self.globalsBottomBorderPanel, flag=wx.EXPAND|wx.LEFT|wx.RIGHT, border=25)
 
         if sys.platform.startswith("darwin"):
             self.globalsPanelSizer.SetFlexibleDirection(wx.VERTICAL)
@@ -575,7 +575,8 @@ class TurboVncOptions(wx.Dialog):
 
         self.interfaceOptionsGroupBox = wx.StaticBox(self.interfaceOptionsPanel, wx.ID_ANY, label="Interface Options")
         self.interfaceOptionsGroupBox.SetFont(self.smallFont)
-        self.interfaceOptionsGroupBoxSizer = wx.StaticBoxSizer(self.interfaceOptionsGroupBox, wx.VERTICAL)
+        #self.interfaceOptionsGroupBoxSizer = wx.StaticBoxSizer(self.interfaceOptionsGroupBox, wx.VERTICAL)
+        self.interfaceOptionsGroupBoxSizer = wx.StaticBoxSizer(self.interfaceOptionsGroupBox, wx.HORIZONTAL)
         self.interfaceOptionsPanel.SetSizer(self.interfaceOptionsGroupBoxSizer)
 
         self.innerInterfaceOptionsPanel = wx.Panel(self.interfaceOptionsPanel, wx.ID_ANY)
@@ -643,37 +644,40 @@ class TurboVncOptions(wx.Dialog):
 
         self.localCursorShapeGroupBox = wx.StaticBox(self.localCursorShapePanel, wx.ID_ANY, label="Local cursor shape")
         self.localCursorShapeGroupBox.SetFont(self.smallFont)
-        self.localCursorShapeGroupBoxSizer = wx.StaticBoxSizer(self.localCursorShapeGroupBox, wx.VERTICAL)
+        #self.localCursorShapeGroupBoxSizer = wx.StaticBoxSizer(self.localCursorShapeGroupBox, wx.VERTICAL)
+        self.localCursorShapeGroupBoxSizer = wx.StaticBoxSizer(self.localCursorShapeGroupBox, wx.HORIZONTAL)
         self.localCursorShapePanel.SetSizer(self.localCursorShapeGroupBoxSizer)
 
         self.innerLocalCursorShapePanel = wx.Panel(self.localCursorShapePanel, wx.ID_ANY)
         self.innerLocalCursorShapePanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5,hgap=5)
         self.innerLocalCursorShapePanel.SetSizer(self.innerLocalCursorShapePanelSizer)
 
+        spacingRightOfRadioButtons = 60
+
         self.dotCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Dot cursor")
         if sys.platform.startswith("win"):
             self.dotCursorRadioButton.SetValue(True)
             if 'dotcursor' in vncOptions:
                 self.dotCursorRadioButton.SetValue(vncOptions['dotcursor'])
-        self.innerLocalCursorShapePanelSizer.Add(self.dotCursorRadioButton)
+        self.innerLocalCursorShapePanelSizer.Add(self.dotCursorRadioButton, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfRadioButtons)
         self.dotCursorRadioButton.SetFont(self.smallFont)
         
         self.smallDotCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Small dot cursor")
-        self.innerLocalCursorShapePanelSizer.Add(self.smallDotCursorRadioButton)
+        self.innerLocalCursorShapePanelSizer.Add(self.smallDotCursorRadioButton, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfRadioButtons)
         self.smallDotCursorRadioButton.SetFont(self.smallFont)
         if sys.platform.startswith("win"):
             if 'smalldotcursor' in vncOptions:
                 self.smallDotCursorRadioButton.SetValue(vncOptions['smalldotcursor'])
         
         self.normalArrowRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Normal arrow")
-        self.innerLocalCursorShapePanelSizer.Add(self.normalArrowRadioButton)
+        self.innerLocalCursorShapePanelSizer.Add(self.normalArrowRadioButton, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfRadioButtons)
         self.normalArrowRadioButton.SetFont(self.smallFont)
         if sys.platform.startswith("win"):
             if 'normalcursor' in vncOptions:
                 self.normalArrowRadioButton.SetValue(vncOptions['normalcursor'])
         
         self.noLocalCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "No local cursor")
-        self.innerLocalCursorShapePanelSizer.Add(self.noLocalCursorRadioButton)
+        self.innerLocalCursorShapePanelSizer.Add(self.noLocalCursorRadioButton, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfRadioButtons)
         self.noLocalCursorRadioButton.SetFont(self.smallFont)
         if sys.platform.startswith("win"):
             if 'nocursor' in vncOptions:
@@ -719,7 +723,8 @@ class TurboVncOptions(wx.Dialog):
         self.acceptReverseVncConnectionsOnTcpPortPanelSizer.Add(wx.Panel(self.acceptReverseVncConnectionsOnTcpPortPanel, wx.ID_ANY), flag=wx.EXPAND)
         
         self.acceptReverseVncConnectionsOnTcpPortPanel.SetSizerAndFit(self.acceptReverseVncConnectionsOnTcpPortPanelSizer)
-        self.innerListeningModePanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortPanel, flag=wx.EXPAND)
+        spacingRightOfSpinCtrl = 175
+        self.innerListeningModePanelSizer.Add(self.acceptReverseVncConnectionsOnTcpPortPanel, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfSpinCtrl)
 
         self.innerListeningModePanel.SetSizerAndFit(self.innerListeningModePanelSizer)
         self.listeningModeGroupBoxSizer.Add(self.innerListeningModePanel, flag=wx.EXPAND)
@@ -752,19 +757,20 @@ class TurboVncOptions(wx.Dialog):
         self.writeLogToAFileCheckBox.SetFont(self.smallFont)
         self.writeLogToAFileCheckBox.Bind(wx.EVT_CHECKBOX, self.onToggleWriteLogToAFileCheckBox)
 
-        if sys.platform.startswith("win"):
-            self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(300,-1))
-        else:
+        if sys.platform.startswith("darwin"):
             self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(400,-1))
+        else:
+            self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(300,-1))
         if 'logfile' in vncOptions:
             self.vncViewerLogFilenameTextField.SetValue(vncOptions['logfile'])
         self.vncViewerLogFilenameTextField.Disable()
         self.innerLoggingPanelSizer.Add(self.vncViewerLogFilenameTextField, flag=wx.EXPAND)
         self.vncViewerLogFilenameTextField.SetFont(self.smallFont)
 
+        spacingRightOfBrowseButton = 10
         self.browseButton = wx.Button(self.innerLoggingPanel, wx.ID_ANY, "Browse...")
         self.browseButton.Disable()
-        self.innerLoggingPanelSizer.Add(self.browseButton, flag=wx.EXPAND)
+        self.innerLoggingPanelSizer.Add(self.browseButton, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfBrowseButton)
         self.browseButton.SetFont(self.smallFont)
         self.browseButton.Bind(wx.EVT_BUTTON, self.onBrowse)
 
