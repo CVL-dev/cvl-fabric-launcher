@@ -285,10 +285,10 @@ class LauncherMainFrame(wx.Frame):
         self.cipher = ""
         if sys.platform.startswith("win"):
             defaultCipher = "arcfour"
-            ciphers = ["3des-cbc", "blowfish-cbc", "arcfour"]
+            ciphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour"]
         else:
             defaultCipher = "arcfour128"
-            ciphers = ["3des-cbc", "blowfish-cbc", "arcfour128"]
+            ciphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
         self.sshTunnelCipherComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=ciphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.loginFieldsPanelSizer.Add(self.sshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if config.has_section("MASSIVE Launcher Preferences"):
