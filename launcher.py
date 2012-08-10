@@ -38,7 +38,7 @@ on Linux and on Mac OS X.
  
 """
 
-# Later, STDERR will be redirected to logTextCtrl
+# Later, STDERR will be redirected to self.logTextCtrl
 # For now, we just want make sure that the Launcher doesn't attempt 
 # to write to CVL Launcher.exe.log, because it might not have
 # permission to do so.
@@ -66,31 +66,9 @@ import ConfigParser
 #logger = ssh.util.logging.getLogger()
 #logger.setLevel(logging.WARN)
 
-global vncOptions
-vncOptions = {}
-defaultMassiveHost = "m2-login2.massive.org.au"
-global vncLoginHost
-vncLoginHost = ""
-global project
-project = ""
-global hours
-hours = ""
-global resolution
-resolution = ""
-global cipher
-cipher = ""
-global username
-username = ""
-password = ""
-global sshTunnelProcess
-sshTunnelProcess = None
-global sshTunnelReady
-sshTunnelReady = False
-global localPortNumber
-localPortNumber = "5901"
-global privateKeyFile
 global launcherMainFrame
-launcherMainFrame = None
+global config
+global massiveLauncherPreferencesFilePath
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self):
@@ -123,12 +101,12 @@ class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
 
-        global logTextCtrl
-
         if sys.platform.startswith("darwin"):
             wx.Frame.__init__(self, parent, id, title, size=(350, 390), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         else:
             wx.Frame.__init__(self, parent, id, title, size=(350, 430), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+
+        self.vncOptions = {}
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -173,38 +151,29 @@ class LauncherMainFrame(wx.Frame):
 
         self.SetMenuBar(self.menu_bar)
 
-        global loginDialogPanel
-        loginDialogPanel = wx.Panel(self)
+        self.loginDialogPanel = wx.Panel(self)
 
-        global vncLoginHostLabel
-        #vncLoginHostLabel = wx.StaticText(loginDialogPanel, -1, 'MASSIVE host', (10, 20))
-        vncLoginHostLabel = wx.StaticText(loginDialogPanel, -1, 'Host', (10, 20))
-        global massiveProjectLabel
-        massiveProjectLabel = wx.StaticText(loginDialogPanel, -1, 'MASSIVE project', (10, 60))
-        global massiveHoursLabel
-        massiveHoursLabel = wx.StaticText(loginDialogPanel, -1, 'Hours requested', (10, 100))
-        global vncDisplayResolutionLabel
-        vncDisplayResolutionLabel = wx.StaticText(loginDialogPanel, -1, 'Resolution', (10, 140))
-        global sshTunnelCipherLabel
-        sshTunnelCipherLabel = wx.StaticText(loginDialogPanel, -1, 'SSH tunnel cipher', (10, 180))
-        global usernameLabel
-        usernameLabel = wx.StaticText(loginDialogPanel, -1, 'Username', (10, 220))
-        global passwordLabel
-        passwordLabel = wx.StaticText(loginDialogPanel, -1, 'Password', (10, 260))
+        self.vncLoginHostLabel = wx.StaticText(self.loginDialogPanel, -1, 'Host', (10, 20))
+        self.massiveProjectLabel = wx.StaticText(self.loginDialogPanel, -1, 'MASSIVE project', (10, 60))
+        self.massiveHoursLabel = wx.StaticText(self.loginDialogPanel, -1, 'Hours requested', (10, 100))
+        self.vncDisplayResolutionLabel = wx.StaticText(self.loginDialogPanel, -1, 'Resolution', (10, 140))
+        self.sshTunnelCipherLabel = wx.StaticText(self.loginDialogPanel, -1, 'SSH tunnel cipher', (10, 180))
+        self.usernameLabel = wx.StaticText(self.loginDialogPanel, -1, 'Username', (10, 220))
+        self.passwordLabel = wx.StaticText(self.loginDialogPanel, -1, 'Password', (10, 260))
 
         widgetWidth1 = 180
         widgetWidth2 = 180
         if not sys.platform.startswith("win"):
             widgetWidth2 = widgetWidth2 + 25
 
-        global vncLoginHost
+        self.vncLoginHost = ""
         vncLoginHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
             "m2-login1.massive.org.au", "m2-login2.massive.org.au","cvldemo"]
-        global vncLoginHostComboBox
-        vncLoginHostComboBox = wx.ComboBox(loginDialogPanel, -1, value=defaultMassiveHost, pos=(125, 15), size=(widgetWidth2, -1),choices=vncLoginHosts, style=wx.CB_DROPDOWN)
+        defaultMassiveHost = "m2-login2.massive.org.au"
+        self.vncLoginHostComboBox = wx.ComboBox(self.loginDialogPanel, -1, value=defaultMassiveHost, pos=(125, 15), size=(widgetWidth2, -1),choices=vncLoginHosts, style=wx.CB_DROPDOWN)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "vncLoginHost"):
-                vncLoginHost = config.get("MASSIVE Launcher Preferences", "vncLoginHost")
+                self.vncLoginHost = config.get("MASSIVE Launcher Preferences", "vncLoginHost")
             else:
                 config.set("MASSIVE Launcher Preferences","vncLoginHost","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -213,13 +182,12 @@ class LauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        if vncLoginHost.strip()!="":
-            vncLoginHostComboBox.SetValue(vncLoginHost)
+        if self.vncLoginHost.strip()!="":
+            self.vncLoginHostComboBox.SetValue(self.vncLoginHost)
 
-        global defaultProjectPlaceholder
-        defaultProjectPlaceholder = '[Use my default project]'
+        self.defaultProjectPlaceholder = '[Use my default project]'
         projects = [
-            defaultProjectPlaceholder,
+            self.defaultProjectPlaceholder,
             'ASync001','ASync002','ASync003','ASync004','ASync005','ASync006',
             'ASync007','ASync008','ASync009','ASync010','ASync011','CSIRO001',
             'CSIRO002','CSIRO003','CSIRO004','CSIRO005','CSIRO006','CSIRO007',
@@ -236,11 +204,11 @@ class LauncherMainFrame(wx.Frame):
             'pLaTr0011','pMelb0095','pMelb0100','pMelb0103','pMelb0104',
             'pMOSP','pRMIT0074','pRMIT0078','pVPAC0005','Training'
             ]
-        global massiveProjectComboBox
-        massiveProjectComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
+        self.massiveProjectComboBox = wx.ComboBox(self.loginDialogPanel, -1, value='', pos=(125, 55), size=(widgetWidth2, -1),choices=projects, style=wx.CB_DROPDOWN)
+        self.project = ""
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "project"):
-                project = config.get("MASSIVE Launcher Preferences", "project")
+                self.project = config.get("MASSIVE Launcher Preferences", "project")
             else:
                 config.set("MASSIVE Launcher Preferences","project","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -249,18 +217,17 @@ class LauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        if project.strip()!="":
-            massiveProjectComboBox.SetValue(project)
+        if self.project.strip()!="":
+            self.massiveProjectComboBox.SetValue(self.project)
         else:
-            massiveProjectComboBox.SetValue(defaultProjectPlaceholder)
+            self.massiveProjectComboBox.SetValue(self.defaultProjectPlaceholder)
 
-        global hours
-        hours = "4"
+        self.hours = "4"
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "hours"):
-                hours = config.get("MASSIVE Launcher Preferences", "hours")
-                if hours.strip() == "":
-                    hours = "4"
+                self.hours = config.get("MASSIVE Launcher Preferences", "hours")
+                if self.hours.strip() == "":
+                    self.hours = "4"
             else:
                 config.set("MASSIVE Launcher Preferences","hours","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -269,23 +236,20 @@ class LauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        global massiveHoursField
-        massiveHoursField = wx.SpinCtrl(loginDialogPanel, -1, value=hours, pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
+        self.massiveHoursField = wx.SpinCtrl(self.loginDialogPanel, -1, value=self.hours, pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
 
-        global defaultResolution
         displaySize = wx.DisplaySize()
         desiredWidth = displaySize[0] * 0.99
         desiredHeight = displaySize[1] * 0.85
         defaultResolution = str(int(desiredWidth)) + "x" + str(int(desiredHeight))
-        resolution = defaultResolution
+        self.resolution = defaultResolution
         resolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        global vncDisplayResolutionComboBox
-        vncDisplayResolutionComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 135), size=(widgetWidth2, -1),choices=resolutions, style=wx.CB_DROPDOWN)
+        self.vncDisplayResolutionComboBox = wx.ComboBox(self.loginDialogPanel, -1, value='', pos=(125, 135), size=(widgetWidth2, -1),choices=resolutions, style=wx.CB_DROPDOWN)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "resolution"):
-                resolution = config.get("MASSIVE Launcher Preferences", "resolution")
+                self.resolution = config.get("MASSIVE Launcher Preferences", "resolution")
             else:
                 config.set("MASSIVE Launcher Preferences","resolution","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -294,23 +258,22 @@ class LauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        if resolution.strip()!="":
-            vncDisplayResolutionComboBox.SetValue(resolution)
+        if self.resolution.strip()!="":
+            self.vncDisplayResolutionComboBox.SetValue(self.resolution)
         else:
-            vncDisplayResolutionComboBox.SetValue(defaultResolution)
+            self.vncDisplayResolutionComboBox.SetValue(defaultResolution)
 
-        cipher = ""
+        self.cipher = ""
         if sys.platform.startswith("win"):
             defaultCipher = "arcfour"
             ciphers = ["3des-cbc", "blowfish-cbc", "arcfour"]
         else:
             defaultCipher = "arcfour128"
             ciphers = ["3des-cbc", "blowfish-cbc", "arcfour128"]
-        global sshTunnelCipherComboBox
-        sshTunnelCipherComboBox = wx.ComboBox(loginDialogPanel, -1, value='', pos=(125, 175), size=(widgetWidth2, -1),choices=ciphers, style=wx.CB_DROPDOWN)
+        self.sshTunnelCipherComboBox = wx.ComboBox(self.loginDialogPanel, -1, value='', pos=(125, 175), size=(widgetWidth2, -1),choices=ciphers, style=wx.CB_DROPDOWN)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "cipher"):
-                cipher = config.get("MASSIVE Launcher Preferences", "cipher")
+                self.cipher = config.get("MASSIVE Launcher Preferences", "cipher")
             else:
                 config.set("MASSIVE Launcher Preferences","cipher","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -319,15 +282,15 @@ class LauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        if cipher.strip()!="":
-            sshTunnelCipherComboBox.SetValue(cipher)
+        if self.cipher.strip()!="":
+            self.sshTunnelCipherComboBox.SetValue(self.cipher)
         else:
-            sshTunnelCipherComboBox.SetValue(defaultCipher)
+            self.sshTunnelCipherComboBox.SetValue(defaultCipher)
 
-        global username
+        self.username = ""
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "username"):
-                username = config.get("MASSIVE Launcher Preferences", "username")
+                self.username = config.get("MASSIVE Launcher Preferences", "username")
             else:
                 config.set("MASSIVE Launcher Preferences","username","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -336,40 +299,36 @@ class LauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        global usernameTextField
-        usernameTextField = wx.TextCtrl(loginDialogPanel, -1, username,  (125, 215), (widgetWidth1, -1))
-        if username.strip()!="":
-            usernameTextField.SelectAll()
+        self.usernameTextField = wx.TextCtrl(self.loginDialogPanel, -1, self.username,  (125, 215), (widgetWidth1, -1))
+        if self.username.strip()!="":
+            self.usernameTextField.SelectAll()
 
-        global passwordField
-        passwordField = wx.TextCtrl(loginDialogPanel, -1, '',  (125, 255), (widgetWidth1, -1), style=wx.TE_PASSWORD)
+        self.password = ""
+        self.passwordField = wx.TextCtrl(self.loginDialogPanel, -1, self.password,  (125, 255), (widgetWidth1, -1), style=wx.TE_PASSWORD)
 
-        usernameTextField.SetFocus()
+        self.usernameTextField.SetFocus()
 
-        massiveProjectComboBox.MoveAfterInTabOrder(vncLoginHostComboBox)
-        massiveHoursField.MoveAfterInTabOrder(massiveProjectComboBox)
-        vncDisplayResolutionComboBox.MoveAfterInTabOrder(massiveHoursField)
-        sshTunnelCipherComboBox.MoveAfterInTabOrder(vncDisplayResolutionComboBox)
-        usernameTextField.MoveAfterInTabOrder(sshTunnelCipherComboBox)
-        passwordField.MoveAfterInTabOrder(usernameTextField)
+        self.massiveProjectComboBox.MoveAfterInTabOrder(self.vncLoginHostComboBox)
+        self.massiveHoursField.MoveAfterInTabOrder(self.massiveProjectComboBox)
+        self.vncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursField)
+        self.sshTunnelCipherComboBox.MoveAfterInTabOrder(self.vncDisplayResolutionComboBox)
+        self.usernameTextField.MoveAfterInTabOrder(self.sshTunnelCipherComboBox)
+        self.passwordField.MoveAfterInTabOrder(self.usernameTextField)
 
-        global optionsButton
-        optionsButton = wx.Button(loginDialogPanel, 1, 'Options...', (15, 305))
+        print "self.buttonsPanel = ...\n"
+        #self.buttonsPanel = 
 
-        global cancelButton
-        cancelButton = wx.Button(loginDialogPanel, 2, 'Cancel', (130, 305))
-
-        global loginButton
-        loginButton = wx.Button(loginDialogPanel, 3, 'Login', (230, 305))
-        loginButton.SetDefault()
+        self.optionsButton = wx.Button(self.loginDialogPanel, 1, 'Options...', (15, 305))
+        self.cancelButton = wx.Button(self.loginDialogPanel, 2, 'Cancel', (130, 305))
+        self.loginButton = wx.Button(self.loginDialogPanel, 3, 'Login', (230, 305))
+        self.loginButton.SetDefault()
 
         self.Bind(wx.EVT_BUTTON, self.onOptions, id=1)
         self.Bind(wx.EVT_BUTTON, self.onCancel, id=2)
         self.Bind(wx.EVT_BUTTON, self.onLogin, id=3)
 
         self.statusbar = MyStatusBar(self)
-        global loginDialogStatusBar
-        loginDialogStatusBar = self.statusbar
+        self.loginDialogStatusBar = self.statusbar
         self.SetStatusBar(self.statusbar)
         self.Centre()
 
@@ -495,24 +454,23 @@ class LauncherMainFrame(wx.Frame):
 
     def onExit(self, event):
         try:
-            os.unlink(privateKeyFile.name)
+            os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
         finally:
             os._exit(0)
 
     def onOptions(self, event):
         import turboVncOptions
-        global vncOptions
-        turboVncOptionsDialog = turboVncOptions.TurboVncOptions(launcherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
+        turboVncOptionsDialog = turboVncOptions.TurboVncOptions(launcherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options", self.vncOptions)
         turboVncOptionsDialog.ShowModal()
         if turboVncOptionsDialog.okClicked:
-            vncOptions = turboVncOptionsDialog.getVncOptions()
+            self.vncOptions = turboVncOptionsDialog.getVncOptions()
             #import pprint
-            #vncOptionsDictionaryString = pprint.pformat(vncOptions)
+            #vncOptionsDictionaryString = pprint.pformat(self.vncOptions)
             #wx.CallAfter(sys.stdout.write, vncOptionsDictionaryString + "\n")
 
     def onCancel(self, event):
         try:
-            os.unlink(privateKeyFile.name)
+            os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
         finally:
             os._exit(0)
 
@@ -550,38 +508,39 @@ class LauncherMainFrame(wx.Frame):
 
                 waitCursor = wx.StockCursor(wx.CURSOR_WAIT)
                 launcherMainFrame.SetCursor(waitCursor)
-                loginDialogPanel.SetCursor(waitCursor)
-                vncLoginHostLabel.SetCursor(waitCursor)
-                massiveProjectLabel.SetCursor(waitCursor)
-                massiveHoursLabel.SetCursor(waitCursor)
-                usernameLabel.SetCursor(waitCursor)
-                passwordLabel.SetCursor(waitCursor)
-                vncLoginHostComboBox.SetCursor(waitCursor)
-                massiveProjectComboBox.SetCursor(waitCursor)
-                massiveHoursField.SetCursor(waitCursor)
-                usernameTextField.SetCursor(waitCursor)
-                passwordField.SetCursor(waitCursor)
-                cancelButton.SetCursor(waitCursor)
-                loginButton.SetCursor(waitCursor)
-
-                global logTextCtrl
-                global loginDialogStatusBar
+                launcherMainFrame.loginDialogPanel.SetCursor(waitCursor)
+                launcherMainFrame.vncLoginHostLabel.SetCursor(waitCursor)
+                launcherMainFrame.massiveProjectLabel.SetCursor(waitCursor)
+                launcherMainFrame.massiveHoursLabel.SetCursor(waitCursor)
+                launcherMainFrame.vncDisplayResolutionLabel.SetCursor(waitCursor)
+                launcherMainFrame.sshTunnelCipherLabel.SetCursor(waitCursor)
+                launcherMainFrame.usernameLabel.SetCursor(waitCursor)
+                launcherMainFrame.passwordLabel.SetCursor(waitCursor)
+                launcherMainFrame.vncLoginHostComboBox.SetCursor(waitCursor)
+                launcherMainFrame.vncDisplayResolutionComboBox.SetCursor(waitCursor)
+                launcherMainFrame.sshTunnelCipherComboBox.SetCursor(waitCursor)
+                launcherMainFrame.massiveProjectComboBox.SetCursor(waitCursor)
+                launcherMainFrame.massiveHoursField.SetCursor(waitCursor)
+                launcherMainFrame.usernameTextField.SetCursor(waitCursor)
+                launcherMainFrame.passwordField.SetCursor(waitCursor)
+                launcherMainFrame.cancelButton.SetCursor(waitCursor)
+                launcherMainFrame.loginButton.SetCursor(waitCursor)
 
                 try:
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Logging in to " + vncLoginHost)
-                    wx.CallAfter(sys.stdout.write, "Attempting to log in to " + vncLoginHost + "...\n")
+                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Logging in to " + launcherMainFrame.vncLoginHost)
+                    wx.CallAfter(sys.stdout.write, "Attempting to log in to " + launcherMainFrame.vncLoginHost + "...\n")
                     
                     sshClient = ssh.SSHClient()
                     sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                    sshClient.connect(vncLoginHost,username=username,password=password)
+                    sshClient.connect(launcherMainFrame.vncLoginHost,username=launcherMainFrame.username,password=launcherMainFrame.password)
 
                     wx.CallAfter(sys.stdout.write, "First login done.\n")
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Setting display resolution...")
+                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
 
-                    set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + resolution
+                    set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + launcherMainFrame.resolution
                     wx.CallAfter(sys.stdout.write, set_display_resolution_cmd + "\n")
                     stdin,stdout,stderr = sshClient.exec_command(set_display_resolution_cmd)
                     stderrRead = stderr.read()
@@ -590,10 +549,10 @@ class LauncherMainFrame(wx.Frame):
                     
                     wx.CallAfter(sys.stdout.write, "\n")
 
-                    if "massive" in vncLoginHost:
-                        # Begin if "massive" in vncLoginHost:
+                    if "massive" in launcherMainFrame.vncLoginHost:
+                        # Begin if "massive" in launcherMainFrame.vncLoginHost:
 
-                        wx.CallAfter(loginDialogStatusBar.SetStatusText, "Checking quota...")
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
 
                         stdin,stdout,stderr = sshClient.exec_command("mybalance --hours")
                         wx.CallAfter(sys.stdout.write, stderr.read())
@@ -607,10 +566,10 @@ class LauncherMainFrame(wx.Frame):
 
                         wx.CallAfter(sys.stdout.write, "\n")
 
-                        wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
 
-                        #qsubcmd = "qsub -A " + project + " -I -q vis -l walltime=" + hours + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
-                        qsubcmd = "/usr/local/desktop/request_visnode.sh " + project + " " + hours
+                        #qsubcmd = "qsub -A " + self.project + " -I -q vis -l walltime=" + launcherMainFrame.hours + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
+                        qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.project + " " + launcherMainFrame.hours
 
                         wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
                         wx.CallAfter(sys.stdout.write, "\n")
@@ -644,7 +603,7 @@ class LauncherMainFrame(wx.Frame):
                                         def showStart():
                                             sshClient2 = ssh.SSHClient()
                                             sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                                            sshClient2.connect(vncLoginHost,username=username,password=password)
+                                            sshClient2.connect(launcherMainFrame.vncLoginHost,username=launcherMainFrame.username,password=launcherMainFrame.password)
                                             stdin,stdout,stderr = sshClient2.exec_command("showstart " + jobNumber)
                                             stderrRead = stderr.read()
                                             stdoutRead = stdout.read()
@@ -689,15 +648,15 @@ class LauncherMainFrame(wx.Frame):
                             if breakOutOfMainLoop:
                                 break
 
-                        wx.CallAfter(loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
 
                         wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
 
-                        # End if "massive" in vncLoginHost:
+                        # End if "massive" in launcherMainFrame.vncLoginHost:
 
                     wx.CallAfter(sys.stdout.write, "Generating SSH key-pair for tunnel...\n\n")
 
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Generating SSH key-pair for tunnel...")
+                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Generating SSH key-pair for tunnel...")
 
                     stdin,stdout,stderr = sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair*")
                     if len(stderr.read()) > 0:
@@ -731,10 +690,10 @@ class LauncherMainFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, stderr.read())
 
                     import tempfile
-                    privateKeyFile = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
-                    privateKeyFile.write(privateKeyString)
-                    privateKeyFile.flush()
-                    privateKeyFile.close()
+                    self.privateKeyFile = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
+                    self.privateKeyFile.write(privateKeyString)
+                    self.privateKeyFile.flush()
+                    self.privateKeyFile.close()
 
                     def createTunnel():
                         wx.CallAfter(sys.stdout.write, "Starting tunnelled SSH session...\n")
@@ -769,80 +728,77 @@ class LauncherMainFrame(wx.Frame):
                                 # will initially be created without any owner.
                                 # We must set the file's owner before we
                                 # can change the permissions to -rw------.
-                                chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + privateKeyFile.name
+                                chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + self.privateKeyFile.name
                                 wx.CallAfter(sys.stdout.write, chown_cmd + "\n")
                                 subprocess.call(chown_cmd, shell=True)
 
-                            chmod_cmd = chmodBinary + " 600 " + privateKeyFile.name
+                            chmod_cmd = chmodBinary + " 600 " + self.privateKeyFile.name
                             wx.CallAfter(sys.stdout.write, chmod_cmd + "\n")
                             subprocess.call(chmod_cmd, shell=True)
 
-                            proxyCommand = "-oProxyCommand=\"ssh -c " + cipher + " -i " + privateKeyFile.name +" "+username+"@"+vncLoginHost+" 'nc %h %p'\""
-                            wx.CallAfter(loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
+                            proxyCommand = "-oProxyCommand=\"ssh -c " + launcherMainFrame.cipher + " -i " + self.privateKeyFile.name +" "+launcherMainFrame.username+"@"+launcherMainFrame.vncLoginHost+" 'nc %h %p'\""
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
 
-                            global localPortNumber
-                            localPortNumber = "5901"
+                            self.localPortNumber = "5901"
                             # Request an ephemeral port from the operating system (by specifying port 0) :
                             import socket
                             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
                             sock.bind(('localhost', 0)) 
-                            localPortNumber = sock.getsockname()[1]
+                            self.localPortNumber = sock.getsockname()[1]
                             sock.close()
-                            localPortNumber = str(localPortNumber)
+                            self.localPortNumber = str(self.localPortNumber)
 
-                            wx.CallAfter(loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
-                            #tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
+                            #tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + launcherMainFrame.cipher + " " \
                                 #"-oStrictHostKeyChecking=no " \
                                 #"-A " + proxyCommand + " " \
-                                #"-L " + localPortNumber + ":localhost:5901" + " -l " + username+" "+visnode+"-ib"
+                                #"-L " + self.localPortNumber + ":localhost:5901" + " -l " + launcherMainFrame.username+" "+visnode+"-ib"
 
-                            if "massive" in vncLoginHost:
-                                tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
+                            if "massive" in launcherMainFrame.vncLoginHost:
+                                tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + launcherMainFrame.cipher + " " \
                                     "-t -t " \
                                     "-oStrictHostKeyChecking=no " \
-                                    "-L " + localPortNumber + ":"+visnode+"-ib:5901" + " -l " + username+" "+vncLoginHost
+                                    "-L " + self.localPortNumber + ":"+visnode+"-ib:5901" + " -l " + launcherMainFrame.username+" "+launcherMainFrame.vncLoginHost
                             else:
-                                tunnel_cmd = sshBinary + " -i " + privateKeyFile.name + " -c " + cipher + " " \
+                                tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + launcherMainFrame.cipher + " " \
                                     "-t -t " \
                                     "-oStrictHostKeyChecking=no " \
-                                    "-L " + localPortNumber + ":localhost:5901" + " -l " + username+" "+vncLoginHost
+                                    "-L " + self.localPortNumber + ":localhost:5901" + " -l " + launcherMainFrame.username+" "+launcherMainFrame.vncLoginHost
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
-                            global sshTunnelProcess
-                            sshTunnelProcess = subprocess.Popen(tunnel_cmd,
+                            self.sshTunnelProcess = subprocess.Popen(tunnel_cmd,
                                 universal_newlines=True,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
 
-                            global sshTunnelReady
-                            sshTunnelReady = False
-                            # Need to check whether SSH tunnel is ready:
+                            launcherMainFrame.loginThread.sshTunnelReady = False
                             while True:
                                 time.sleep(1)
-                                line = sshTunnelProcess.stdout.readline()
+                                line = self.sshTunnelProcess.stdout.readline()
                                 if "Last login" in line:
-                                    sshTunnelReady = True
+                                    launcherMainFrame.loginThread.sshTunnelReady = True
                                     break
                             else:
-                                sshTunnelReady = True
+                                launcherMainFrame.loginThread.sshTunnelReady = True
 
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
                             try:
-                                os.unlink(privateKeyFile.name)
+                                os.unlink(self.privateKeyFile.name)
                             finally:
                                 os._exit(0)
                         except:
                             wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                             wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
+                    self.sshTunnelReady = False
                     tunnelThread = threading.Thread(target=createTunnel)
 
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
+                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
                     tunnelThread.start()
 
                     count = 1
-                    while not sshTunnelReady and count < 30 and "massive" in vncLoginHost:
+                    while not self.sshTunnelReady and count < 30 and "massive" in launcherMainFrame.vncLoginHost:
                         time.sleep(1)
                         count = count + 1
 
@@ -897,7 +853,7 @@ class LauncherMainFrame(wx.Frame):
                     else:
                         wx.CallAfter(sys.stdout.write, "Error: TurboVNC was not found in " + vnc + "\n")
 
-                    wx.CallAfter(loginDialogStatusBar.SetStatusText, "Launching TurboVNC...")
+                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Launching TurboVNC...")
 
                     wx.CallAfter(sys.stdout.write, "\nStarting MASSIVE VNC...\n")
 
@@ -907,103 +863,107 @@ class LauncherMainFrame(wx.Frame):
                         else:
                             optionPrefixCharacter = "-"
                         vncOptionsString = ""
-                        if 'jpegCompression' in vncOptions and vncOptions['jpegCompression']==False:
+                        if 'jpegCompression' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpegCompression']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nojpeg"
                         defaultJpegChrominanceSubsampling = "1x"
-                        if 'jpegChrominanceSubsampling' in vncOptions and vncOptions['jpegChrominanceSubsampling']!=defaultJpegChrominanceSubsampling:
-                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + vncOptions['jpegChrominanceSubsampling']
+                        if 'jpegChrominanceSubsampling' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpegChrominanceSubsampling']!=defaultJpegChrominanceSubsampling:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + launcherMainFrame.vncOptions['jpegChrominanceSubsampling']
                         defaultJpegImageQuality = "95"
-                        if 'jpegImageQuality' in vncOptions and vncOptions['jpegImageQuality']!=defaultJpegImageQuality:
-                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + vncOptions['jpegImageQuality']
-                        if 'zlibCompressionEnabled' in vncOptions and vncOptions['zlibCompressionEnabled']==True:
-                            if 'zlibCompressionLevel' in vncOptions:
-                                vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + vncOptions['zlibCompressionLevel']
-                        if 'viewOnly' in vncOptions and vncOptions['viewOnly']==True:
+                        if 'jpegImageQuality' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpegImageQuality']!=defaultJpegImageQuality:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + launcherMainFrame.vncOptions['jpegImageQuality']
+                        if 'zlibCompressionEnabled' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['zlibCompressionEnabled']==True:
+                            if 'zlibCompressionLevel' in launcherMainFrame.vncOptions:
+                                vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + launcherMainFrame.vncOptions['zlibCompressionLevel']
+                        if 'viewOnly' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['viewOnly']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "viewonly"
-                        if 'disableClipboardTransfer' in vncOptions and vncOptions['disableClipboardTransfer']==True:
+                        if 'disableClipboardTransfer' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['disableClipboardTransfer']==True:
                             if sys.platform.startswith("win"):
                                 vncOptionsString = vncOptionsString + " /disableclipboard"
                             else:
                                 vncOptionsString = vncOptionsString + " -noclipboardsend -noclipboardrecv"
                         if sys.platform.startswith("win"):
-                            if 'scale' in vncOptions:
-                                if vncOptions['scale']=="Auto":
+                            if 'scale' in launcherMainFrame.vncOptions:
+                                if launcherMainFrame.vncOptions['scale']=="Auto":
                                     vncOptionsString = vncOptionsString + " /fitwindow"
                                 else:
-                                    vncOptionsString = vncOptionsString + " /scale " + vncOptions['scale']
+                                    vncOptionsString = vncOptionsString + " /scale " + launcherMainFrame.vncOptions['scale']
                             defaultSpanMode = 'automatic'
-                            if 'span' in vncOptions and vncOptions['span']!=defaultSpanMode:
-                                vncOptionsString = vncOptionsString + " /span " + vncOptions['span']
-                        if 'doubleBuffering' in vncOptions and vncOptions['doubleBuffering']==False:
+                            if 'span' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['span']!=defaultSpanMode:
+                                vncOptionsString = vncOptionsString + " /span " + launcherMainFrame.vncOptions['span']
+                        if 'doubleBuffering' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['doubleBuffering']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
-                        if 'fullScreenMode' in vncOptions and vncOptions['fullScreenMode']==True:
+                        if 'fullScreenMode' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['fullScreenMode']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "fullscreen"
-                        if 'deiconifyOnRemoteBellEvent' in vncOptions and vncOptions['deiconifyOnRemoteBellEvent']==False:
+                        if 'deiconifyOnRemoteBellEvent' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['deiconifyOnRemoteBellEvent']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noraiseonbeep"
                         if sys.platform.startswith("win"):
-                            if 'emulate3' in vncOptions and vncOptions['emulate3']==True:
+                            if 'emulate3' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['emulate3']==True:
                                 vncOptionsString = vncOptionsString + " /emulate3"
-                            if 'swapmouse' in vncOptions and vncOptions['swapmouse']==True:
+                            if 'swapmouse' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['swapmouse']==True:
                                 vncOptionsString = vncOptionsString + " /swapmouse"
-                        if 'dontShowRemoteCursor' in vncOptions and vncOptions['dontShowRemoteCursor']==True:
+                        if 'dontShowRemoteCursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['dontShowRemoteCursor']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nocursorshape"
-                        elif 'letRemoteServerDealWithCursor' in vncOptions and vncOptions['letRemoteServerDealWithCursor']==True:
+                        elif 'letRemoteServerDealWithCursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['letRemoteServerDealWithCursor']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "x11cursor"
-                        if 'requestSharedSession' in vncOptions and vncOptions['requestSharedSession']==False:
+                        if 'requestSharedSession' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['requestSharedSession']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
                         if sys.platform.startswith("win"):
-                            if 'toolbar' in vncOptions and vncOptions['toolbar']==False:
+                            if 'toolbar' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['toolbar']==False:
                                 vncOptionsString = vncOptionsString + " /notoolbar"
-                            if 'dotcursor' in vncOptions and vncOptions['dotcursor']==True:
+                            if 'dotcursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['dotcursor']==True:
                                 vncOptionsString = vncOptionsString + " /dotcursor"
-                            if 'smalldotcursor' in vncOptions and vncOptions['smalldotcursor']==True:
+                            if 'smalldotcursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['smalldotcursor']==True:
                                 vncOptionsString = vncOptionsString + " /smalldotcursor"
-                            if 'normalcursor' in vncOptions and vncOptions['normalcursor']==True:
+                            if 'normalcursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['normalcursor']==True:
                                 vncOptionsString = vncOptionsString + " /normalcursor"
-                            if 'nocursor' in vncOptions and vncOptions['nocursor']==True:
+                            if 'nocursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['nocursor']==True:
                                 vncOptionsString = vncOptionsString + " /nocursor"
-                            if 'writelog' in vncOptions and vncOptions['writelog']==True:
-                                if 'loglevel' in vncOptions and vncOptions['loglevel']==True:
-                                    vncOptionsString = vncOptionsString + " /loglevel " + vncOptions['loglevel']
-                                if 'logfile' in vncOptions:
-                                    vncOptionsString = vncOptionsString + " /logfile \"" + vncOptions['logfile'] + "\""
+                            if 'writelog' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['writelog']==True:
+                                if 'loglevel' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['loglevel']==True:
+                                    vncOptionsString = vncOptionsString + " /loglevel " + launcherMainFrame.vncOptions['loglevel']
+                                if 'logfile' in launcherMainFrame.vncOptions:
+                                    vncOptionsString = vncOptionsString + " /logfile \"" + launcherMainFrame.vncOptions['logfile'] + "\""
 
                         if sys.platform.startswith("win"):
-                            vncCommandString = "\""+vnc+"\" /user "+username+" /autopass " + vncOptionsString + " localhost::" + localPortNumber
+                            vncCommandString = "\""+vnc+"\" /user "+launcherMainFrame.username+" /autopass " + vncOptionsString + " localhost::" + self.localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
-                            proc.communicate(input=password + "\r\n")
+                            proc.communicate(input=launcherMainFrame.password + "\r\n")
                         else:
-                            vncCommandString = vnc + " -user " + username + " -autopass " + vncOptionsString + " localhost::" + localPortNumber
+                            vncCommandString = vnc + " -user " + launcherMainFrame.username + " -autopass " + vncOptionsString + " localhost::" + self.localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
-                            proc.communicate(input=password + "\n")
+                            proc.communicate(input=launcherMainFrame.password + "\n")
                         try:
-                            global sshTunnelProcess
-                            sshTunnelProcess.terminate()
-                            os.unlink(privateKeyFile.name)
+                            self.sshTunnelProcess.terminate()
+                            os.unlink(self.privateKeyFile.name)
                         finally:
                             os._exit(0)
 
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
                         launcherMainFrame.SetCursor(arrowCursor)
-                        loginDialogPanel.SetCursor(arrowCursor)
-                        vncLoginHostLabel.SetCursor(arrowCursor)
-                        massiveProjectLabel.SetCursor(arrowCursor)
-                        massiveHoursLabel.SetCursor(arrowCursor)
-                        usernameLabel.SetCursor(arrowCursor)
-                        passwordLabel.SetCursor(arrowCursor)
-                        vncLoginHostComboBox.SetCursor(arrowCursor)
-                        massiveProjectComboBox.SetCursor(arrowCursor)
-                        massiveHoursField.SetCursor(arrowCursor)
-                        usernameTextField.SetCursor(arrowCursor)
-                        passwordField.SetCursor(arrowCursor)
-                        cancelButton.SetCursor(arrowCursor)
-                        loginButton.SetCursor(arrowCursor)
+                        launcherMainFrame.loginDialogPanel.SetCursor(arrowCursor)
+                        launcherMainFrame.vncLoginHostLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.massiveProjectLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.massiveHoursLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.vncDisplayResolutionLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.sshTunnelCipherLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.usernameLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.passwordLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.vncLoginHostComboBox.SetCursor(arrowCursor)
+                        launcherMainFrame.vncDisplayResolutionComboBox.SetCursor(arrowCursor)
+                        launcherMainFrame.sshTunnelCipherComboBox.SetCursor(arrowCursor)
+                        launcherMainFrame.massiveProjectComboBox.SetCursor(arrowCursor)
+                        launcherMainFrame.massiveHoursField.SetCursor(arrowCursor)
+                        launcherMainFrame.usernameTextField.SetCursor(arrowCursor)
+                        launcherMainFrame.passwordField.SetCursor(arrowCursor)
+                        launcherMainFrame.optionsButton.SetCursor(arrowCursor)
+                        launcherMainFrame.cancelButton.SetCursor(arrowCursor)
+                        launcherMainFrame.loginButton.SetCursor(arrowCursor)
 
                     except:
                         wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
@@ -1011,19 +971,24 @@ class LauncherMainFrame(wx.Frame):
 
                         arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
                         launcherMainFrame.SetCursor(arrowCursor)
-                        loginDialogPanel.SetCursor(arrowCursor)
-                        vncLoginHostLabel.SetCursor(arrowCursor)
-                        massiveProjectLabel.SetCursor(arrowCursor)
-                        massiveHoursLabel.SetCursor(arrowCursor)
-                        usernameLabel.SetCursor(arrowCursor)
-                        passwordLabel.SetCursor(arrowCursor)
-                        vncLoginHostComboBox.SetCursor(arrowCursor)
-                        massiveProjectComboBox.SetCursor(arrowCursor)
-                        massiveHoursField.SetCursor(arrowCursor)
-                        usernameTextField.SetCursor(arrowCursor)
-                        passwordField.SetCursor(arrowCursor)
-                        cancelButton.SetCursor(arrowCursor)
-                        loginButton.SetCursor(arrowCursor)
+                        launcherMainFrame.loginDialogPanel.SetCursor(arrowCursor)
+                        launcherMainFrame.vncLoginHostLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.massiveProjectLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.massiveHoursLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.vncDisplayResolutionLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.sshTunnelCipherLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.usernameLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.passwordLabel.SetCursor(arrowCursor)
+                        launcherMainFrame.vncLoginHostComboBox.SetCursor(arrowCursor)
+                        launcherMainFrame.vncDisplayResolutionComboBox.SetCursor(arrowCursor)
+                        launcherMainFrame.sshTunnelCipherComboBox.SetCursor(arrowCursor)
+                        launcherMainFrame.massiveProjectComboBox.SetCursor(arrowCursor)
+                        launcherMainFrame.massiveHoursField.SetCursor(arrowCursor)
+                        launcherMainFrame.usernameTextField.SetCursor(arrowCursor)
+                        launcherMainFrame.passwordField.SetCursor(arrowCursor)
+                        launcherMainFrame.optionsButton.SetCursor(arrowCursor)
+                        launcherMainFrame.cancelButton.SetCursor(arrowCursor)
+                        launcherMainFrame.loginButton.SetCursor(arrowCursor)
 
                 except:
                     wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
@@ -1031,50 +996,55 @@ class LauncherMainFrame(wx.Frame):
 
                     arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
                     launcherMainFrame.SetCursor(arrowCursor)
-                    loginDialogPanel.SetCursor(arrowCursor)
-                    vncLoginHostLabel.SetCursor(arrowCursor)
-                    massiveProjectLabel.SetCursor(arrowCursor)
-                    massiveHoursLabel.SetCursor(arrowCursor)
-                    usernameLabel.SetCursor(arrowCursor)
-                    passwordLabel.SetCursor(arrowCursor)
-                    vncLoginHostComboBox.SetCursor(arrowCursor)
-                    massiveProjectComboBox.SetCursor(arrowCursor)
-                    massiveHoursField.SetCursor(arrowCursor)
-                    usernameTextField.SetCursor(arrowCursor)
-                    passwordField.SetCursor(arrowCursor)
-                    cancelButton.SetCursor(arrowCursor)
-                    loginButton.SetCursor(arrowCursor)
+                    launcherMainFrame.loginDialogPanel.SetCursor(arrowCursor)
+                    launcherMainFrame.vncLoginHostLabel.SetCursor(arrowCursor)
+                    launcherMainFrame.massiveProjectLabel.SetCursor(arrowCursor)
+                    launcherMainFrame.massiveHoursLabel.SetCursor(arrowCursor)
+                    launcherMainFrame.vncDisplayResolutionLabel.SetCursor(arrowCursor)
+                    launcherMainFrame.sshTunnelCipherLabel.SetCursor(arrowCursor)
+                    launcherMainFrame.usernameLabel.SetCursor(arrowCursor)
+                    launcherMainFrame.passwordLabel.SetCursor(arrowCursor)
+                    launcherMainFrame.vncLoginHostComboBox.SetCursor(arrowCursor)
+                    launcherMainFrame.vncDisplayResolutionComboBox.SetCursor(arrowCursor)
+                    launcherMainFrame.sshTunnelCipherComboBox.SetCursor(arrowCursor)
+                    launcherMainFrame.massiveProjectComboBox.SetCursor(arrowCursor)
+                    launcherMainFrame.massiveHoursField.SetCursor(arrowCursor)
+                    launcherMainFrame.usernameTextField.SetCursor(arrowCursor)
+                    launcherMainFrame.passwordField.SetCursor(arrowCursor)
+                    launcherMainFrame.optionsButton.SetCursor(arrowCursor)
+                    launcherMainFrame.cancelButton.SetCursor(arrowCursor)
+                    launcherMainFrame.loginButton.SetCursor(arrowCursor)
 
-        username = usernameTextField.GetValue()
-        password = passwordField.GetValue()
-        vncLoginHost = vncLoginHostComboBox.GetValue()
-        hours = str(massiveHoursField.GetValue())
-        project = massiveProjectComboBox.GetValue()
-        if "massive" in vncLoginHost:
-            if project == defaultProjectPlaceholder:
+        self.username = self.usernameTextField.GetValue()
+        self.password = self.passwordField.GetValue()
+        self.vncLoginHost = self.vncLoginHostComboBox.GetValue()
+        self.hours = str(self.massiveHoursField.GetValue())
+        self.project = self.massiveProjectComboBox.GetValue()
+        if "massive" in self.vncLoginHost:
+            if self.project == self.defaultProjectPlaceholder:
                 xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
                 # Get list of user's projects from Karaage:
-                # users_projects = xmlrpcServer.get_users_projects(username, password)
+                # users_projects = xmlrpcServer.get_users_projects(self.username, self.password)
                 # projects = users_projects[1]
                 # Get user's default project from Karaage:
-                project = xmlrpcServer.get_project(username)
-                massiveProjectComboBox.SetValue(project)
-        resolution = vncDisplayResolutionComboBox.GetValue()
-        cipher = sshTunnelCipherComboBox.GetValue()
+                self.project = xmlrpcServer.get_project(self.username)
+                self.massiveProjectComboBox.SetValue(self.project)
+        self.resolution = self.vncDisplayResolutionComboBox.GetValue()
+        self.cipher = self.sshTunnelCipherComboBox.GetValue()
 
-        config.set("MASSIVE Launcher Preferences", "username", username)
-        config.set("MASSIVE Launcher Preferences", "host", vncLoginHost)
-        if "massive" in vncLoginHost:
-            config.set("MASSIVE Launcher Preferences", "project", project)
-            config.set("MASSIVE Launcher Preferences", "hours", hours)
-        config.set("MASSIVE Launcher Preferences", "resolution", resolution)
-        config.set("MASSIVE Launcher Preferences", "cipher", cipher)
+        config.set("MASSIVE Launcher Preferences", "username", self.username)
+        config.set("MASSIVE Launcher Preferences", "host", self.vncLoginHost)
+        if "massive" in self.vncLoginHost:
+            config.set("MASSIVE Launcher Preferences", "project", self.project)
+            config.set("MASSIVE Launcher Preferences", "hours", self.hours)
+        config.set("MASSIVE Launcher Preferences", "resolution", self.resolution)
+        config.set("MASSIVE Launcher Preferences", "cipher", self.cipher)
         with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
             config.write(massiveLauncherPreferencesFileObject)
 
-        if "massive" in vncLoginHost:
+        if "massive" in self.vncLoginHost:
             logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
-        elif "cvl" in vncLoginHost:
+        elif "cvl" in self.vncLoginHost:
             logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
         else:
             logWindow = wx.Frame(self, title="Launcher Log Window", name="Launcher Log Window",pos=(200,150),size=(700,450))
@@ -1087,22 +1057,22 @@ class LauncherMainFrame(wx.Frame):
             import MASSIVE_icon
             logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
 
-        logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
+        self.logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
         gs = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
-        gs.Add(logTextCtrl, 0, wx.EXPAND)
+        gs.Add(self.logTextCtrl, 0, wx.EXPAND)
         logWindow.SetSizer(gs)
         if sys.platform.startswith("darwin"):
             font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         else:
             font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-        logTextCtrl.SetFont(font)
+        self.logTextCtrl.SetFont(font)
         logWindow.Show(True)
 
-        sys.stdout = logTextCtrl
-        sys.stderr = logTextCtrl
-        #print "Redirected STDOUT and STDERR to logTextCtrl"
+        sys.stdout = self.logTextCtrl
+        sys.stderr = self.logTextCtrl
+        #print "Redirected STDOUT and STDERR to self.logTextCtrl"
 
-        LoginThread(self)
+        self.loginThread = LoginThread(self)
 
 class MyStatusBar(wx.StatusBar):
     def __init__(self, parent):
