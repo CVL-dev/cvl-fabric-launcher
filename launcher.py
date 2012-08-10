@@ -53,7 +53,7 @@ import time
 import traceback
 import threading
 import os
-import ssh # Pure Python-based ssh module, based on Paramiko, published on PyPi
+import ssh # Pure Python ssh module, based on Paramiko, published on PyPi
 import HTMLParser
 import urllib
 import launcher_version_number
@@ -494,6 +494,26 @@ class LauncherMainFrame(wx.Frame):
         if textCtrl is not None:
             textCtrl.SelectAll()
 
+    def SetCursor(self, cursor):
+        self.loginDialogPanel.SetCursor(cursor)
+        self.vncLoginHostLabel.SetCursor(cursor)
+        self.massiveProjectLabel.SetCursor(cursor)
+        self.massiveHoursLabel.SetCursor(cursor)
+        self.vncDisplayResolutionLabel.SetCursor(cursor)
+        self.sshTunnelCipherLabel.SetCursor(cursor)
+        self.usernameLabel.SetCursor(cursor)
+        self.passwordLabel.SetCursor(cursor)
+        self.vncLoginHostComboBox.SetCursor(cursor)
+        self.vncDisplayResolutionComboBox.SetCursor(cursor)
+        self.sshTunnelCipherComboBox.SetCursor(cursor)
+        self.massiveProjectComboBox.SetCursor(cursor)
+        self.massiveHoursField.SetCursor(cursor)
+        self.usernameTextField.SetCursor(cursor)
+        self.passwordField.SetCursor(cursor)
+        self.cancelButton.SetCursor(cursor)
+        self.loginButton.SetCursor(cursor)
+        super(LauncherMainFrame, self).SetCursor(cursor)
+
     def onLogin(self, event):
         class LoginThread(threading.Thread):
             """Login Thread Class."""
@@ -506,25 +526,7 @@ class LauncherMainFrame(wx.Frame):
             def run(self):
                 """Run Worker Thread."""
 
-                waitCursor = wx.StockCursor(wx.CURSOR_WAIT)
-                launcherMainFrame.SetCursor(waitCursor)
-                launcherMainFrame.loginDialogPanel.SetCursor(waitCursor)
-                launcherMainFrame.vncLoginHostLabel.SetCursor(waitCursor)
-                launcherMainFrame.massiveProjectLabel.SetCursor(waitCursor)
-                launcherMainFrame.massiveHoursLabel.SetCursor(waitCursor)
-                launcherMainFrame.vncDisplayResolutionLabel.SetCursor(waitCursor)
-                launcherMainFrame.sshTunnelCipherLabel.SetCursor(waitCursor)
-                launcherMainFrame.usernameLabel.SetCursor(waitCursor)
-                launcherMainFrame.passwordLabel.SetCursor(waitCursor)
-                launcherMainFrame.vncLoginHostComboBox.SetCursor(waitCursor)
-                launcherMainFrame.vncDisplayResolutionComboBox.SetCursor(waitCursor)
-                launcherMainFrame.sshTunnelCipherComboBox.SetCursor(waitCursor)
-                launcherMainFrame.massiveProjectComboBox.SetCursor(waitCursor)
-                launcherMainFrame.massiveHoursField.SetCursor(waitCursor)
-                launcherMainFrame.usernameTextField.SetCursor(waitCursor)
-                launcherMainFrame.passwordField.SetCursor(waitCursor)
-                launcherMainFrame.cancelButton.SetCursor(waitCursor)
-                launcherMainFrame.loginButton.SetCursor(waitCursor)
+                launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
 
                 try:
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Logging in to " + launcherMainFrame.vncLoginHost)
@@ -944,76 +946,20 @@ class LauncherMainFrame(wx.Frame):
                         finally:
                             os._exit(0)
 
-                        arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
-                        launcherMainFrame.SetCursor(arrowCursor)
-                        launcherMainFrame.loginDialogPanel.SetCursor(arrowCursor)
-                        launcherMainFrame.vncLoginHostLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.massiveProjectLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.massiveHoursLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.vncDisplayResolutionLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.sshTunnelCipherLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.usernameLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.passwordLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.vncLoginHostComboBox.SetCursor(arrowCursor)
-                        launcherMainFrame.vncDisplayResolutionComboBox.SetCursor(arrowCursor)
-                        launcherMainFrame.sshTunnelCipherComboBox.SetCursor(arrowCursor)
-                        launcherMainFrame.massiveProjectComboBox.SetCursor(arrowCursor)
-                        launcherMainFrame.massiveHoursField.SetCursor(arrowCursor)
-                        launcherMainFrame.usernameTextField.SetCursor(arrowCursor)
-                        launcherMainFrame.passwordField.SetCursor(arrowCursor)
-                        launcherMainFrame.optionsButton.SetCursor(arrowCursor)
-                        launcherMainFrame.cancelButton.SetCursor(arrowCursor)
-                        launcherMainFrame.loginButton.SetCursor(arrowCursor)
+                        launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
 
                     except:
                         wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                         wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
-                        arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
-                        launcherMainFrame.SetCursor(arrowCursor)
-                        launcherMainFrame.loginDialogPanel.SetCursor(arrowCursor)
-                        launcherMainFrame.vncLoginHostLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.massiveProjectLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.massiveHoursLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.vncDisplayResolutionLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.sshTunnelCipherLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.usernameLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.passwordLabel.SetCursor(arrowCursor)
-                        launcherMainFrame.vncLoginHostComboBox.SetCursor(arrowCursor)
-                        launcherMainFrame.vncDisplayResolutionComboBox.SetCursor(arrowCursor)
-                        launcherMainFrame.sshTunnelCipherComboBox.SetCursor(arrowCursor)
-                        launcherMainFrame.massiveProjectComboBox.SetCursor(arrowCursor)
-                        launcherMainFrame.massiveHoursField.SetCursor(arrowCursor)
-                        launcherMainFrame.usernameTextField.SetCursor(arrowCursor)
-                        launcherMainFrame.passwordField.SetCursor(arrowCursor)
-                        launcherMainFrame.optionsButton.SetCursor(arrowCursor)
-                        launcherMainFrame.cancelButton.SetCursor(arrowCursor)
-                        launcherMainFrame.loginButton.SetCursor(arrowCursor)
+                        launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
 
                 except:
                     wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
-                    arrowCursor = wx.StockCursor(wx.CURSOR_ARROW)
+                    launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
                     launcherMainFrame.SetCursor(arrowCursor)
-                    launcherMainFrame.loginDialogPanel.SetCursor(arrowCursor)
-                    launcherMainFrame.vncLoginHostLabel.SetCursor(arrowCursor)
-                    launcherMainFrame.massiveProjectLabel.SetCursor(arrowCursor)
-                    launcherMainFrame.massiveHoursLabel.SetCursor(arrowCursor)
-                    launcherMainFrame.vncDisplayResolutionLabel.SetCursor(arrowCursor)
-                    launcherMainFrame.sshTunnelCipherLabel.SetCursor(arrowCursor)
-                    launcherMainFrame.usernameLabel.SetCursor(arrowCursor)
-                    launcherMainFrame.passwordLabel.SetCursor(arrowCursor)
-                    launcherMainFrame.vncLoginHostComboBox.SetCursor(arrowCursor)
-                    launcherMainFrame.vncDisplayResolutionComboBox.SetCursor(arrowCursor)
-                    launcherMainFrame.sshTunnelCipherComboBox.SetCursor(arrowCursor)
-                    launcherMainFrame.massiveProjectComboBox.SetCursor(arrowCursor)
-                    launcherMainFrame.massiveHoursField.SetCursor(arrowCursor)
-                    launcherMainFrame.usernameTextField.SetCursor(arrowCursor)
-                    launcherMainFrame.passwordField.SetCursor(arrowCursor)
-                    launcherMainFrame.optionsButton.SetCursor(arrowCursor)
-                    launcherMainFrame.cancelButton.SetCursor(arrowCursor)
-                    launcherMainFrame.loginButton.SetCursor(arrowCursor)
 
         self.username = self.usernameTextField.GetValue()
         self.password = self.passwordField.GetValue()
