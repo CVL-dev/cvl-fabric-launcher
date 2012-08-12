@@ -69,8 +69,10 @@ import ConfigParser
 global launcherMainFrame
 global massiveConfig
 global cvlConfig
+global turboVncConfig
 global massiveLauncherPreferencesFilePath
 global cvlLauncherPreferencesFilePath
+global turboVncPreferencesFilePath
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self):
@@ -1327,6 +1329,14 @@ class MyApp(wx.App):
         cvlLauncherPreferencesFilePath = os.path.join(appUserDataDir,"CVL Launcher Preferences.cfg")
         if os.path.exists(cvlLauncherPreferencesFilePath):
             cvlConfig.read(cvlLauncherPreferencesFilePath)
+
+        global turboVncConfig
+        turboVncConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+
+        global turboVncPreferencesFilePath
+        turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
+        if os.path.exists(turboVncPreferencesFilePath):
+            turboVncConfig.read(turboVncPreferencesFilePath)
 
         global launcherMainFrame
         launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
