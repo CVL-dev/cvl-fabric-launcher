@@ -67,8 +67,8 @@ import ConfigParser
 #logger.setLevel(logging.WARN)
 
 global launcherMainFrame
-global massiveConfig
-global cvlConfig
+global massiveLauncherConfig
+global cvlLauncherConfig
 global turboVncConfig
 global massiveLauncherPreferencesFilePath
 global cvlLauncherPreferencesFilePath
@@ -183,19 +183,19 @@ class LauncherMainFrame(wx.Frame):
         defaultMassiveHost = "m2-login2.massive.org.au"
         self.massiveLoginHostComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value=defaultMassiveHost, choices=massiveLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if massiveConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveConfig.has_option("MASSIVE Launcher Preferences", "massive_login_host"):
-                self.massiveLoginHost = massiveConfig.get("MASSIVE Launcher Preferences", "massive_login_host")
-            elif massiveConfig.has_option("MASSIVE Launcher Preferences", "host"):
-                self.massiveLoginHost = massiveConfig.get("MASSIVE Launcher Preferences", "host")
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_login_host"):
+                self.massiveLoginHost = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_login_host")
+            elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "host"):
+                self.massiveLoginHost = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "host")
             else:
-                massiveConfig.set("MASSIVE Launcher Preferences","massive_login_host","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_login_host","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveConfig.write(massiveLauncherPreferencesFileObject)
+                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
-            massiveConfig.add_section("MASSIVE Launcher Preferences")
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveConfig.write(massiveLauncherPreferencesFileObject)
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         if self.massiveLoginHost.strip()!="":
             self.massiveLoginHostComboBox.SetValue(self.massiveLoginHost)
 
@@ -224,19 +224,19 @@ class LauncherMainFrame(wx.Frame):
         self.massiveProjectComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveProjects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.massiveProject = ""
-        if massiveConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveConfig.has_option("MASSIVE Launcher Preferences", "massive_project"):
-                self.massiveProject = massiveConfig.get("MASSIVE Launcher Preferences", "massive_project")
-            elif massiveConfig.has_option("MASSIVE Launcher Preferences", "project"):
-                self.massiveProject = massiveConfig.get("MASSIVE Launcher Preferences", "project")
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_project"):
+                self.massiveProject = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_project")
+            elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "project"):
+                self.massiveProject = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "project")
             else:
-                massiveConfig.set("MASSIVE Launcher Preferences","massive_project","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_project","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveConfig.write(massiveLauncherPreferencesFileObject)
+                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
-            massiveConfig.add_section("MASSIVE Launcher Preferences")
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveConfig.write(massiveLauncherPreferencesFileObject)
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         if self.massiveProject.strip()!="":
             self.massiveProjectComboBox.SetValue(self.massiveProject)
         else:
@@ -246,23 +246,23 @@ class LauncherMainFrame(wx.Frame):
         self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveHoursRequested = "4"
-        if massiveConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveConfig.has_option("MASSIVE Launcher Preferences", "massive_hours_requested"):
-                self.massiveHoursRequested = massiveConfig.get("MASSIVE Launcher Preferences", "massive_hours_requested")
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_hours_requested"):
+                self.massiveHoursRequested = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_hours_requested")
                 if self.massiveHoursRequested.strip() == "":
                     self.massiveHoursRequested = "4"
-            elif massiveConfig.has_option("MASSIVE Launcher Preferences", "hours"):
-                self.massiveHoursRequested = massiveConfig.get("MASSIVE Launcher Preferences", "hours")
+            elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "hours"):
+                self.massiveHoursRequested = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "hours")
                 if self.massiveHoursRequested.strip() == "":
                     self.massiveHoursRequested = "4"
             else:
-                massiveConfig.set("MASSIVE Launcher Preferences","massive_hours_requested","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_hours_requested","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveConfig.write(massiveLauncherPreferencesFileObject)
+                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
-            massiveConfig.add_section("MASSIVE Launcher Preferences")
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveConfig.write(massiveLauncherPreferencesFileObject)
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=24)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -279,19 +279,19 @@ class LauncherMainFrame(wx.Frame):
             ]
         self.massiveVncDisplayResolutionComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveVncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveVncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if massiveConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveConfig.has_option("MASSIVE Launcher Preferences", "massive_vnc_display_resolution"):
-                self.massiveVncDisplayResolution = massiveConfig.get("MASSIVE Launcher Preferences", "massive_vnc_display_resolution")
-            elif massiveConfig.has_option("MASSIVE Launcher Preferences", "resolution"):
-                self.massiveVncDisplayResolution = massiveConfig.get("MASSIVE Launcher Preferences", "resolution")
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_vnc_display_resolution"):
+                self.massiveVncDisplayResolution = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_vnc_display_resolution")
+            elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "resolution"):
+                self.massiveVncDisplayResolution = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "resolution")
             else:
-                massiveConfig.set("MASSIVE Launcher Preferences","massive_vnc_display_resolution","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_vnc_display_resolution","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveConfig.write(massiveLauncherPreferencesFileObject)
+                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
-            massiveConfig.add_section("MASSIVE Launcher Preferences")
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveConfig.write(massiveLauncherPreferencesFileObject)
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         if self.massiveVncDisplayResolution.strip()!="":
             self.massiveVncDisplayResolutionComboBox.SetValue(self.massiveVncDisplayResolution)
         else:
@@ -309,19 +309,19 @@ class LauncherMainFrame(wx.Frame):
             massiveSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
         self.massiveSshTunnelCipherComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveSshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveSshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if massiveConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveConfig.has_option("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher"):
-                self.massiveSshTunnelCipher = massiveConfig.get("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher")
-            if massiveConfig.has_option("MASSIVE Launcher Preferences", "cipher"):
-                self.massiveSshTunnelCipher = massiveConfig.get("MASSIVE Launcher Preferences", "cipher")
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher"):
+                self.massiveSshTunnelCipher = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher")
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "cipher"):
+                self.massiveSshTunnelCipher = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "cipher")
             else:
-                massiveConfig.set("MASSIVE Launcher Preferences","massive_ssh_tunnel_cipher","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_ssh_tunnel_cipher","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveConfig.write(massiveLauncherPreferencesFileObject)
+                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
-            massiveConfig.add_section("MASSIVE Launcher Preferences")
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveConfig.write(massiveLauncherPreferencesFileObject)
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         if self.massiveSshTunnelCipher.strip()!="":
             self.massiveSshTunnelCipherComboBox.SetValue(self.massiveSshTunnelCipher)
         else:
@@ -331,19 +331,19 @@ class LauncherMainFrame(wx.Frame):
         self.massiveLoginFieldsPanelSizer.Add(self.massiveUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveUsername = ""
-        if massiveConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveConfig.has_option("MASSIVE Launcher Preferences", "massive_username"):
-                self.massiveUsername = massiveConfig.get("MASSIVE Launcher Preferences", "massive_username")
-            elif massiveConfig.has_option("MASSIVE Launcher Preferences", "username"):
-                self.massiveUsername = massiveConfig.get("MASSIVE Launcher Preferences", "username")
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_username"):
+                self.massiveUsername = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_username")
+            elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "username"):
+                self.massiveUsername = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "username")
             else:
-                massiveConfig.set("MASSIVE Launcher Preferences","massive_username","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_username","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveConfig.write(massiveLauncherPreferencesFileObject)
+                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
-            massiveConfig.add_section("MASSIVE Launcher Preferences")
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveConfig.write(massiveLauncherPreferencesFileObject)
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         self.massiveUsernameTextField = wx.TextCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, self.massiveUsername, size=(widgetWidth1, -1))
         self.massiveLoginFieldsPanelSizer.Add(self.massiveUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
         if self.massiveUsername.strip()!="":
@@ -394,17 +394,17 @@ class LauncherMainFrame(wx.Frame):
         defaultCvlHost = "115.146.93.198"
         self.cvlLoginHostComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if cvlConfig.has_section("CVL Launcher Preferences"):
-            if cvlConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
-                self.cvlLoginHost = cvlConfig.get("CVL Launcher Preferences", "cvl_login_host")
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
+                self.cvlLoginHost = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_login_host")
             else:
-                cvlConfig.set("CVL Launcher Preferences","cvl_login_host","")
+                cvlLauncherConfig.set("CVL Launcher Preferences","cvl_login_host","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlConfig.write(cvlLauncherPreferencesFileObject)
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
-            cvlConfig.add_section("CVL Launcher Preferences")
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlConfig.write(cvlLauncherPreferencesFileObject)
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         if self.cvlLoginHost.strip()!="":
             self.cvlLoginHostComboBox.SetValue(self.cvlLoginHost)
 
@@ -421,19 +421,19 @@ class LauncherMainFrame(wx.Frame):
             ]
         self.cvlVncDisplayResolutionComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlVncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if cvlConfig.has_section("CVL Launcher Preferences"):
-            if cvlConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_resolution"):
-                self.cvlVncDisplayResolution = cvlConfig.get("CVL Launcher Preferences", "cvl_vnc_display_resolution")
-            elif cvlConfig.has_option("CVL Launcher Preferences", "resolution"):
-                self.cvlVncDisplayResolution = cvlConfig.get("CVL Launcher Preferences", "resolution")
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_resolution"):
+                self.cvlVncDisplayResolution = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_resolution")
+            elif cvlLauncherConfig.has_option("CVL Launcher Preferences", "resolution"):
+                self.cvlVncDisplayResolution = cvlLauncherConfig.get("CVL Launcher Preferences", "resolution")
             else:
-                cvlConfig.set("CVL Launcher Preferences","cvl_vnc_display_resolution","")
+                cvlLauncherConfig.set("CVL Launcher Preferences","cvl_vnc_display_resolution","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlConfig.write(cvlLauncherPreferencesFileObject)
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
-            cvlConfig.add_section("CVL Launcher Preferences")
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlConfig.write(cvlLauncherPreferencesFileObject)
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         if self.cvlVncDisplayResolution.strip()!="":
             self.cvlVncDisplayResolutionComboBox.SetValue(self.cvlVncDisplayResolution)
         else:
@@ -451,19 +451,19 @@ class LauncherMainFrame(wx.Frame):
             cvlSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
         self.cvlSshTunnelCipherComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlSshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.cvlLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if cvlConfig.has_section("CVL Launcher Preferences"):
-            if cvlConfig.has_option("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher"):
-                self.cvlSshTunnelCipher = cvlConfig.get("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher")
-            if cvlConfig.has_option("CVL Launcher Preferences", "cipher"):
-                self.cvlSshTunnelCipher = cvlConfig.get("CVL Launcher Preferences", "cipher")
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher"):
+                self.cvlSshTunnelCipher = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher")
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cipher"):
+                self.cvlSshTunnelCipher = cvlLauncherConfig.get("CVL Launcher Preferences", "cipher")
             else:
-                cvlConfig.set("CVL Launcher Preferences","cvl_ssh_tunnel_cipher","")
+                cvlLauncherConfig.set("CVL Launcher Preferences","cvl_ssh_tunnel_cipher","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlConfig.write(cvlLauncherPreferencesFileObject)
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
-            cvlConfig.add_section("CVL Launcher Preferences")
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlConfig.write(cvlLauncherPreferencesFileObject)
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         if self.cvlSshTunnelCipher.strip()!="":
             self.cvlSshTunnelCipherComboBox.SetValue(self.cvlSshTunnelCipher)
         else:
@@ -473,17 +473,17 @@ class LauncherMainFrame(wx.Frame):
         self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlUsername = ""
-        if cvlConfig.has_section("CVL Launcher Preferences"):
-            if cvlConfig.has_option("CVL Launcher Preferences", "cvl_username"):
-                self.cvlUsername = cvlConfig.get("CVL Launcher Preferences", "cvl_username")
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_username"):
+                self.cvlUsername = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_username")
             else:
-                cvlConfig.set("CVL Launcher Preferences","cvl_username","")
+                cvlLauncherConfig.set("CVL Launcher Preferences","cvl_username","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlConfig.write(cvlLauncherPreferencesFileObject)
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
-            cvlConfig.add_section("CVL Launcher Preferences")
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlConfig.write(cvlLauncherPreferencesFileObject)
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         self.cvlUsernameTextField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
         self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
         if self.cvlUsername.strip()!="":
@@ -681,14 +681,32 @@ class LauncherMainFrame(wx.Frame):
             os._exit(0)
 
     def onOptions(self, event):
+
         import turboVncOptions
+
+        if len(self.vncOptions)==0:
+            if turboVncConfig.has_section("TurboVNC Preferences"):
+                savedTurboVncOptions =  turboVncConfig.items("TurboVNC Preferences")
+                for option in savedTurboVncOptions:
+                    key = option[0]
+                    value = option[1]
+                    if value=='True':
+                        value = True
+                    if value=='False':
+                        value = False
+                    self.vncOptions[key] = value
+
         turboVncOptionsDialog = turboVncOptions.TurboVncOptions(launcherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options", self.vncOptions)
         turboVncOptionsDialog.ShowModal()
+
         if turboVncOptionsDialog.okClicked:
             self.vncOptions = turboVncOptionsDialog.getVncOptions()
-            #import pprint
-            #vncOptionsDictionaryString = pprint.pformat(self.vncOptions)
-            #wx.CallAfter(sys.stdout.write, vncOptionsDictionaryString + "\n")
+
+            for key in self.vncOptions:
+                turboVncConfig.set("TurboVNC Preferences", key, self.vncOptions[key])
+
+            with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
+                turboVncConfig.write(turboVncPreferencesFileObject)
 
     def onCancel(self, event):
         try:
@@ -1113,20 +1131,20 @@ class LauncherMainFrame(wx.Frame):
                         else:
                             optionPrefixCharacter = "-"
                         vncOptionsString = ""
-                        if 'jpegCompression' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpegCompression']==False:
+                        if 'jpeg_compression' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpeg_compression']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nojpeg"
                         defaultJpegChrominanceSubsampling = "1x"
-                        if 'jpegChrominanceSubsampling' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpegChrominanceSubsampling']!=defaultJpegChrominanceSubsampling:
-                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + launcherMainFrame.vncOptions['jpegChrominanceSubsampling']
+                        if 'jpeg_chrominance_subsampling' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpeg_chrominance_subsampling']!=defaultJpegChrominanceSubsampling:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + launcherMainFrame.vncOptions['jpeg_chrominance_subsampling']
                         defaultJpegImageQuality = "95"
-                        if 'jpegImageQuality' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpegImageQuality']!=defaultJpegImageQuality:
-                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + launcherMainFrame.vncOptions['jpegImageQuality']
-                        if 'zlibCompressionEnabled' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['zlibCompressionEnabled']==True:
-                            if 'zlibCompressionLevel' in launcherMainFrame.vncOptions:
-                                vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + launcherMainFrame.vncOptions['zlibCompressionLevel']
-                        if 'viewOnly' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['viewOnly']==True:
+                        if 'jpeg_image_quality' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpeg_image_quality']!=defaultJpegImageQuality:
+                            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + launcherMainFrame.vncOptions['jpeg_image_quality']
+                        if 'zlib_compression_enabled' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['zlib_compression_enabled']==True:
+                            if 'zlib_compression_level' in launcherMainFrame.vncOptions:
+                                vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + launcherMainFrame.vncOptions['zlib_compression_level']
+                        if 'view_only' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['view_only']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "viewonly"
-                        if 'disableClipboardTransfer' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['disableClipboardTransfer']==True:
+                        if 'disable_clipboard_transfer' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['disable_clipboard_transfer']==True:
                             if sys.platform.startswith("win"):
                                 vncOptionsString = vncOptionsString + " /disableclipboard"
                             else:
@@ -1140,22 +1158,22 @@ class LauncherMainFrame(wx.Frame):
                             defaultSpanMode = 'automatic'
                             if 'span' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['span']!=defaultSpanMode:
                                 vncOptionsString = vncOptionsString + " /span " + launcherMainFrame.vncOptions['span']
-                        if 'doubleBuffering' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['doubleBuffering']==False:
+                        if 'double_buffering' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['double_buffering']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
-                        if 'fullScreenMode' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['fullScreenMode']==True:
+                        if 'full_screen_mode' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['full_screen_mode']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "fullscreen"
-                        if 'deiconifyOnRemoteBellEvent' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['deiconifyOnRemoteBellEvent']==False:
+                        if 'deiconify_on_remote_bell_event' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['deiconify_on_remote_bell_event']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noraiseonbeep"
                         if sys.platform.startswith("win"):
                             if 'emulate3' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['emulate3']==True:
                                 vncOptionsString = vncOptionsString + " /emulate3"
                             if 'swapmouse' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['swapmouse']==True:
                                 vncOptionsString = vncOptionsString + " /swapmouse"
-                        if 'dontShowRemoteCursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['dontShowRemoteCursor']==True:
+                        if 'dont_show_remote_cursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['dont_show_remote_cursor']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nocursorshape"
-                        elif 'letRemoteServerDealWithCursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['letRemoteServerDealWithCursor']==True:
+                        elif 'let_remote_server_deal_with_mouse_cursor' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['let_remote_server_deal_with_mouse_cursor']==True:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "x11cursor"
-                        if 'requestSharedSession' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['requestSharedSession']==False:
+                        if 'request_shared_session' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['request_shared_session']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
                         if sys.platform.startswith("win"):
                             if 'toolbar' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['toolbar']==False:
@@ -1245,26 +1263,26 @@ class LauncherMainFrame(wx.Frame):
                 self.massiveProjectComboBox.SetValue(self.massiveProject)
 
         if launcherMainFrame.massiveTabSelected:
-            massiveConfig.set("MASSIVE Launcher Preferences", "massive_login_host", self.massiveLoginHost)
-            massiveConfig.set("MASSIVE Launcher Preferences", "massive_username", self.massiveUsername)
-            massiveConfig.set("MASSIVE Launcher Preferences", "massive_vnc_display_resolution", self.massiveVncDisplayResolution)
-            massiveConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher", self.massiveSshTunnelCipher)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_login_host", self.massiveLoginHost)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_username", self.massiveUsername)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_vnc_display_resolution", self.massiveVncDisplayResolution)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher", self.massiveSshTunnelCipher)
         else:
-            cvlConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
-            cvlConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
-            cvlConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
-            cvlConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher", self.cvlSshTunnelCipher)
+            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
+            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
+            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
+            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher", self.cvlSshTunnelCipher)
 
         if launcherMainFrame.massiveTabSelected:
-            massiveConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
-            massiveConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
 
         if launcherMainFrame.massiveTabSelected:
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveConfig.write(massiveLauncherPreferencesFileObject)
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlConfig.write(cvlLauncherPreferencesFileObject)
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
         if launcherMainFrame.massiveTabSelected:
             logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
@@ -1314,21 +1332,25 @@ class MyApp(wx.App):
         if not os.path.exists(appUserDataDir):
             os.makedirs(appUserDataDir)
 
-        global massiveConfig
-        massiveConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+        global massiveLauncherConfig
+        massiveLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
 
         global massiveLauncherPreferencesFilePath
         massiveLauncherPreferencesFilePath = os.path.join(appUserDataDir,"MASSIVE Launcher Preferences.cfg")
         if os.path.exists(massiveLauncherPreferencesFilePath):
-            massiveConfig.read(massiveLauncherPreferencesFilePath)
+            massiveLauncherConfig.read(massiveLauncherPreferencesFilePath)
+        if not massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
 
-        global cvlConfig
-        cvlConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+        global cvlLauncherConfig
+        cvlLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
 
         global cvlLauncherPreferencesFilePath
         cvlLauncherPreferencesFilePath = os.path.join(appUserDataDir,"CVL Launcher Preferences.cfg")
         if os.path.exists(cvlLauncherPreferencesFilePath):
-            cvlConfig.read(cvlLauncherPreferencesFilePath)
+            cvlLauncherConfig.read(cvlLauncherPreferencesFilePath)
+        if not cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
 
         global turboVncConfig
         turboVncConfig = ConfigParser.RawConfigParser(allow_no_value=True)
@@ -1337,6 +1359,8 @@ class MyApp(wx.App):
         turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
         if os.path.exists(turboVncPreferencesFilePath):
             turboVncConfig.read(turboVncPreferencesFilePath)
+        if not turboVncConfig.has_section("TurboVNC Preferences"):
+            turboVncConfig.add_section("TurboVNC Preferences")
 
         global launcherMainFrame
         launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
