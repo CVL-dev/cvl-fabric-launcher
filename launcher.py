@@ -193,7 +193,7 @@ class LauncherMainFrame(wx.Frame):
         if self.massiveLoginHost.strip()!="":
             self.massiveLoginHostComboBox.SetValue(self.massiveLoginHost)
 
-        self.massiveProjectLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'MASSIVE massiveProject')
+        self.massiveProjectLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'MASSIVE project')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.defaultProjectPlaceholder = '[Use my default massiveProject]'
