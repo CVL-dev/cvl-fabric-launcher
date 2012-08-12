@@ -269,27 +269,27 @@ class LauncherMainFrame(wx.Frame):
         desiredWidth = displaySize[0] * 0.99
         desiredHeight = displaySize[1] * 0.85
         defaultResolution = str(int(desiredWidth)) + "x" + str(int(desiredHeight))
-        self.massiveDesktopResolution = defaultResolution
-        massiveDesktopResolutions = [
+        self.massiveVncDisplayResolution = defaultResolution
+        massiveVncDisplayResolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        self.massiveVncDisplayResolutionComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveDesktopResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.massiveVncDisplayResolutionComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveVncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveVncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if config.has_section("MASSIVE Launcher Preferences"):
-            if config.has_option("MASSIVE Launcher Preferences", "massiveDesktopResolution"):
-                self.massiveDesktopResolution = config.get("MASSIVE Launcher Preferences", "massiveDesktopResolution")
+            if config.has_option("MASSIVE Launcher Preferences", "massiveVncDisplayResolution"):
+                self.massiveVncDisplayResolution = config.get("MASSIVE Launcher Preferences", "massiveVncDisplayResolution")
             elif config.has_option("MASSIVE Launcher Preferences", "resolution"):
-                self.massiveDesktopResolution = config.get("MASSIVE Launcher Preferences", "resolution")
+                self.massiveVncDisplayResolution = config.get("MASSIVE Launcher Preferences", "resolution")
             else:
-                config.set("MASSIVE Launcher Preferences","massiveDesktopResolution","")
+                config.set("MASSIVE Launcher Preferences","massiveVncDisplayResolution","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                     config.write(massiveLauncherPreferencesFileObject)
         else:
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        if self.massiveDesktopResolution.strip()!="":
-            self.massiveVncDisplayResolutionComboBox.SetValue(self.massiveDesktopResolution)
+        if self.massiveVncDisplayResolution.strip()!="":
+            self.massiveVncDisplayResolutionComboBox.SetValue(self.massiveVncDisplayResolution)
         else:
             self.massiveVncDisplayResolutionComboBox.SetValue(defaultResolution)
 
@@ -386,8 +386,8 @@ class LauncherMainFrame(wx.Frame):
         self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlLoginHost = ""
-        cvlLoginHosts = ["115.146.93.127"]
-        defaultCvlHost = "115.146.93.127"
+        cvlLoginHosts = ["115.146.93.198"]
+        defaultCvlHost = "115.146.93.198"
         self.cvlLoginHostComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if config.has_section("CVL Launcher Preferences"):
@@ -411,27 +411,27 @@ class LauncherMainFrame(wx.Frame):
         desiredWidth = displaySize[0] * 0.99
         desiredHeight = displaySize[1] * 0.85
         defaultResolution = str(int(desiredWidth)) + "x" + str(int(desiredHeight))
-        self.cvlDesktopResolution = defaultResolution
-        cvlDesktopResolutions = [
+        self.cvlVncDisplayResolution = defaultResolution
+        cvlVncDisplayResolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        self.cvlVncDisplayResolutionComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlDesktopResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.cvlVncDisplayResolutionComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlVncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if config.has_section("CVL Launcher Preferences"):
-            if config.has_option("CVL Launcher Preferences", "cvlDesktopResolution"):
-                self.cvlDesktopResolution = config.get("CVL Launcher Preferences", "cvlDesktopResolution")
+            if config.has_option("CVL Launcher Preferences", "cvlVncDisplayResolution"):
+                self.cvlVncDisplayResolution = config.get("CVL Launcher Preferences", "cvlVncDisplayResolution")
             elif config.has_option("CVL Launcher Preferences", "resolution"):
-                self.cvlDesktopResolution = config.get("CVL Launcher Preferences", "resolution")
+                self.cvlVncDisplayResolution = config.get("CVL Launcher Preferences", "resolution")
             else:
-                config.set("CVL Launcher Preferences","cvlDesktopResolution","")
+                config.set("CVL Launcher Preferences","cvlVncDisplayResolution","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                     config.write(cvlLauncherPreferencesFileObject)
         else:
             config.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 config.write(cvlLauncherPreferencesFileObject)
-        if self.cvlDesktopResolution.strip()!="":
-            self.cvlVncDisplayResolutionComboBox.SetValue(self.cvlDesktopResolution)
+        if self.cvlVncDisplayResolution.strip()!="":
+            self.cvlVncDisplayResolutionComboBox.SetValue(self.cvlVncDisplayResolution)
         else:
             self.cvlVncDisplayResolutionComboBox.SetValue(defaultResolution)
 
@@ -507,6 +507,11 @@ class LauncherMainFrame(wx.Frame):
         # End CVL tab
 
         self.loginDialogPanelSizer.Add(self.tabbedView, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
+
+        MASSIVE_TAB_INDEX = 0
+        self.tabbedView.ChangeSelection(MASSIVE_TAB_INDEX)
+        self.massiveTabSelected = True
+        self.cvlTabSelected = False
 
         # Buttons Panel
 
@@ -741,15 +746,39 @@ class LauncherMainFrame(wx.Frame):
             def run(self):
                 """Run Worker Thread."""
 
-                launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
-
                 try:
-                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Logging in to " + launcherMainFrame.massiveLoginHost)
-                    wx.CallAfter(sys.stdout.write, "Attempting to log in to " + launcherMainFrame.massiveLoginHost + "...\n")
+                    launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
+
+                    MASSIVE_TAB_INDEX = 0
+                    CVL_TAB_INDEX =1 
+
+                    if launcherMainFrame.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+                        launcherMainFrame.massiveTabSelected = True
+                        launcherMainFrame.cvlTabSelected = False
+
+                    if launcherMainFrame.tabbedView.GetSelection()==CVL_TAB_INDEX:
+                        launcherMainFrame.massiveTabSelected = False
+                        launcherMainFrame.cvlTabSelected = True
+
+                    if launcherMainFrame.massiveTabSelected:
+                        self.host       = launcherMainFrame.massiveLoginHost
+                        self.resolution = launcherMainFrame.massiveVncDisplayResolution
+                        self.cipher     = launcherMainFrame.massiveSshTunnelCipher
+                        self.username   = launcherMainFrame.massiveUsername
+                        self.password   = launcherMainFrame.massivePassword
+                    else:
+                        self.host       = launcherMainFrame.cvlLoginHost
+                        self.resolution = launcherMainFrame.cvlVncDisplayResolution
+                        self.cipher     = launcherMainFrame.cvlSshTunnelCipher
+                        self.username   = launcherMainFrame.cvlUsername
+                        self.password   = launcherMainFrame.cvlPassword
+                    
+                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Logging in to " + self.host)
+                    wx.CallAfter(sys.stdout.write, "Attempting to log in to " + self.host + "...\n")
                     
                     sshClient = ssh.SSHClient()
                     sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                    sshClient.connect(launcherMainFrame.massiveLoginHost,username=launcherMainFrame.massiveUsername,password=launcherMainFrame.massivePassword)
+                    sshClient.connect(self.host,username=self.username,password=self.password)
 
                     wx.CallAfter(sys.stdout.write, "First login done.\n")
 
@@ -757,7 +786,7 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
 
-                    set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + launcherMainFrame.massiveDesktopResolution
+                    set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + self.resolution
                     wx.CallAfter(sys.stdout.write, set_display_resolution_cmd + "\n")
                     stdin,stdout,stderr = sshClient.exec_command(set_display_resolution_cmd)
                     stderrRead = stderr.read()
@@ -766,8 +795,8 @@ class LauncherMainFrame(wx.Frame):
                     
                     wx.CallAfter(sys.stdout.write, "\n")
 
-                    if "massive" in launcherMainFrame.massiveLoginHost:
-                        # Begin if "massive" in launcherMainFrame.massiveLoginHost:
+                    if launcherMainFrame.massiveTabSelected:
+                        # Begin if launcherMainFrame.massiveTabSelected:
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
 
@@ -820,7 +849,7 @@ class LauncherMainFrame(wx.Frame):
                                         def showStart():
                                             sshClient2 = ssh.SSHClient()
                                             sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                                            sshClient2.connect(launcherMainFrame.massiveLoginHost,username=launcherMainFrame.massiveUsername,password=launcherMainFrame.massivePassword)
+                                            sshClient2.connect(self.host,username=self.username,password=self.password)
                                             stdin,stdout,stderr = sshClient2.exec_command("showstart " + jobNumber)
                                             stderrRead = stderr.read()
                                             stdoutRead = stdout.read()
@@ -869,7 +898,7 @@ class LauncherMainFrame(wx.Frame):
 
                         wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
 
-                        # End if "massive" in launcherMainFrame.massiveLoginHost:
+                        # End if launcherMainFrame.massiveTabSelected:
 
                     wx.CallAfter(sys.stdout.write, "Generating SSH key-pair for tunnel...\n\n")
 
@@ -953,7 +982,7 @@ class LauncherMainFrame(wx.Frame):
                             wx.CallAfter(sys.stdout.write, chmod_cmd + "\n")
                             subprocess.call(chmod_cmd, shell=True)
 
-                            proxyCommand = "-oProxyCommand=\"ssh -c " + launcherMainFrame.massiveSshTunnelCipher + " -i " + self.privateKeyFile.name +" "+launcherMainFrame.massiveUsername+"@"+launcherMainFrame.massiveLoginHost+" 'nc %h %p'\""
+                            proxyCommand = "-oProxyCommand=\"ssh -c " + self.cipher + " -i " + self.privateKeyFile.name +" "+self.username+"@"+self.host+" 'nc %h %p'\""
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
 
                             self.localPortNumber = "5901"
@@ -967,21 +996,21 @@ class LauncherMainFrame(wx.Frame):
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
-                            #tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + launcherMainFrame.massiveSshTunnelCipher + " " \
+                            #tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
                                 #"-oStrictHostKeyChecking=no " \
                                 #"-A " + proxyCommand + " " \
-                                #"-L " + self.localPortNumber + ":localhost:5901" + " -l " + launcherMainFrame.massiveUsername+" "+visnode+"-ib"
+                                #"-L " + self.localPortNumber + ":localhost:5901" + " -l " + self.username+" "+visnode+"-ib"
 
-                            if "massive" in launcherMainFrame.massiveLoginHost:
-                                tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + launcherMainFrame.massiveSshTunnelCipher + " " \
+                            if launcherMainFrame.massiveTabSelected:
+                                tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
                                     "-t -t " \
                                     "-oStrictHostKeyChecking=no " \
-                                    "-L " + self.localPortNumber + ":"+visnode+"-ib:5901" + " -l " + launcherMainFrame.massiveUsername+" "+launcherMainFrame.massiveLoginHost
+                                    "-L " + self.localPortNumber + ":"+visnode+"-ib:5901" + " -l " + self.username+" "+self.host
                             else:
-                                tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + launcherMainFrame.massiveSshTunnelCipher + " " \
+                                tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
                                     "-t -t " \
                                     "-oStrictHostKeyChecking=no " \
-                                    "-L " + self.localPortNumber + ":localhost:5901" + " -l " + launcherMainFrame.massiveUsername+" "+launcherMainFrame.massiveLoginHost
+                                    "-L " + self.localPortNumber + ":localhost:5901" + " -l " + self.username+" "+self.host
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
                             self.sshTunnelProcess = subprocess.Popen(tunnel_cmd,
@@ -1015,7 +1044,7 @@ class LauncherMainFrame(wx.Frame):
                     tunnelThread.start()
 
                     count = 1
-                    while not self.sshTunnelReady and count < 30 and "massive" in launcherMainFrame.massiveLoginHost:
+                    while not self.sshTunnelReady and count < 30 and launcherMainFrame.massiveTabSelected:
                         time.sleep(1)
                         count = count + 1
 
@@ -1142,19 +1171,19 @@ class LauncherMainFrame(wx.Frame):
                                     vncOptionsString = vncOptionsString + " /logfile \"" + launcherMainFrame.vncOptions['logfile'] + "\""
 
                         if sys.platform.startswith("win"):
-                            vncCommandString = "\""+vnc+"\" /user "+launcherMainFrame.massiveUsername+" /autopass " + vncOptionsString + " localhost::" + self.localPortNumber
+                            vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + self.localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
-                            proc.communicate(input=launcherMainFrame.massivePassword + "\r\n")
+                            proc.communicate(input=self.password + "\r\n")
                         else:
-                            vncCommandString = vnc + " -user " + launcherMainFrame.massiveUsername + " -autopass " + vncOptionsString + " localhost::" + self.localPortNumber
+                            vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + self.localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
-                            proc.communicate(input=launcherMainFrame.massivePassword + "\n")
+                            proc.communicate(input=self.password + "\n")
                         try:
                             self.sshTunnelProcess.terminate()
                             os.unlink(self.privateKeyFile.name)
@@ -1174,14 +1203,34 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
-                    launcherMainFrame.SetCursor(arrowCursor)
 
-        self.massiveUsername = self.massiveUsernameTextField.GetValue()
-        self.massivePassword = self.massivePasswordField.GetValue()
-        self.massiveLoginHost = self.massiveLoginHostComboBox.GetValue()
-        self.massiveHoursRequested = str(self.massiveHoursField.GetValue())
-        self.massiveProject = self.massiveProjectComboBox.GetValue()
-        if "massive" in self.massiveLoginHost:
+        MASSIVE_TAB_INDEX = 0
+        CVL_TAB_INDEX =1 
+
+        if launcherMainFrame.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+            launcherMainFrame.massiveTabSelected = True
+            launcherMainFrame.cvlTabSelected = False
+
+        if launcherMainFrame.tabbedView.GetSelection()==CVL_TAB_INDEX:
+            launcherMainFrame.massiveTabSelected = False
+            launcherMainFrame.cvlTabSelected = True
+
+        if launcherMainFrame.massiveTabSelected:
+            self.massiveLoginHost = self.massiveLoginHostComboBox.GetValue()
+            self.massiveUsername = self.massiveUsernameTextField.GetValue()
+            self.massivePassword = self.massivePasswordField.GetValue()
+            self.massiveVncDisplayResolution = self.massiveVncDisplayResolutionComboBox.GetValue()
+            self.massiveSshTunnelCipher = self.massiveSshTunnelCipherComboBox.GetValue()
+        else:
+            self.cvlLoginHost = self.cvlLoginHostComboBox.GetValue()
+            self.cvlUsername = self.cvlUsernameTextField.GetValue()
+            self.cvlPassword = self.cvlPasswordField.GetValue()
+            self.cvlVncDisplayResolution = self.cvlVncDisplayResolutionComboBox.GetValue()
+            self.cvlSshTunnelCipher = self.cvlSshTunnelCipherComboBox.GetValue()
+
+        if launcherMainFrame.massiveTabSelected:
+            self.massiveHoursRequested = str(self.massiveHoursField.GetValue())
+            self.massiveProject = self.massiveProjectComboBox.GetValue()
             if self.massiveProject == self.defaultProjectPlaceholder:
                 xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
                 # Get list of user's massiveProjects from Karaage:
@@ -1190,25 +1239,29 @@ class LauncherMainFrame(wx.Frame):
                 # Get user's default massiveProject from Karaage:
                 self.massiveProject = xmlrpcServer.get_massiveProject(self.massiveUsername)
                 self.massiveProjectComboBox.SetValue(self.massiveProject)
-        self.massiveDesktopResolution = self.massiveVncDisplayResolutionComboBox.GetValue()
-        self.massiveSshTunnelCipher = self.massiveSshTunnelCipherComboBox.GetValue()
 
-        config.set("MASSIVE Launcher Preferences", "massiveUsername", self.massiveUsername)
-        config.set("MASSIVE Launcher Preferences", "massiveLoginHost", self.massiveLoginHost)
-        if "massive" in self.massiveLoginHost:
+        if launcherMainFrame.massiveTabSelected:
+            config.set("MASSIVE Launcher Preferences", "massiveLoginHost", self.massiveLoginHost)
+            config.set("MASSIVE Launcher Preferences", "massiveUsername", self.massiveUsername)
+            config.set("MASSIVE Launcher Preferences", "massiveVncDisplayResolution", self.massiveVncDisplayResolution)
+            config.set("MASSIVE Launcher Preferences", "massiveSshTunnelCipher", self.massiveSshTunnelCipher)
+        else:
+            config.set("CVL Launcher Preferences", "cvlLoginHost", self.cvlLoginHost)
+            config.set("CVL Launcher Preferences", "cvlUsername", self.cvlUsername)
+            config.set("CVL Launcher Preferences", "cvlVncDisplayResolution", self.cvlVncDisplayResolution)
+            config.set("CVL Launcher Preferences", "cvlSshTunnelCipher", self.cvlSshTunnelCipher)
+
+        if launcherMainFrame.massiveTabSelected:
             config.set("MASSIVE Launcher Preferences", "massiveProject", self.massiveProject)
             config.set("MASSIVE Launcher Preferences", "massiveHoursRequested", self.massiveHoursRequested)
-        config.set("MASSIVE Launcher Preferences", "massiveDesktopResolution", self.massiveDesktopResolution)
-        config.set("MASSIVE Launcher Preferences", "massiveSshTunnelCipher", self.massiveSshTunnelCipher)
+
         with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
             config.write(massiveLauncherPreferencesFileObject)
 
-        if "massive" in self.massiveLoginHost:
+        if launcherMainFrame.massiveTabSelected:
             logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
-        elif "cvl" in self.massiveLoginHost:
-            logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
         else:
-            logWindow = wx.Frame(self, title="Launcher Log Window", name="Launcher Log Window",pos=(200,150),size=(700,450))
+            logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
