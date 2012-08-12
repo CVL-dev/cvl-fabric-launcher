@@ -156,6 +156,8 @@ class LauncherMainFrame(wx.Frame):
 
         self.tabbedView = wx.Notebook(self.loginDialogPanel, wx.ID_ANY, style=(wx.NB_TOP))
 
+        # MASSIVE tab
+
         self.massiveLoginDialogPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
         self.massiveLoginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
 
@@ -257,13 +259,11 @@ class LauncherMainFrame(wx.Frame):
             config.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
-        #self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, pos=(123, 95), size=(widgetWidth2, -1),min=1,max=24)
         self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=24)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        #self.vncDisplayResolutionLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Resolution', (10, 140))
-        self.vncDisplayResolutionLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Resolution')
-        self.massiveLoginFieldsPanelSizer.Add(self.vncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.massiveVncDisplayResolutionLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Resolution')
+        self.massiveLoginFieldsPanelSizer.Add(self.massiveVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         displaySize = wx.DisplaySize()
         desiredWidth = displaySize[0] * 0.99
@@ -273,8 +273,8 @@ class LauncherMainFrame(wx.Frame):
         massiveDesktopResolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        self.vncDisplayResolutionComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveDesktopResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
-        self.massiveLoginFieldsPanelSizer.Add(self.vncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.massiveVncDisplayResolutionComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveDesktopResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.massiveLoginFieldsPanelSizer.Add(self.massiveVncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "massiveDesktopResolution"):
                 self.massiveDesktopResolution = config.get("MASSIVE Launcher Preferences", "massiveDesktopResolution")
@@ -289,12 +289,12 @@ class LauncherMainFrame(wx.Frame):
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
         if self.massiveDesktopResolution.strip()!="":
-            self.vncDisplayResolutionComboBox.SetValue(self.massiveDesktopResolution)
+            self.massiveVncDisplayResolutionComboBox.SetValue(self.massiveDesktopResolution)
         else:
-            self.vncDisplayResolutionComboBox.SetValue(defaultResolution)
+            self.massiveVncDisplayResolutionComboBox.SetValue(defaultResolution)
 
-        self.sshTunnelCipherLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
-        self.massiveLoginFieldsPanelSizer.Add(self.sshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.massiveSshTunnelCipherLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
+        self.massiveLoginFieldsPanelSizer.Add(self.massiveSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveSshTunnelCipher = ""
         if sys.platform.startswith("win"):
@@ -303,8 +303,8 @@ class LauncherMainFrame(wx.Frame):
         else:
             defaultCipher = "arcfour128"
             massiveSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
-        self.sshTunnelCipherComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveSshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
-        self.massiveLoginFieldsPanelSizer.Add(self.sshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.massiveSshTunnelCipherComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveSshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.massiveLoginFieldsPanelSizer.Add(self.massiveSshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if config.has_section("MASSIVE Launcher Preferences"):
             if config.has_option("MASSIVE Launcher Preferences", "massiveSshTunnelCipher"):
                 self.massiveSshTunnelCipher = config.get("MASSIVE Launcher Preferences", "massiveSshTunnelCipher")
@@ -319,9 +319,9 @@ class LauncherMainFrame(wx.Frame):
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 config.write(massiveLauncherPreferencesFileObject)
         if self.massiveSshTunnelCipher.strip()!="":
-            self.sshTunnelCipherComboBox.SetValue(self.massiveSshTunnelCipher)
+            self.massiveSshTunnelCipherComboBox.SetValue(self.massiveSshTunnelCipher)
         else:
-            self.sshTunnelCipherComboBox.SetValue(defaultCipher)
+            self.massiveSshTunnelCipherComboBox.SetValue(defaultCipher)
 
         self.massiveUsernameLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Username')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -356,9 +356,9 @@ class LauncherMainFrame(wx.Frame):
 
         self.massiveProjectComboBox.MoveAfterInTabOrder(self.massiveLoginHostComboBox)
         self.massiveHoursField.MoveAfterInTabOrder(self.massiveProjectComboBox)
-        self.vncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursField)
-        self.sshTunnelCipherComboBox.MoveAfterInTabOrder(self.vncDisplayResolutionComboBox)
-        self.massiveUsernameTextField.MoveAfterInTabOrder(self.sshTunnelCipherComboBox)
+        self.massiveVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursField)
+        self.massiveSshTunnelCipherComboBox.MoveAfterInTabOrder(self.massiveVncDisplayResolutionComboBox)
+        self.massiveUsernameTextField.MoveAfterInTabOrder(self.massiveSshTunnelCipherComboBox)
         self.massivePasswordField.MoveAfterInTabOrder(self.massiveUsernameTextField)
 
         self.massiveLoginFieldsPanel.SetSizerAndFit(self.massiveLoginFieldsPanelSizer)
@@ -370,11 +370,145 @@ class LauncherMainFrame(wx.Frame):
 
         self.tabbedView.AddPage(self.massiveLoginDialogPanel, "MASSIVE")
 
+        # CVL tab
+
         self.cvlLoginDialogPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
 
         self.tabbedView.AddPage(self.cvlLoginDialogPanel, "CVL")
 
+        self.cvlLoginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
+
+        self.cvlLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
+        self.cvlLoginFieldsPanelSizer = wx.FlexGridSizer(rows=7, cols=2, vgap=3, hgap=5)
+        self.cvlLoginFieldsPanel.SetSizer(self.cvlLoginFieldsPanelSizer)
+
+        self.cvlLoginHostLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Host')
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.cvlLoginHost = ""
+        cvlLoginHosts = ["115.146.93.127"]
+        defaultCvlHost = "115.146.93.127"
+        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        if config.has_section("CVL Launcher Preferences"):
+            if config.has_option("CVL Launcher Preferences", "cvlLoginHost"):
+                self.cvlLoginHost = config.get("CVL Launcher Preferences", "cvlLoginHost")
+            else:
+                config.set("CVL Launcher Preferences","cvlLoginHost","")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    config.write(cvlLauncherPreferencesFileObject)
+        else:
+            config.add_section("CVL Launcher Preferences")
+            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                config.write(cvlLauncherPreferencesFileObject)
+        if self.cvlLoginHost.strip()!="":
+            self.cvlLoginHostComboBox.SetValue(self.cvlLoginHost)
+
+        self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Resolution')
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        displaySize = wx.DisplaySize()
+        desiredWidth = displaySize[0] * 0.99
+        desiredHeight = displaySize[1] * 0.85
+        defaultResolution = str(int(desiredWidth)) + "x" + str(int(desiredHeight))
+        self.cvlDesktopResolution = defaultResolution
+        cvlDesktopResolutions = [
+            defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
+            ]
+        self.cvlVncDisplayResolutionComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlDesktopResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        if config.has_section("CVL Launcher Preferences"):
+            if config.has_option("CVL Launcher Preferences", "cvlDesktopResolution"):
+                self.cvlDesktopResolution = config.get("CVL Launcher Preferences", "cvlDesktopResolution")
+            elif config.has_option("CVL Launcher Preferences", "resolution"):
+                self.cvlDesktopResolution = config.get("CVL Launcher Preferences", "resolution")
+            else:
+                config.set("CVL Launcher Preferences","cvlDesktopResolution","")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    config.write(cvlLauncherPreferencesFileObject)
+        else:
+            config.add_section("CVL Launcher Preferences")
+            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                config.write(cvlLauncherPreferencesFileObject)
+        if self.cvlDesktopResolution.strip()!="":
+            self.cvlVncDisplayResolutionComboBox.SetValue(self.cvlDesktopResolution)
+        else:
+            self.cvlVncDisplayResolutionComboBox.SetValue(defaultResolution)
+
+        self.cvlSshTunnelCipherLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.cvlSshTunnelCipher = ""
+        if sys.platform.startswith("win"):
+            defaultCipher = "arcfour"
+            cvlSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour"]
+        else:
+            defaultCipher = "arcfour128"
+            cvlSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
+        self.cvlSshTunnelCipherComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlSshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        if config.has_section("CVL Launcher Preferences"):
+            if config.has_option("CVL Launcher Preferences", "cvlSshTunnelCipher"):
+                self.cvlSshTunnelCipher = config.get("CVL Launcher Preferences", "cvlSshTunnelCipher")
+            if config.has_option("CVL Launcher Preferences", "cipher"):
+                self.cvlSshTunnelCipher = config.get("CVL Launcher Preferences", "cipher")
+            else:
+                config.set("CVL Launcher Preferences","cvlSshTunnelCipher","")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    config.write(cvlLauncherPreferencesFileObject)
+        else:
+            config.add_section("CVL Launcher Preferences")
+            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                config.write(cvlLauncherPreferencesFileObject)
+        if self.cvlSshTunnelCipher.strip()!="":
+            self.cvlSshTunnelCipherComboBox.SetValue(self.cvlSshTunnelCipher)
+        else:
+            self.cvlSshTunnelCipherComboBox.SetValue(defaultCipher)
+
+        self.cvlUsernameLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Username')
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.cvlUsername = ""
+        if config.has_section("CVL Launcher Preferences"):
+            if config.has_option("CVL Launcher Preferences", "cvlUsername"):
+                self.cvlUsername = config.get("CVL Launcher Preferences", "cvlUsername")
+            else:
+                config.set("CVL Launcher Preferences","cvlUsername","")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    config.write(cvlLauncherPreferencesFileObject)
+        else:
+            config.add_section("CVL Launcher Preferences")
+            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                config.write(cvlLauncherPreferencesFileObject)
+        self.cvlUsernameTextField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
+        if self.cvlUsername.strip()!="":
+            self.cvlUsernameTextField.SelectAll()
+
+        self.cvlPasswordLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Password')
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.cvlPassword = ""
+        self.cvlPasswordField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlPassword, size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
+
+        self.cvlVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.cvlLoginHostComboBox)
+        self.cvlSshTunnelCipherComboBox.MoveAfterInTabOrder(self.cvlVncDisplayResolutionComboBox)
+        self.cvlUsernameTextField.MoveAfterInTabOrder(self.cvlSshTunnelCipherComboBox)
+        self.cvlPasswordField.MoveAfterInTabOrder(self.cvlUsernameTextField)
+
+        self.cvlLoginFieldsPanel.SetSizerAndFit(self.cvlLoginFieldsPanelSizer)
+
+        self.cvlLoginDialogPanelSizer.Add(self.cvlLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
+
+        self.cvlLoginDialogPanel.SetSizerAndFit(self.cvlLoginDialogPanelSizer)
+        self.cvlLoginDialogPanel.Layout()
+
+        # End CVL tab
+
         self.loginDialogPanelSizer.Add(self.tabbedView, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
+
+        # Buttons Panel
 
         self.buttonsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
 
@@ -580,13 +714,13 @@ class LauncherMainFrame(wx.Frame):
         self.massiveLoginHostLabel.SetCursor(cursor)
         self.massiveProjectLabel.SetCursor(cursor)
         self.massiveHoursLabel.SetCursor(cursor)
-        self.vncDisplayResolutionLabel.SetCursor(cursor)
-        self.sshTunnelCipherLabel.SetCursor(cursor)
+        self.massiveVncDisplayResolutionLabel.SetCursor(cursor)
+        self.massiveSshTunnelCipherLabel.SetCursor(cursor)
         self.massiveUsernameLabel.SetCursor(cursor)
         self.massivePasswordLabel.SetCursor(cursor)
         self.massiveLoginHostComboBox.SetCursor(cursor)
-        self.vncDisplayResolutionComboBox.SetCursor(cursor)
-        self.sshTunnelCipherComboBox.SetCursor(cursor)
+        self.massiveVncDisplayResolutionComboBox.SetCursor(cursor)
+        self.massiveSshTunnelCipherComboBox.SetCursor(cursor)
         self.massiveProjectComboBox.SetCursor(cursor)
         self.massiveHoursField.SetCursor(cursor)
         self.massiveUsernameTextField.SetCursor(cursor)
@@ -621,7 +755,7 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
-                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display massiveDesktopResolution...")
+                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
 
                     set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + launcherMainFrame.massiveDesktopResolution
                     wx.CallAfter(sys.stdout.write, set_display_resolution_cmd + "\n")
@@ -1056,8 +1190,8 @@ class LauncherMainFrame(wx.Frame):
                 # Get user's default massiveProject from Karaage:
                 self.massiveProject = xmlrpcServer.get_massiveProject(self.massiveUsername)
                 self.massiveProjectComboBox.SetValue(self.massiveProject)
-        self.massiveDesktopResolution = self.vncDisplayResolutionComboBox.GetValue()
-        self.massiveSshTunnelCipher = self.sshTunnelCipherComboBox.GetValue()
+        self.massiveDesktopResolution = self.massiveVncDisplayResolutionComboBox.GetValue()
+        self.massiveSshTunnelCipher = self.massiveSshTunnelCipherComboBox.GetValue()
 
         config.set("MASSIVE Launcher Preferences", "massiveUsername", self.massiveUsername)
         config.set("MASSIVE Launcher Preferences", "massiveLoginHost", self.massiveLoginHost)
@@ -1118,12 +1252,19 @@ class MyApp(wx.App):
         appUserDataDir = os.path.join(appUserDataDir,"")
         if not os.path.exists(appUserDataDir):
             os.makedirs(appUserDataDir)
+
         global config
         config = ConfigParser.RawConfigParser(allow_no_value=True)
+
         global massiveLauncherPreferencesFilePath
         massiveLauncherPreferencesFilePath = os.path.join(appUserDataDir,"MASSIVE Launcher Preferences.cfg")
         if os.path.exists(massiveLauncherPreferencesFilePath):
             config.read(massiveLauncherPreferencesFilePath)
+
+        global cvlLauncherPreferencesFilePath
+        cvlLauncherPreferencesFilePath = os.path.join(appUserDataDir,"CVL Launcher Preferences.cfg")
+        if os.path.exists(cvlLauncherPreferencesFilePath):
+            config.read(cvlLauncherPreferencesFilePath)
 
         global launcherMainFrame
         launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
