@@ -189,7 +189,7 @@ class LauncherMainFrame(wx.Frame):
             elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "host"):
                 self.massiveLoginHost = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "host")
             else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_login_host","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_login_host","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                     massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
@@ -230,7 +230,7 @@ class LauncherMainFrame(wx.Frame):
             elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "project"):
                 self.massiveProject = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "project")
             else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_project","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                     massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
@@ -256,7 +256,7 @@ class LauncherMainFrame(wx.Frame):
                 if self.massiveHoursRequested.strip() == "":
                     self.massiveHoursRequested = "4"
             else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_hours_requested","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                     massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
@@ -285,7 +285,7 @@ class LauncherMainFrame(wx.Frame):
             elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "resolution"):
                 self.massiveVncDisplayResolution = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "resolution")
             else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_vnc_display_resolution","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_vnc_display_resolution","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                     massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
@@ -315,7 +315,7 @@ class LauncherMainFrame(wx.Frame):
             if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "cipher"):
                 self.massiveSshTunnelCipher = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "cipher")
             else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_ssh_tunnel_cipher","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                     massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
@@ -337,7 +337,7 @@ class LauncherMainFrame(wx.Frame):
             elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "username"):
                 self.massiveUsername = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "username")
             else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences","massive_username","")
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_username","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                     massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
@@ -398,7 +398,7 @@ class LauncherMainFrame(wx.Frame):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
                 self.cvlLoginHost = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_login_host")
             else:
-                cvlLauncherConfig.set("CVL Launcher Preferences","cvl_login_host","")
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                     cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
@@ -407,6 +407,46 @@ class LauncherMainFrame(wx.Frame):
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         if self.cvlLoginHost.strip()!="":
             self.cvlLoginHostComboBox.SetValue(self.cvlLoginHost)
+
+        self.cvlVncDisplayNumberLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Display number')
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.cvlVncDisplayNumber = "automatic"
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number"):
+                self.cvlVncDisplayNumber = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_number")
+                if self.cvlVncDisplayNumber.strip() == "":
+                    self.cvlVncDisplayNumber = "automatic"
+            else:
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number","")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        else:
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
+            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+
+        self.cvlVncDisplayNumberPanel = wx.Panel(self.cvlLoginFieldsPanel, wx.ID_ANY)
+        self.cvlVncDisplayNumberPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=20)
+        self.cvlVncDisplayNumberPanel.SetSizer(self.cvlVncDisplayNumberPanelSizer)
+
+        self.cvlVncDisplayNumberAutomaticCheckBox = wx.CheckBox(self.cvlVncDisplayNumberPanel, wx.ID_ANY, "Automatic")
+        self.cvlVncDisplayNumberPanelSizer.Add(self.cvlVncDisplayNumberAutomaticCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_BOTTOM, border=5)
+        self.cvlVncDisplayNumberSpinCtrl = wx.SpinCtrl(self.cvlVncDisplayNumberPanel, wx.ID_ANY, min=0,max=100)
+        if self.cvlVncDisplayNumber=="automatic":
+            self.cvlVncDisplayNumberAutomatic = True
+            self.cvlVncDisplayNumberAutomaticCheckBox.SetValue(self.cvlVncDisplayNumberAutomatic)
+            self.cvlVncDisplayNumberSpinCtrl.SetValue(1)
+            self.cvlVncDisplayNumberSpinCtrl.Disable()
+        if self.cvlVncDisplayNumber!="automatic":
+            self.cvlVncDisplayNumberSpinCtrl.SetValue(int(self.cvlVncDisplayNumber))
+        self.cvlVncDisplayNumberPanelSizer.Add(self.cvlVncDisplayNumberSpinCtrl, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_BOTTOM, border=5)
+        self.cvlVncDisplayNumberAutomaticCheckBox.Bind(wx.EVT_CHECKBOX, self.onToggleCvlVncDisplayNumberAutomaticCheckBox)
+
+        self.cvlVncDisplayNumberPanel.SetSizerAndFit(self.cvlVncDisplayNumberPanelSizer)
+
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberPanel, flag=wx.ALIGN_RIGHT|wx.RIGHT, border=10)
+
 
         self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Resolution')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -427,7 +467,7 @@ class LauncherMainFrame(wx.Frame):
             elif cvlLauncherConfig.has_option("CVL Launcher Preferences", "resolution"):
                 self.cvlVncDisplayResolution = cvlLauncherConfig.get("CVL Launcher Preferences", "resolution")
             else:
-                cvlLauncherConfig.set("CVL Launcher Preferences","cvl_vnc_display_resolution","")
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                     cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
@@ -457,7 +497,7 @@ class LauncherMainFrame(wx.Frame):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cipher"):
                 self.cvlSshTunnelCipher = cvlLauncherConfig.get("CVL Launcher Preferences", "cipher")
             else:
-                cvlLauncherConfig.set("CVL Launcher Preferences","cvl_ssh_tunnel_cipher","")
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                     cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
@@ -477,7 +517,7 @@ class LauncherMainFrame(wx.Frame):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_username"):
                 self.cvlUsername = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_username")
             else:
-                cvlLauncherConfig.set("CVL Launcher Preferences","cvl_username","")
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                     cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
@@ -496,7 +536,9 @@ class LauncherMainFrame(wx.Frame):
         self.cvlPasswordField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlPassword, size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
         self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
 
-        self.cvlVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.cvlLoginHostComboBox)
+        self.cvlVncDisplayNumberPanel.MoveAfterInTabOrder(self.cvlLoginHostComboBox)
+        self.cvlVncDisplayNumberPanel.MoveAfterInTabOrder(self.cvlVncDisplayNumberPanel)
+        self.cvlVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.cvlVncDisplayNumberPanel)
         self.cvlSshTunnelCipherComboBox.MoveAfterInTabOrder(self.cvlVncDisplayResolutionComboBox)
         self.cvlUsernameTextField.MoveAfterInTabOrder(self.cvlSshTunnelCipherComboBox)
         self.cvlPasswordField.MoveAfterInTabOrder(self.cvlUsernameTextField)
@@ -524,13 +566,16 @@ class LauncherMainFrame(wx.Frame):
         self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=10)
         self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
 
-        self.optionsButton = wx.Button(self.buttonsPanel, 1, 'Options...')
+        OPTIONS_BUTTON_ID = 1
+        self.optionsButton = wx.Button(self.buttonsPanel, OPTIONS_BUTTON_ID, 'Options...')
         self.buttonsPanelSizer.Add(self.optionsButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
 
-        self.cancelButton = wx.Button(self.buttonsPanel, 2, 'Cancel')
+        CANCEL_BUTTON_ID = 2
+        self.cancelButton = wx.Button(self.buttonsPanel, CANCEL_BUTTON_ID, 'Cancel')
         self.buttonsPanelSizer.Add(self.cancelButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
 
-        self.loginButton = wx.Button(self.buttonsPanel, 3, 'Login')
+        LOGIN_BUTTON_ID = 3
+        self.loginButton = wx.Button(self.buttonsPanel, LOGIN_BUTTON_ID, 'Login')
         self.buttonsPanelSizer.Add(self.loginButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
 
         self.buttonsPanel.SetSizerAndFit(self.buttonsPanelSizer)
@@ -539,9 +584,9 @@ class LauncherMainFrame(wx.Frame):
 
         self.loginButton.SetDefault()
 
-        self.Bind(wx.EVT_BUTTON, self.onOptions, id=1)
-        self.Bind(wx.EVT_BUTTON, self.onCancel, id=2)
-        self.Bind(wx.EVT_BUTTON, self.onLogin, id=3)
+        self.Bind(wx.EVT_BUTTON, self.onOptions, id=OPTIONS_BUTTON_ID)
+        self.Bind(wx.EVT_BUTTON, self.onCancel,  id=CANCEL_BUTTON_ID)
+        self.Bind(wx.EVT_BUTTON, self.onLogin,   id=LOGIN_BUTTON_ID)
 
         self.loginDialogStatusBar = LauncherStatusBar(self)
         self.SetStatusBar(self.loginDialogStatusBar)
@@ -680,6 +725,12 @@ class LauncherMainFrame(wx.Frame):
         finally:
             os._exit(0)
 
+    def onToggleCvlVncDisplayNumberAutomaticCheckBox(self, event):
+        if self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
+            self.cvlVncDisplayNumberSpinCtrl.Disable()
+        else:
+            self.cvlVncDisplayNumberSpinCtrl.Enable()
+
     def onOptions(self, event):
 
         import turboVncOptions
@@ -815,18 +866,24 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
-                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
-
-                    set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + self.resolution
-                    wx.CallAfter(sys.stdout.write, set_display_resolution_cmd + "\n")
-                    stdin,stdout,stderr = sshClient.exec_command(set_display_resolution_cmd)
-                    stderrRead = stderr.read()
-                    if len(stderrRead) > 0:
-                        wx.CallAfter(sys.stdout.write, stderrRead)
-                    
-                    wx.CallAfter(sys.stdout.write, "\n")
+                    if launcherMainFrame.cvlTabSelected:
+                        if launcherMainFrame.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
+                            self.cvlVncDisplayNumber = 1
+                        else:
+                            self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumberSpinCtrl.GetValue()
 
                     if launcherMainFrame.massiveTabSelected:
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
+
+                        set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + self.resolution
+                        wx.CallAfter(sys.stdout.write, set_display_resolution_cmd + "\n")
+                        stdin,stdout,stderr = sshClient.exec_command(set_display_resolution_cmd)
+                        stderrRead = stderr.read()
+                        if len(stderrRead) > 0:
+                            wx.CallAfter(sys.stdout.write, stderrRead)
+                        
+                        wx.CallAfter(sys.stdout.write, "\n")
+
                         # Begin if launcherMainFrame.massiveTabSelected:
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
@@ -930,6 +987,32 @@ class LauncherMainFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
 
                         # End if launcherMainFrame.massiveTabSelected:
+                    else:
+                        #cvlVncServerCommand = "/usr/local/turbovnc/1.1/bin/vncserver -name \"Characterisation Virtual Laboratory\" -geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
+                        cvlVncServerCommand = "vncsession --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
+                        if launcherMainFrame.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==False:
+                            cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
+                        wx.CallAfter(sys.stdout.write, cvlVncServerCommand + "\n")
+                        stdin,stdout,stderr = sshClient.exec_command(cvlVncServerCommand)
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                        stdoutRead = stdout.read()
+                        lines = stdoutRead.split("\n")
+                        if launcherMainFrame.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
+                            self.cvlVncDisplayNumber = 1
+                        else:
+                            self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumberSpinCtrl.GetValue()
+                        if launcherMainFrame.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
+                            for line in lines:
+                                if " desktop is " in line:
+                                    lineComponents = line.split(":")
+                                    self.cvlVncDisplayNumber = int(lineComponents[1])
+                        wx.CallAfter(sys.stdout.write, stdoutRead)
+
+                        wx.CallAfter(sys.stdout.write, "\n")
+
+                        wx.CallAfter(sys.stdout.write, "CVL VNC Display Number is " + str(self.cvlVncDisplayNumber) + "\n")
+
+                        wx.CallAfter(sys.stdout.write, "\n")
 
                     wx.CallAfter(sys.stdout.write, "Generating SSH key-pair for tunnel...\n\n")
 
@@ -1041,7 +1124,7 @@ class LauncherMainFrame(wx.Frame):
                                 tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
                                     "-t -t " \
                                     "-oStrictHostKeyChecking=no " \
-                                    "-L " + self.localPortNumber + ":localhost:5901" + " -l " + self.username+" "+self.host
+                                    "-L " + self.localPortNumber + ":localhost:" + str(5900+self.cvlVncDisplayNumber) + " -l " + self.username+" "+self.host
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
                             self.sshTunnelProcess = subprocess.Popen(tunnel_cmd,
@@ -1215,9 +1298,22 @@ class LauncherMainFrame(wx.Frame):
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             proc.communicate(input=self.password + "\n")
+
                         try:
                             self.sshTunnelProcess.terminate()
                             os.unlink(self.privateKeyFile.name)
+
+                            if launcherMainFrame.cvlTabSelected:
+                                # The log messages below will only be visible if an exception occurs.
+                                # If everything runs smoothly, the Launcher will terminate immediately
+                                # after running the vncserver -kill command.
+                                #cvlVncServerKillCommand = "/usr/local/turbovnc/1.1/bin/vncserver -kill :" + str(self.cvlVncDisplayNumber)
+                                cvlVncServerKillCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
+                                wx.CallAfter(sys.stdout.write, cvlVncServerKillCommand + "\n")
+                                stdin,stdout,stderr = sshClient.exec_command(cvlVncServerKillCommand)
+                                wx.CallAfter(sys.stdout.write, stderr.read())
+                                wx.CallAfter(sys.stdout.write, stdout.read())
+
                         finally:
                             os._exit(0)
 
@@ -1278,6 +1374,7 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher", self.massiveSshTunnelCipher)
         else:
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
+            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number", self.cvlVncDisplayNumber)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher", self.cvlSshTunnelCipher)
