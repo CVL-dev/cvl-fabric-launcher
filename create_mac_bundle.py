@@ -10,7 +10,7 @@ Traditionally, this script would be named setup.py
 
 from setuptools import setup, Extension
 
-import massive_launcher_version_number
+import launcher_version_number
 
 # THE ssh_tunnel MODULE IS NOT CURRENTLY USED. 
 # ITS IMPLEMENTATION IS INCOMPLETE AND IT DOESN'T WORK IN ITS CURRENT FORM.
@@ -32,13 +32,13 @@ setup(
             CFBundleIdentifier="au.edu.monash.MASSIVE",
             CFBundleName="MASSIVE Launcher",
             CFBundlePackageType="APPL",
-            CFBundleVersion="Version " + massive_launcher_version_number.version_number
+            CFBundleVersion="Version " + launcher_version_number.version_number
             )
         )
     ),
     data_files=["MASSIVE.icns"],
     name="MASSIVE Launcher",
     setup_requires=["py2app"],
-    app=['massive.py']
+    app=['launcher.py']
     #,ext_modules = [ssh_tunnel_module]
 )

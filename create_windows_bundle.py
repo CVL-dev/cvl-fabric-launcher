@@ -22,15 +22,15 @@ import py2exe
     #extra_compile_args = ['-O3'],
     #libraries = ['ssh2'])
 
-import massive_launcher_version_number
+import launcher_version_number
 
 setup(
     name = "MASSIVE Launcher",
     description = "MASSIVE Launcher",
-    version = massive_launcher_version_number.version_number,
+    version = launcher_version_number.version_number,
     windows = [
         {
-            "script": "massive.py",
+            "script": "launcher.py",
             "icon_resources": [(1, "massive.ico")],
             "dest_base": "MASSIVE Launcher"
         }
