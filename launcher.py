@@ -415,8 +415,8 @@ class LauncherMainFrame(wx.Frame):
         self.cvlVncDisplayNumber = 1
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number_automatic"):
-                self.cvlVncDisplayNumber = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_number_automatic")
-                if self.cvlVncDisplayNumber.strip() == "":
+                self.cvlVncDisplayNumberAutomatic = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_number_automatic")
+                if self.cvlVncDisplayNumberAutomatic.strip() == "":
                     self.cvlVncDisplayNumberAutomatic = True
                 else:
                     if self.cvlVncDisplayNumberAutomatic==True or self.cvlVncDisplayNumberAutomatic=='True':
