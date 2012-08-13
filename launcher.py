@@ -67,12 +67,19 @@ import ConfigParser
 #logger.setLevel(logging.WARN)
 
 global launcherMainFrame
+launcherMainFrame = None
 global massiveLauncherConfig
+massiveLauncherConfig = None
 global cvlLauncherConfig
+cvlLauncherConfig = None
 global turboVncConfig
+turboVncConfig = None
 global massiveLauncherPreferencesFilePath
+massiveLauncherPreferencesFilePath = None
 global cvlLauncherPreferencesFilePath
+cvlLauncherPreferencesFilePath = None
 global turboVncPreferencesFilePath
+turboVncPreferencesFilePath = None
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self):
