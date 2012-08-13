@@ -411,14 +411,30 @@ class LauncherMainFrame(wx.Frame):
         self.cvlVncDisplayNumberLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Display number')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.cvlVncDisplayNumber = "automatic"
+        self.cvlVncDisplayNumberAutomatic = True
+        self.cvlVncDisplayNumber = 1
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number_automatic"):
+                self.cvlVncDisplayNumber = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_number_automatic")
+                if self.cvlVncDisplayNumber.strip() == "":
+                    self.cvlVncDisplayNumberAutomatic = True
+                else:
+                    if self.cvlVncDisplayNumberAutomatic==True or self.cvlVncDisplayNumberAutomatic=='True':
+                        self.cvlVncDisplayNumberAutomatic = True
+                    else:
+                        self.cvlVncDisplayNumberAutomatic = False
+            else:
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number_automatic","True")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number"):
                 self.cvlVncDisplayNumber = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_number")
                 if self.cvlVncDisplayNumber.strip() == "":
-                    self.cvlVncDisplayNumber = "automatic"
+                    self.cvlVncDisplayNumber = 1
+                else:
+                    self.cvlVncDisplayNumber = int(self.cvlVncDisplayNumber)
             else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number","")
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number","1")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                     cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
@@ -433,13 +449,13 @@ class LauncherMainFrame(wx.Frame):
         self.cvlVncDisplayNumberAutomaticCheckBox = wx.CheckBox(self.cvlVncDisplayNumberPanel, wx.ID_ANY, "Automatic")
         self.cvlVncDisplayNumberPanelSizer.Add(self.cvlVncDisplayNumberAutomaticCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_BOTTOM, border=5)
         self.cvlVncDisplayNumberSpinCtrl = wx.SpinCtrl(self.cvlVncDisplayNumberPanel, wx.ID_ANY, min=0,max=100)
-        if self.cvlVncDisplayNumber=="automatic":
-            self.cvlVncDisplayNumberAutomatic = True
-            self.cvlVncDisplayNumberAutomaticCheckBox.SetValue(self.cvlVncDisplayNumberAutomatic)
+        if self.cvlVncDisplayNumberAutomatic==True:
+            self.cvlVncDisplayNumberAutomaticCheckBox.SetValue(True)
             self.cvlVncDisplayNumberSpinCtrl.SetValue(1)
             self.cvlVncDisplayNumberSpinCtrl.Disable()
-        if self.cvlVncDisplayNumber!="automatic":
-            self.cvlVncDisplayNumberSpinCtrl.SetValue(int(self.cvlVncDisplayNumber))
+        if self.cvlVncDisplayNumberAutomatic==False:
+            self.cvlVncDisplayNumberAutomaticCheckBox.SetValue(False)
+            self.cvlVncDisplayNumberSpinCtrl.SetValue(self.cvlVncDisplayNumber)
         self.cvlVncDisplayNumberPanelSizer.Add(self.cvlVncDisplayNumberSpinCtrl, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_BOTTOM, border=5)
         self.cvlVncDisplayNumberAutomaticCheckBox.Bind(wx.EVT_CHECKBOX, self.onToggleCvlVncDisplayNumberAutomaticCheckBox)
 
@@ -866,11 +882,7 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
-                    if launcherMainFrame.cvlTabSelected:
-                        if launcherMainFrame.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
-                            self.cvlVncDisplayNumber = 1
-                        else:
-                            self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumberSpinCtrl.GetValue()
+                    self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
 
                     if launcherMainFrame.massiveTabSelected:
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
@@ -988,29 +1000,32 @@ class LauncherMainFrame(wx.Frame):
 
                         # End if launcherMainFrame.massiveTabSelected:
                     else:
-                        #cvlVncServerCommand = "/usr/local/turbovnc/1.1/bin/vncserver -name \"Characterisation Virtual Laboratory\" -geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
-                        cvlVncServerCommand = "vncsession --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
-                        if launcherMainFrame.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==False:
-                            cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
-                        wx.CallAfter(sys.stdout.write, cvlVncServerCommand + "\n")
-                        stdin,stdout,stderr = sshClient.exec_command(cvlVncServerCommand)
-                        wx.CallAfter(sys.stdout.write, stderr.read())
-                        stdoutRead = stdout.read()
-                        lines = stdoutRead.split("\n")
-                        if launcherMainFrame.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
-                            self.cvlVncDisplayNumber = 1
-                        else:
-                            self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumberSpinCtrl.GetValue()
-                        if launcherMainFrame.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
+                        self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
+                        if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
+                            cvlVncServerCommand = "vncsession --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
+                            if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
+                                cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
+                            wx.CallAfter(sys.stdout.write, cvlVncServerCommand + "\n")
+                            stdin,stdout,stderr = sshClient.exec_command(cvlVncServerCommand)
+                            stderrRead = stderr.read()
+                            wx.CallAfter(sys.stdout.write, stderrRead)
+                            stdoutRead = stdout.read()
+                            wx.CallAfter(sys.stdout.write, stdoutRead)
+                            lines = stderrRead.split("\n")
+                            foundDisplayNumber = False
                             for line in lines:
-                                if " desktop is " in line:
+                                if "desktop is" in line:
                                     lineComponents = line.split(":")
                                     self.cvlVncDisplayNumber = int(lineComponents[1])
-                        wx.CallAfter(sys.stdout.write, stdoutRead)
+                                    foundDisplayNumber = True
 
-                        wx.CallAfter(sys.stdout.write, "\n")
-
-                        wx.CallAfter(sys.stdout.write, "CVL VNC Display Number is " + str(self.cvlVncDisplayNumber) + "\n")
+                        if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
+                            wx.CallAfter(sys.stdout.write, "CVL VNC Display Number is " + str(self.cvlVncDisplayNumber) + "\n")
+                        if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
+                            if foundDisplayNumber:
+                                wx.CallAfter(sys.stdout.write, "CVL VNC Display Number is " + str(self.cvlVncDisplayNumber) + "\n")
+                            else:
+                                wx.CallAfter(sys.stdout.write, "Failed to parse vncserver output for display number.\n")
 
                         wx.CallAfter(sys.stdout.write, "\n")
 
@@ -1215,7 +1230,10 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Launching TurboVNC...")
 
-                    wx.CallAfter(sys.stdout.write, "\nStarting MASSIVE VNC...\n")
+                    if launcherMainFrame.massiveTabSelected:
+                        wx.CallAfter(sys.stdout.write, "\nStarting MASSIVE VNC...\n")
+                    if launcherMainFrame.cvlTabSelected:
+                        wx.CallAfter(sys.stdout.write, "\nStarting CVL VNC...\n")
 
                     try:
                         if sys.platform.startswith("win"):
@@ -1300,19 +1318,17 @@ class LauncherMainFrame(wx.Frame):
                             proc.communicate(input=self.password + "\n")
 
                         try:
-                            self.sshTunnelProcess.terminate()
-                            os.unlink(self.privateKeyFile.name)
-
-                            if launcherMainFrame.cvlTabSelected:
-                                # The log messages below will only be visible if an exception occurs.
-                                # If everything runs smoothly, the Launcher will terminate immediately
-                                # after running the vncserver -kill command.
-                                #cvlVncServerKillCommand = "/usr/local/turbovnc/1.1/bin/vncserver -kill :" + str(self.cvlVncDisplayNumber)
-                                cvlVncServerKillCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
-                                wx.CallAfter(sys.stdout.write, cvlVncServerKillCommand + "\n")
-                                stdin,stdout,stderr = sshClient.exec_command(cvlVncServerKillCommand)
+                            if launcherMainFrame.cvlTabSelected and launcherMainFrame.cvlVncDisplayNumberAutomatic:
+                                cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
+                                wx.CallAfter(sys.stdout.write, cvlVncSessionStopCommand + "\n")
+                                stdin,stdout,stderr = sshClient.exec_command(cvlVncSessionStopCommand)
                                 wx.CallAfter(sys.stdout.write, stderr.read())
                                 wx.CallAfter(sys.stdout.write, stdout.read())
+                            else:
+                                wx.CallAfter(sys.stdout.write, "Don't need to stop vnc session.\n")
+
+                            os.unlink(self.privateKeyFile.name)
+                            self.sshTunnelProcess.terminate()
 
                         finally:
                             os._exit(0)
@@ -1367,6 +1383,10 @@ class LauncherMainFrame(wx.Frame):
                 self.massiveProject = xmlrpcServer.get_massiveProject(self.massiveUsername)
                 self.massiveProjectComboBox.SetValue(self.massiveProject)
 
+        if launcherMainFrame.cvlTabSelected:
+            self.cvlVncDisplayNumberAutomatic = self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()
+            self.cvlVncDisplayNumber = self.cvlVncDisplayNumberSpinCtrl.GetValue()
+
         if launcherMainFrame.massiveTabSelected:
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_login_host", self.massiveLoginHost)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_username", self.massiveUsername)
@@ -1374,6 +1394,7 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher", self.massiveSshTunnelCipher)
         else:
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
+            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number_automatic", self.cvlVncDisplayNumberAutomatic)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number", self.cvlVncDisplayNumber)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
