@@ -495,6 +495,10 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.cvlVncDisplayResolutionComboBox.SetValue(defaultResolution)
 
+        if self.cvlVncDisplayNumberAutomatic==False:
+            self.cvlVncDisplayResolutionComboBox.Disable()
+            self.cvlVncDisplayResolutionLabel.Disable()
+
         self.cvlSshTunnelCipherLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -744,8 +748,12 @@ class LauncherMainFrame(wx.Frame):
     def onToggleCvlVncDisplayNumberAutomaticCheckBox(self, event):
         if self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
             self.cvlVncDisplayNumberSpinCtrl.Disable()
+            self.cvlVncDisplayResolutionComboBox.Enable()
+            self.cvlVncDisplayResolutionLabel.Enable()
         else:
             self.cvlVncDisplayNumberSpinCtrl.Enable()
+            self.cvlVncDisplayResolutionComboBox.Disable()
+            self.cvlVncDisplayResolutionLabel.Disable()
 
     def onOptions(self, event):
 
