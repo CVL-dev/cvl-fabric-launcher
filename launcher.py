@@ -179,7 +179,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.massiveLoginHost = ""
         massiveLoginHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
-            "m2-login1.massive.org.au", "m2-login2.massive.org.au","cvldemo"]
+            "m2-login1.massive.org.au", "m2-login2.massive.org.au"]
         defaultMassiveHost = "m2-login2.massive.org.au"
         self.massiveLoginHostComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value=defaultMassiveHost, choices=massiveLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -737,7 +737,6 @@ class LauncherMainFrame(wx.Frame):
     def SetCursor(self, cursor):
         self.massiveLoginDialogPanel.SetCursor(cursor)
         self.massiveLoginFieldsPanel.SetCursor(cursor)
-        self.buttonsPanel.SetCursor(cursor)
         self.massiveLoginHostLabel.SetCursor(cursor)
         self.massiveProjectLabel.SetCursor(cursor)
         self.massiveHoursLabel.SetCursor(cursor)
@@ -752,8 +751,18 @@ class LauncherMainFrame(wx.Frame):
         self.massiveHoursField.SetCursor(cursor)
         self.massiveUsernameTextField.SetCursor(cursor)
         self.massivePasswordField.SetCursor(cursor)
+
+        self.cvlLoginHostComboBox.SetCursor(cursor)
+        self.cvlUsernameTextField.SetCursor(cursor)
+        self.cvlPasswordField.SetCursor(cursor)
+        self.cvlVncDisplayResolutionComboBox.SetCursor(cursor)
+        self.cvlSshTunnelCipherComboBox.SetCursor(cursor)
+
+        self.buttonsPanel.SetCursor(cursor)
+        self.optionsButton.SetCursor(cursor)
         self.cancelButton.SetCursor(cursor)
         self.loginButton.SetCursor(cursor)
+
         super(LauncherMainFrame, self).SetCursor(cursor)
 
     def onLogin(self, event):
