@@ -1,45 +1,37 @@
+#  MASSIVE/CVL Launcher - easy secure login for the MASSIVE Desktop and the CVL
+#  Copyright (C) 2012  James Wettenhall, Monash University
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#  Enquires: James.Wettenhall@monash.edu or help@massive.org.au
 
-MASSIVE LAUNCHER
-================
+MASSIVE/CVL LAUNCHER
+====================
 
-MASSIVE Launcher is an attempt to offer MASSIVE users an easier login method,
-beginning with Mac OS X users.  Currently Mac OS X users have to install
-TurboVNC, only to find that there is no double-clickable TurboVNC application
-in their Applications folder, so they have to run it from the command-line 
-after creating an SSH tunnel.  MASSIVE Launcher provides a double-clickable
-GUI launcher for MASSIVE users, which creates the SSH tunnel automatically, 
-using the Python pexpect library, and then calls TurboVNC to launch the MASSIVE
-Desktop.  This allows the user to launch the MASSIVE Desktop without having to
-use the command-line.
+MASSIVE/CVL Launcher is an attempt to offer MASSIVE/CVL users an easier login 
+method, beginning with Mac OS X users.  Until TurboVNC v1.2, Mac OS X users had to install TurboVNC, only to find that there was no double-clickable TurboVNC 
+application in their Applications folder, so they had to run TurboVNC from the 
+command-line after creating an SSH tunnel.  MASSIVE/CVL Launcher provides a 
+double-clickable GUI launcher for MASSIVE users, which creates the SSH tunnel 
+automatically, and then calls TurboVNC to launch the MASSIVE/CVL Desktop.  This
+allows the user to launch the MASSIVE/CVL Desktop without having to use the 
+command-line.
 
-MASSIVE LAUNCHER CONFLUENCE DOCUMENTATION
+MASSIVE/CVL LAUNCHER CONFLUENCE DOCUMENTATION AND BUILD INSTRUCTIONS
 
-See https://confluence-vre.its.monash.edu.au/display/CVL/Easy+login+on+Mac+OS+X+using+wxPython
-
-BUNDLING THE PYTHON SCRIPTS INTO A MAC OS X APPLICATION
-
-On Mac OS X, the launcher app can be built using:
-
-python create_massive_bundle.py py2app
-
-The core code of the launcher is in the massive.py script, and can be run
-with "python masive.py". The create_massive_bundle.py script is used with 
-py2app to create the MASSIVE.app application bundle. 
-
-The create_massive_bundle.py script can be used to specify the application
-name, the icon file, the version number, and other attributes to be included
-within MASSIVE.app/Contents/Info.plist
-
-MASSIVE LAUNCHER VERSION NUMBER
-
-The version number of a Mac OS X application is listed in its 
-ApplicationName.app/Contents/Info.plist file.  However, the MASSIVE Launcher
-application needs to be able to check its version number programmatically
-(preferably using a platform-independent method), so that it can inform the 
-user if an upgrade is required.  For this reason, the version number is 
-recorded in the massive_launcher_version_number.py script, so that it can be 
-read by both the create_massive_bundle.py script, used by py2app to build
-MASSIVE.app/Contents/Info.plist, and by the massive.py application.
+https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+%28wxPython+client-side+GUI%29
 
 PYTHON VERSION
 
@@ -65,8 +57,12 @@ the icon was taken as a screenshot (cmd-shift-4) from the MASSIVE website. The
 white background was then made transparent, by using Gimp 2.8's 
 "Color to Alpha..." menu item in the "Colors" menu. 
 
-The create_massive_bundle.py script can be used to specify the icon file
+The create_mac_bundle.py script can be used to specify the icon file
 (MASSIVE.icns), which will be included in MASSIVE.app/Contents/Info.plist by
 the py2app module. The MASSIVE.icns file will be copied into
 MASSIVE.app/Contents/Resources/ by the py2app module.
+
+wxPython provides a handy tool (/usr/local/bin/img2py) for encoding a bitmap 
+image (e.g. an icon) in a platform-independent Python script.  A Python version
+of the MASSIVE icon has been created as MASSIVE_icon.py
 
