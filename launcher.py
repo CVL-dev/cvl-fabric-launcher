@@ -1235,7 +1235,7 @@ class LauncherMainFrame(wx.Frame):
                     def sleepWhileTurboVncStarts():
                         global autoQuitAfterTurboVncCompletes
                         autoQuitAfterTurboVncCompletes = False
-                        time.sleep(10)
+                        time.sleep(5)
                         autoQuitAfterTurboVncCompletes = True
 
                     sleepWhileTurboVncStartsThread = threading.Thread(target=sleepWhileTurboVncStarts)
