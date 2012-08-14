@@ -99,6 +99,8 @@ global cvlLauncherPreferencesFilePath
 cvlLauncherPreferencesFilePath = None
 global turboVncPreferencesFilePath
 turboVncPreferencesFilePath = None
+global autoQuitAfterTurboVncCompletes
+autoQuitAfterTurboVncCompletes = True
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self):
@@ -1215,6 +1217,22 @@ class LauncherMainFrame(wx.Frame):
                     if count < 5:
                         time.sleep (5-count)
 
+                    # Sleep timer to ensure that Launcher remains open long
+                    # enough to display any error messages encountered
+                    # while attempting to launch TurboVNC:
+
+                    def sleepWhileTurboVncStarts():
+                        global autoQuitAfterTurboVncCompletes
+                        autoQuitAfterTurboVncCompletes = False
+                        time.sleep(10)
+                        autoQuitAfterTurboVncCompletes = True
+
+                    sleepWhileTurboVncStartsThread = threading.Thread(target=sleepWhileTurboVncStarts)
+                    sleepWhileTurboVncStartsThread.start()
+
+
+                    # VNC
+
                     if sys.platform.startswith("win"):
                         vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
                     else:
@@ -1353,19 +1371,23 @@ class LauncherMainFrame(wx.Frame):
                             proc.communicate(input=self.password + "\n")
 
                         try:
-                            if launcherMainFrame.cvlTabSelected and launcherMainFrame.cvlVncDisplayNumberAutomatic:
-                                cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
-                                wx.CallAfter(sys.stdout.write, cvlVncSessionStopCommand + "\n")
-                                stdin,stdout,stderr = sshClient.exec_command(cvlVncSessionStopCommand)
-                                wx.CallAfter(sys.stdout.write, stderr.read())
-                                wx.CallAfter(sys.stdout.write, stdout.read())
-                            else:
-                                wx.CallAfter(sys.stdout.write, "Don't need to stop vnc session.\n")
+                            if launcherMainFrame.cvlTabSelected:
+                                if launcherMainFrame.cvlVncDisplayNumberAutomatic:
+                                    cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
+                                    wx.CallAfter(sys.stdout.write, cvlVncSessionStopCommand + "\n")
+                                    stdin,stdout,stderr = sshClient.exec_command(cvlVncSessionStopCommand)
+                                    wx.CallAfter(sys.stdout.write, stderr.read())
+                                    wx.CallAfter(sys.stdout.write, stdout.read())
+                                else:
+                                    wx.CallAfter(sys.stdout.write, "Don't need to stop vnc session.\n")
 
                             os.unlink(self.privateKeyFile.name)
                             self.sshTunnelProcess.terminate()
 
                         finally:
+                            global autoQuitAfterTurboVncCompletes
+                            while autoQuitAfterTurboVncCompletes==False:
+                                time.sleep(1)
                             os._exit(0)
 
                         launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
