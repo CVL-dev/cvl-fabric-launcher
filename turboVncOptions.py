@@ -811,7 +811,7 @@ class TurboVncOptions(wx.Dialog):
         self.verbosityLevelSpinCtrl.Disable()
         self.verbosityLevelSpinCtrl.SetFont(self.smallFont)
         if 'loglevel' in vncOptions:
-            self.verbosityLevelSpinCtrl.SetValue(vncOptions['loglevel'])
+            self.verbosityLevelSpinCtrl.SetValue(int(vncOptions['loglevel']))
         self.innerLoggingPanelSizer.Add(self.verbosityLevelSpinCtrl)
         
         self.innerLoggingPanel.SetSizerAndFit(self.innerLoggingPanelSizer)
