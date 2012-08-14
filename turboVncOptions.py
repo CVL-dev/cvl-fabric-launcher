@@ -145,12 +145,12 @@ class TurboVncOptions(wx.Dialog):
         emptySpace = wx.StaticText(self.encodingMethodsPanel, wx.ID_ANY, "   ")
         self.encodingMethodsPanelSizer.Add(emptySpace, flag=wx.EXPAND)
 
-        encodingMethods = ['Tight + Perceptually Lossless JPEG (LAN)', 
+        self.encodingMethods = ['Tight + Perceptually Lossless JPEG (LAN)', 
             'Tight + Medium Quality JPEG', 
             'Tight + Low Quality JPEG (WAN)', 
             'Lossless Tight (Gigabit)', 
             'Lossless Tight + Zlib (WAN)']
-        self.encodingMethodsComboBox = wx.Choice(self.encodingMethodsPanel, wx.ID_ANY, choices=encodingMethods)
+        self.encodingMethodsComboBox = wx.Choice(self.encodingMethodsPanel, wx.ID_ANY, choices=self.encodingMethods)
         self.encodingMethodsComboBox.SetFont(self.smallFont)
         self.encodingMethodsComboBox.SetStringSelection('Tight + Perceptually Lossless JPEG (LAN)')
         self.encodingMethodsComboBox.Bind(wx.EVT_CHOICE, self.onSelectEncodingMethodFromComboBox)
@@ -292,6 +292,10 @@ class TurboVncOptions(wx.Dialog):
         self.encodingGroupBoxSizer.Add(self.innerEncodingPanel, flag=wx.EXPAND)
         self.encodingPanel.SetSizerAndFit(self.encodingGroupBoxSizer)
 
+        # Ensure that the encoding methods combo box is set to the 
+        # appropriate preset, based on the values of the sliders.
+        self.onAdjustEncodingMethodSliders(None)
+
         # Restrictions group box
 
         self.restrictionsPanel = wx.Panel(self.connectionLeftPanel, wx.ID_ANY)
@@ -317,6 +321,8 @@ class TurboVncOptions(wx.Dialog):
         self.disableClipboardTransferCheckBox.SetValue(False)
         if 'disable_clipboard_transfer' in vncOptions:
             self.disableClipboardTransferCheckBox.SetValue(vncOptions['disable_clipboard_transfer'])
+        if not sys.platform.startswith("win"):
+            self.disableClipboardTransferCheckBox.Disable()
         self.innerRestrictionsPanelSizer.Add(self.disableClipboardTransferCheckBox)
         self.disableClipboardTransferCheckBox.SetFont(self.smallFont)
         
@@ -911,8 +917,6 @@ class TurboVncOptions(wx.Dialog):
         self.zlibCompressionLevelSlider.Disable()
         self.bestZlibCompressionLabel.Disable()
         self.zlibCompressionLevelPanel.Disable()
-        self.zlibCompressionLevelSlider.SetValue(1)
-        self.zlibCompressionLevelLabel.SetLabel("Zlib compression level:     1")
         self.zlibCompressionPanelEnabled = False
  
     def onSelectEncodingMethodFromComboBox(self, event):
@@ -937,22 +941,32 @@ class TurboVncOptions(wx.Dialog):
 
     def onAdjustEncodingMethodSliders(self, event):
 
+        jpegCompressionCheckBoxValue = self.jpegCompressionCheckBox.GetValue()
         jpegChrominanceSubsamplingSliderValue = self.jpegChrominanceSubsamplingSlider.GetValue()
         jpegImageQualitySliderValue = self.jpegImageQualitySlider.GetValue()
         zlibCompressionLevelSliderValue = self.zlibCompressionLevelSlider.GetValue()
 
-        if event.GetEventObject()==self.jpegChrominanceSubsamplingSlider:
-            self.jpegChrominanceSubsamplingLabel.SetLabel("JPEG chrominance subsampling:    " + self.jpegChrominanceSubsamplingLevel[jpegChrominanceSubsamplingSliderValue])
-        if event.GetEventObject()==self.jpegImageQualitySlider:
-            self.jpegImageQualityLabel.SetLabel("JPEG image quality:    " + str(jpegImageQualitySliderValue))
-        if event.GetEventObject()==self.zlibCompressionLevelSlider:
-            self.zlibCompressionLevelLabel.SetLabel("Zlib compression level:     " + self.zlibCompressionLevel[zlibCompressionLevelSliderValue])
+        self.jpegChrominanceSubsamplingLabel.SetLabel("JPEG chrominance subsampling:    " + self.jpegChrominanceSubsamplingLevel[jpegChrominanceSubsamplingSliderValue])
+        self.jpegImageQualityLabel.SetLabel("JPEG image quality:    " + str(jpegImageQualitySliderValue))
+        self.zlibCompressionLevelLabel.SetLabel("Zlib compression level:     " + self.zlibCompressionLevel[zlibCompressionLevelSliderValue])
 
         # We need to check whether the values of the sliders match
         # the current preset value in the encoding methods combo box.  
         # If so, select it, if not, add Custom if necessary and select it.
         # If the values don't match the currently selected preset, but they
         # do match another preset, we should update the combo-box selection.
+
+        self.encodingMethodsComboBox.SetStringSelection("Tight + Perceptually Lossless JPEG (LAN)")
+        for encodingMethod in self.encodingMethods:
+            if (jpegCompressionCheckBoxValue==self.encodingMethodsPresets[encodingMethod]['jpeg_compression'] and \
+                    jpegChrominanceSubsamplingSliderValue==self.encodingMethodsPresets[encodingMethod]['jpeg_chrominance_subsampling'] and \
+                    jpegImageQualitySliderValue==self.encodingMethodsPresets[encodingMethod]['jpeg_image_quality'] and \
+                    zlibCompressionLevelSliderValue==self.encodingMethodsPresets[encodingMethod]['zlib_compression_level']):
+                self.encodingMethodsComboBox.SetStringSelection(encodingMethod)
+                if "Lossless" in encodingMethod and "Perceptually" not in encodingMethod:  
+                    self.enableZlibCompressionLevelWidgets()
+                else:
+                    self.disableZlibCompressionLevelWidgets()
 
         encodingMethodPresetString = self.encodingMethodsComboBox.GetStringSelection()
 
@@ -967,7 +981,6 @@ class TurboVncOptions(wx.Dialog):
             CUSTOM_INDEX = 4
             if "Custom" in self.encodingMethodsComboBox.GetItems():
                 self.encodingMethodsComboBox.Delete(CUSTOM_INDEX)
-            self.encodingMethodsComboBox.SetSelection(0)
 
     def onBrowse(self, event):
         filters = 'TurboVNC log files (*.log)|*.log'

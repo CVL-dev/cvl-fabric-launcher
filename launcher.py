@@ -1310,8 +1310,8 @@ class LauncherMainFrame(wx.Frame):
                         if 'disable_clipboard_transfer' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['disable_clipboard_transfer']==True:
                             if sys.platform.startswith("win"):
                                 vncOptionsString = vncOptionsString + " /disableclipboard"
-                            else:
-                                vncOptionsString = vncOptionsString + " -noclipboardsend -noclipboardrecv"
+                            #else:
+                                #vncOptionsString = vncOptionsString + " -noclipboardsend -noclipboardrecv"
                         if sys.platform.startswith("win"):
                             if 'scale' in launcherMainFrame.vncOptions:
                                 if launcherMainFrame.vncOptions['scale']=="Auto":
