@@ -140,6 +140,17 @@ class LauncherMainFrame(wx.Frame):
 
         self.vncOptions = {}
 
+        if turboVncConfig.has_section("TurboVNC Preferences"):
+            savedTurboVncOptions =  turboVncConfig.items("TurboVNC Preferences")
+            for option in savedTurboVncOptions:
+                key = option[0]
+                value = option[1]
+                if value=='True':
+                    value = True
+                if value=='False':
+                    value = False
+                self.vncOptions[key] = value
+
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
             self.SetIcon(_icon)
