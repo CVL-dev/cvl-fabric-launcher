@@ -322,6 +322,7 @@ class TurboVncOptions(wx.Dialog):
         if 'disable_clipboard_transfer' in vncOptions:
             self.disableClipboardTransferCheckBox.SetValue(vncOptions['disable_clipboard_transfer'])
         if not sys.platform.startswith("win"):
+            self.disableClipboardTransferCheckBox.SetValue(False)
             self.disableClipboardTransferCheckBox.Disable()
         self.innerRestrictionsPanelSizer.Add(self.disableClipboardTransferCheckBox)
         self.disableClipboardTransferCheckBox.SetFont(self.smallFont)
