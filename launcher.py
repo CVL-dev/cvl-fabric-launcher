@@ -1305,6 +1305,13 @@ class LauncherMainFrame(wx.Frame):
                         else:
                             optionPrefixCharacter = "-"
                         vncOptionsString = ""
+
+                        # This is necessary to avoid confusion arising from connecting to localhost::[port] after creating SSH tunnel.
+                        # In this case, the X11 version of TurboVNC assumes that the client and server are the same computer:
+                        # "Same machine: preferring raw encoding"
+                        if not sys.platform.startswith("win"):
+                            vncOptionsString = "-encodings \"tight copyrect\""
+
                         if 'jpeg_compression' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpeg_compression']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nojpeg"
                         defaultJpegChrominanceSubsampling = "1x"
