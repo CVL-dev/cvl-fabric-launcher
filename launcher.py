@@ -659,7 +659,8 @@ class LauncherMainFrame(wx.Frame):
 
         self.Centre()
 
-        launcherURL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
+        #launcherURL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
+        launcherURL = "https://www.massive.org.au/userguide/cluster-instructions/massive-launcher"
 
         try:
             myHtmlParser = MyHtmlParser()
