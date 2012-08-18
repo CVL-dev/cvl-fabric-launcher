@@ -1051,7 +1051,7 @@ class LauncherMainFrame(wx.Frame):
                     else:
                         self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
-                            cvlVncServerCommand = "vncsession --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
+                            cvlVncServerCommand = "vncsession --vnc tigervnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
                             if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                                 cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
                             wx.CallAfter(sys.stdout.write, cvlVncServerCommand + "\n")
@@ -1065,7 +1065,9 @@ class LauncherMainFrame(wx.Frame):
                             for line in lines:
                                 if "desktop is" in line:
                                     lineComponents = line.split(":")
-                                    self.cvlVncDisplayNumber = int(lineComponents[1])
+                                    # An extra parsing step is required for TigerVNC server output, compared with TurboVNC
+                                    displayComponents = lineComponents[1].split(" ")
+                                    self.cvlVncDisplayNumber = int(displayComponents[0])
                                     foundDisplayNumber = True
 
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
