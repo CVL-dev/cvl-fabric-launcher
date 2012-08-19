@@ -1090,7 +1090,7 @@ class LauncherMainFrame(wx.Frame):
                     stdin,stdout,stderr = sshClient.exec_command("/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/mkdir ~/.ssh")
+                    stdin,stdout,stderr = sshClient.exec_command("/bin/mkdir -p ~/.ssh")
                     stdin,stdout,stderr = sshClient.exec_command("/bin/chmod 700 ~/.ssh")
                     stdin,stdout,stderr = sshClient.exec_command("/bin/touch ~/.ssh/authorized_keys")
                     stdin,stdout,stderr = sshClient.exec_command("/bin/chmod 600 ~/.ssh/authorized_keys")
