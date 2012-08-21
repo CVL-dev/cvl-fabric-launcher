@@ -241,7 +241,7 @@ class LauncherMainFrame(wx.Frame):
         self.massiveProjectLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'MASSIVE project')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.defaultProjectPlaceholder = '[Use my default massiveProject]'
+        self.defaultProjectPlaceholder = '[Use my default project]'
         massiveProjects = [
             self.defaultProjectPlaceholder,
             'ASync001','ASync002','ASync003','ASync004','ASync005','ASync006',
@@ -1463,7 +1463,7 @@ class LauncherMainFrame(wx.Frame):
                 # users_massiveProjects = xmlrpcServer.get_users_massiveProjects(self.massiveUsername, self.massivePassword)
                 # massiveProjects = users_massiveProjects[1]
                 # Get user's default massiveProject from Karaage:
-                self.massiveProject = xmlrpcServer.get_massiveProject(self.massiveUsername)
+                self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
                 self.massiveProjectComboBox.SetValue(self.massiveProject)
 
         if launcherMainFrame.cvlTabSelected:
