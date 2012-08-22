@@ -1035,6 +1035,8 @@ class LauncherMainFrame(wx.Frame):
                                         break
                                     else:
                                         lineFragment = ""
+                                    if "ERROR" in line or "Error" in line or "error" in line:
+                                        wx.CallAfter(sys.stdout.write, line)
                                     if "waiting for job" in line:
                                         wx.CallAfter(sys.stdout.write, line)
                                         lineSplit = line.split(" ")
