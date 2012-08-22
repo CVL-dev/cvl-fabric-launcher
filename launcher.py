@@ -968,7 +968,14 @@ class LauncherMainFrame(wx.Frame):
 
                         wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
                         wx.CallAfter(sys.stdout.write, "\n")
-                      
+                    
+                        # We will open a channel to allow us to monitor output from qsub,
+                        # even before the "qsub" command has finished running. 
+
+                        # From: http://www.lag.net/paramiko/docs/paramiko.Channel-class.html#recv_stderr_ready
+                        # "Only channels using exec_command or invoke_shell without a pty 
+                        #  will ever have data on the stderr stream."
+ 
                         transport = sshClient.get_transport()
                         channel = transport.open_session()
                         channel.get_pty()
