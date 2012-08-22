@@ -1024,6 +1024,7 @@ class LauncherMainFrame(wx.Frame):
                                 line = lineFragment + buff.readline()
                                 while line != "":
                                     wx.CallAfter(sys.stdout.write, "ERROR: " + line + "\n")
+                                    launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
                             if (channel.recv_ready()):
                                 out = channel.recv(1024)
                                 buff = StringIO.StringIO(out)
@@ -1037,6 +1038,7 @@ class LauncherMainFrame(wx.Frame):
                                         lineFragment = ""
                                     if "ERROR" in line or "Error" in line or "error" in line:
                                         wx.CallAfter(sys.stdout.write, line)
+                                        launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
                                     if "waiting for job" in line:
                                         wx.CallAfter(sys.stdout.write, line)
                                         lineSplit = line.split(" ")
