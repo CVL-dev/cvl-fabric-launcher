@@ -1319,6 +1319,7 @@ class LauncherMainFrame(wx.Frame):
                         foundTurboVncInRegistry = False
                         if not foundTurboVncInRegistry:
                             try:
+                                # 64-bit Windows installation, 64-bit TurboVNC, HKEY_CURRENT_USER
                                 key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_ALL_ACCESS)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
@@ -1327,6 +1328,7 @@ class LauncherMainFrame(wx.Frame):
                                 foundTurboVncInRegistry = False
                         if not foundTurboVncInRegistry:
                             try:
+                                # 64-bit Windows installation, 64-bit TurboVNC, HKEY_LOCAL_MACHINE
                                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_ALL_ACCESS)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
@@ -1335,6 +1337,7 @@ class LauncherMainFrame(wx.Frame):
                                 foundTurboVncInRegistry = False
                         if not foundTurboVncInRegistry:
                             try:
+                                # 32-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
                                 key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
@@ -1343,7 +1346,26 @@ class LauncherMainFrame(wx.Frame):
                                 foundTurboVncInRegistry = False
                         if not foundTurboVncInRegistry:
                             try:
+                                # 32-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
                                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                vnc = os.path.join(queryResult[0], "vncviewer.exe")
+                                foundTurboVncInRegistry = True
+                            except:
+                                foundTurboVncInRegistry = False
+                        if not foundTurboVncInRegistry:
+                            try:
+                                # 64-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
+                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY)
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                vnc = os.path.join(queryResult[0], "vncviewer.exe")
+                                foundTurboVncInRegistry = True
+                            except:
+                                foundTurboVncInRegistry = False
+                        if not foundTurboVncInRegistry:
+                            try:
+                                # 64-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
+                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 foundTurboVncInRegistry = True
@@ -1355,7 +1377,33 @@ class LauncherMainFrame(wx.Frame):
                     if os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
-                        wx.CallAfter(sys.stdout.write, "Error: TurboVNC was not found in " + vnc + "\n")
+                        wx.CallAfter(sys.stdout.write, "Error: TurboVNC was not found in: " + vnc + "\n")
+                        dlg = wx.MessageDialog(launcherMainFrame, "Error: TurboVNC was not found in:\n\n" + 
+                                                    "    " + vnc + "\n\n" +
+                                                    "The launcher cannot continue.\n",
+                                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                        dlg.ShowModal()
+                        dlg.Destroy()
+                        try:
+                            if launcherMainFrame.cvlTabSelected:
+                                if launcherMainFrame.cvlVncDisplayNumberAutomatic:
+                                    cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
+                                    wx.CallAfter(sys.stdout.write, cvlVncSessionStopCommand + "\n")
+                                    # Earlier sshClient connection may have timed out by now.
+                                    sshClient2 = ssh.SSHClient()
+                                    sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                                    sshClient2.connect(self.host,username=self.username,password=self.password)
+                                    stdin,stdout,stderr = sshClient2.exec_command(cvlVncSessionStopCommand)
+                                    wx.CallAfter(sys.stdout.write, stderr.read())
+                                    wx.CallAfter(sys.stdout.write, stdout.read())
+                                    sshClient2.close()
+                                else:
+                                    wx.CallAfter(sys.stdout.write, "Don't need to stop vnc session.\n")
+
+                            os.unlink(self.privateKeyFile.name)
+                            self.sshTunnelProcess.terminate()
+                        finally:
+                            os._exit(1)
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Launching TurboVNC...")
 
