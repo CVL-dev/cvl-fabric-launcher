@@ -1532,6 +1532,11 @@ class LauncherMainFrame(wx.Frame):
                                 universal_newlines=True)
                             turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\n")
 
+                        if turboVncStderr != None and turboVncStderr.strip()!="":
+                            wx.CallAfter(sys.stdout.write, turboVncStderr)
+                        if proc.returncode != 0:
+                            wx.CallAfter(sys.stdout.write, turboVncStdout)
+
                         try:
                             if launcherMainFrame.cvlTabSelected:
                                 if launcherMainFrame.cvlVncDisplayNumberAutomatic:
@@ -1555,7 +1560,8 @@ class LauncherMainFrame(wx.Frame):
                             global autoQuitAfterTurboVncCompletes
                             while autoQuitAfterTurboVncCompletes==False:
                                 time.sleep(1)
-                            os._exit(0)
+                            if proc.returncode==0 and (turboVncStderr==None or turboVncStderr.strip()==""):
+                                os._exit(0)
 
                         launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
 
