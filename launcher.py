@@ -1539,10 +1539,15 @@ class LauncherMainFrame(wx.Frame):
                         try:
                             if launcherMainFrame.cvlTabSelected:
                                 if launcherMainFrame.cvlVncDisplayNumberAutomatic:
-                                    # We should ask the user whether they want to keep their VNC session 
-                                    # (Display Number n) open for future use.
-                                    cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
-                                    wx.CallAfter(sys.stdout.write, cvlVncSessionStopCommand + "\n")
+                                    import questionDialog
+                                    result = questionDialog.questionDialog("Do you want to keep your VNC session (Display #" + str(self.cvlVncDisplayNumber) + ") running for future use?",
+                                        #buttons=["Discard VNC Session", wx.ID_CANCEL, "Save VNC Session"])
+                                        buttons=["Discard VNC Session", "Save VNC Session"],
+                                        caption="MASSIVE/CVL Launcher")
+                                    if result == "Discard VNC Session":
+                                        cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
+                                        wx.CallAfter(sys.stdout.write, cvlVncSessionStopCommand + "\n")
+                                    self.turboVncFinishTime = datetime.datetime.now()
                                     # Earlier sshClient connection may have timed out by now.
                                     sshClient2 = ssh.SSHClient()
                                     sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
