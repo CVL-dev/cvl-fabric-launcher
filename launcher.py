@@ -1152,7 +1152,7 @@ class LauncherMainFrame(wx.Frame):
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + self.massiveVisNodes[0])
 
                         
-                        wx.CallAfter(sys.stdout.write, "Massive Desktop visnode")
+                        wx.CallAfter(sys.stdout.write, "\nMassive Desktop visnode")
                         if int(launcherMainFrame.massiveVisNodesRequested)>1:
                             wx.CallAfter(sys.stdout.write, "s: ")
                         else:
@@ -1362,7 +1362,7 @@ class LauncherMainFrame(wx.Frame):
                         if not foundTurboVncInRegistry:
                             try:
                                 # 64-bit Windows installation, 64-bit TurboVNC, HKEY_CURRENT_USER
-                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_ALL_ACCESS)
+                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_READ)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
@@ -1370,10 +1370,12 @@ class LauncherMainFrame(wx.Frame):
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
+                                #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
+                                #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                         if not foundTurboVncInRegistry:
                             try:
                                 # 64-bit Windows installation, 64-bit TurboVNC, HKEY_LOCAL_MACHINE
-                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_ALL_ACCESS)
+                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_READ)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
@@ -1381,10 +1383,12 @@ class LauncherMainFrame(wx.Frame):
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
+                                #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
+                                #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                         if not foundTurboVncInRegistry:
                             try:
                                 # 32-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
-                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_READ)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
@@ -1392,10 +1396,12 @@ class LauncherMainFrame(wx.Frame):
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
+                                #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
+                                #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                         if not foundTurboVncInRegistry:
                             try:
                                 # 32-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
-                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_ALL_ACCESS)
+                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_READ)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
@@ -1403,10 +1409,12 @@ class LauncherMainFrame(wx.Frame):
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
+                                #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
+                                #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                         if not foundTurboVncInRegistry:
                             try:
                                 # 64-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
-                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY)
+                                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY | _winreg.KEY_READ)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
@@ -1414,10 +1422,12 @@ class LauncherMainFrame(wx.Frame):
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
+                                #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
+                                #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                         if not foundTurboVncInRegistry:
                             try:
                                 # 64-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
-                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY)
+                                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY | _winreg.KEY_READ)
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
@@ -1425,6 +1435,8 @@ class LauncherMainFrame(wx.Frame):
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
+                                #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
+                                #wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
