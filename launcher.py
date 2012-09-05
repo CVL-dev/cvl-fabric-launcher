@@ -80,6 +80,7 @@ import StringIO
 import xmlrpclib
 import appdirs
 import ConfigParser
+import datetime
 #import logging
 
 #logger = ssh.util.logging.getLogger()
@@ -99,8 +100,6 @@ global cvlLauncherPreferencesFilePath
 cvlLauncherPreferencesFilePath = None
 global turboVncPreferencesFilePath
 turboVncPreferencesFilePath = None
-global autoQuitAfterTurboVncCompletes
-autoQuitAfterTurboVncCompletes = True
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self):
@@ -1293,19 +1292,7 @@ class LauncherMainFrame(wx.Frame):
                     if count < 5:
                         time.sleep (5-count)
 
-                    # Sleep timer to ensure that Launcher remains open long
-                    # enough to display any error messages encountered
-                    # while attempting to launch TurboVNC:
-
-                    def sleepWhileTurboVncStarts():
-                        global autoQuitAfterTurboVncCompletes
-                        autoQuitAfterTurboVncCompletes = False
-                        time.sleep(5)
-                        autoQuitAfterTurboVncCompletes = True
-
-                    sleepWhileTurboVncStartsThread = threading.Thread(target=sleepWhileTurboVncStarts)
-                    sleepWhileTurboVncStartsThread.start()
-
+                    self.turboVncStartTime = datetime.datetime.now()
 
                     # VNC
 
@@ -1532,8 +1519,20 @@ class LauncherMainFrame(wx.Frame):
                                 universal_newlines=True)
                             turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\n")
 
+                        self.turboVncFinishTime = datetime.datetime.now()
+
+                        # Below, we display the TurboVNC viewer's STDERR in the Log window.
+                        # If the Launcher can accurately determine that the TurboVNC viewer 
+                        # encountered a critical error, it will remain open long enough for
+                        # the user to be able to view any error messages in the Launcher's
+                        # Log window, instead of automatically exiting.
                         if turboVncStderr != None and turboVncStderr.strip()!="":
                             wx.CallAfter(sys.stdout.write, turboVncStderr)
+
+                        # If the TurboVNC viewer return an exit code, indicating that an 
+                        # error occurred (this only works in the Mac and Linux version of 
+                        # TurboVNC at present), display the TurboVNC viewer's STDOUT in 
+                        # the Launcher's Log window (as well as STDERR).
                         if proc.returncode != 0:
                             wx.CallAfter(sys.stdout.write, turboVncStdout)
 
@@ -1557,11 +1556,19 @@ class LauncherMainFrame(wx.Frame):
                             self.sshTunnelProcess.terminate()
 
                         finally:
-                            global autoQuitAfterTurboVncCompletes
-                            while autoQuitAfterTurboVncCompletes==False:
-                                time.sleep(1)
-                            if proc.returncode==0 and (turboVncStderr==None or turboVncStderr.strip()==""):
+                            # If the TurboVNC process completed less than 3 seconds after it started,
+                            # then the Launcher assumes that something went wrong, so it will
+                            # remain open to display any STDERR from TurboVNC in its Log window,
+                            # rather than automatically exiting. This technique is most useful for
+                            # the Mac / Linux (X11) version of TurboVNC.  On Windows, the TurboVNC
+                            # viewer may display an error message in a message dialog for longer 
+                            # than 3 seconds.
+                            turboVncElapsedTime = self.turboVncFinishTime - self.turboVncStartTime
+                            turboVncElapsedTimeInSeconds = turboVncElapsedTime.total_seconds()
+                            if turboVncElapsedTimeInSeconds>=3 and proc.returncode==0 and (turboVncStderr==None or turboVncStderr.strip()==""):
                                 os._exit(0)
+                            elif turboVncElapsedTimeInSeconds<3:
+                                wx.CallAfter(sys.stdout.write, "Disabling auto-quit because TurboVNC's elapsed time is less than 3 seconds.\n")
 
                         launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
 
