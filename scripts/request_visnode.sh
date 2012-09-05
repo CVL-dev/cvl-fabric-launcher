@@ -10,14 +10,20 @@
 
 # check if we are called correctly and show usage if not
 if [ $# -lt 2 ] ; then
- echo "Usage: massive_desktop <project> <hours>"
+ echo "Usage: request_visnode.sh <project> <hours> <visnodes>"
  echo "  Where:"
  echo "    <project> the MASSIVE project code (e.g. MonashXXX)"
- echo "    <hours> How many hours you want the session for (e.g. 8 )"
+ echo "    <hours> How many hours you want the session for (e.g. 4 )"
+ echo "    <visnodes> How many vis nodes you want the session for (e.g. 1 )"
  exit 0
 fi
 
 PROJECT=$1
 HOURS=$2
+VISNODES=1
+if [ $# -ge 3 ] ; then
+ VISNODES=$3
+fi
+
 echo $@
-qsub -A $PROJECT -N Desktop -I -q vis -l walltime=$HOURS:0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB
+qsub -A $PROJECT -N Desktop -I -q vis -l walltime=$HOURS:0:0,nodes=$VISNODES:ppn=12:gpus=2,pmem=16000MB
