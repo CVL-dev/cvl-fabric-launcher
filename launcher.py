@@ -1539,6 +1539,8 @@ class LauncherMainFrame(wx.Frame):
                         try:
                             if launcherMainFrame.cvlTabSelected:
                                 if launcherMainFrame.cvlVncDisplayNumberAutomatic:
+                                    # We should ask the user whether they want to keep their VNC session 
+                                    # (Display Number n) open for future use.
                                     cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
                                     wx.CallAfter(sys.stdout.write, cvlVncSessionStopCommand + "\n")
                                     # Earlier sshClient connection may have timed out by now.
