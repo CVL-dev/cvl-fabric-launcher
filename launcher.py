@@ -294,6 +294,10 @@ class LauncherMainFrame(wx.Frame):
         self.massiveHoursLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Hours requested')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
+        self.massiveHoursAndVisNodesPanel = wx.Panel(self.massiveLoginFieldsPanel, wx.ID_ANY)
+        self.massiveHoursAndVisNodesPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=3, hgap=5)
+        self.massiveHoursAndVisNodesPanel.SetSizer(self.massiveHoursAndVisNodesPanelSizer)
+
         self.massiveHoursRequested = "4"
         if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
             if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_hours_requested"):
@@ -313,8 +317,38 @@ class LauncherMainFrame(wx.Frame):
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         # Maximum of 336 hours is 2 weeks:
-        self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=336)
-        self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        #self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=336)
+        self.massiveHoursField = wx.SpinCtrl(self.massiveHoursAndVisNodesPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=336)
+
+        #self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.massiveHoursAndVisNodesPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.massiveVisNodesLabel = wx.StaticText(self.massiveHoursAndVisNodesPanel, wx.ID_ANY, 'Vis Nodes')
+        self.massiveHoursAndVisNodesPanelSizer.Add(self.massiveVisNodesLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.massiveVisNodesRequested = "1"
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_visnodes_requested"):
+                self.massiveVisNodesRequested = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_visnodes_requested")
+                if self.massiveVisNodesRequested.strip() == "":
+                    self.massiveVisNodesRequested = "1"
+            elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "visnodes"):
+                self.massiveVisNodesRequested = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "visnodes")
+                if self.massiveVisNodesRequested.strip() == "":
+                    self.massiveVisNodesRequested = "1"
+            else:
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested","")
+                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+        else:
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+        self.massiveVisNodesField = wx.SpinCtrl(self.massiveHoursAndVisNodesPanel, wx.ID_ANY, value=self.massiveVisNodesRequested, min=1,max=10)
+        self.massiveHoursAndVisNodesPanelSizer.Add(self.massiveVisNodesField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.massiveHoursAndVisNodesPanel.SetSizerAndFit(self.massiveHoursAndVisNodesPanelSizer)
+        self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursAndVisNodesPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveVncDisplayResolutionLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Resolution')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -409,8 +443,10 @@ class LauncherMainFrame(wx.Frame):
         self.massiveUsernameTextField.SetFocus()
 
         self.massiveProjectComboBox.MoveAfterInTabOrder(self.massiveLoginHostComboBox)
-        self.massiveHoursField.MoveAfterInTabOrder(self.massiveProjectComboBox)
-        self.massiveVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursField)
+        #self.massiveHoursField.MoveAfterInTabOrder(self.massiveProjectComboBox)
+        self.massiveHoursAndVisNodesPanel.MoveAfterInTabOrder(self.massiveProjectComboBox)
+        #self.massiveVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursField)
+        self.massiveVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursAndVisNodesPanel)
         self.massiveSshTunnelCipherComboBox.MoveAfterInTabOrder(self.massiveVncDisplayResolutionComboBox)
         self.massiveUsernameTextField.MoveAfterInTabOrder(self.massiveSshTunnelCipherComboBox)
         self.massivePasswordField.MoveAfterInTabOrder(self.massiveUsernameTextField)
@@ -984,6 +1020,7 @@ class LauncherMainFrame(wx.Frame):
                     self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
 
                     if launcherMainFrame.massiveTabSelected:
+                        self.massiveVisNodes = []
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
 
                         set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + self.resolution
@@ -1014,7 +1051,8 @@ class LauncherMainFrame(wx.Frame):
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
 
                         #qsubcmd = "qsub -A " + self.massiveProject + " -I -q vis -l walltime=" + launcherMainFrame.massiveHoursRequested + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
-                        qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested
+                        #qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested
+                        qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested
 
                         wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
                         wx.CallAfter(sys.stdout.write, "\n")
@@ -1097,16 +1135,32 @@ class LauncherMainFrame(wx.Frame):
                                         jobNumber = jobNumberSplit[0]
                                     if "Starting XServer on the following nodes" in line:
                                         startingXServerLineNumber = lineNumber
-                                    if lineNumber == (startingXServerLineNumber + 1): # vis node
+                                    if startingXServerLineNumber!=-1 and \
+                                            lineNumber >= (startingXServerLineNumber+1) and \
+                                            lineNumber <= (startingXServerLineNumber+int(launcherMainFrame.massiveVisNodesRequested)): # vis nodes
+                                        #wx.CallAfter(sys.stdout.write, "VISNODE LINE: " + line + "\n");
                                         visnode = line.strip()
-                                        breakOutOfMainLoop = True
+                                        self.massiveVisNodes.append(visnode)
+                                        if lineNumber==startingXServerLineNumber+int(launcherMainFrame.massiveVisNodesRequested):
+                                            breakOutOfMainLoop = True
                                     line = buff.readline()
                             if breakOutOfMainLoop:
                                 break
 
-                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
+                        #wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + self.massiveVisNodes[0])
 
-                        wx.CallAfter(sys.stdout.write, "Massive Desktop visnode: " + visnode + "\n\n")
+                        
+                        wx.CallAfter(sys.stdout.write, "Massive Desktop visnode")
+                        if int(launcherMainFrame.massiveVisNodesRequested)>1:
+                            wx.CallAfter(sys.stdout.write, "s: ")
+                        else:
+                            wx.CallAfter(sys.stdout.write, ": ")
+
+                        for visNodeNumber in range(0,int(launcherMainFrame.massiveVisNodesRequested)):
+                            wx.CallAfter(sys.stdout.write, self.massiveVisNodes[visNodeNumber] + " ")
+
+                        wx.CallAfter(sys.stdout.write, "\n\n")
 
                         # End if launcherMainFrame.massiveTabSelected:
                     else:
@@ -1240,13 +1294,13 @@ class LauncherMainFrame(wx.Frame):
                             #tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
                                 #"-oStrictHostKeyChecking=no " \
                                 #"-A " + proxyCommand + " " \
-                                #"-L " + self.localPortNumber + ":localhost:5901" + " -l " + self.username+" "+visnode+"-ib"
+                                #"-L " + self.localPortNumber + ":localhost:5901" + " -l " + self.username+" "+self.massiveVisNodes[0]+"-ib"
 
                             if launcherMainFrame.massiveTabSelected:
                                 tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
                                     "-t -t " \
                                     "-oStrictHostKeyChecking=no " \
-                                    "-L " + self.localPortNumber + ":"+visnode+"-ib:5901" + " -l " + self.username+" "+self.host
+                                    "-L " + self.localPortNumber + ":"+self.massiveVisNodes[0]+"-ib:5901" + " -l " + self.username+" "+self.host
                             else:
                                 tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
                                     "-t -t " \
@@ -1617,6 +1671,7 @@ class LauncherMainFrame(wx.Frame):
 
         if launcherMainFrame.massiveTabSelected:
             self.massiveHoursRequested = str(self.massiveHoursField.GetValue())
+            self.massiveVisNodesRequested = str(self.massiveVisNodesField.GetValue())
             self.massiveProject = self.massiveProjectComboBox.GetValue()
             if self.massiveProject == self.defaultProjectPlaceholder:
                 xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
@@ -1647,6 +1702,7 @@ class LauncherMainFrame(wx.Frame):
         if launcherMainFrame.massiveTabSelected:
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested", self.massiveVisNodesRequested)
 
         if launcherMainFrame.massiveTabSelected:
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
