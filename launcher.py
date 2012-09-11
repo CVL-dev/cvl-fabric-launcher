@@ -1319,8 +1319,6 @@ class LauncherMainFrame(wx.Frame):
                                 if "Last login" in line:
                                     launcherMainFrame.loginThread.sshTunnelReady = True
                                     break
-                            else:
-                                launcherMainFrame.loginThread.sshTunnelReady = True
 
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
@@ -1340,12 +1338,12 @@ class LauncherMainFrame(wx.Frame):
                     tunnelThread.start()
 
                     count = 1
-                    while not self.sshTunnelReady and count < 30 and launcherMainFrame.massiveTabSelected:
+                    while not self.sshTunnelReady and count < 30
                         time.sleep(1)
                         count = count + 1
 
                     if count < 5:
-                        time.sleep (5-count)
+                        time.sleep(5-count)
 
                     self.turboVncStartTime = datetime.datetime.now()
 
