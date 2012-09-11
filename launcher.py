@@ -1346,7 +1346,7 @@ class LauncherMainFrame(wx.Frame):
                     self.privateKeyFile.flush()
                     self.privateKeyFile.close()
 
-                    def createTunnel():
+                    def createTunnel(localPortNumber,remoteHost,remotePortNumber,tunnelServer,tunnelUsername,tunnelPrivateKeyFileName):
                         wx.CallAfter(sys.stdout.write, "Starting tunnelled SSH session...\n")
 
                         try:
@@ -1379,43 +1379,36 @@ class LauncherMainFrame(wx.Frame):
                                 # will initially be created without any owner.
                                 # We must set the file's owner before we
                                 # can change the permissions to -rw------.
-                                chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + self.privateKeyFile.name
+                                chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + tunnelPrivateKeyFileName
                                 wx.CallAfter(sys.stdout.write, chown_cmd + "\n")
                                 subprocess.call(chown_cmd, shell=True)
 
-                            chmod_cmd = chmodBinary + " 600 " + self.privateKeyFile.name
+                            chmod_cmd = chmodBinary + " 600 " + tunnelPrivateKeyFileName
                             wx.CallAfter(sys.stdout.write, chmod_cmd + "\n")
                             subprocess.call(chmod_cmd, shell=True)
 
-                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
+                            localPortNumber = str(localPortNumber)
 
-                            self.localPortNumber = "5901"
-                            # Request an ephemeral port from the operating system (by specifying port 0) :
-                            import socket
-                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-                            sock.bind(('localhost', 0)) 
-                            self.localPortNumber = sock.getsockname()[1]
-                            sock.close()
-                            self.localPortNumber = str(self.localPortNumber)
+                            if localPortNumber=="0":
+                                # Request an ephemeral port from the operating system (by specifying port 0) :
+                                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
+                                import socket
+                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+                                sock.bind(('localhost', 0)) 
+                                localPortNumber = sock.getsockname()[1]
+                                sock.close()
+                                localPortNumber = str(localPortNumber)
+
+                            launcherMainFrame.loginThread.localPortNumber = localPortNumber
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
-                            #proxyCommand = "-oProxyCommand=\"ssh -c " + self.cipher + " -i " + self.privateKeyFile.name +" "+self.username+"@"+self.host+" 'nc %h %p'\""
-                            #tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
-                                #"-oStrictHostKeyChecking=no " \
-                                #"-A " + proxyCommand + " " \
-                                #"-L " + self.localPortNumber + ":localhost:5901" + " -l " + self.username+" "+self.massiveVisNodes[0]+"-ib"
+                            remotePortNumber = str(remotePortNumber)
 
-                            if launcherMainFrame.massiveTabSelected:
-                                tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
-                                    "-t -t " \
-                                    "-oStrictHostKeyChecking=no " \
-                                    "-L " + self.localPortNumber + ":"+self.massiveVisNodes[0]+"-ib:5901" + " -l " + self.username+" "+self.host
-                            else:
-                                tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
-                                    "-t -t " \
-                                    "-oStrictHostKeyChecking=no " \
-                                    "-L " + self.localPortNumber + ":localhost:" + str(5900+self.cvlVncDisplayNumber) + " -l " + self.username+" "+self.host
+                            tunnel_cmd = sshBinary + " -i " + tunnelPrivateKeyFileName + " -c " + self.cipher + " " \
+                                "-t -t " \
+                                "-oStrictHostKeyChecking=no " \
+                                "-L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
                             self.sshTunnelProcess = subprocess.Popen(tunnel_cmd,
@@ -1432,7 +1425,7 @@ class LauncherMainFrame(wx.Frame):
                         except KeyboardInterrupt:
                             wx.CallAfter(sys.stdout.write, "C-c: Port forwarding stopped.")
                             try:
-                                os.unlink(self.privateKeyFile.name)
+                                os.unlink(tunnelPrivateKeyFileName)
                             finally:
                                 os._exit(0)
                         except:
@@ -1440,7 +1433,17 @@ class LauncherMainFrame(wx.Frame):
                             wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     self.sshTunnelReady = False
-                    tunnelThread = threading.Thread(target=createTunnel)
+                    localPortNumber = "0" # Request ephemeral port.
+                    tunnelServer = self.host
+                    tunnelUsername = self.username
+                    tunnelPrivateKeyFileName = self.privateKeyFile.name
+                    if launcherMainFrame.massiveTabSelected:
+                        remoteHost = self.massiveVisNodes[0] + "-ib"
+                        remotePortNumber = "5901"
+                    else:
+                        remoteHost = "localhost"
+                        remotePortNumber = str(5900+self.cvlVncDisplayNumber)
+                    tunnelThread = threading.Thread(target=createTunnel, args=(localPortNumber,remoteHost,remotePortNumber,tunnelServer,tunnelUsername,tunnelPrivateKeyFileName))
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
@@ -1559,14 +1562,14 @@ class LauncherMainFrame(wx.Frame):
                             dlg.ShowModal()
                             dlg.Destroy()
                         if sys.platform.startswith("win"):
-                            vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + self.localPortNumber
+                            vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\r\n")
                         else:
-                            vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + self.localPortNumber
+                            vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
