@@ -57,7 +57,8 @@ The MASSIVE.icns icon file is for the Mac OS X operating system only.
 It was created using the free Img2icns application. http://www.img2icnsapp.com/
 There is also a built-in Mac OS X application, Icon Composer. It used to live
 in the /Applications/Utilities/ folder, or the /Developer/Applications/ folder.
-Now you have to install Xcode first (from the App Store), then launch Xcode, and from the Xcode menu, choose "Open Developer Tool". The image used to create
+Now you have to install Xcode first (from the App Store), then launch Xcode, 
+and from the Xcode menu, choose "Open Developer Tool". The image used to create
 the icon was taken as a screenshot (cmd-shift-4) from the MASSIVE website. The
 white background was then made transparent, by using Gimp 2.8's 
 "Color to Alpha..." menu item in the "Colors" menu. 
