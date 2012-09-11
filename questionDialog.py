@@ -1,8 +1,28 @@
+#  MASSIVE/CVL Launcher - easy secure login for the MASSIVE Desktop and the CVL
+#  Copyright (C) 2012  James Wettenhall, Monash University
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#  Enquires: James.Wettenhall@monash.edu or help@massive.org.au
+
+# questionDialog.py
+
 """ Dialog to ask a modal question, with coder-specified list of buttons. 
 """
 
 import wx
-from wx.lib.evtmgr import eventManager
 
 class ModalQuestion(wx.Dialog):
     """ Ask a question.
@@ -29,11 +49,13 @@ class ModalQuestion(wx.Dialog):
 
         for i, button in enumerate(buttons):
             if isinstance(button, (int, long)):
+                # A built-in button ID was passed in, like wx.ID_CANCEL
                 b = wx.Button(self, id=button)
             else:
+                # A button label string was passed in.
                 b = wx.Button(self, label=button)
 
-            eventManager.Register(dropArgs(curry(self.EndModal, i)), wx.EVT_BUTTON, b)
+            self.Bind(wx.EVT_BUTTON, dropArgs(curry(self.EndModal, i)), id=b.GetId())
             buttonSizer.Add(b, flag=wx.ALL|wx.BORDER, border=25)
             #buttonSizer.Add(b, flag=wx.ALL)
 
