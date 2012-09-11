@@ -25,7 +25,8 @@ MASSIVE Desktop: https://www.massive.org.au/userguide/cluster-instructions/using
 CVL: https://www.nectar.org.au/characterisation-virtual-laboratory
 
 MASSIVE/CVL Launcher is an attempt to offer MASSIVE/CVL users an easier login 
-method, beginning with Mac OS X users.  Until TurboVNC v1.2, Mac OS X users had to install TurboVNC, only to find that there was no double-clickable TurboVNC 
+method, beginning with Mac OS X users.  Until TurboVNC v1.2, Mac OS X users had
+to install TurboVNC, only to find that there was no double-clickable TurboVNC 
 application in their Applications folder, so they had to run TurboVNC from the 
 command-line after creating an SSH tunnel.  MASSIVE/CVL Launcher provides a 
 double-clickable GUI launcher for MASSIVE users, which creates the SSH tunnel 
