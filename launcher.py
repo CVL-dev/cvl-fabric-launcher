@@ -1010,9 +1010,9 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Logging in to " + self.host)
                     wx.CallAfter(sys.stdout.write, "Attempting to log in to " + self.host + "...\n")
                     
-                    sshClient = ssh.SSHClient()
-                    sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                    sshClient.connect(self.host,username=self.username,password=self.password)
+                    self.sshClient = ssh.SSHClient()
+                    self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                    self.sshClient.connect(self.host,username=self.username,password=self.password)
 
                     wx.CallAfter(sys.stdout.write, "First login done.\n")
 
@@ -1026,7 +1026,7 @@ class LauncherMainFrame(wx.Frame):
 
                         set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + self.resolution
                         wx.CallAfter(sys.stdout.write, set_display_resolution_cmd + "\n")
-                        stdin,stdout,stderr = sshClient.exec_command(set_display_resolution_cmd)
+                        stdin,stdout,stderr = self.sshClient.exec_command(set_display_resolution_cmd)
                         stderrRead = stderr.read()
                         if len(stderrRead) > 0:
                             wx.CallAfter(sys.stdout.write, stderrRead)
@@ -1037,13 +1037,13 @@ class LauncherMainFrame(wx.Frame):
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
 
-                        stdin,stdout,stderr = sshClient.exec_command("mybalance --hours")
+                        stdin,stdout,stderr = self.sshClient.exec_command("mybalance --hours")
                         wx.CallAfter(sys.stdout.write, stderr.read())
                         wx.CallAfter(sys.stdout.write, stdout.read())
 
                         wx.CallAfter(sys.stdout.write, "\n")
 
-                        stdin,stdout,stderr = sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
+                        stdin,stdout,stderr = self.sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
                         wx.CallAfter(sys.stdout.write, stderr.read())
                         wx.CallAfter(sys.stdout.write, stdout.read())
 
@@ -1065,7 +1065,7 @@ class LauncherMainFrame(wx.Frame):
                         # "Only channels using exec_command or invoke_shell without a pty 
                         #  will ever have data on the stderr stream."
  
-                        transport = sshClient.get_transport()
+                        transport = self.sshClient.get_transport()
                         channel = transport.open_session()
                         channel.get_pty()
                         channel.setblocking(0)
@@ -1171,7 +1171,7 @@ class LauncherMainFrame(wx.Frame):
                             if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                                 cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
                             wx.CallAfter(sys.stdout.write, cvlVncServerCommand + "\n")
-                            stdin,stdout,stderr = sshClient.exec_command(cvlVncServerCommand)
+                            stdin,stdout,stderr = self.sshClient.exec_command(cvlVncServerCommand)
                             stderrRead = stderr.read()
                             wx.CallAfter(sys.stdout.write, stderrRead)
                             stdoutRead = stdout.read()
@@ -1200,34 +1200,34 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Generating SSH key-pair for tunnel...")
 
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair*")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair*")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
-                    stdin,stdout,stderr = sshClient.exec_command("/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/mkdir -p ~/.ssh")
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/chmod 700 ~/.ssh")
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/touch ~/.ssh/authorized_keys")
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/chmod 600 ~/.ssh/authorized_keys")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/mkdir -p ~/.ssh")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/chmod 700 ~/.ssh")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/touch ~/.ssh/authorized_keys")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/chmod 600 ~/.ssh/authorized_keys")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair.pub")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair.pub")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/cat MassiveLauncherKeyPair")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/cat MassiveLauncherKeyPair")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
 
                     privateKeyString = stdout.read()
 
-                    stdin,stdout,stderr = sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair")
+                    stdin,stdout,stderr = self.sshClient.exec_command("/bin/rm -f ~/MassiveLauncherKeyPair")
                     if len(stderr.read()) > 0:
                         wx.CallAfter(sys.stdout.write, stderr.read())
 
@@ -1278,7 +1278,6 @@ class LauncherMainFrame(wx.Frame):
                             wx.CallAfter(sys.stdout.write, chmod_cmd + "\n")
                             subprocess.call(chmod_cmd, shell=True)
 
-                            proxyCommand = "-oProxyCommand=\"ssh -c " + self.cipher + " -i " + self.privateKeyFile.name +" "+self.username+"@"+self.host+" 'nc %h %p'\""
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
 
                             self.localPortNumber = "5901"
@@ -1292,6 +1291,7 @@ class LauncherMainFrame(wx.Frame):
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
+                            #proxyCommand = "-oProxyCommand=\"ssh -c " + self.cipher + " -i " + self.privateKeyFile.name +" "+self.username+"@"+self.host+" 'nc %h %p'\""
                             #tunnel_cmd = sshBinary + " -i " + self.privateKeyFile.name + " -c " + self.cipher + " " \
                                 #"-oStrictHostKeyChecking=no " \
                                 #"-A " + proxyCommand + " " \
@@ -1455,7 +1455,7 @@ class LauncherMainFrame(wx.Frame):
                                 if launcherMainFrame.cvlVncDisplayNumberAutomatic:
                                     cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
                                     wx.CallAfter(sys.stdout.write, cvlVncSessionStopCommand + "\n")
-                                    # Earlier sshClient connection may have timed out by now.
+                                    # Earlier self.sshClient connection may have timed out by now.
                                     sshClient2 = ssh.SSHClient()
                                     sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
                                     sshClient2.connect(self.host,username=self.username,password=self.password)
@@ -1468,6 +1468,8 @@ class LauncherMainFrame(wx.Frame):
 
                             os.unlink(self.privateKeyFile.name)
                             self.sshTunnelProcess.terminate()
+                            self.sshClient.exec_command("exit")
+                            self.sshClient.close()
                         finally:
                             os._exit(1)
 
