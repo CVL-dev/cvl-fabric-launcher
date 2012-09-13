@@ -252,24 +252,50 @@ class LauncherMainFrame(wx.Frame):
         self.massiveProjectLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'MASSIVE project')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
+        # The pre-populated list of projects in the combo-box is 
+        # hard-coded for now, because 
+        # Karaage (http://code.vpac.org/trac/karaage/)
+        # doesn't appear to provide a way to list all projects on MASSIVE
+        # without authenticating.
+        # The user can type in the project name themself, or use the
+        # [Use my default project] option.
         self.defaultProjectPlaceholder = '[Use my default project]'
         massiveProjects = [
             self.defaultProjectPlaceholder,
             'ASync001','ASync002','ASync003','ASync004','ASync005','ASync006',
-            'ASync007','ASync008','ASync009','ASync010','ASync011','CSIRO001',
-            'CSIRO002','CSIRO003','CSIRO004','CSIRO005','CSIRO006','CSIRO007',
-            'Desc001','Desc002','Desc003','Monash001','Monash002','Monash003',
-            'Monash004','Monash005','Monash006','Monash007','Monash008',
+            'ASync007','ASync008','ASync009','ASync010','ASync011',
+
+            'CSIRO001','CSIRO002','CSIRO003','CSIRO004','CSIRO005','CSIRO006',
+            'CSIRO007',
+
+            'Desc001','Desc002','Desc003','Desc004',
+
+            'Monash001','Monash002','Monash003','Monash004',
+            'Monash005','Monash006','Monash007','Monash008',
             'Monash009','Monash010','Monash011','Monash012','Monash013',
             'Monash014','Monash015','Monash016','Monash017','Monash018',
             'Monash019','Monash020','Monash021','Monash022','Monash023',
             'Monash024','Monash025','Monash026','Monash027','Monash028',
             'Monash029','Monash030','Monash031','Monash032','Monash033',
-            'Monash034','NCId75','NCIdb5','NCIdc0','NCIdd2','NCIg61','NCIg75',
+            'Monash034','Monash035','Monash036',
+
+            'NCId75','NCIdb5','NCIdc0','NCIdd2','NCIg61','NCIg75',
             'NCIq97','NCIr14','NCIw25','NCIw27','NCIw67','NCIw81','NCIw91',
-            'NCIy40','NCIy95','NCIy96','pDeak0023','pDeak0024','pDeak0026',
-            'pLaTr0011','pMelb0095','pMelb0100','pMelb0103','pMelb0104',
-            'pMOSP','pRMIT0074','pRMIT0078','pVPAC0005','Training'
+            'NCIy40','NCIy95','NCIy96',
+
+            'pDeak0023','pDeak0024','pDeak0026',
+
+            'pLaTr0011',
+
+            'pMelb0095','pMelb0100','pMelb0103','pMelb0104',
+
+            'pMOSP',
+
+            'pRMIT0074','pRMIT0078','pRMIT0083',
+
+            'pVPAC0005',
+
+            'Training'
             ]
         self.massiveProjectComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveProjects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
