@@ -526,34 +526,41 @@ class LauncherMainFrame(wx.Frame):
 
         self.cvlVncDisplayNumberAutomatic = True
         self.cvlVncDisplayNumber = 1
-        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
-            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number_automatic"):
-                self.cvlVncDisplayNumberAutomatic = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_number_automatic")
-                if self.cvlVncDisplayNumberAutomatic.strip() == "":
-                    self.cvlVncDisplayNumberAutomatic = True
-                else:
-                    if self.cvlVncDisplayNumberAutomatic==True or self.cvlVncDisplayNumberAutomatic=='True':
-                        self.cvlVncDisplayNumberAutomatic = True
-                    else:
-                        self.cvlVncDisplayNumberAutomatic = False
-            else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number_automatic","True")
-                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number"):
-                self.cvlVncDisplayNumber = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_number")
-                if self.cvlVncDisplayNumber.strip() == "":
-                    self.cvlVncDisplayNumber = 1
-                else:
-                    self.cvlVncDisplayNumber = int(self.cvlVncDisplayNumber)
-            else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number","1")
-                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        else:
-            cvlLauncherConfig.add_section("CVL Launcher Preferences")
-            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        # The following section is commented out for the following reason:
+        # It is better to always default to "automatic display number",
+        # i.e. always start a new VNC session on the server by default,
+        # rather than remember what the user did last time.
+        # If a manual choice of display number is remembered, then the
+        # user could accidentally try to connect to a stale or 
+        # non-existent VNC session.
+        #if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            #if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number_automatic"):
+                #self.cvlVncDisplayNumberAutomatic = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_number_automatic")
+                #if self.cvlVncDisplayNumberAutomatic.strip() == "":
+                    #self.cvlVncDisplayNumberAutomatic = True
+                #else:
+                    #if self.cvlVncDisplayNumberAutomatic==True or self.cvlVncDisplayNumberAutomatic=='True':
+                        #self.cvlVncDisplayNumberAutomatic = True
+                    #else:
+                        #self.cvlVncDisplayNumberAutomatic = False
+            #else:
+                #cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number_automatic","True")
+                #with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    #cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+            #if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number"):
+                #self.cvlVncDisplayNumber = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_number")
+                #if self.cvlVncDisplayNumber.strip() == "":
+                    #self.cvlVncDisplayNumber = 1
+                #else:
+                    #self.cvlVncDisplayNumber = int(self.cvlVncDisplayNumber)
+            #else:
+                #cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number","1")
+                #with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    #cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        #else:
+            #cvlLauncherConfig.add_section("CVL Launcher Preferences")
+            #with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                #cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
         self.cvlVncDisplayNumberPanel = wx.Panel(self.cvlLoginFieldsPanel, wx.ID_ANY)
         self.cvlVncDisplayNumberPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=20)
