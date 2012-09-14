@@ -1333,6 +1333,7 @@ class LauncherMainFrame(wx.Frame):
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
                             if foundDisplayNumber:
                                 wx.CallAfter(sys.stdout.write, "CVL VNC Display Number is " + str(self.cvlVncDisplayNumber) + "\n")
+                                launcherMainFrame.cvlVncDisplayNumberSpinCtrl.SetValue(int(self.cvlVncDisplayNumber))
                             else:
                                 wx.CallAfter(sys.stdout.write, "Failed to parse vncserver output for display number.\n")
 
