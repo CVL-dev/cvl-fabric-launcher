@@ -1610,6 +1610,14 @@ class LauncherMainFrame(wx.Frame):
                                 universal_newlines=True)
                             turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\n")
 
+                        if sys.platform.startswith("darwin"):
+                            # Grab focus back from X11, i.e. reactive MASSIVE Launcher app.
+                            subprocess.Popen(['osascript', '-e', 
+                                "tell application \"System Events\"\r" +
+                                "  set procName to name of first process whose unix id is " + str(os.getpid()) + "\r" +
+                                "end tell\r" +
+                                "tell application procName to activate\r"])
+
                         self.turboVncFinishTime = datetime.datetime.now()
 
                         # Below, we display the TurboVNC viewer's STDERR in the Log window.
