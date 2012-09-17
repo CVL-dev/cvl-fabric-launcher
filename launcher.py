@@ -1418,8 +1418,8 @@ class LauncherMainFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, "\n")
 
                         wx.CallAfter(sys.stdout.write, "Checking whether you have any existing jobs in the Vis node queue...\n")
-                        wx.CallAfter(sys.stdout.write, "showq -w user:" + self.username + " | grep " + self.username + "\n")
-                        stdin,stdout,stderr = self.sshClient.exec_command("showq -w user:" + self.username + " | grep " + self.username)
+                        wx.CallAfter(sys.stdout.write, "showq -w class:vis -w user:" + self.username + " | grep " + self.username + "\n")
+                        stdin,stdout,stderr = self.sshClient.exec_command("showq -w class:vis -w user:" + self.username + " | grep " + self.username)
                         wx.CallAfter(sys.stdout.write, stderr.read())
                         stdoutRead = stdout.read()
                         if stdoutRead.strip()!="":
