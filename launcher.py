@@ -1402,6 +1402,9 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write, "\n")
 
                     if launcherMainFrame.massiveTabSelected:
+
+                        # Begin if launcherMainFrame.massiveTabSelected:
+
                         self.massiveVisNodes = []
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
 
@@ -1414,7 +1417,35 @@ class LauncherMainFrame(wx.Frame):
                         
                         wx.CallAfter(sys.stdout.write, "\n")
 
-                        # Begin if launcherMainFrame.massiveTabSelected:
+                        wx.CallAfter(sys.stdout.write, "Checking whether you have any existing jobs in the Vis node queue...\n")
+                        wx.CallAfter(sys.stdout.write, "showq -w user:" + self.username + " | grep " + self.username + "\n")
+                        stdin,stdout,stderr = self.sshClient.exec_command("showq -w user:" + self.username + " | grep " + self.username)
+                        wx.CallAfter(sys.stdout.write, stderr.read())
+                        stdoutRead = stdout.read()
+                        if stdoutRead.strip()!="":
+                            wx.CallAfter(sys.stdout.write, stdoutRead)
+                            stdoutReadSplit = stdoutRead.split(" ")
+                            jobNumber = stdoutReadSplit[0] # e.g. 3050965
+                            wx.CallAfter(sys.stdout.write, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n")
+                            dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
+                                                                        "You already have at least one job in the Vis node queue:\n\n" + 
+                                                                        stdoutRead.strip() + "\n\n" +
+                                                                        "To delete existing Vis node job(s), SSH to\n" + 
+                                                                        self.host + " and run:\n\n" +
+                                                                        "qdel <jobNumber>\n\n" +
+                                                                        "e.g. qdel " + jobNumber + "\n\n" +
+                                                        "The launcher cannot continue.\n",
+                                                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                            dlg.ShowModal()
+                            dlg.Destroy()
+                            try:
+                                os.unlink(self.privateKeyFile.name)
+                                self.sshClient.exec_command("exit")
+                                self.sshClient.close()
+                            finally:
+                                os._exit(1)
+
+                        wx.CallAfter(sys.stdout.write, "\n")
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
 
