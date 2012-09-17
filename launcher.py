@@ -953,6 +953,9 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write,"qdel " + launcherMainFrame.loginThread.massiveJobNumber + "\n")
                     launcherMainFrame.loginThread.sshClient.exec_command("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
 
+            launcherMainFrame.loginThread.sshClient.exec_command("exit")
+            launcherMainFrame.loginThread.sshClient.close()
+
         except:
             wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
             wx.CallAfter(sys.stdout.write, traceback.format_exc())
@@ -1794,6 +1797,7 @@ class LauncherMainFrame(wx.Frame):
                                 if launcherMainFrame.loginThread.massiveJobNumber != "0":
                                     wx.CallAfter(sys.stdout.write,"qdel " + launcherMainFrame.loginThread.massiveJobNumber + "\n")
                                     launcherMainFrame.loginThread.sshClient.exec_command("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
+                            launcherMainFrame.loginThread.sshClient.exec_command("exit")
 
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
