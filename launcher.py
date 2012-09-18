@@ -953,7 +953,6 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write,"qdel " + launcherMainFrame.loginThread.massiveJobNumber + "\n")
                     launcherMainFrame.loginThread.sshClient.exec_command("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
 
-            launcherMainFrame.loginThread.sshClient.exec_command("exit")
             launcherMainFrame.loginThread.sshClient.close()
 
         except:
@@ -1155,7 +1154,6 @@ class LauncherMainFrame(wx.Frame):
                         try:
                             os.unlink(self.privateKeyFile.name)
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
-                            self.sshClient.exec_command("exit")
                             self.sshClient.close()
                         finally:
                             os._exit(1)
@@ -1397,7 +1395,6 @@ class LauncherMainFrame(wx.Frame):
                         try:
                             os.unlink(self.privateKeyFile.name)
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
-                            self.sshClient.exec_command("exit")
                             self.sshClient.close()
                         finally:
                             os._exit(1)
@@ -1443,7 +1440,6 @@ class LauncherMainFrame(wx.Frame):
                             dlg.Destroy()
                             try:
                                 os.unlink(self.privateKeyFile.name)
-                                self.sshClient.exec_command("exit")
                                 self.sshClient.close()
                             finally:
                                 os._exit(1)
@@ -1799,7 +1795,6 @@ class LauncherMainFrame(wx.Frame):
                                 if launcherMainFrame.loginThread.massiveJobNumber != "0":
                                     wx.CallAfter(sys.stdout.write,"qdel " + launcherMainFrame.loginThread.massiveJobNumber + "\n")
                                     launcherMainFrame.loginThread.sshClient.exec_command("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
-                            launcherMainFrame.loginThread.sshClient.exec_command("exit")
 
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
