@@ -1447,6 +1447,8 @@ class LauncherMainFrame(wx.Frame):
                                 self.sshClient.close()
                             finally:
                                 os._exit(1)
+                        else:
+                            wx.CallAfter(sys.stdout.write, "You don't have any jobs already in the Vis node queue, which is good.\n")
 
                         wx.CallAfter(sys.stdout.write, "\n")
 
