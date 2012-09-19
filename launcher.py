@@ -1145,12 +1145,18 @@ class LauncherMainFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
                         wx.CallAfter(sys.stdout.write, "Error: TurboVNC was not found in: " + vnc + "\n")
-                        dlg = wx.MessageDialog(launcherMainFrame, "Error: TurboVNC was not found in:\n\n" + 
+                        def showTurboVncNotFoundMessageDialog():
+                            dlg = wx.MessageDialog(launcherMainFrame, "Error: TurboVNC was not found in:\n\n" + 
                                                     "    " + vnc + "\n\n" +
                                                     "The launcher cannot continue.\n",
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                        dlg.ShowModal()
-                        dlg.Destroy()
+                            dlg.ShowModal()
+                            dlg.Destroy()
+                            launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted = True
+                        launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted = False
+                        wx.CallAfter(showTurboVncNotFoundMessageDialog)
+                        while launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted==False:
+                            time.sleep(1)
                         try:
                             os.unlink(self.privateKeyFile.name)
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
@@ -1175,10 +1181,16 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(sys.stdout.write, "TurboVNC viewer version number = " + self.turboVncVersionNumber + "\n")
 
                     if self.turboVncVersionNumber.startswith("0.") or self.turboVncVersionNumber.startswith("1.0"):
-                        dlg = wx.MessageDialog(launcherMainFrame, "Warning: Using a TurboVNC viewer earlier than v1.1 means that you will need to enter your password twice.\n",
+                        def showOldTurboVncWarningMessageDialog():
+                            dlg = wx.MessageDialog(launcherMainFrame, "Warning: Using a TurboVNC viewer earlier than v1.1 means that you will need to enter your password twice.\n",
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                        dlg.ShowModal()
-                        dlg.Destroy()
+                            dlg.ShowModal()
+                            dlg.Destroy()
+                            launcherMainFrame.loginThread.showOldTurboVncWarningMessageDialogCompleted = True
+                        launcherMainFrame.loginThread.showOldTurboVncWarningMessageDialogCompleted = False
+                        wx.CallAfter(showOldTurboVncWarningMessageDialog)
+                        while launcherMainFrame.loginThread.showOldTurboVncWarningMessageDialogCompleted==False:
+                            time.sleep(1)
 
                     wx.CallAfter(sys.stdout.write, "\n")
 
@@ -1382,16 +1394,20 @@ class LauncherMainFrame(wx.Frame):
                         count = count + 1
                     if self.sshTunnelReady:
                         wx.CallAfter(sys.stdout.write, "SSH tunnelling appears to be working correctly.\n")
-                        #launcherMainFrame.loginThread.sshTunnelProcess.terminate()
                     else:
                         wx.CallAfter(sys.stdout.write, "Error: Cannot create an SSH tunnel to " + testTunnelServer + "\n")
-                        #launcherMainFrame.loginThread.sshTunnelProcess.terminate()
-                        dlg = wx.MessageDialog(launcherMainFrame, "Error: Cannot create an SSH tunenl to\n\n" +
+                        def showCantCreateSshTunnelMessageDialog():
+                            dlg = wx.MessageDialog(launcherMainFrame, "Error: Cannot create an SSH tunenl to\n\n" +
                                                     "    " + testTunnelServer + "\n\n" +
                                                     "The launcher cannot continue.\n",
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                        dlg.ShowModal()
-                        dlg.Destroy()
+                            dlg.ShowModal()
+                            dlg.Destroy()
+                            launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted = True
+                        launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted = False
+                        wx.CallAfter(showCantCreateSshTunnelMessageDialog)
+                        while launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted==False:
+                            time.sleep(1)
                         try:
                             os.unlink(self.privateKeyFile.name)
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
@@ -1427,7 +1443,8 @@ class LauncherMainFrame(wx.Frame):
                             stdoutReadSplit = stdoutRead.split(" ")
                             jobNumber = stdoutReadSplit[0] # e.g. 3050965
                             wx.CallAfter(sys.stdout.write, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n")
-                            dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
+                            def showExistingJobFoundInVisNodeQueueMessageDialog():
+                                dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
                                                                         "You already have at least one job in the Vis node queue:\n\n" + 
                                                                         stdoutRead.strip() + "\n\n" +
                                                                         "To delete existing Vis node job(s), SSH to\n" + 
@@ -1436,8 +1453,13 @@ class LauncherMainFrame(wx.Frame):
                                                                         "e.g. qdel " + jobNumber + "\n\n" +
                                                         "The launcher cannot continue.\n",
                                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                            dlg.ShowModal()
-                            dlg.Destroy()
+                                dlg.ShowModal()
+                                dlg.Destroy()
+                                launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted = True
+                            launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted = False
+                            wx.CallAfter(showExistingJobFoundInVisNodeQueueMessageDialog)
+                            while launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted==False:
+                                time.sleep(1)
                             try:
                                 os.unlink(self.privateKeyFile.name)
                                 self.sshClient.close()
