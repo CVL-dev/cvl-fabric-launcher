@@ -1053,6 +1053,7 @@ class LauncherMainFrame(wx.Frame):
                         self.password   = launcherMainFrame.cvlPassword
                     
                     # Check for TurboVNC
+                    turboVncURL = "http://www.virtualgl.org/DeveloperInfo/PreReleases"
 
                     if sys.platform.startswith("win"):
                         vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
@@ -1144,19 +1145,126 @@ class LauncherMainFrame(wx.Frame):
                     if os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
                     else:
-                        wx.CallAfter(sys.stdout.write, "Error: TurboVNC was not found in: " + vnc + "\n")
                         def showTurboVncNotFoundMessageDialog():
-                            dlg = wx.MessageDialog(launcherMainFrame, "Error: TurboVNC was not found in:\n\n" + 
-                                                    "    " + vnc + "\n\n" +
-                                                    "The launcher cannot continue.\n",
-                                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                            dlg.ShowModal()
-                            dlg.Destroy()
-                            launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted = True
+                            turboVncNotFoundDialog = wx.Dialog(launcherMainFrame, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
+
+                            if sys.platform.startswith("win"):
+                                _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+                                turboVncNotFoundDialog.SetIcon(_icon)
+
+                            if sys.platform.startswith("linux"):
+                                import MASSIVE_icon
+                                turboVncNotFoundDialog.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+
+                            massiveIconPanel = wx.Panel(turboVncNotFoundDialog)
+
+                            import MASSIVE_icon
+                            massiveIconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
+                            wx.StaticBitmap(massiveIconPanel, wx.ID_ANY,
+                                massiveIconAsBitmap,
+                                (0, 50),
+                                (massiveIconAsBitmap.GetWidth(), massiveIconAsBitmap.GetHeight()))
+
+                            turboVncNotFoundPanel = wx.Panel(turboVncNotFoundDialog)
+
+                            turboVncNotFoundPanelSizer = wx.FlexGridSizer(rows=8, cols=1, vgap=5, hgap=5)
+                            turboVncNotFoundPanel.SetSizer(turboVncNotFoundPanelSizer)
+
+                            turboVncNotFoundTitleLabel = wx.StaticText(turboVncNotFoundPanel,
+                                label = "MASSIVE/CVL Launcher")
+                            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+                            font.SetPointSize(14)
+                            font.SetWeight(wx.BOLD)
+                            turboVncNotFoundTitleLabel.SetFont(font)
+                            turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
+                            turboVncNotFoundPanelSizer.Add(turboVncNotFoundTitleLabel, flag=wx.EXPAND)
+                            turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
+
+                            turboVncNotFoundTextLabel1 = wx.StaticText(turboVncNotFoundPanel,
+                                label = "TurboVNC not found.\n" +
+                                        "Please download from:\n")
+                            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+                            if sys.platform.startswith("darwin"):
+                                font.SetPointSize(11)
+                            else:
+                                font.SetPointSize(9)
+                            turboVncNotFoundTextLabel1.SetFont(font)
+                            turboVncNotFoundPanelSizer.Add(turboVncNotFoundTextLabel1, flag=wx.EXPAND)
+
+                            turboVncNotFoundHyperlink = wx.HyperlinkCtrl(turboVncNotFoundPanel,
+                                id = wx.ID_ANY,
+                                label = turboVncURL,
+                                url = turboVncURL)
+                            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+                            if sys.platform.startswith("darwin"):
+                                font.SetPointSize(11)
+                            else:
+                                font.SetPointSize(8)
+                            turboVncNotFoundHyperlink.SetFont(font)
+                            turboVncNotFoundPanelSizer.Add(turboVncNotFoundHyperlink, border=10, flag=wx.LEFT|wx.BORDER)
+                            turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
+
+                            turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel, wx.ID_ANY, ""))
+                            turboVncNotFoundQueriesContactLabel = wx.StaticText(turboVncNotFoundPanel,
+                                label = "For queries, please contact:")
+                            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+                            if sys.platform.startswith("darwin"):
+                                font.SetPointSize(11)
+                            else:
+                                font.SetPointSize(9)
+                            turboVncNotFoundQueriesContactLabel.SetFont(font)
+                            turboVncNotFoundPanelSizer.Add(turboVncNotFoundQueriesContactLabel, border=10, flag=wx.EXPAND|wx.BORDER)
+
+                            contactEmailHyperlink = wx.HyperlinkCtrl(turboVncNotFoundPanel,
+                                id = wx.ID_ANY,
+                                label = "help@massive.org.au",
+                                url = "mailto:help@massive.org.au")
+                            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+                            if sys.platform.startswith("darwin"):
+                                font.SetPointSize(11)
+                            else:
+                                font.SetPointSize(8)
+                            contactEmailHyperlink.SetFont(font)
+                            turboVncNotFoundPanelSizer.Add(contactEmailHyperlink, border=20, flag=wx.LEFT|wx.BORDER)
+
+                            contactEmail2Hyperlink = wx.HyperlinkCtrl(turboVncNotFoundPanel,
+                                id = wx.ID_ANY,
+                                label = "James.Wettenhall@monash.edu",
+                                url = "mailto:James.Wettenhall@monash.edu")
+                            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+                            if sys.platform.startswith("darwin"):
+                                font.SetPointSize(11)
+                            else:
+                                font.SetPointSize(8)
+                            contactEmail2Hyperlink.SetFont(font)
+                            turboVncNotFoundPanelSizer.Add(contactEmail2Hyperlink, border=20, flag=wx.LEFT|wx.BORDER)
+
+                            def onOK(event):
+                                launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted = True
+
+                            okButton = wx.Button(turboVncNotFoundPanel, 1, ' OK ')
+                            okButton.SetDefault()
+                            turboVncNotFoundPanelSizer.Add(okButton, flag=wx.ALIGN_RIGHT)
+                            turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
+                            turboVncNotFoundPanelSizer.Fit(turboVncNotFoundPanel)
+
+                            turboVncNotFoundDialog.Bind(wx.EVT_BUTTON, onOK, id=1)
+
+                            turboVncNotFoundDialogSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=5)
+                            turboVncNotFoundDialogSizer.Add(massiveIconPanel, flag=wx.EXPAND)
+                            turboVncNotFoundDialogSizer.Add(turboVncNotFoundPanel, flag=wx.EXPAND)
+                            turboVncNotFoundDialogSizer.Add(wx.StaticText(turboVncNotFoundDialog,label="       "))
+                            turboVncNotFoundDialog.SetSizer(turboVncNotFoundDialogSizer)
+                            turboVncNotFoundDialogSizer.Fit(turboVncNotFoundDialog)
+
+                            turboVncNotFoundDialog.ShowModal()
+                            turboVncNotFoundDialog.Destroy()
+
                         launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted = False
                         wx.CallAfter(showTurboVncNotFoundMessageDialog)
-                        while launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted==False:
+                        while launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted == False:
                             time.sleep(1)
+
                         try:
                             os.unlink(self.privateKeyFile.name)
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
