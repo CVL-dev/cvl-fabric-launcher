@@ -100,15 +100,25 @@ global cvlLauncherPreferencesFilePath
 cvlLauncherPreferencesFilePath = None
 global turboVncPreferencesFilePath
 turboVncPreferencesFilePath = None
+global turboVncLatestVersion 
+turboVncLatestVersion = None
+
+#LAUNCHER_URL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
+LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massive-launcher"
+
+# TURBOVNC_BASE_URL = "http://www.virtualgl.org/DeveloperInfo/PreReleases"
+TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
+
 
 class MyHtmlParser(HTMLParser.HTMLParser):
-  def __init__(self):
+  def __init__(self, valueString):
     HTMLParser.HTMLParser.__init__(self)
     self.recording = 0
     self.data = []
     self.recordingLatestVersionNumber = 0
     self.latestVersionNumber = "0.0.0"
     self.htmlComments = ""
+    self.valueString = valueString
 
   def handle_starttag(self, tag, attributes):
     if tag != 'span':
@@ -119,7 +129,7 @@ class MyHtmlParser(HTMLParser.HTMLParser):
           return
     foundLatestVersionNumberTag = False
     for name, value in attributes:
-      if name == 'id' and value == 'MassiveLauncherLatestVersionNumber':
+      if name == 'id' and value == self.valueString:
         foundLatestVersionNumberTag = True
         break
     else:
@@ -738,12 +748,10 @@ class LauncherMainFrame(wx.Frame):
 
         self.Centre()
 
-        #launcherURL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
-        launcherURL = "https://www.massive.org.au/userguide/cluster-instructions/massive-launcher"
-
+        # Check for the latest version of the launcher:
         try:
-            myHtmlParser = MyHtmlParser()
-            feed = urllib.urlopen(launcherURL)
+            myHtmlParser = MyHtmlParser('MassiveLauncherLatestVersionNumber')
+            feed = urllib.urlopen(LAUNCHER_URL)
             html = feed.read()
             myHtmlParser.feed(html)
             myHtmlParser.close()
@@ -812,8 +820,8 @@ class LauncherMainFrame(wx.Frame):
 
             newVersionAlertHyperlink = wx.HyperlinkCtrl(newVersionAlertPanel, 
                 id = wx.ID_ANY,
-                label = launcherURL,
-                url = launcherURL)
+                label = LAUNCHER_URL,
+                url = LAUNCHER_URL)
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             if sys.platform.startswith("darwin"):
                 font.SetPointSize(11)
@@ -1053,7 +1061,23 @@ class LauncherMainFrame(wx.Frame):
                         self.password   = launcherMainFrame.cvlPassword
                     
                     # Check for TurboVNC
-                    turboVncURL = "http://www.virtualgl.org/DeveloperInfo/PreReleases"
+
+                    # Check for the latest version of TurboVNC on the launcher web page:
+                    try:
+                        myHtmlParser = MyHtmlParser('TurboVncLatestVersionNumber')
+                        feed = urllib.urlopen(LAUNCHER_URL)
+                        html = feed.read()
+                        myHtmlParser.feed(html)
+                        myHtmlParser.close()
+                    except:
+                        dlg = wx.MessageDialog(self, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
+                                                    "The launcher cannot continue.\n",
+                                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                        dlg.ShowModal()
+                        dlg.Destroy()
+                        sys.exit(1)
+
+                    turboVncLatestVersion = myHtmlParser.latestVersionNumber
 
                     if sys.platform.startswith("win"):
                         vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
@@ -1193,8 +1217,8 @@ class LauncherMainFrame(wx.Frame):
 
                             turboVncNotFoundHyperlink = wx.HyperlinkCtrl(turboVncNotFoundPanel,
                                 id = wx.ID_ANY,
-                                label = turboVncURL,
-                                url = turboVncURL)
+                                label = TURBOVNC_BASE_URL + turboVncLatestVersion,
+                                url = TURBOVNC_BASE_URL + turboVncLatestVersion)
                             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
                             if sys.platform.startswith("darwin"):
                                 font.SetPointSize(11)
