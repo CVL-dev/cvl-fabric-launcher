@@ -1336,7 +1336,6 @@ class LauncherMainFrame(wx.Frame):
                     self.sshClient.connect(self.host,username=self.username,password=self.password)
 
                     wx.CallAfter(sys.stdout.write, "First login done.\n")
-
                     wx.CallAfter(sys.stdout.write, "\n")
 
                     # Create SSH key pair for tunnel.
@@ -1552,6 +1551,12 @@ class LauncherMainFrame(wx.Frame):
                     if launcherMainFrame.massiveTabSelected:
 
                         # Begin if launcherMainFrame.massiveTabSelected:
+
+                        # Run sanity check script
+                        stdin,stdout,stderr = self.sshClient.exec_command("/usr/local/desktop/sanity_check.sh")
+                        stdoutRead = stdout.read()
+                        if len(stdoutRead) > 0:
+                            wx.CallAfter(sys.stdout.write, stdoutRead + '\n')
 
                         self.massiveVisNodes = []
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
