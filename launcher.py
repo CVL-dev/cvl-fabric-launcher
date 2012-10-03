@@ -1933,20 +1933,22 @@ class LauncherMainFrame(wx.Frame):
                                         if result == "Discard VNC Session":
                                             cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
                                             wx.CallAfter(sys.stdout.write, cvlVncSessionStopCommand + "\n")
+
+                                            # Earlier sshClient connection may have timed out by now.
+                                            sshClient2 = ssh.SSHClient()
+                                            sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                                            sshClient2.connect(self.host,username=self.username,password=self.password)
+                                            stdin,stdout,stderr = sshClient2.exec_command(cvlVncSessionStopCommand)
+                                            wx.CallAfter(sys.stdout.write, stderr.read())
+                                            wx.CallAfter(sys.stdout.write, stdout.read())
+                                            sshClient2.close()
+
                                         launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = True
                                     launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = False
                                     wx.CallAfter(askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession)
                                     while launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted==False:
                                         time.sleep(1)
                                     self.turboVncFinishTime = datetime.datetime.now()
-                                    # Earlier sshClient connection may have timed out by now.
-                                    sshClient2 = ssh.SSHClient()
-                                    sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                                    sshClient2.connect(self.host,username=self.username,password=self.password)
-                                    stdin,stdout,stderr = sshClient2.exec_command(cvlVncSessionStopCommand)
-                                    wx.CallAfter(sys.stdout.write, stderr.read())
-                                    wx.CallAfter(sys.stdout.write, stdout.read())
-                                    sshClient2.close()
                                 else:
                                     wx.CallAfter(sys.stdout.write, "Don't need to stop vnc session.\n")
 
