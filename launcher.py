@@ -152,9 +152,10 @@ def find_ssh_processes():
             ssh_processes = [x.split() for x in wmic_out.splitlines() if 'ssh' in x]
             return [(int(x[-1]), x[:-1],) for x in ssh_processes]
     else:
-        current_username = psutil.Process(os.getpid()).username
-        return [(proc.pid, proc.cmdline) for proc in psutil.get_process_list() if len(proc.cmdline) > 0 and 'ssh' in proc.cmdline[0] and proc.username == current_username]
-
+        ps_ssh_out, ps_ssh_err = subprocess.Popen('ps -o pid,command -x', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).communicate()
+        ssh_processes = [x.split() for x in ps_ssh_out.splitlines() if 'ssh' in x]
+        ssh_processes = [(int(x[0]), x[1:]) for x in ssh_processes if len(x) > 0]
+        return ssh_processes
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self, valueString):
