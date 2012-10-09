@@ -1585,7 +1585,7 @@ class LauncherMainFrame(wx.Frame):
                     else:
                         wx.CallAfter(sys.stdout.write, "Error: Cannot create an SSH tunnel to " + testTunnelServer + "\n")
                         def showCantCreateSshTunnelMessageDialog():
-                            dlg = wx.MessageDialog(launcherMainFrame, "Error: Cannot create an SSH tunenl to\n\n" +
+                            dlg = wx.MessageDialog(launcherMainFrame, "Error: Cannot create an SSH tunnel to\n\n" +
                                                     "    " + testTunnelServer + "\n\n" +
                                                     "The launcher cannot continue.\n",
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
