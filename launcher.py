@@ -1946,7 +1946,8 @@ class LauncherMainFrame(wx.Frame):
                                 universal_newlines=True)
                             turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\r\n")
                         else:
-                            vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
+                            # Hard coding the location of the jar file for testing purposes only:
+                            vncCommandString = 'java -jar /opt/TurboVNC/java/VncViewer.jar' + " -user " + self.username + " -autopass " + vncOptionsString + " localhost:" + launcherMainFrame.loginThread.localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             proc = subprocess.Popen(vncCommandString, 
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
