@@ -1947,6 +1947,16 @@ class LauncherMainFrame(wx.Frame):
                             turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\r\n")
                         else:
                             # Hard coding the location of the jar file for testing purposes only:
+                            # DRC on the mailing list regarding the use of -encoding:
+                            #   I will probably add a similar feature for automatically selecting Raw if
+                            #   connecting to the same machine, so you may need to pass "-encoding
+                            #   Tight" to the Java viewer at some point to override that.
+                            #
+                            #   There is no facility for disabling CopyRect at the moment, and if it
+                            #   does get added at some point in the future, it would be via a separate
+                            #   parameter (-copyrect/-nocopyrect), which is the way the Windows viewer
+                            #   currently handles it, so passing "-encoding Tight" should be a safe bet.
+
                             vncCommandString = 'java -jar /opt/TurboVNC/java/VncViewer.jar' + " -user " + self.username + " -autopass " + vncOptionsString + " localhost:" + launcherMainFrame.loginThread.localPortNumber
                             wx.CallAfter(sys.stdout.write, vncCommandString + "\n")
                             proc = subprocess.Popen(vncCommandString, 
