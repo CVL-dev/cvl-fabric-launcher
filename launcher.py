@@ -114,20 +114,8 @@ import subprocess
 import sys
 
 
-def find_ssh_processes():
+def find_ssh_processes(tunnel_cmd, parent_pid=None):
     """
-    Find ssh processes. We return a list of tuples, where each tuple
-    corresponds to an ssh process, of the form (pid, cmd_line).
-
-    Example:
-
-    >>> find_ssh_processes()
-    [(2096, ['sshd: user@pts/0']),
-     (2130, ['sshd: user@pts/1']),
-     (2185, ['sshd: user@pts/2']),
-     (2244, ['ssh', '-t', '-Y', 'example.com'])]
-
-    Notes:
 
     * On the Windows platform we call the wmic program to find ssh
     processes because psutil does not return the full command line,
@@ -142,20 +130,20 @@ def find_ssh_processes():
     # we have to use the wmic command instead.
 
     if sys.platform.startswith("win"):
-        wmic_cmd = """wmic process where "name='ssh.exe'" get commandline,processid"""
+        wmic_cmd = """wmic process where "name='ssh.exe'" get processid,parentprocessid"""
         wmic_prc = subprocess.Popen(wmic_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         wmic_out, wmic_err = wmic_prc.communicate()
 
         if 'No Instance(s) Available' in wmic_err:
             return []
         else:
-            ssh_processes = [x.split() for x in wmic_out.splitlines() if 'ssh' in x]
-            return [(int(x[-1]), x[:-1],) for x in ssh_processes]
+            ssh_processes = [x.split() for x in wmic_out.splitlines()]
+            return [int(x[1]) for x in ssh_processes if len(x) == 2 and 'Parent' not in x[0] and int(x[0]) == parent_pid]
     else:
         ps_ssh_out, ps_ssh_err = subprocess.Popen('ps -o pid,command -x', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).communicate()
         ssh_processes = [x.split() for x in ps_ssh_out.splitlines() if 'ssh' in x]
         ssh_processes = [(int(x[0]), x[1:]) for x in ssh_processes if len(x) > 0]
-        return ssh_processes
+        return [x[0] for x in ssh_processes if x[1] == tunnel_cmd.split()]
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self, valueString):
@@ -1507,13 +1495,17 @@ class LauncherMainFrame(wx.Frame):
 
                             tunnel_cmd = sshBinary + " -i " + tunnelPrivateKeyFileName + " -c " + self.cipher + " " \
                                 "-t -t " \
-                                "-oStrictHostKeyChecking=no " \
+                                "-o StrictHostKeyChecking=no " \
                                 "-o BatchMode=yes -o ServerAliveInterval=1 -o ServerAliveCountMax=5 -f -o ExitOnForwardFailure=yes " \
                                 "-N -L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
+
+                            use_shell = not sys.platform.startswith("win")
                             launcherMainFrame.loginThread.sshTunnelProcess = subprocess.Popen(tunnel_cmd,
-                                universal_newlines=True,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+                                universal_newlines=True,shell=use_shell,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+
+                            ssh_parent_pid = launcherMainFrame.loginThread.sshTunnelProcess.pid
 
                             # With the "-f" option the ssh process will exit immediately, so check its return value:
                             while True:
@@ -1526,9 +1518,11 @@ class LauncherMainFrame(wx.Frame):
 
                             wx.CallAfter(sys.stdout.write, 'ssh_return_value:' + str(ssh_return_value) + '\n')
 
+                            wx.CallAfter(sys.stdout.write, 'find_ssh_processes:' + str(find_ssh_processes(tunnel_cmd, ssh_parent_pid)) + '\n')
+
                             if ssh_return_value == 0:
                                 # The tunnel was created successfully. Now find the pid of the spawned ssh process.
-                                matching_ssh_processes = [x[0] for x in find_ssh_processes() if x[1] == tunnel_cmd.split()] # pids
+                                matching_ssh_processes = find_ssh_processes(tunnel_cmd, ssh_parent_pid) # pids
 
                                 if len(matching_ssh_processes) == 1:
                                     launcherMainFrame.loginThread.sshTunnelProcess = psutil.Process(matching_ssh_processes[0])
