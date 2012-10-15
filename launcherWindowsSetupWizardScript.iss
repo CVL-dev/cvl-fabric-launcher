@@ -31,10 +31,10 @@ DefaultGroupName={#LauncherAppName}
 UninstallDisplayIcon={app}\{#LauncherAppExeName}
 Compression=lzma2
 SolidCompression=yes
-OutputDir=Z:\Desktop\cvl_svn\launcher\trunk\
+OutputDir=C:\launcher_build\
 
 [Files]
-Source: "dist\*.*"; DestDir: "{app}"
+Source: "dist\*.*"; DestDir: "{app}"; Flags: recursesubdirs
 ; Source: "{#LauncherAppName}.chm"; DestDir: "{app}"
 ;Source: "Readme.txt"; DestDir: "{app}"; Flags: isreadme
 

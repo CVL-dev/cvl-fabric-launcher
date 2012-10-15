@@ -30,6 +30,7 @@
 
 from distutils.core import setup, Extension
 import py2exe
+import glob
 
 # THE ssh_tunnel MODULE IS NOT CURRENTLY USED. 
 # ITS IMPLEMENTATION IS INCOMPLETE AND IT DOESN'T WORK IN ITS CURRENT FORM.
@@ -43,8 +44,11 @@ import py2exe
 
 import launcher_version_number
 
+data_files = [("Microsoft.VC90.CRT", glob.glob(r'C:\WINDOWS\WinSxS\Manifests\x86_Microsoft.VC90.CRT_1fc8b3b9a1e18e3b_9.0.21022.8_x-ww_d08d0375.manifest') + glob.glob(r'C:\WINDOWS\WinSxS\x86_Microsoft.VC90.CRT_1fc8b3b9a1e18e3b_9.0.21022.8_x-ww_d08d0375\*.dll'))]
+
 setup(
     name = "MASSIVE Launcher",
+    data_files=data_files,
     description = "MASSIVE Launcher",
     version = launcher_version_number.version_number,
     windows = [
