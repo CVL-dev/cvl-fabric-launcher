@@ -367,7 +367,7 @@ class LauncherMainFrame(wx.Frame):
         self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveHoursAndVisNodesPanel = wx.Panel(self.massiveLoginFieldsPanel, wx.ID_ANY)
-        self.massiveHoursAndVisNodesPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=3, hgap=5)
+        self.massiveHoursAndVisNodesPanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=3, hgap=5)
         self.massiveHoursAndVisNodesPanel.SetSizer(self.massiveHoursAndVisNodesPanelSizer)
 
         self.massiveHoursRequested = "4"
@@ -393,7 +393,7 @@ class LauncherMainFrame(wx.Frame):
         self.massiveHoursField = wx.SpinCtrl(self.massiveHoursAndVisNodesPanel, wx.ID_ANY, value=self.massiveHoursRequested, size=(widgetWidth3,-1), min=1,max=336)
 
         #self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.massiveHoursAndVisNodesPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.massiveHoursAndVisNodesPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveVisNodesLabel = wx.StaticText(self.massiveHoursAndVisNodesPanel, wx.ID_ANY, 'Vis nodes')
         self.massiveHoursAndVisNodesPanelSizer.Add(self.massiveVisNodesLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -421,6 +421,32 @@ class LauncherMainFrame(wx.Frame):
 
         self.massiveHoursAndVisNodesPanel.SetSizerAndFit(self.massiveHoursAndVisNodesPanelSizer)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursAndVisNodesPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.massivePersistentMode = False
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_persistent_mode"):
+                self.massivePersistentMode = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_persistent_mode")
+                if self.massivePersistentMode.strip() == "":
+                    self.massivePersistentMode = True
+                else:
+                    if self.massivePersistentMode==True or self.massivePersistentMode=='True':
+                        self.massivePersistentMode = True
+                    else:
+                        self.massivePersistentMode = False
+            else:
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode","False")
+                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+        else:
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+
+        self.massivePersistentModeLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Persistent mode')
+        self.massiveLoginFieldsPanelSizer.Add(self.massivePersistentModeLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.massivePersistentModeCheckBox = wx.CheckBox(self.massiveLoginFieldsPanel, wx.ID_ANY, "")
+        self.massivePersistentModeCheckBox.SetValue(self.massivePersistentMode)
+        self.massiveLoginFieldsPanelSizer.Add(self.massivePersistentModeCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveVncDisplayResolutionLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Resolution')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -2072,6 +2098,7 @@ class LauncherMainFrame(wx.Frame):
         if launcherMainFrame.massiveTabSelected:
             self.massiveHoursRequested = str(self.massiveHoursField.GetValue())
             self.massiveVisNodesRequested = str(self.massiveVisNodesField.GetValue())
+            self.massivePersistentMode = self.massivePersistentModeCheckBox.GetValue()
             self.massiveProject = self.massiveProjectComboBox.GetValue()
             if self.massiveProject == self.defaultProjectPlaceholder:
                 xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
@@ -2103,6 +2130,7 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested", self.massiveVisNodesRequested)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode", self.massivePersistentMode)
 
         if launcherMainFrame.massiveTabSelected:
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
