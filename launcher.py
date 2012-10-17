@@ -277,6 +277,7 @@ class LauncherMainFrame(wx.Frame):
             "m2-login1.massive.org.au", "m2-login2.massive.org.au"]
         defaultMassiveHost = "m2-login2.massive.org.au"
         self.massiveLoginHostComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value=defaultMassiveHost, choices=massiveLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.massiveLoginHostComboBox.Bind(wx.EVT_TEXT, self.onMassiveLoginHostNameChanged)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
             if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_login_host"):
@@ -1014,7 +1015,13 @@ class LauncherMainFrame(wx.Frame):
             newVersionAlertDialog.Destroy()
 
             sys.exit(1)
- 
+
+    def onMassiveLoginHostNameChanged(self, event):
+        event.Skip()
+        selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
+        if selectedMassiveLoginHost.startswith("m1"):
+            self.massivePersistentModeCheckBox.SetValue(True)
+
     def onAbout(self, event):
         dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n",
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
