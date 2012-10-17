@@ -291,7 +291,13 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        if self.massiveLoginHost.strip()!="":
+        self.massiveLoginHost = self.massiveLoginHost.strip()
+        if self.massiveLoginHost!="":
+            try:
+                self.massiveLoginHostComboBox.SetSelection(massiveLoginHosts.index(self.massiveLoginHost))
+            except:
+                # Hostname was not found in combo-box.
+                self.massiveLoginHostComboBox.SetSelection(-1)
             self.massiveLoginHostComboBox.SetValue(self.massiveLoginHost)
 
         self.massiveProjectLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'MASSIVE project')
@@ -358,7 +364,14 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        if self.massiveProject.strip()!="":
+
+        self.massiveProject = self.massiveProject.strip()
+        if self.massiveProject!="":
+            try:
+                self.massiveProjectComboBox.SetSelection(massiveProjects.index(self.massiveProject))
+            except:
+                # Project was not found in combo-box.
+                self.massiveProjectComboBox.SetSelection(-1)
             self.massiveProjectComboBox.SetValue(self.massiveProject)
         else:
             self.massiveProjectComboBox.SetValue(self.defaultProjectPlaceholder)
@@ -422,25 +435,28 @@ class LauncherMainFrame(wx.Frame):
         self.massiveHoursAndVisNodesPanel.SetSizerAndFit(self.massiveHoursAndVisNodesPanelSizer)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursAndVisNodesPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.massivePersistentMode = False
-        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_persistent_mode"):
-                self.massivePersistentMode = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_persistent_mode")
-                if self.massivePersistentMode.strip() == "":
-                    self.massivePersistentMode = True
-                else:
-                    if self.massivePersistentMode==True or self.massivePersistentMode=='True':
+        if self.massiveLoginHost.startswith("m1"):
+            self.massivePersistentMode = True
+        else:
+            self.massivePersistentMode = False
+            if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+                if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_persistent_mode"):
+                    self.massivePersistentMode = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_persistent_mode")
+                    if self.massivePersistentMode.strip() == "":
                         self.massivePersistentMode = True
                     else:
-                        self.massivePersistentMode = False
+                        if self.massivePersistentMode==True or self.massivePersistentMode=='True':
+                            self.massivePersistentMode = True
+                        else:
+                            self.massivePersistentMode = False
+                else:
+                    massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode","False")
+                    with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                        massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
             else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode","False")
+                massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                     massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        else:
-            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
-            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
 
         self.massivePersistentModeLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Persistent mode')
         self.massiveLoginFieldsPanelSizer.Add(self.massivePersistentModeLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -474,7 +490,13 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        if self.massiveVncDisplayResolution.strip()!="":
+        self.massiveVncDisplayResolution = self.massiveVncDisplayResolution.strip()
+        if self.massiveVncDisplayResolution!="":
+            try:
+                self.massiveVncDisplayResolutionComboBox.SetSelection(massiveVncDisplayResolutions.index(self.massiveVncDisplayResolution))
+            except:
+                # Resolution was not found in combo-box.
+                self.massiveProjectComboBox.SetSelection(-1)
             self.massiveVncDisplayResolutionComboBox.SetValue(self.massiveVncDisplayResolution)
         else:
             self.massiveVncDisplayResolutionComboBox.SetValue(defaultResolution)
@@ -504,7 +526,13 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        if self.massiveSshTunnelCipher.strip()!="":
+        self.massiveSshTunnelCipher = self.massiveSshTunnelCipher.strip()
+        if self.massiveSshTunnelCipher!="":
+            try:
+                self.massiveSshTunnelCipherComboBox.SetSelection(massiveSshTunnelCiphers.index(self.massiveSshTunnelCipher))
+            except:
+                # Cipher was not found in combo-box.
+                self.massiveSshTunnelCipherComboBox.SetSelection(-1)
             self.massiveSshTunnelCipherComboBox.SetValue(self.massiveSshTunnelCipher)
         else:
             self.massiveSshTunnelCipherComboBox.SetValue(defaultCipher)
@@ -1647,40 +1675,41 @@ class LauncherMainFrame(wx.Frame):
                         
                         wx.CallAfter(sys.stdout.write, "\n")
 
-                        wx.CallAfter(sys.stdout.write, "Checking whether you have any existing jobs in the Vis node queue...\n")
-                        wx.CallAfter(sys.stdout.write, "showq -w class:vis -w user:" + self.username + " | grep " + self.username + "\n")
-                        stdin,stdout,stderr = self.sshClient.exec_command("showq -w class:vis -w user:" + self.username + " | grep " + self.username)
-                        wx.CallAfter(sys.stdout.write, stderr.read())
-                        stdoutRead = stdout.read()
-                        if stdoutRead.strip()!="":
-                            wx.CallAfter(sys.stdout.write, stdoutRead)
-                            stdoutReadSplit = stdoutRead.split(" ")
-                            jobNumber = stdoutReadSplit[0] # e.g. 3050965
-                            wx.CallAfter(sys.stdout.write, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n")
-                            def showExistingJobFoundInVisNodeQueueMessageDialog():
-                                dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
-                                                                        "You already have at least one job in the Vis node queue:\n\n" + 
-                                                                        stdoutRead.strip() + "\n\n" +
-                                                                        "To delete existing Vis node job(s), SSH to\n" + 
-                                                                        self.host + " and run:\n\n" +
-                                                                        "qdel <jobNumber>\n\n" +
-                                                                        "e.g. qdel " + jobNumber + "\n\n" +
-                                                        "The launcher cannot continue.\n",
-                                                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                                dlg.ShowModal()
-                                dlg.Destroy()
-                                launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted = True
-                            launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted = False
-                            wx.CallAfter(showExistingJobFoundInVisNodeQueueMessageDialog)
-                            while launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted==False:
-                                time.sleep(1)
-                            try:
-                                os.unlink(self.privateKeyFile.name)
-                                self.sshClient.close()
-                            finally:
-                                os._exit(1)
-                        else:
-                            wx.CallAfter(sys.stdout.write, "You don't have any jobs already in the Vis node queue, which is good.\n")
+                        if self.host.startswith("m2"):
+                            wx.CallAfter(sys.stdout.write, "Checking whether you have any existing jobs in the Vis node queue...\n")
+                            wx.CallAfter(sys.stdout.write, "showq -w class:vis -w user:" + self.username + " | grep " + self.username + "\n")
+                            stdin,stdout,stderr = self.sshClient.exec_command("showq -w class:vis -w user:" + self.username + " | grep " + self.username)
+                            wx.CallAfter(sys.stdout.write, stderr.read())
+                            stdoutRead = stdout.read()
+                            if stdoutRead.strip()!="":
+                                wx.CallAfter(sys.stdout.write, stdoutRead)
+                                stdoutReadSplit = stdoutRead.split(" ")
+                                jobNumber = stdoutReadSplit[0] # e.g. 3050965
+                                wx.CallAfter(sys.stdout.write, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n")
+                                def showExistingJobFoundInVisNodeQueueMessageDialog():
+                                    dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
+                                                                            "You already have at least one job in the Vis node queue:\n\n" + 
+                                                                            stdoutRead.strip() + "\n\n" +
+                                                                            "To delete existing Vis node job(s), SSH to\n" + 
+                                                                            self.host + " and run:\n\n" +
+                                                                            "qdel <jobNumber>\n\n" +
+                                                                            "e.g. qdel " + jobNumber + "\n\n" +
+                                                            "The launcher cannot continue.\n",
+                                                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                    dlg.ShowModal()
+                                    dlg.Destroy()
+                                    launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted = True
+                                launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted = False
+                                wx.CallAfter(showExistingJobFoundInVisNodeQueueMessageDialog)
+                                while launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted==False:
+                                    time.sleep(1)
+                                try:
+                                    os.unlink(self.privateKeyFile.name)
+                                    self.sshClient.close()
+                                finally:
+                                    os._exit(1)
+                            else:
+                                wx.CallAfter(sys.stdout.write, "You don't have any jobs already in the Vis node queue, which is good.\n")
 
                         wx.CallAfter(sys.stdout.write, "\n")
 
@@ -1692,17 +1721,18 @@ class LauncherMainFrame(wx.Frame):
 
                         wx.CallAfter(sys.stdout.write, "\n")
 
-                        stdin,stdout,stderr = self.sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
-                        wx.CallAfter(sys.stdout.write, stderr.read())
-                        wx.CallAfter(sys.stdout.write, stdout.read())
+                        if self.host.startswith("m2"):
+                            stdin,stdout,stderr = self.sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
+                            wx.CallAfter(sys.stdout.write, stderr.read())
+                            wx.CallAfter(sys.stdout.write, stdout.read())
 
-                        wx.CallAfter(sys.stdout.write, "\n")
+                            wx.CallAfter(sys.stdout.write, "\n")
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
 
                         #qsubcmd = "qsub -A " + self.massiveProject + " -I -q vis -l walltime=" + launcherMainFrame.massiveHoursRequested + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
-                        #qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested
-                        qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested
+                        #qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested
+                        qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
 
                         wx.CallAfter(sys.stdout.write, qsubcmd + "\n")
                         wx.CallAfter(sys.stdout.write, "\n")
