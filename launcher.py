@@ -1077,7 +1077,7 @@ class LauncherMainFrame(wx.Frame):
                 wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                 wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
-            if launcherMainFrame.massiveTabSelected:
+            if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
                 if launcherMainFrame.loginThread.massiveJobNumber != "0":
                     wx.CallAfter(sys.stdout.write,"qdel " + launcherMainFrame.loginThread.massiveJobNumber + "\n")
                     launcherMainFrame.loginThread.sshClient.exec_command("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
@@ -1713,13 +1713,13 @@ class LauncherMainFrame(wx.Frame):
                             stdin,stdout,stderr = self.sshClient.exec_command("showq -w class:vis -w user:" + self.username + " | grep " + self.username)
                             wx.CallAfter(sys.stdout.write, stderr.read())
                             stdoutRead = stdout.read()
-                            if stdoutRead.strip()!="":
-                                wx.CallAfter(sys.stdout.write, stdoutRead)
+                            wx.CallAfter(sys.stdout.write, stdoutRead)
+                            if stdoutRead.strip()!="" and launcherMainFrame.massivePersistentMode==False:
                                 stdoutReadSplit = stdoutRead.split(" ")
                                 jobNumber = stdoutReadSplit[0] # e.g. 3050965
                                 wx.CallAfter(sys.stdout.write, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n")
                                 def showExistingJobFoundInVisNodeQueueMessageDialog():
-                                    dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
+                                    dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one interactive job in the Vis node queue.\n\n" +
                                                                             "You already have at least one job in the Vis node queue:\n\n" + 
                                                                             stdoutRead.strip() + "\n\n" +
                                                                             "To delete existing Vis node job(s), SSH to\n" + 
@@ -1740,7 +1740,7 @@ class LauncherMainFrame(wx.Frame):
                                     self.sshClient.close()
                                 finally:
                                     os._exit(1)
-                            else:
+                            if stdoutRead.strip()=="":
                                 wx.CallAfter(sys.stdout.write, "You don't have any jobs already in the Vis node queue, which is good.\n")
 
                         wx.CallAfter(sys.stdout.write, "\n")
@@ -2097,7 +2097,7 @@ class LauncherMainFrame(wx.Frame):
                                 wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                                 wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
-                            if launcherMainFrame.massiveTabSelected:
+                            if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
                                 if launcherMainFrame.loginThread.massiveJobNumber != "0":
                                     wx.CallAfter(sys.stdout.write,"qdel " + launcherMainFrame.loginThread.massiveJobNumber + "\n")
                                     launcherMainFrame.loginThread.sshClient.exec_command("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
