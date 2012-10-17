@@ -293,9 +293,9 @@ class LauncherMainFrame(wx.Frame):
                 massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         self.massiveLoginHost = self.massiveLoginHost.strip()
         if self.massiveLoginHost!="":
-            try:
+            if self.massiveLoginHost in massiveLoginHosts:
                 self.massiveLoginHostComboBox.SetSelection(massiveLoginHosts.index(self.massiveLoginHost))
-            except:
+            else:
                 # Hostname was not found in combo-box.
                 self.massiveLoginHostComboBox.SetSelection(-1)
             self.massiveLoginHostComboBox.SetValue(self.massiveLoginHost)
@@ -311,7 +311,7 @@ class LauncherMainFrame(wx.Frame):
         # The user can type in the project name themself, or use the
         # [Use my default project] option.
         self.defaultProjectPlaceholder = '[Use my default project]'
-        massiveProjects = [
+        self.massiveProjects = [
             self.defaultProjectPlaceholder,
             'ASync001','ASync002','ASync003','ASync004','ASync005','ASync006',
             'ASync007','ASync008','ASync009','ASync010','ASync011',
@@ -348,7 +348,7 @@ class LauncherMainFrame(wx.Frame):
 
             'Training'
             ]
-        self.massiveProjectComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveProjects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.massiveProjectComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=self.massiveProjects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.massiveProject = ""
         if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
@@ -367,9 +367,9 @@ class LauncherMainFrame(wx.Frame):
 
         self.massiveProject = self.massiveProject.strip()
         if self.massiveProject!="":
-            try:
-                self.massiveProjectComboBox.SetSelection(massiveProjects.index(self.massiveProject))
-            except:
+            if self.massiveProject in self.massiveProjects:
+                self.massiveProjectComboBox.SetSelection(self.massiveProjects.index(self.massiveProject))
+            else:
                 # Project was not found in combo-box.
                 self.massiveProjectComboBox.SetSelection(-1)
             self.massiveProjectComboBox.SetValue(self.massiveProject)
@@ -492,9 +492,9 @@ class LauncherMainFrame(wx.Frame):
                 massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         self.massiveVncDisplayResolution = self.massiveVncDisplayResolution.strip()
         if self.massiveVncDisplayResolution!="":
-            try:
+            if self.massiveVncDisplayResolution in massiveVncDisplayResolutions:
                 self.massiveVncDisplayResolutionComboBox.SetSelection(massiveVncDisplayResolutions.index(self.massiveVncDisplayResolution))
-            except:
+            else:
                 # Resolution was not found in combo-box.
                 self.massiveProjectComboBox.SetSelection(-1)
             self.massiveVncDisplayResolutionComboBox.SetValue(self.massiveVncDisplayResolution)
@@ -511,6 +511,7 @@ class LauncherMainFrame(wx.Frame):
         else:
             defaultCipher = "arcfour128"
             massiveSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
+        self.massiveSshTunnelCipher = defaultCipher
         self.massiveSshTunnelCipherComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveSshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveSshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
@@ -527,10 +528,12 @@ class LauncherMainFrame(wx.Frame):
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         self.massiveSshTunnelCipher = self.massiveSshTunnelCipher.strip()
+        if self.massiveSshTunnelCipher=="":
+            self.massiveSshTunnelCipher = defaultCipher
         if self.massiveSshTunnelCipher!="":
-            try:
+            if self.massiveSshTunnelCipher in massiveSshTunnelCiphers:
                 self.massiveSshTunnelCipherComboBox.SetSelection(massiveSshTunnelCiphers.index(self.massiveSshTunnelCipher))
-            except:
+            else:
                 # Cipher was not found in combo-box.
                 self.massiveSshTunnelCipherComboBox.SetSelection(-1)
             self.massiveSshTunnelCipherComboBox.SetValue(self.massiveSshTunnelCipher)
@@ -617,7 +620,13 @@ class LauncherMainFrame(wx.Frame):
             cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        if self.cvlLoginHost.strip()!="":
+        self.cvlLoginHost = self.cvlLoginHost.strip()
+        if self.cvlLoginHost!="":
+            if self.cvlLoginHost in cvlLoginHosts:
+                self.cvlLoginHostComboBox.SetSelection(cvlLoginHosts.index(self.cvlLoginHost))
+            else:
+                # Hostname was not found in combo-box.
+                self.cvlLoginHostComboBox.SetSelection(-1)
             self.cvlLoginHostComboBox.SetValue(self.cvlLoginHost)
 
         self.cvlVncDisplayNumberLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Display number')
@@ -709,7 +718,13 @@ class LauncherMainFrame(wx.Frame):
             cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        if self.cvlVncDisplayResolution.strip()!="":
+        self.cvlVncDisplayResolution = self.cvlVncDisplayResolution.strip()
+        if self.cvlVncDisplayResolution!="":
+            if self.cvlVncDisplayResolution in cvlVncDisplayResolutions:
+                self.cvlVncDisplayResolutionComboBox.SetSelection(cvlVncDisplayResolutions.index(self.cvlVncDisplayResolution))
+            else:
+                # Resolution was not found in combo-box.
+                self.cvlVncDisplayResolutionComboBox.SetSelection(-1)
             self.cvlVncDisplayResolutionComboBox.SetValue(self.cvlVncDisplayResolution)
         else:
             self.cvlVncDisplayResolutionComboBox.SetValue(defaultResolution)
@@ -721,7 +736,9 @@ class LauncherMainFrame(wx.Frame):
         self.cvlSshTunnelCipherLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
+        defaultCipher = ""
         self.cvlSshTunnelCipher = ""
+        cvlSshTunnelCiphers = [""]
         if sys.platform.startswith("win"):
             defaultCipher = "arcfour"
             cvlSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour"]
@@ -743,7 +760,15 @@ class LauncherMainFrame(wx.Frame):
             cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        if self.cvlSshTunnelCipher.strip()!="":
+        self.cvlSshTunnelCipher = self.cvlSshTunnelCipher.strip()
+        if self.cvlSshTunnelCipher=="":
+            self.cvlSshTunnelCipher = defaultCipher
+        if self.cvlSshTunnelCipher!="":
+            if self.cvlSshTunnelCipher in cvlSshTunnelCiphers:
+                self.cvlSshTunnelCipherComboBox.SetSelection(cvlSshTunnelCiphers.index(self.cvlSshTunnelCipher))
+            else:
+                # Cipher was not found in combo-box.
+                self.cvlSshTunnelCipherComboBox.SetSelection(-1)
             self.cvlSshTunnelCipherComboBox.SetValue(self.cvlSshTunnelCipher)
         else:
             self.cvlSshTunnelCipherComboBox.SetValue(defaultCipher)
@@ -2134,9 +2159,14 @@ class LauncherMainFrame(wx.Frame):
                 xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
                 # Get list of user's massiveProjects from Karaage:
                 # users_massiveProjects = xmlrpcServer.get_users_massiveProjects(self.massiveUsername, self.massivePassword)
-                # massiveProjects = users_massiveProjects[1]
+                # self.massiveProjects = users_massiveProjects[1]
                 # Get user's default massiveProject from Karaage:
                 self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
+                if self.massiveProject in self.massiveProject:
+                    self.massiveProjectComboBox.SetSelection(self.massiveProjects.index(self.massiveProject))
+                else:
+                    # Project was not found in combo-box.
+                    self.massiveProjectComboBox.SetSelection(-1)
                 self.massiveProjectComboBox.SetValue(self.massiveProject)
 
         if launcherMainFrame.cvlTabSelected:
