@@ -2,7 +2,8 @@
 
 sudo apt-get --assume-yes install 	python-wxgtk2.8 python-wxgtk2.8-dbg \
 					python-pycryptopp python-pycryptopp-dbg python-libssh2 \
-					python-setuptools python-dev
+					python-setuptools python-dev \
+					alien
 
 sudo easy_install pip 
 sudo pip install ssh
@@ -17,6 +18,8 @@ ARCHITECTURE=`uname -m | sed s/x86_64/amd64/g`
 TMP="tmp_debian_build"
 
 rm -fr $TMP
+rm -f *.deb *.rpm
+
 TARGET=$TMP/opt/MassiveLauncher-${VERSION}_${ARCHITECTURE}
 mkdir -p $TARGET
 
@@ -31,12 +34,13 @@ sed -i "s@/opt/MassiveLauncher@/opt/MassiveLauncher-${VERSION}_${ARCHITECTURE}@g
     ${TARGET}/MASSIVE\ Launcher.desktop \
     ${TARGET}/massiveLauncher.sh
 
-dpkg -b $TMP MassiveLauncher-${VERSION}_${ARCHITECTURE}.deb
+DEB=massive-launcher_${VERSION}_${ARCHITECTURE}.deb
+dpkg -b $TMP $DEB
+sudo alien --to-rpm $DEB
 
 echo
 echo
 echo
-ls -lh MassiveLauncher-${VERSION}_${ARCHITECTURE}.deb
+ls -lh *.deb *.rpm
 echo
 echo
-
