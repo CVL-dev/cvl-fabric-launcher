@@ -8,19 +8,19 @@
 # You may have to change PYINSTALLERDIR to point to the directory where
 # pyinstaller 1.5.1 was unpacked.
 
-PYINSTALLERDIR=/opt/src/pyinstaller-1.5.1
+PYINSTALLERDIR=`pwd`/pyinstaller-1.5.1
 
 set -o nounset
 set -e
 
 VERSION=$1
-ARCHITECTURE=$2
+ARCHITECTURE=`uname -m | sed s/x86_64/amd64/g`
 
 rm -fr dist
 python $PYINSTALLERDIR/Configure.py
 rm -f launcher.spec
-python /opt/src/pyinstaller-1.5.1/Makespec.py launcher.py
-python /opt/src/pyinstaller-1.5.1/Build.py launcher.spec
+python ${PYINSTALLERDIR}/Makespec.py launcher.py
+python ${PYINSTALLERDIR}/Build.py launcher.spec
 
 cp "MASSIVE Launcher.desktop" 	dist/launcher/
 cp massiveLauncher.sh 		dist/launcher/
