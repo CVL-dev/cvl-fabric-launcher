@@ -36,4 +36,3 @@ cd ..
 
 ls -lh dist/MassiveLauncher_v${VERSION}_${ARCHITECTURE}.tar.gz
 
-./rpmbuild.sh

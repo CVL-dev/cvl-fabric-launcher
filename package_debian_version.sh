@@ -1,9 +1,10 @@
 #!/bin/bash
 
-sudo apt-get install 	python-wxgtk2.8 python-wxgtk2.8-dbg \
- 			python-pycryptopp python-pycryptopp-dbg python-libssh2 \
-			python-setuptools sudo easy_install pip python-dev
+sudo apt-get --assume-yes install 	python-wxgtk2.8 python-wxgtk2.8-dbg \
+					python-pycryptopp python-pycryptopp-dbg python-libssh2 \
+					python-setuptools python-dev
 
+sudo easy_install pip 
 sudo pip install ssh
 sudo pip install appdirs
 sudo pip install psutil
