@@ -19,6 +19,11 @@ echo "%_tmppath "`pwd`/tmp >> ~/.rpmmacros
 
 sed s/VERSION/${VERSION}/g SPECS/massive-launcher.spec.template > SPECS/massive-launcher.spec
 
+if [ "$ARCHITECTURE" == "amd64" ]
+then
+    sed -i s/libc.so.6\(GLIBC_PRIVATE\)/libc.so.6\(GLIBC_PRIVATE\)\(64bit\)/g SPECS/massive-launcher.spec
+fi
+
 rm -fr massive-launcher-${VERSION}
 
 mkdir -p massive-launcher-${VERSION}/opt/MassiveLauncher-${VERSION}_${ARCHITECTURE}
