@@ -14,7 +14,7 @@ set -o nounset
 set -e
 
 VERSION=$1
-ARCHITECTURE=`uname -m | sed s/x86_64/amd64/g`
+ARCHITECTURE=`uname -m | sed s/x86_64/amd64/g | sed s/i686/i386/g`
 
 rm -fr dist
 python $PYINSTALLERDIR/Configure.py
