@@ -1582,7 +1582,7 @@ class LauncherMainFrame(wx.Frame):
                             tunnel_cmd = sshBinary + " -i " + tunnelPrivateKeyFileName + " -c " + self.cipher + " " \
                                 "-t -t " \
                                 "-o StrictHostKeyChecking=no " \
-                                "-o BatchMode=yes -o ServerAliveInterval=1 -o ServerAliveCountMax=5 -f -o ExitOnForwardFailure=yes " \
+                                "-o BatchMode=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=5 -f -o ExitOnForwardFailure=yes " \
                                 "-N -L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
