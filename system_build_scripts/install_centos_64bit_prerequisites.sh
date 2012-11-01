@@ -143,3 +143,9 @@ pip install pycrypto
 pip install appdirs
 pip install psutil
 
+echo
+echo "Log out and log in again to load the modules environment."
+echo
+echo "Try: module load python wxpython"
+echo
+echo
