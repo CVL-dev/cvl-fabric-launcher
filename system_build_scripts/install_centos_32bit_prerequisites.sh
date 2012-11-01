@@ -37,15 +37,16 @@ yum -y install gcc glibc glibc-devel libgcc  \
                freetype-devel \
                fontconfig-devel \
                libcanberra-gtk2 \
-               PackageKit-gtk-module
+               PackageKit-gtk-module \
+               make cmake
 
 
 tar zxf modules-3.2.9c.tar.gz
 cd modules-3.2.9
-./configure --prefix=/opt/sw/32bit/centos/modules/3.2.9c --with-tcl-lib=/usr/lib64 --with-tcl-inc=/usr/include
+./configure --prefix=/opt/sw/32bit/centos/modules/3.2.9c
 make
 make install
-echo ". /opt/sw/32bit/centos/modules/3.2.9c/Modules/3.2.9/init/bash" >> /etc/bash.bashrc
+echo ". /opt/sw/32bit/centos/modules/3.2.9c/Modules/3.2.9/init/bash" >> /etc/bashrc
 cd ..
 
 tar zxf Python-2.7.3.tgz
