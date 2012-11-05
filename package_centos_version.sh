@@ -26,15 +26,11 @@ fi
 
 rm -fr massive-launcher-${VERSION}
 
-mkdir -p massive-launcher-${VERSION}/opt/MassiveLauncher-${VERSION}_${ARCHITECTURE}
+mkdir -p massive-launcher-${VERSION}/opt/MassiveLauncher
 rm -f massive-launcher-${VERSION}.tar.gz SOURCES/massive-launcher-${VERSION}.tar.gz 
 
 
-cp -r ../dist/MassiveLauncher-${VERSION}_${ARCHITECTURE}/* massive-launcher-${VERSION}/opt/MassiveLauncher-${VERSION}_${ARCHITECTURE}
-
-sed -i "s@/opt/MassiveLauncher@/opt/MassiveLauncher-${VERSION}_${ARCHITECTURE}@g" \
-    massive-launcher-${VERSION}/opt/MassiveLauncher-${VERSION}_${ARCHITECTURE}/MASSIVE\ Launcher.desktop \
-    massive-launcher-${VERSION}/opt/MassiveLauncher-${VERSION}_${ARCHITECTURE}/massiveLauncher.sh
+cp -r ../dist/MassiveLauncher-${VERSION}_${ARCHITECTURE}/* massive-launcher-${VERSION}/opt/MassiveLauncher
 
 tar zcf massive-launcher-${VERSION}.tar.gz massive-launcher-${VERSION}
 cp massive-launcher-${VERSION}.tar.gz SOURCES/
