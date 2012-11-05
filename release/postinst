@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Ubuntu 12.04 may be missing a pango modules file
+# which means that the launcher won't be able to find
+# any fonts (the user just sees empty rectangles instead
+# of characters!).
+
+if [ ! -f /etc/pango/pango.modules ];
+then
+    mkdir -p /etc/pango
+    pango-querymodules > /etc/pango/pango.modules
+fi
+
+
+

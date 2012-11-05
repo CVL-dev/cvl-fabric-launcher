@@ -15,7 +15,8 @@ mkdir -p $TARGET
 
 cp -r dist/MassiveLauncher-${VERSION}_${ARCHITECTURE}/* $TARGET/
 mkdir $TMP/DEBIAN
-cp release/control $TMP/DEBIAN
+cp release/control  $TMP/DEBIAN
+cp release/postinst $TMP/DEBIAN
 
 sed -i "s/VERSION/${VERSION}/g" $TMP/DEBIAN/control
 sed -i "s/ARCHITECTURE/${ARCHITECTURE}/g" $TMP/DEBIAN/control
