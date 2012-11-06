@@ -122,6 +122,10 @@ def find_ssh_processes(tunnel_cmd, parent_pid=None):
     only the executable name; on Linux and OSX we use the Python
     psutil library.
 
+    * On Windows, if the user is not a local administrator, they will not be able
+    to run wmic.exe, so try the freely available utility PrcView, available
+    from: http://www.teamcti.com/pview/prcview.htm
+
     * On Linux and OSX we only return the ssh processes for the current user.
 
     """
@@ -134,11 +138,22 @@ def find_ssh_processes(tunnel_cmd, parent_pid=None):
         wmic_prc = subprocess.Popen(wmic_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         wmic_out, wmic_err = wmic_prc.communicate()
 
-        if 'No Instance(s) Available' in wmic_err:
-            return []
+        if 'Only the administrator group members can use WMIC.EXE' in wmic_out or 'Only the administrator group members can use WMIC.EXE' in wmic_err:
+            # User is not a local administrator, so try PrcView as a last resort.
+
+            pv_cmd = """pv -l *ssh*"""
+            pv_prc = subprocess.Popen(pv_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            pv_out, pv_err = pv_prc.communicate()
+
+            ssh_processes = [x.split() for x in pv_out.splitlines()] # process name, PID, command line...
+            ssh_processes = [(int(x[1]),  x[2:]) for x in ssh_processes]
+            return [x[0] for x in ssh_processes if x[1] == tunnel_cmd.split()]
         else:
-            ssh_processes = [x.split() for x in wmic_out.splitlines()]
-            return [int(x[1]) for x in ssh_processes if len(x) == 2 and 'Parent' not in x[0] and int(x[0]) == parent_pid]
+            if 'No Instance(s) Available' in wmic_err:
+                return []
+            else:
+                ssh_processes = [x.split() for x in wmic_out.splitlines()]
+                return [int(x[1]) for x in ssh_processes if len(x) == 2 and 'Parent' not in x[0] and int(x[0]) == parent_pid]
     else:
         ps_ssh_out, ps_ssh_err = subprocess.Popen('ps -o pid,command -x', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).communicate()
         ssh_processes = [x.split() for x in ps_ssh_out.splitlines() if 'ssh' in x]
