@@ -82,7 +82,6 @@ import appdirs
 import ConfigParser
 import datetime
 #import logging
-import psutil
 
 #logger = ssh.util.logging.getLogger()
 #logger.setLevel(logging.WARN)
@@ -110,55 +109,6 @@ LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massiv
 # TURBOVNC_BASE_URL = "http://www.virtualgl.org/DeveloperInfo/PreReleases"
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
 
-import subprocess
-import sys
-
-
-def find_ssh_processes(tunnel_cmd, parent_pid=None):
-    """
-
-    * On the Windows platform we call the wmic program to find ssh
-    processes because psutil does not return the full command line,
-    only the executable name; on Linux and OSX we use the Python
-    psutil library.
-
-    * On Windows, if the user is not a local administrator, they will not be able
-    to run wmic.exe, so try the freely available utility PrcView, available
-    from: http://www.teamcti.com/pview/prcview.htm
-
-    * On Linux and OSX we only return the ssh processes for the current user.
-
-    """
-
-    # On Windows, proc.cmdline contains just the executable's name, not the arguments, so 
-    # we have to use the wmic command instead.
-
-    if sys.platform.startswith("win"):
-        wmic_cmd = """wmic process where "name='ssh.exe'" get processid,parentprocessid"""
-        wmic_prc = subprocess.Popen(wmic_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        wmic_out, wmic_err = wmic_prc.communicate()
-
-        if 'Only the administrator group members can use WMIC.EXE' in wmic_out or 'Only the administrator group members can use WMIC.EXE' in wmic_err:
-            # User is not a local administrator, so try PrcView as a last resort.
-
-            pv_cmd = """pv -l *ssh*"""
-            pv_prc = subprocess.Popen(pv_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            pv_out, pv_err = pv_prc.communicate()
-
-            ssh_processes = [x.split() for x in pv_out.splitlines()] # process name, PID, command line...
-            ssh_processes = [(int(x[1]),  x[2:]) for x in ssh_processes]
-            return [x[0] for x in ssh_processes if x[1] == tunnel_cmd.split()]
-        else:
-            if 'No Instance(s) Available' in wmic_err:
-                return []
-            else:
-                ssh_processes = [x.split() for x in wmic_out.splitlines()]
-                return [int(x[1]) for x in ssh_processes if len(x) == 2 and 'Parent' not in x[0] and int(x[0]) == parent_pid]
-    else:
-        ps_ssh_out, ps_ssh_err = subprocess.Popen('ps -o pid,command -x', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).communicate()
-        ssh_processes = [x.split() for x in ps_ssh_out.splitlines() if 'ssh' in x]
-        ssh_processes = [(int(x[0]), x[1:]) for x in ssh_processes if len(x) > 0]
-        return [x[0] for x in ssh_processes if x[1] == tunnel_cmd.split()]
 
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self, valueString):
@@ -1596,9 +1546,10 @@ class LauncherMainFrame(wx.Frame):
 
                             tunnel_cmd = sshBinary + " -i " + tunnelPrivateKeyFileName + " -c " + self.cipher + " " \
                                 "-t -t " \
-                                "-o StrictHostKeyChecking=no " \
-                                "-o BatchMode=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=5 -f -o ExitOnForwardFailure=yes " \
-                                "-N -L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer
+                                "-oStrictHostKeyChecking=no " \
+                                "-L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer
+
+                            if testRun: tunnel_cmd += ' echo "tunnel_hello"'
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
 
@@ -1606,36 +1557,23 @@ class LauncherMainFrame(wx.Frame):
                             launcherMainFrame.loginThread.sshTunnelProcess = subprocess.Popen(tunnel_cmd,
                                 universal_newlines=True,shell=use_shell,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
 
-                            ssh_parent_pid = launcherMainFrame.loginThread.sshTunnelProcess.pid
-
-                            # With the "-f" option the ssh process will exit immediately, so check its return value:
-                            while True:
-                                ssh_return_value = launcherMainFrame.loginThread.sshTunnelProcess.poll()
-                                if ssh_return_value is not None: break
-                                time.sleep(1)
-
                             launcherMainFrame.loginThread.sshTunnelReady = False
                             launcherMainFrame.loginThread.sshTunnelExceptionOccurred = False
-
-                            wx.CallAfter(sys.stdout.write, 'ssh_return_value:' + str(ssh_return_value) + '\n')
-
-                            wx.CallAfter(sys.stdout.write, 'find_ssh_processes:' + str(find_ssh_processes(tunnel_cmd, ssh_parent_pid)) + '\n')
-
-                            if ssh_return_value == 0:
-                                # The tunnel was created successfully. Now find the pid of the spawned ssh process.
-                                matching_ssh_processes = find_ssh_processes(tunnel_cmd, ssh_parent_pid) # pids
-
-                                if len(matching_ssh_processes) == 1:
-                                    launcherMainFrame.loginThread.sshTunnelProcess = psutil.Process(matching_ssh_processes[0])
+                            while True:
+                                time.sleep(1)
+                                line = launcherMainFrame.loginThread.sshTunnelProcess.stdout.readline()
+                                if "tunnel_hello" in line:
                                     launcherMainFrame.loginThread.sshTunnelReady = True
-                                else:
-                                    wx.CallAfter(sys.stdout.write, 'ERROR: found zero or multiple ssh tunnel processes: ' + str(matching_ssh_processes) + '\n\n')
+                                    break
+                                if line.strip()!="":
+                                    wx.CallAfter(sys.stdout.write, line + "\n")
+                                if "No such file" in line:
                                     launcherMainFrame.loginThread.sshTunnelExceptionOccurred = True
-                            else:
-                                launcherMainFrame.loginThread.sshTunnelExceptionOccurred = True
-                                wx.CallAfter(sys.stdout.write, 'ERROR: ssh tunnel command returned nonzero exit status: ' + str(ssh_return_value) + '\n\n')
-
-                            if testRun and launcherMainFrame.loginThread.sshTunnelReady:
+                                    break
+                                if "is not recognized" in line:
+                                    launcherMainFrame.loginThread.sshTunnelExceptionOccurred = True
+                                    break
+                            if testRun:
                                 launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
                         except KeyboardInterrupt:
