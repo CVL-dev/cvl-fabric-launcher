@@ -1551,9 +1551,8 @@ class LauncherMainFrame(wx.Frame):
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
 
-                            use_shell = not sys.platform.startswith("win")
                             launcherMainFrame.loginThread.sshTunnelProcess = subprocess.Popen(tunnel_cmd,
-                                universal_newlines=True,shell=use_shell,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+                                universal_newlines=True,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
 
                             launcherMainFrame.loginThread.sshTunnelReady = False
                             launcherMainFrame.loginThread.sshTunnelExceptionOccurred = False
