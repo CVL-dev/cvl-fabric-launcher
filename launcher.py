@@ -1547,9 +1547,7 @@ class LauncherMainFrame(wx.Frame):
                             tunnel_cmd = sshBinary + " -i " + tunnelPrivateKeyFileName + " -c " + self.cipher + " " \
                                 "-t -t " \
                                 "-oStrictHostKeyChecking=no " \
-                                "-L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer
-
-                            if testRun: tunnel_cmd += ' echo "tunnel_hello"'
+                                "-L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer + ' "echo tunnel_hello; bash "'
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
 
@@ -1560,7 +1558,7 @@ class LauncherMainFrame(wx.Frame):
                             launcherMainFrame.loginThread.sshTunnelReady = False
                             launcherMainFrame.loginThread.sshTunnelExceptionOccurred = False
                             while True:
-                                time.sleep(1)
+                                time.sleep(0.1)
                                 line = launcherMainFrame.loginThread.sshTunnelProcess.stdout.readline()
                                 if "tunnel_hello" in line:
                                     launcherMainFrame.loginThread.sshTunnelReady = True
