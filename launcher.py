@@ -1985,13 +1985,17 @@ class LauncherMainFrame(wx.Frame):
                                 universal_newlines=True)
                             turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\n")
 
-                        if sys.platform.startswith("darwin") and launcherMainFrame.cvlTabSelected:
-                            # Grab focus back from X11, i.e. reactivate MASSIVE Launcher app.
-                            subprocess.Popen(['osascript', '-e', 
-                                "tell application \"System Events\"\r" +
-                                "  set procName to name of first process whose unix id is " + str(os.getpid()) + "\r" +
-                                "end tell\r" +
-                                "tell application procName to activate\r"])
+                        # The following attempt to grab the focus back from
+                        # TurboVNC viewer failed rather ungracefully a few
+                        # times recently, so I'm disabling it for now:
+
+                        #if sys.platform.startswith("darwin") and launcherMainFrame.cvlTabSelected:
+                            ## Grab focus back from X11, i.e. reactivate MASSIVE Launcher app.
+                            #subprocess.Popen(['osascript', '-e', 
+                                #"tell application \"System Events\"\r" +
+                                #"  set procName to name of first process whose unix id is " + str(os.getpid()) + "\r" +
+                                #"end tell\r" +
+                                #"tell application procName to activate\r"])
 
                         self.turboVncFinishTime = datetime.datetime.now()
 
