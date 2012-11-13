@@ -16,5 +16,5 @@
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #  Enquires: James.Wettenhall@monash.edu or help@massive.org.au
 
-version_number = "0.3.1"
+version_number = "0.3.2"
 

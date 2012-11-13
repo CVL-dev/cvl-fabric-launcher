@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# Utility for packaging the Linux version of the installer. Example use:
-#
-# 	./package_linux_version.sh 0.3.1 i686
-# 	./package_linux_version.sh 0.3.1 amd64
+# Utility for packaging the Linux version of the installer.
 #
 # You may have to change PYINSTALLERDIR to point to the directory where
 # pyinstaller 1.5.1 was unpacked.
