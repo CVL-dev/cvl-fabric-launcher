@@ -113,7 +113,6 @@ curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
 pip install ssh
 pip install pycrypto
 pip install appdirs
-pip install psutil
 
 echo
 echo "Log out and log in again to load the modules environment."

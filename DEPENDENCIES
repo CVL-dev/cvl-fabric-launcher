@@ -147,19 +147,6 @@ It can be installed using:
 python setup.py build
 sudo python setup.py install
 
-3.6 psutil
-
-Installing psutil using the standard "python setup.py install" command results in an egg
-being installed in the site-packages directory, which is incompatible with PyInstaller. Instead,
-one must use pip (these may have to be executed with root privileges):
-
-    curl http://python-distribute.org/distribute_setup.py | python
-    curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
-    pip install psutil
-
-Generally, any errors about not being able to import pkg_resources are due to an egg being
-installed instead of a flat file layout as pip does.
-
 4. PYTHON MODULES REQUIRED TO BUILD THE BUNDLED DISTRIBUTABLE APPLICATION
 
 4.1 setuptools
