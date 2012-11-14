@@ -7,9 +7,7 @@
 
 if [ ! -f /etc/pango/pango.modules ];
 then
-    mkdir -p /etc/pango
-    pango-querymodules > /etc/pango/pango.modules
+    which pango-querymodules && mkdir -p /etc/pango
+    which pango-querymodules && pango-querymodules > /etc/pango/pango.modules
 fi
-
-
 
