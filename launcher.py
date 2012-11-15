@@ -62,7 +62,7 @@ on Linux and on Mac OS X.
 # to write to CVL Launcher.exe.log, because it might not have
 # permission to do so.
 import sys
-sys.stderr = sys.stdout
+# sys.stderr = sys.stdout
 
 if sys.platform.startswith("win"):
     import _winreg
@@ -82,6 +82,7 @@ import appdirs
 import ConfigParser
 import datetime
 #import logging
+import shlex
 
 #logger = ssh.util.logging.getLogger()
 #logger.setLevel(logging.WARN)
@@ -1551,8 +1552,10 @@ class LauncherMainFrame(wx.Frame):
 
                             wx.CallAfter(sys.stdout.write, tunnel_cmd + "\n")
 
-                            launcherMainFrame.loginThread.sshTunnelProcess = subprocess.Popen(tunnel_cmd,
-                                universal_newlines=True,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+                            launcherMainFrame.loginThread.sshTunnelProcess = subprocess.Popen(shlex.split(tunnel_cmd),
+                                universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+
+                            wx.CallAfter(sys.stdout.write, 'pid of ssh tunnel process, line 1557: ' + str(launcherMainFrame.loginThread.sshTunnelProcess.pid))
 
                             launcherMainFrame.loginThread.sshTunnelReady = False
                             launcherMainFrame.loginThread.sshTunnelExceptionOccurred = False
