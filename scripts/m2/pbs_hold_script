@@ -1,0 +1,9 @@
+#!/bin/bash
+#PBS -o $HOME/.vnc/
+#PBS -e $HOME/.vnc/
+
+cd $PBS_O_WORKDIR
+walltime_seconds=$(qstat -f $PBS_JOBID | grep "Walltime.Remaining" | sed 's/Walltime.Remaining = //')
+let "session_hold_timer = $walltime_seconds - 10 " #let the session die before pbs kills it
+echo sleep $session_hold_timer
+sleep $session_hold_timer
