@@ -1714,7 +1714,7 @@ class LauncherMainFrame(wx.Frame):
                         wx.CallAfter(sys.stdout.write, "\n")
 
                         if self.host.startswith("m2"):
-                            stdin,stdout,stderr = self.sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
+                            stdin,stdout,stderr = self.sshClient.exec_command("echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 9 nodes in use")
                             wx.CallAfter(sys.stdout.write, stderr.read())
                             wx.CallAfter(sys.stdout.write, stdout.read())
 
