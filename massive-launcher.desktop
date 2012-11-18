@@ -1,0 +1,12 @@
+
+[Desktop Entry]
+Encoding=UTF-8
+Name=MASSIVE Launcher
+Comment=MASSIVE Desktop launcher
+Exec=/opt/MassiveLauncher/massiveLauncher.sh
+Icon=/opt/MassiveLauncher/icons/MASSIVElogoTransparent32x32.png
+Terminal=false
+Type=Application
+StartupWMClass=Launcher
+Categories=Network;Application;
+X-Desktop-File-Install-Version=0.15

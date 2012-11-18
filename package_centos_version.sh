@@ -27,9 +27,10 @@ fi
 rm -fr massive-launcher-${VERSION}
 
 mkdir -p massive-launcher-${VERSION}/opt/MassiveLauncher
+mkdir -p massive-launcher-${VERSION}/usr/share/applications
 rm -f massive-launcher-${VERSION}.tar.gz SOURCES/massive-launcher-${VERSION}.tar.gz 
 
-
+cp ../massive-launcher.desktop massive-launcher-${VERSION}/usr/share/applications/
 cp -r ../dist/MassiveLauncher-${VERSION}_${ARCHITECTURE}/* massive-launcher-${VERSION}/opt/MassiveLauncher
 
 tar zcf massive-launcher-${VERSION}.tar.gz massive-launcher-${VERSION}

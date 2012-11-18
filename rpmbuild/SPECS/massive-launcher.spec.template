@@ -48,6 +48,7 @@ rm -rf %{buildroot}
 # %config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
 #%{_bindir}/*
 /opt/*
+/usr/*
 
 %changelog
 * Fri Oct 19 2012 Initial version.
