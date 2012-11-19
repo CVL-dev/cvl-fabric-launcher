@@ -416,6 +416,11 @@ class LauncherMainFrame(wx.Frame):
                             self.massivePersistentMode = True
                         else:
                             self.massivePersistentMode = False
+
+                    # persistent mode is never used with m2-*
+                    if self.massiveLoginHost.startswith("m2"):
+                        self.massivePersistentMode = False
+
                 else:
                     massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode","False")
                     with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
