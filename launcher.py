@@ -468,7 +468,7 @@ class LauncherMainFrame(wx.Frame):
                 self.massiveVncDisplayResolutionComboBox.SetSelection(massiveVncDisplayResolutions.index(self.massiveVncDisplayResolution))
             else:
                 # Resolution was not found in combo-box.
-                self.massiveProjectComboBox.SetSelection(-1)
+                self.massiveVncDisplayResolutionComboBox.SetSelection(-1)
             self.massiveVncDisplayResolutionComboBox.SetValue(self.massiveVncDisplayResolution)
         else:
             self.massiveVncDisplayResolutionComboBox.SetValue(defaultResolution)
