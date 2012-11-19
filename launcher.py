@@ -992,6 +992,8 @@ class LauncherMainFrame(wx.Frame):
         selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
         if selectedMassiveLoginHost.startswith("m1"):
             self.massivePersistentModeCheckBox.SetValue(True)
+        if selectedMassiveLoginHost.startswith("m2"):
+            self.massivePersistentModeCheckBox.SetValue(False)
 
     def onAbout(self, event):
         dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n",
