@@ -11,3 +11,4 @@ then
     which pango-querymodules && pango-querymodules > /etc/pango/pango.modules
 fi
 
+exit 0
