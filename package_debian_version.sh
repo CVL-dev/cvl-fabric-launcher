@@ -13,6 +13,10 @@ rm -f *.deb
 TARGET=$TMP/opt/MassiveLauncher
 mkdir -p $TARGET
 
+mkdir -p $TMP/usr/share/applications
+
+cp massive-launcher.desktop $TMP/usr/share/applications/
+
 cp -r dist/MassiveLauncher-${VERSION}_${ARCHITECTURE}/* $TARGET/
 mkdir $TMP/DEBIAN
 cp release/control  $TMP/DEBIAN
