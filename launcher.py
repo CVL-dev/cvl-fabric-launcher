@@ -2140,7 +2140,7 @@ class LauncherMainFrame(wx.Frame):
                 # self.massiveProjects = users_massiveProjects[1]
                 # Get user's default massiveProject from Karaage:
                 self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
-                if self.massiveProject in self.massiveProject:
+                if self.massiveProject in self.massiveProjects:
                     self.massiveProjectComboBox.SetSelection(self.massiveProjects.index(self.massiveProject))
                 else:
                     # Project was not found in combo-box.
