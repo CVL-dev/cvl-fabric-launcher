@@ -4,6 +4,8 @@ Section: misc
 Priority: optional
 Architecture: ARCHITECTURE
 Essential: no
+Installed-Size: XXINSTALLEDSIZE
+Requires: turbovnc (>= 1.1)
 Maintainer: The MASSIVE/Launcher project [https://github.com/CVL-dev/cvl-fabric-launcher]
 Description: MASSIVE/CVL Launcher
  A cross-platform (wxPython) GUI to launch a secure remote desktop (VNC over SSH) session for the MASSIVE Desktop - https://www.massive.org.au/userguide/cluster-instructions/using-the-massive-desktop or for the Characterisation Virtual Laboratory (CVL) - https://www.nectar.org.au/characterisation-virtual-laboratory. Because the Launcher is not specific to one research group (driver) within the CVL, it is considered to be part of the "fabric" of the CVL.

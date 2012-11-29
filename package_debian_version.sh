@@ -22,8 +22,11 @@ mkdir $TMP/DEBIAN
 cp release/control  $TMP/DEBIAN
 cp release/postinst $TMP/DEBIAN
 
+installedSize=`du -sx --exclude DEBIAN $TMP`
+
 sed -i "s/VERSION/${VERSION}/g" $TMP/DEBIAN/control
 sed -i "s/ARCHITECTURE/${ARCHITECTURE}/g" $TMP/DEBIAN/control
+sed -i "s/XXINSTALLEDSIZE/${installedSize}/g" $TMP/DEBIAN/control
 
 DEB=massive-launcher_${VERSION}_${ARCHITECTURE}.deb
 dpkg -b $TMP $DEB
