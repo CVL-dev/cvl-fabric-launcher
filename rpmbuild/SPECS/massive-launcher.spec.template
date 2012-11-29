@@ -17,6 +17,7 @@ URL: https://www.massive.org.au/userguide/cluster-instructions/massive-launcher
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 provides: libc.so.6(GLIBC_PRIVATE)
+requires: turbovnc >= 1.1
 
 # http://www.mail-archive.com/fedora-devel-list@redhat.com/msg13200.html
 %global __prelink_undo_cmd %{nil}
