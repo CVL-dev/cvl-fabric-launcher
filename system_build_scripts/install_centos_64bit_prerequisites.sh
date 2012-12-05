@@ -38,7 +38,7 @@ yum -y install gcc glibc glibc-devel libgcc  \
                fontconfig-devel \
                libcanberra-gtk2 \
                PackageKit-gtk-module \
-               make cmake
+               make cmake rpm-build
 
 tar zxf modules-3.2.9c.tar.gz
 cd modules-3.2.9
