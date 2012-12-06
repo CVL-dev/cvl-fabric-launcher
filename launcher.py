@@ -1016,7 +1016,7 @@ class LauncherMainFrame(wx.Frame):
 
     def onOptions(self, event):
 
-        import turboVncOptions
+        import optionsDialog
 
         if len(self.vncOptions)==0:
             if turboVncConfig.has_section("TurboVNC Preferences"):
@@ -1030,11 +1030,11 @@ class LauncherMainFrame(wx.Frame):
                         value = False
                     self.vncOptions[key] = value
 
-        turboVncOptionsDialog = turboVncOptions.TurboVncOptions(launcherMainFrame, wx.ID_ANY, "TurboVNC Viewer Options", self.vncOptions)
-        turboVncOptionsDialog.ShowModal()
+        launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher Options", self.vncOptions)
+        launcherOptionsDialog.ShowModal()
 
-        if turboVncOptionsDialog.okClicked:
-            self.vncOptions = turboVncOptionsDialog.getVncOptions()
+        if launcherOptionsDialog.okClicked:
+            self.vncOptions = launcherOptionsDialog.getVncOptions()
 
             for key in self.vncOptions:
                 turboVncConfig.set("TurboVNC Preferences", key, self.vncOptions[key])
@@ -1262,6 +1262,9 @@ class LauncherMainFrame(wx.Frame):
 
                     if os.path.exists(vnc):
                         wx.CallAfter(sys.stdout.write, "TurboVNC was found in " + vnc + "\n")
+                        #if sys.platform.startswith("darwin"):
+                            ## Need to determine whether we have the X11 version of TurboVNC or the Java version.
+                            
                     else:
                         def showTurboVncNotFoundMessageDialog():
                             turboVncNotFoundDialog = wx.Dialog(launcherMainFrame, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
@@ -1390,9 +1393,11 @@ class LauncherMainFrame(wx.Frame):
                         finally:
                             os._exit(1)
 
-                    # Check TurboVNC version number
-
                     if not sys.platform.startswith("win"):
+                        # Check TurboVNC version number and flavour (X11 or Java)
+
+                        # Check TurboVNC version number
+                        # For Windows, this has already been determined using the Registry.
                         turboVncVersionNumberCommandString = vnc + " -help"
                         proc = subprocess.Popen(turboVncVersionNumberCommandString, 
                             stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
@@ -1401,8 +1406,23 @@ class LauncherMainFrame(wx.Frame):
                         if turboVncStderr != None:
                             wx.CallAfter(sys.stdout.write, turboVncStderr)
                         turboVncVersionNumberComponents = turboVncStdout.split(" v")
-                        turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" ")
-                        self.turboVncVersionNumber = turboVncVersionNumberComponents[0]
+                        turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
+                        self.turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
+
+                        # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
+                        turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"  
+                        proc = subprocess.Popen(turboVncFlavourTestCommandString, 
+                            stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                            universal_newlines=True)
+                        stdout, stderr = proc.communicate(input="\n")
+                        if stderr != None:
+                            wx.CallAfter(sys.stdout.write, stderr)
+                        if proc.returncode==0:
+                            wx.CallAfter(sys.stdout.write, "Java version of TurboVNC Viewer is installed.\n")
+                            self.turboVncFlavour = "Java"
+                        else:
+                            wx.CallAfter(sys.stdout.write, "X11 version of TurboVNC Viewer is installed.\n")
+                            self.turboVncFlavour = "X11"
 
                     wx.CallAfter(sys.stdout.write, "TurboVNC viewer version number = " + self.turboVncVersionNumber + "\n")
 
@@ -1924,7 +1944,10 @@ class LauncherMainFrame(wx.Frame):
                         # In this case, the X11 version of TurboVNC assumes that the client and server are the same computer:
                         # "Same machine: preferring raw encoding"
                         if not sys.platform.startswith("win"):
-                            vncOptionsString = "-encodings \"tight copyrect\""
+                            if self.turboVncFlavour == "X11":
+                                vncOptionsString = "-encodings \"tight copyrect\""
+                            else:
+                                vncOptionsString = "-encoding \"Tight\""
 
                         if 'jpeg_compression' in launcherMainFrame.vncOptions and launcherMainFrame.vncOptions['jpeg_compression']==False:
                             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nojpeg"
