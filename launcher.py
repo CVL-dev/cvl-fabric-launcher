@@ -175,8 +175,8 @@ def run_ssh_command(ssh_client, command, wx=None, ignore_errors=False):
     stdout, stderr = stdout.read(), stderr.read()
 
     if wx is not None:
-        wx.CallAfter(sys.stdout.write, 'run_ssh_command: "%s":' % command)
-        wx.CallAfter(sys.stdout.write, '   called from %s:%d' % inspect.stack()[1][1:3])
+        wx.CallAfter(sys.stdout.write, 'run_ssh_command: "%s"\n' % command)
+        wx.CallAfter(sys.stdout.write, '   called from %s:%d\n' % inspect.stack()[1][1:3])
         wx.CallAfter(sys.stdout.write, '   stdout: %s\n' % stdout)
         wx.CallAfter(sys.stdout.write, '   stderr: %s\n' % stderr)
         wx.CallAfter(sys.stdout.write, '\n')
