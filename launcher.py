@@ -941,7 +941,6 @@ class LoginThread(threading.Thread):
         """Init Worker Thread Class."""
         threading.Thread.__init__(self)
         self._notify_window = notify_window
-        self.start()
 
     def run(self):
         """Run Worker Thread."""
@@ -1056,7 +1055,7 @@ class LoginThread(threading.Thread):
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic:
                             logger.debug('launcherMainFrame.cvlVncDisplayNumberAutomatic == True')
 
-                            possiblyCloseTurboVNC()
+                            wx.CallAfter(possiblyCloseTurboVNC())
 
                             self.turboVncFinishTime = datetime.datetime.now()
                             logger.debug('self.turboVncFinishTime = ' + str(self.turboVncFinishTime))
@@ -2297,6 +2296,7 @@ class LauncherMainFrame(wx.Frame):
         logger.addHandler(logger_fh)
 
         self.loginThread = LoginThread(self)
+        self.loginThread.start()
 
 class LauncherStatusBar(wx.StatusBar):
     def __init__(self, parent):
