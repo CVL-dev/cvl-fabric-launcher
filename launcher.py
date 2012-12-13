@@ -1122,13 +1122,12 @@ class LauncherMainFrame(wx.Frame):
                 """Init Worker Thread Class."""
                 threading.Thread.__init__(self)
                 self._notify_window = notify_window
-                self.start()
 
             def run(self):
                 """Run Worker Thread."""
 
                 try:
-                    launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
+                    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
 
                     MASSIVE_TAB_INDEX = 0
                     CVL_TAB_INDEX =1 
@@ -1811,7 +1810,7 @@ class LauncherMainFrame(wx.Frame):
                                 line = lineFragment + buff.readline()
                                 while line != "":
                                     wx.CallAfter(sys.stdout.write, "ERROR: " + line + "\n")
-                                    launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+                                    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                             if (channel.recv_ready()):
                                 out = channel.recv(1024)
                                 buff = StringIO.StringIO(out)
@@ -1825,7 +1824,7 @@ class LauncherMainFrame(wx.Frame):
                                         lineFragment = ""
                                     if "ERROR" in line or "Error" in line or "error" in line:
                                         wx.CallAfter(sys.stdout.write, line)
-                                        launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+                                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                                     if "waiting for job" in line:
                                         wx.CallAfter(sys.stdout.write, line)
                                         lineSplit = line.split(" ")
@@ -1889,7 +1888,7 @@ class LauncherMainFrame(wx.Frame):
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
                             if foundDisplayNumber:
                                 wx.CallAfter(sys.stdout.write, "CVL VNC Display Number is " + str(self.cvlVncDisplayNumber) + "\n")
-                                launcherMainFrame.cvlVncDisplayNumberSpinCtrl.SetValue(int(self.cvlVncDisplayNumber))
+                                wx.CallAfter(launcherMainFrame.cvlVncDisplayNumberSpinCtrl.SetValue, int(self.cvlVncDisplayNumber))
                             else:
                                 wx.CallAfter(sys.stdout.write, "Failed to parse vncserver output for display number.\n")
 
@@ -2113,19 +2112,19 @@ class LauncherMainFrame(wx.Frame):
                             elif turboVncElapsedTimeInSeconds<3:
                                 wx.CallAfter(sys.stdout.write, "Disabling auto-quit because TurboVNC's elapsed time is less than 3 seconds.\n")
 
-                        launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
 
                     except:
                         wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                         wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
-                        launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
 
                 except:
                     wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                     wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
-                    launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+                    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
 
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1 
@@ -2229,6 +2228,7 @@ class LauncherMainFrame(wx.Frame):
         #print "Redirected STDOUT and STDERR to self.logTextCtrl"
 
         self.loginThread = LoginThread(self)
+        self.loginThread.start()
 
 class LauncherStatusBar(wx.StatusBar):
     def __init__(self, parent):
