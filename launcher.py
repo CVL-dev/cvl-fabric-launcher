@@ -98,7 +98,6 @@ import ssh # Pure Python ssh module, based on Paramiko, published on PyPi
 import HTMLParser
 import urllib
 import launcher_version_number
-import StringIO
 import xmlrpclib
 import appdirs
 import ConfigParser
