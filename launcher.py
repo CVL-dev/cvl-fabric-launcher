@@ -609,6 +609,12 @@ class LauncherMainFrame(wx.Frame):
         self.massiveUsernameTextField.MoveAfterInTabOrder(self.massiveSshTunnelCipherComboBox)
         self.massivePasswordField.MoveAfterInTabOrder(self.massiveUsernameTextField)
 
+        self.massiveShowDebugWindowLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
+        self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.massiveShowDebugWindowCheckBox = wx.CheckBox(self.massiveLoginFieldsPanel, wx.ID_ANY, "")
+        self.massiveShowDebugWindowCheckBox.SetValue(False)
+        self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+
         self.massiveLoginFieldsPanel.SetSizerAndFit(self.massiveLoginFieldsPanelSizer)
 
         self.massiveLoginDialogPanelSizer.Add(self.massiveLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
@@ -2266,7 +2272,10 @@ class LauncherMainFrame(wx.Frame):
             font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         self.logTextCtrl.SetFont(font)
 
-        logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
+        if launcherMainFrame.massiveTabSelected:
+            logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
+        else:
+            logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
 
         global logger
         global logger_output
