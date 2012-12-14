@@ -78,7 +78,10 @@ def dump_log():
     logging.shutdown()
 
     logger.debug('about to send debug log')
-    r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py', files={'logfile': logger_output.getvalue()})
+    try:
+        r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py', files={'logfile': logger_output.getvalue()})
+    except:
+        pass
 
     return
 
