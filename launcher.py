@@ -76,6 +76,10 @@ logger_fh = None
 
 def dump_log():
     logging.shutdown()
+
+    logger.debug('about to send debug log')
+    r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py', files={'logfile': logger_output.getvalue()})
+
     return
 
 # Redirect stdout and stderr to the logger output string. While this is
@@ -105,6 +109,7 @@ import datetime
 #import logging
 import shlex
 import inspect
+import requests
 
 global launcherMainFrame
 launcherMainFrame = None
