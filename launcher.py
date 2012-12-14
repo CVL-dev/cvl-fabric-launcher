@@ -195,15 +195,16 @@ def die_from_main_frame(error_message, final_actions=None):
     finally:
         os._exit(1)
 
-def run_ssh_command(ssh_client, command, wx=None, ignore_errors=False):
+def run_ssh_command(ssh_client, command, wx=None, ignore_errors=False, log_output=True):
     logger.debug('run_ssh_command: "%s"' % command)
     logger.debug('   called from %s:%d' % inspect.stack()[1][1:3])
 
     stdin, stdout, stderr = ssh_client.exec_command(command)
     stdout, stderr = stdout.read(), stderr.read()
 
-    logger.debug('command stdout: %s' % stdout)
-    logger.debug('command stderr: %s' % stderr)
+    if log_output:
+        logger.debug('command stdout: %s' % stdout)
+        logger.debug('command stderr: %s' % stderr)
 
     if not ignore_errors and len(stderr) > 0:
         error_message = 'Error running command: "%s" at line %d' % (command, inspect.stack()[1][2])
@@ -1547,9 +1548,9 @@ class LauncherMainFrame(wx.Frame):
                     run_ssh_command(self.sshClient, "/bin/touch ~/.ssh/authorized_keys", wx)
                     run_ssh_command(self.sshClient, "/bin/chmod 600 ~/.ssh/authorized_keys", wx)
                     run_ssh_command(self.sshClient, "/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys", wx)
-                    run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys", wx)
+                    run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys", wx, log_output=False)
                     run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair.pub", wx)
-                    privateKeyString, _ = run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair", wx)
+                    privateKeyString, _ = run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair", wx, log_output=False)
 
                     run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair", wx)
 
