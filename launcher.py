@@ -74,14 +74,15 @@ logger_output = None
 global logger_fh
 logger_fh = None
 
-def dump_log():
+def dump_log(submit_log=False):
     logging.shutdown()
 
-    logger.debug('about to send debug log')
-    try:
-        r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py', files={'logfile': logger_output.getvalue()})
-    except:
-        pass
+    if submit_log:
+        logger.debug('about to send debug log')
+        try:
+            r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py', files={'logfile': logger_output.getvalue()})
+        except:
+            pass
 
     return
 
@@ -178,7 +179,7 @@ class MyHtmlParser(HTMLParser.HTMLParser):
       self.htmlComments += data.strip()
 
 def die_from_main_frame(error_message, final_actions=None):
-    dump_log()
+    dump_log(submit_log=True)
 
     def error_dialog():
         dlg = wx.MessageDialog(launcherMainFrame, "Error: " + error_message + "\n\n" + "The launcher cannot continue.\n",
@@ -925,7 +926,7 @@ class LauncherMainFrame(wx.Frame):
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
-            dump_log()
+            dump_log(submit_log=True)
             sys.exit(1)
 
 
@@ -1044,7 +1045,7 @@ class LauncherMainFrame(wx.Frame):
             newVersionAlertPanelSizer.Add(contactEmail2Hyperlink, border=20, flag=wx.LEFT|wx.BORDER)
 
             def onOK(event):
-                dump_log()
+                dump_log(submit_log=True)
                 sys.exit(1)
 
             okButton = wx.Button(newVersionAlertPanel, 1, ' OK ')
@@ -1065,7 +1066,7 @@ class LauncherMainFrame(wx.Frame):
             newVersionAlertDialog.ShowModal()
             newVersionAlertDialog.Destroy()
 
-            dump_log()
+            dump_log(submit_log=True)
             sys.exit(1)
 
     def onMassiveLoginHostNameChanged(self, event):
@@ -1251,7 +1252,7 @@ class LauncherMainFrame(wx.Frame):
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                         dlg.ShowModal()
                         dlg.Destroy()
-                        dump_log()
+                        dump_log(submit_log=True)
                         sys.exit(1)
 
                     turboVncLatestVersion = myHtmlParser.latestVersionNumber
@@ -1474,7 +1475,7 @@ class LauncherMainFrame(wx.Frame):
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
                             self.sshClient.close()
                         finally:
-                            dump_log()
+                            dump_log(submit_log=True)
                             os._exit(1)
 
                     if not sys.platform.startswith("win"):
@@ -1686,7 +1687,7 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 os.unlink(tunnelPrivateKeyFileName)
                             finally:
-                                dump_log()
+                                dump_log(submit_log=True)
                                 os._exit(0)
                         except:
                             logger.debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
@@ -1740,7 +1741,7 @@ class LauncherMainFrame(wx.Frame):
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
                             self.sshClient.close()
                         finally:
-                            dump_log()
+                            dump_log(submit_log=True)
                             os._exit(1)
                         
                     if launcherMainFrame.massiveTabSelected:
@@ -1785,7 +1786,7 @@ class LauncherMainFrame(wx.Frame):
                                     os.unlink(self.privateKeyFile.name)
                                     self.sshClient.close()
                                 finally:
-                                    dump_log()
+                                    dump_log(submit_log=True)
                                     os._exit(1)
                             if stdoutRead.strip()=="":
                                 logger.debug("You don't have any jobs already in the Vis node queue, which is good.")
