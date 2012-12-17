@@ -2144,7 +2144,9 @@ class LauncherMainFrame(wx.Frame):
                                             sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
                                             sshClient2.connect(self.host,username=self.username,password=self.password)
                                             run_ssh_command(sshClient2, cvlVncSessionStopCommand, wx, ignore_errors=True) # yet another command that sends output to stderr FIXME we should parse this and check for real errors
+                                            logger.debug('ran cvlVncSessionStopCommand')
                                             sshClient2.close()
+                                            logger.debug('closed the sshClient2 connection')
 
                                         launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = True
 
