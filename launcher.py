@@ -79,10 +79,8 @@ def dump_log(submit_log=False):
 
     if submit_log:
         logger.debug('about to send debug log')
-        try:
-            r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py', files={'logfile': logger_output.getvalue()})
-        except:
-            pass
+
+        r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py', files={'logfile': logger_output.getvalue()})
 
     return
 
@@ -1078,7 +1076,9 @@ class LauncherMainFrame(wx.Frame):
             self.massivePersistentModeCheckBox.SetValue(False)
 
     def onAbout(self, event):
-        dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n",
+        import commit_def
+        dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n"
+                                   + 'Commit: ' + commit_def.LATEST_COMMIT + '\n',
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
