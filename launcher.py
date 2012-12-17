@@ -1236,7 +1236,35 @@ class LauncherMainFrame(wx.Frame):
                         self.cipher     = launcherMainFrame.cvlSshTunnelCipher
                         self.username   = launcherMainFrame.cvlUsername
                         self.password   = launcherMainFrame.cvlPassword
-                    
+
+                    logger.debug('host: ' + self.host)
+                    logger.debug('resolution: ' + self.resolution)
+                    logger.debug('cipher: ' + self.cipher)
+                    logger.debug('username: ' + self.username)
+                    logger.debug('sys.platform: ' + sys.platform)
+
+                    import platform
+
+                    logger.debug('platform.architecture: '  + str(platform.architecture()))
+                    logger.debug('platform.machine: '       + str(platform.machine()))
+                    logger.debug('platform.node: '          + str(platform.node()))
+                    logger.debug('platform.platform: '      + str(platform.platform()))
+                    logger.debug('platform.processor: '     + str(platform.processor()))
+                    logger.debug('platform.release: '       + str(platform.release()))
+                    logger.debug('platform.system: '        + str(platform.system()))
+                    logger.debug('platform.version: '       + str(platform.version()))
+                    logger.debug('platform.uname: '         + str(platform.uname()))
+
+                    if sys.platform.startswith("win"):
+                        logger.debug('platform.win32_ver: ' + str(platform.win32_ver()))
+
+                    if sys.platform.startswith("darwin"):
+                        logger.debug('platform.mac_ver: ' + str(platform.mac_ver()))
+
+                    if sys.platform.startswith("linux"):
+                        logger.debug('platform.linux_distribution: ' + str(platform.linux_distribution()))
+                        logger.debug('platform.libc_ver: ' + str(platform.libc_ver()))
+
                     # Check for TurboVNC
 
                     # Check for the latest version of TurboVNC on the launcher web page:
