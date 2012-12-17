@@ -83,7 +83,7 @@ def dump_log(submit_log=False):
         r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py',
                           files={'logfile': logger_output.getvalue()},
                           verify='cacert.pem')
-
+ 
     return
 
 # Redirect stdout and stderr to the logger output string. While this is
@@ -2140,17 +2140,27 @@ class LauncherMainFrame(wx.Frame):
                                             logger.debug('cvlVncSessionStopCommand: ' + cvlVncSessionStopCommand)
 
                                             # Earlier sshClient connection may have timed out by now.
+                                            logger.debug('Creating sshClient2')
                                             sshClient2 = ssh.SSHClient()
+
+                                            logger.debug('Setting missing host policy.')
                                             sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                                            sshClient2.connect(self.host,username=self.username,password=self.password)
-                                            run_ssh_command(sshClient2, cvlVncSessionStopCommand, wx, ignore_errors=True) # yet another command that sends output to stderr FIXME we should parse this and check for real errors
-                                            logger.debug('ran cvlVncSessionStopCommand')
+
+                                            logger.debug('Logging in')
+                                            sshClient2.connect(self.host,username=self.username,password=self.password, timeout=3.0)
+
+                                            logger.debug('Running cvlVncSessionStopCommand')
+                                            run_ssh_command(sshClient2, cvlVncSessionStopCommand, wx, ignore_errors=True, log_output=True) # yet another command that sends output to stderr FIXME we should parse this and check for real errors
+
+                                            logger.debug('Closing sshClient2.')
                                             sshClient2.close()
-                                            logger.debug('closed the sshClient2 connection')
+                                            logger.debug('Closed sshClient2 connection.')
 
                                         launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = True
 
                                     logger.debug('About to ask user if they want to keep or kill their VNC session...')
+
+                                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking if user wants to terminate or keep the VNC session...") 
 
                                     launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = False
                                     wx.CallAfter(askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession)
