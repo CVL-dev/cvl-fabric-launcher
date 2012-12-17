@@ -80,7 +80,9 @@ def dump_log(submit_log=False):
     if submit_log:
         logger.debug('about to send debug log')
 
-        r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py', files={'logfile': logger_output.getvalue()})
+        r = requests.post('https://cvl.massive.org.au/cgi-bin/log_drop.py',
+                          files={'logfile': logger_output.getvalue()},
+                          verify='cacert.pem')
 
     return
 
