@@ -24,6 +24,10 @@ os.system('copy /Y C:\\Python27\\Lib\\site-packages\\wx-2.8-msw-unicode\\wx\\gdi
 os.system('copy /Y sshwindows\\*.* dist\\')
 os.system('copy /Y GPL.txt dist\\')
 
+import requests
+cacert = requests.certs.where()
+os.system('copy /Y ' + cacert + ' dist\\')
+
 # REM Is the filename of the manifest file safe to assume?
 
 os.system('copy /Y *.manifest dist\\Microsoft.VC90.CRT')

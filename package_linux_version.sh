@@ -26,6 +26,8 @@ mkdir dist/launcher/icons
 cp IconPngs/* dist/launcher/icons/
 cp README_LINUX dist/launcher/
 
+cp `python -c 'import requests; print requests.certs.where()'` dist/launcher/
+
 cd dist
 mv launcher MassiveLauncher-${VERSION}_${ARCHITECTURE}
 tar zcf MassiveLauncher_v${VERSION}_${ARCHITECTURE}.tar.gz MassiveLauncher-${VERSION}_${ARCHITECTURE}
