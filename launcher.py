@@ -152,6 +152,49 @@ class MyHtmlParser(HTMLParser.HTMLParser):
   def handle_comment(self,data):
       self.htmlComments += data.strip()
 
+def dump_log(submit_log=False):
+    logging.shutdown()
+
+    if submit_log:
+        #logger.debug('about to send debug log')
+
+        url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
+        file_info = {'logfile': launcherMainFrame.logger_output.getvalue()}
+
+        # If we are running in an installation then we have to use
+        # our packaged cacert.pem file:
+        if os.path.exists('cacert.pem'):
+            r = requests.post(url, files=file_info, verify='cacert.pem')
+        else:
+            r = requests.post(url, files=file_info)
+ 
+    return
+
+
+
+def die_from_main_frame(error_message, final_actions=None):
+    dump_log(submit_log=True)
+
+    def error_dialog():
+        dlg = wx.MessageDialog(launcherMainFrame, "Error: " + error_message + "\n\n" + "The launcher cannot continue.\n",
+                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+        dlg.Destroy()
+        launcherMainFrame.loginThread.die_from_main_frame_dialog_completed = True
+
+    launcherMainFrame.loginThread.die_from_main_frame_dialog_completed = False
+    wx.CallAfter(error_dialog)
+
+    while not launcherMainFrame.loginThread.die_from_main_frame_dialog_completed:
+        time.sleep(1)
+    try:
+        if final_actions is not None:
+            final_actions()
+    finally:
+        os._exit(1)
+
+
+
 def run_ssh_command(ssh_client, command, wx=None, ignore_errors=False, log_output=True):
     #logger.debug('run_ssh_command: "%s"' % command)
     #logger.debug('   called from %s:%d' % inspect.stack()[1][1:3])
@@ -1157,47 +1200,6 @@ class LauncherMainFrame(wx.Frame):
 
         super(LauncherMainFrame, self).SetCursor(cursor)
 
-    def die_from_main_frame(self, error_message, final_actions=None):
-        self.dump_log(submit_log=True)
-
-        def error_dialog():
-            dlg = wx.MessageDialog(launcherMainFrame, "Error: " + error_message + "\n\n" + "The launcher cannot continue.\n",
-                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-            dlg.ShowModal()
-            dlg.Destroy()
-            launcherMainFrame.loginThread.die_from_main_frame_dialog_completed = True
-
-        launcherMainFrame.loginThread.die_from_main_frame_dialog_completed = False
-        wx.CallAfter(error_dialog)
-
-        while not launcherMainFrame.loginThread.die_from_main_frame_dialog_completed:
-            time.sleep(1)
-        try:
-            if final_actions is not None:
-                final_actions()
-        finally:
-            os._exit(1)
-
-
-    def dump_log(self, submit_log=False):
-        logging.shutdown()
-
-        if submit_log:
-            #logger.debug('about to send debug log')
-
-            url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
-            file_info = {'logfile': self.logger_output.getvalue()}
-
-            # If we are running in an installation then we have to use
-            # our packaged cacert.pem file:
-            if os.path.exists('cacert.pem'):
-                r = requests.post(url, files=file_info, verify='cacert.pem')
-            else:
-                r = requests.post(url, files=file_info)
-     
-        return
-
-
     def logger_debug(self, message):
         self.logger.debug(message)
 
@@ -1242,23 +1244,23 @@ class LauncherMainFrame(wx.Frame):
                         self.username   = launcherMainFrame.cvlUsername
                         self.password   = launcherMainFrame.cvlPassword
 
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'host: ' + self.host)
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'resolution: ' + self.resolution)
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'cipher: ' + self.cipher)
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'username: ' + self.username)
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'sys.platform: ' + sys.platform)
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'host: ' + self.host)
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'resolution: ' + self.resolution)
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'cipher: ' + self.cipher)
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'username: ' + self.username)
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'sys.platform: ' + sys.platform)
 
                     import platform
 
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.architecture: '  + str(platform.architecture()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.machine: '       + str(platform.machine()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.node: '          + str(platform.node()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.platform: '      + str(platform.platform()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.processor: '     + str(platform.processor()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.release: '       + str(platform.release()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.system: '        + str(platform.system()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.version: '       + str(platform.version()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.uname: '         + str(platform.uname()))
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.architecture: '  + str(platform.architecture()))
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.machine: '       + str(platform.machine()))
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.node: '          + str(platform.node()))
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.platform: '      + str(platform.platform()))
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.processor: '     + str(platform.processor()))
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.release: '       + str(platform.release()))
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.system: '        + str(platform.system()))
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.version: '       + str(platform.version()))
+                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.uname: '         + str(platform.uname()))
 
                     if sys.platform.startswith("win"):
                         pass
@@ -1575,8 +1577,9 @@ class LauncherMainFrame(wx.Frame):
                     try:
                         self.sshClient.connect(self.host,username=self.username,password=self.password)
                     except ssh.AuthenticationException, e:
-                        #logger.error("Failed to authenticate with user's username/password credentials: " + str(e))
-                        wx.CallAfter(launcherMainFrame.die_from_main_frame, 'Authentication error with user %s on server %s' % (self.username, self.host))
+                        wx.CallAfter(launcherMainFrame.logger_error, "Failed to authenticate with user's username/password credentials: " + str(e))
+                        die_from_main_frame('Authentication error with user %s on server %s' % (self.username, self.host))
+                        return
 
                     #logger.debug("First login done.")
 
@@ -2361,6 +2364,9 @@ class LauncherMainFrame(wx.Frame):
         else:
             logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
 
+        logging.basicConfig()
+        logging.getLogger('ssh.transport').setLevel(logging.INFO)
+
         self.logger = logging.getLogger('launcher')
         self.logger.setLevel(logging.DEBUG)
 
@@ -2385,9 +2391,6 @@ class LauncherMainFrame(wx.Frame):
         logger_fh.setLevel(logging.DEBUG)
         logger_fh.setFormatter(logging.Formatter(log_format_string))
         self.logger.addHandler(logger_fh)
-
-        # Set the log level for the ssh library:
-        logging.getLogger('ssh.transport').setLevel(logging.INFO)
         
         self.loginThread = LoginThread(self)
         self.loginThread.start()
