@@ -28,27 +28,27 @@ class IdentityMenu(wx.Menu):
 
         createNewKeyMenuItemId = wx.NewId()
         self.Append(createNewKeyMenuItemId, "Create &new key")
-        self.Bind(wx.EVT_MENU, self.onCreateNewKey, id=createNewKeyMenuItemId)
+        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onCreateNewKey, id=createNewKeyMenuItemId)
 
         inspectKeyMenuItemId = wx.NewId()
         self.Append(inspectKeyMenuItemId, "&Inspect key")
-        self.Bind(wx.EVT_MENU, self.onInspectKey, id=inspectKeyMenuItemId)
+        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onInspectKey, id=inspectKeyMenuItemId)
 
         changePassphraseMenuItemId = wx.NewId()
         self.Append(changePassphraseMenuItemId, "&Change passphrase")
-        self.Bind(wx.EVT_MENU, self.onChangePassphrase, id=changePassphraseMenuItemId)
+        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onChangePassphrase, id=changePassphraseMenuItemId)
 
         resetPassphraseMenuItemId = wx.NewId()
         self.Append(resetPassphraseMenuItemId, "&Reset passphrase")
-        self.Bind(wx.EVT_MENU, self.onResetPassphrase, id=resetPassphraseMenuItemId)
+        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onResetPassphrase, id=resetPassphraseMenuItemId)
 
         deleteKeyMenuItemId = wx.NewId()
         self.Append(deleteKeyMenuItemId, "&Delete key")
-        self.Bind(wx.EVT_MENU, self.onDeleteKey, id=deleteKeyMenuItemId)
+        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onDeleteKey, id=deleteKeyMenuItemId)
 
         helpAboutKeysMenuItem = wx.NewId()
         self.Append(helpAboutKeysMenuItem, "&Help about keys")
-        self.Bind(wx.EVT_MENU, self.onHelpAboutKeys, id=helpAboutKeysMenuItem)
+        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onHelpAboutKeys, id=helpAboutKeysMenuItem)
 
 
     def privateKeyExists(self, warnIfNotFoundInLocalSettings):
@@ -75,7 +75,7 @@ class IdentityMenu(wx.Menu):
         return os.path.exists(self.privateKeyFilePath)
 
 
-    def offerToCreateKeyAndCreateIt(self):
+    def offerToCreateKey(self):
 
         dlg = wx.MessageDialog(None,
                         "You don't seem to have a Launcher key yet. The key will be\n" +
@@ -83,15 +83,21 @@ class IdentityMenu(wx.Menu):
                          "server, e.g. MASSIVE.\n\n" +
                          "Would you like to generate a key now?",
                         "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
-        if dlg.ShowModal()==wx.ID_YES:
-            createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
-            createNewKeyDialog.Center()
-            if createNewKeyDialog.ShowModal()==wx.ID_OK:
-                logger_debug("User pressed OK from CreateNewKeyDialog.")
-            else:
-                logger_debug("User canceled from CreateNewKeyDialog.")
-                return False
-        return True
+        return dlg.ShowModal()
+
+
+    def createKey(self):
+
+        createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
+        createNewKeyDialog.Center()
+        if createNewKeyDialog.ShowModal()==wx.ID_OK:
+            logger_debug("User pressed OK from CreateNewKeyDialog.")
+            createdKey = True
+        else:
+            logger_debug("User canceled from CreateNewKeyDialog.")
+            createdKey= False
+
+        return createdKey
 
 
     def deleteKey(self):
@@ -121,7 +127,7 @@ class IdentityMenu(wx.Menu):
             if dlg.ShowModal()==wx.ID_YES:
                 success = self.deleteKey()
                 if not success:
-                    dlg = wx.MessageDialog(self, 
+                    dlg = wx.MessageDialog(self.launcherMainFrame, 
                         "An error occured while attempting to delete your existing key. :-(",
                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                     dlg.ShowModal()
@@ -154,7 +160,10 @@ class IdentityMenu(wx.Menu):
 
     def onInspectKey(self,event):
         if not self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
-            self.offerToCreateKeyAndCreateIt()
+            if self.offerToCreateKey()==wx.ID_YES:
+                self.createKey()
+            else:
+                return
 
         inspectKeyDialog = InspectKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Key Properties', self.privateKeyFilePath)
         inspectKeyDialog.Center()
@@ -171,7 +180,8 @@ class IdentityMenu(wx.Menu):
                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
         else:
-            self.offerToCreateKeyAndCreateIt()
+            if self.offerToCreateKey()==wx.ID_YES:
+                self.createKey()
 
 
     def onResetPassphrase(self,event):
@@ -180,7 +190,8 @@ class IdentityMenu(wx.Menu):
             resetKeyPassphraseDialog = ResetKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Reset Key Passphrase', self.privateKeyFilePath, self.keyIsInAgent())
             resetKeyPassphraseDialog.ShowModal()
         else:
-            self.offerToCreateKeyAndCreateIt()
+            if self.offerToCreateKey()==wx.ID_YES:
+                self.createKey()
 
 
     def onDeleteKey(self,event):
@@ -191,11 +202,11 @@ class IdentityMenu(wx.Menu):
                 "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
             if dlg.ShowModal()==wx.ID_YES:
                 success = self.deleteKey()
-                if sucesss:
+                if success:
                     message = "Your Launcher key was successfully deleted! :-)"
                 else:
                     message = "An error occured while attempting to delete your key. :-("
-                dlg = wx.MessageDialog(self, message,
+                dlg = wx.MessageDialog(self.launcherMainFrame, message,
                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
         else:

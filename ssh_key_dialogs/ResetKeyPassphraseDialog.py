@@ -205,11 +205,9 @@ class ResetKeyPassphraseDialog(wx.Dialog):
 
         if success:
             self.Show(False)
-            self.EndModal(wx.ID_OK)
 
     def onCancel(self, event):
         self.Show(False)
-        self.EndModal(wx.ID_CANCEL)
 
     def onHelp(self, event):
         global helpController

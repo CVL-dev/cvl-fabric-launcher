@@ -199,7 +199,7 @@ class LauncherMainFrame(wx.Frame):
             self.menu_bar.Append(self.edit_menu, "&Edit")
 
         self.identity_menu = IdentityMenu()
-        self.identity_menu.initialize(launcherMainFrame, massiveLauncherConfig, massiveLauncherPreferencesFilePath, helpController)
+        self.identity_menu.initialize(self, massiveLauncherConfig, massiveLauncherPreferencesFilePath, helpController)
         self.menu_bar.Append(self.identity_menu, "&Identity")
 
         self.help_menu = wx.Menu()

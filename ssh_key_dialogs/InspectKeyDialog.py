@@ -352,7 +352,6 @@ class InspectKeyDialog(wx.Dialog):
 
             if success:
                 self.Show(False)
-                self.EndModal(wx.ID_OK)
 
     def onChangePassphrase(self,event):
         from ChangeKeyPassphraseDialog import ChangeKeyPassphraseDialog
@@ -384,7 +383,6 @@ class InspectKeyDialog(wx.Dialog):
 
     def onClose(self, event):
         self.Show(False)
-        self.EndModal(wx.ID_OK)
 
     def startAgent(self):
         agentenv = None
