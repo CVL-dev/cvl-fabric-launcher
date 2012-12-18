@@ -67,6 +67,8 @@ class LauncherProgressDialog(wx.Frame):
         else:
             sizer = wx.FlexGridSizer(rows=2, cols=3, vgap=5, hgap=15)
 
+	sizer.AddGrowableCol(1)
+
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
         sizer.Add(self.messageStaticText, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, border=15)
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
