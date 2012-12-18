@@ -1244,23 +1244,23 @@ class LauncherMainFrame(wx.Frame):
                         self.username   = launcherMainFrame.cvlUsername
                         self.password   = launcherMainFrame.cvlPassword
 
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'host: ' + self.host)
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'resolution: ' + self.resolution)
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'cipher: ' + self.cipher)
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'username: ' + self.username)
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'sys.platform: ' + sys.platform)
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'host: ' + self.host)
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'resolution: ' + self.resolution)
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'cipher: ' + self.cipher)
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'username: ' + self.username)
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'sys.platform: ' + sys.platform)
 
                     import platform
 
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.architecture: '  + str(platform.architecture()))
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.machine: '       + str(platform.machine()))
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.node: '          + str(platform.node()))
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.platform: '      + str(platform.platform()))
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.processor: '     + str(platform.processor()))
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.release: '       + str(platform.release()))
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.system: '        + str(platform.system()))
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.version: '       + str(platform.version()))
-                    #wx.CallAfter(launcherMainFrame.logger_debug, 'platform.uname: '         + str(platform.uname()))
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.architecture: '  + str(platform.architecture()))
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.machine: '       + str(platform.machine()))
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.node: '          + str(platform.node()))
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.platform: '      + str(platform.platform()))
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.processor: '     + str(platform.processor()))
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.release: '       + str(platform.release()))
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.system: '        + str(platform.system()))
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.version: '       + str(platform.version()))
+                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.uname: '         + str(platform.uname()))
 
                     if sys.platform.startswith("win"):
                         pass
@@ -2364,8 +2364,8 @@ class LauncherMainFrame(wx.Frame):
         else:
             logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
 
-        logging.basicConfig()
-        logging.getLogger('ssh.transport').setLevel(logging.INFO)
+        transport_logger = logging.getLogger('ssh.transport')
+        transport_logger.setLevel(logging.INFO)
 
         self.logger = logging.getLogger('launcher')
         self.logger.setLevel(logging.DEBUG)
@@ -2378,12 +2378,14 @@ class LauncherMainFrame(wx.Frame):
         string_handler.setLevel(logging.DEBUG)
         string_handler.setFormatter(logging.Formatter(log_format_string))
         self.logger.addHandler(string_handler)
+        transport_logger.addHandler(string_handler)
 
         # Send all log messages to the debug window, which may or may not be visible.
         log_window_handler = logging.StreamHandler(stream=self.logTextCtrl)
         log_window_handler.setLevel(logging.DEBUG)
         log_window_handler.setFormatter(logging.Formatter(log_format_string))
         self.logger.addHandler(log_window_handler)
+        transport_logger.addHandler(log_window_handler)
 
         # Finally, send all log messages to a log file.
         from os.path import expanduser, join
@@ -2391,6 +2393,7 @@ class LauncherMainFrame(wx.Frame):
         logger_fh.setLevel(logging.DEBUG)
         logger_fh.setFormatter(logging.Formatter(log_format_string))
         self.logger.addHandler(logger_fh)
+        transport_logger.addHandler(logger_fh)
         
         self.loginThread = LoginThread(self)
         self.loginThread.start()
