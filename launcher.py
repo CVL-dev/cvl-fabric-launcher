@@ -153,6 +153,7 @@ class MyHtmlParser(HTMLParser.HTMLParser):
       self.htmlComments += data.strip()
 
 def dump_log(submit_log=False):
+    return
     logging.shutdown()
 
     if submit_log:
@@ -1244,23 +1245,23 @@ class LauncherMainFrame(wx.Frame):
                         self.username   = launcherMainFrame.cvlUsername
                         self.password   = launcherMainFrame.cvlPassword
 
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'host: ' + self.host)
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'resolution: ' + self.resolution)
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'cipher: ' + self.cipher)
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'username: ' + self.username)
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'sys.platform: ' + sys.platform)
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'host: ' + self.host)
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'resolution: ' + self.resolution)
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'cipher: ' + self.cipher)
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'username: ' + self.username)
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'sys.platform: ' + sys.platform)
 
                     import platform
 
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.architecture: '  + str(platform.architecture()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.machine: '       + str(platform.machine()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.node: '          + str(platform.node()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.platform: '      + str(platform.platform()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.processor: '     + str(platform.processor()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.release: '       + str(platform.release()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.system: '        + str(platform.system()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.version: '       + str(platform.version()))
-                    wx.CallAfter(launcherMainFrame.logger_debug, 'platform.uname: '         + str(platform.uname()))
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'platform.architecture: '  + str(platform.architecture()))
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'platform.machine: '       + str(platform.machine()))
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'platform.node: '          + str(platform.node()))
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'platform.platform: '      + str(platform.platform()))
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'platform.processor: '     + str(platform.processor()))
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'platform.release: '       + str(platform.release()))
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'platform.system: '        + str(platform.system()))
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'platform.version: '       + str(platform.version()))
+                    # wx.CallAfter(launcherMainFrame.logger_debug, 'platform.uname: '         + str(platform.uname()))
 
                     if sys.platform.startswith("win"):
                         pass
@@ -1577,7 +1578,7 @@ class LauncherMainFrame(wx.Frame):
                     try:
                         self.sshClient.connect(self.host,username=self.username,password=self.password)
                     except ssh.AuthenticationException, e:
-                        wx.CallAfter(launcherMainFrame.logger_error, "Failed to authenticate with user's username/password credentials: " + str(e))
+                        # wx.CallAfter(launcherMainFrame.logger_error, "Failed to authenticate with user's username/password credentials: " + str(e))
                         die_from_main_frame('Authentication error with user %s on server %s' % (self.username, self.host))
                         return
 
@@ -1913,7 +1914,7 @@ class LauncherMainFrame(wx.Frame):
                                 line = lineFragment + buff.readline()
                                 while line != "":
                                     #logger.error('channel.recv_stderr_ready(): ' + line)
-                                    launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+                                    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                             if (channel.recv_ready()):
                                 out = channel.recv(1024)
                                 buff = StringIO(out)
@@ -1927,7 +1928,7 @@ class LauncherMainFrame(wx.Frame):
                                         lineFragment = ""
                                     if "ERROR" in line or "Error" in line or "error" in line:
                                         #logger.error('error in line: ' + line)
-                                        launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+                                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                                     if "waiting for job" in line:
                                         #logger.debug('waiting for job in line: ' + line)
                                         lineSplit = line.split(" ")
@@ -1989,7 +1990,7 @@ class LauncherMainFrame(wx.Frame):
                             if foundDisplayNumber:
                                 pass
                                 #logger.debug("CVL VNC Display Number is " + str(self.cvlVncDisplayNumber))
-                                launcherMainFrame.cvlVncDisplayNumberSpinCtrl.SetValue(int(self.cvlVncDisplayNumber))
+                                wx.CallAfter(launcherMainFrame.cvlVncDisplayNumberSpinCtrl.SetValue, int(self.cvlVncDisplayNumber))
                             else:
                                 pass
                                 #logger.error("Failed to parse vncserver output for display number.")
@@ -2161,31 +2162,39 @@ class LauncherMainFrame(wx.Frame):
                                     #logger.debug('launcherMainFrame.cvlVncDisplayNumberAutomatic == True')
 
                                     def askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession():
+                                        print "hey!"
                                         import questionDialog
                                         result = questionDialog.questionDialog("Do you want to keep your VNC session (Display #" + str(self.cvlVncDisplayNumber) + ") running for future use?",
                                             #buttons=["Discard VNC Session", wx.ID_CANCEL, "Save VNC Session"])
                                             buttons=["Discard VNC Session", "Save VNC Session"],
                                             caption="MASSIVE/CVL Launcher")
                                         if result == "Discard VNC Session":
+                                            print 'Discarding!!!!'
                                             cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
-                                            #logger.debug('cvlVncSessionStopCommand: ' + cvlVncSessionStopCommand)
+                                            # wx.CallAfter(launcherMainFrame.logger_debug, 'cvlVncSessionStopCommand: ' + cvlVncSessionStopCommand)
 
                                             # Earlier sshClient connection may have timed out by now.
-                                            #logger.debug('Creating sshClient2')
-                                            sshClient2 = ssh.SSHClient()
+                                            # wx.CallAfter(launcherMainFrame.logger_debug, 'Creating sshClient2')
+                                            print 'here1'
+                                            import paramiko
+                                            sshClient2 = paramiko.SSHClient()
 
-                                            #logger.debug('Setting missing host policy.')
-                                            sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                                            # wx.CallAfter(launcherMainFrame.logger_debug, 'Setting missing host policy.')
+                                            print 'here2'
+                                            sshClient2.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-                                            #logger.debug('Logging in')
-                                            sshClient2.connect(self.host,username=self.username,password=self.password, timeout=3.0)
+                                            # wx.CallAfter(launcherMainFrame.logger_debug, 'Logging in')
+                                            print 'here3'
+                                            sshClient2.connect(self.host,username=self.username,password=self.password)
 
-                                            #logger.debug('Running cvlVncSessionStopCommand')
+                                            # wx.CallAfter(launcherMainFrame.logger_debug, 'Running cvlVncSessionStopCommand')
+                                            print 'here4'
                                             run_ssh_command(sshClient2, cvlVncSessionStopCommand, wx, ignore_errors=True, log_output=True) # yet another command that sends output to stderr FIXME we should parse this and check for real errors
 
-                                            #logger.debug('Closing sshClient2.')
+                                            # wx.CallAfter(launcherMainFrame.logger_debug, 'Closing sshClient2.')
+                                            print 'here5'
                                             sshClient2.close()
-                                            #logger.debug('Closed sshClient2 connection.')
+                                            # wx.CallAfter(launcherMainFrame.logger_debug, 'Closed sshClient2 connection.')
 
                                         launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = True
 
