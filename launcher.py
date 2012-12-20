@@ -87,7 +87,7 @@ import datetime
 import shlex
 import inspect
 import requests
-import paramiko
+import ssh
 
 global transport_logger
 global logger
@@ -1561,12 +1561,12 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Logging in to " + self.host)
                     logger.debug("Attempting to log in to " + self.host)
                     
-                    self.sshClient = paramiko.SSHClient()
-                    self.sshClient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    self.sshClient = ssh.SSHClient()
+                    self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
                     try:
                         self.sshClient.connect(self.host,username=self.username,password=self.password)
-                    except paramiko.AuthenticationException, e:
+                    except ssh.AuthenticationException, e:
                         logger.error("Failed to authenticate with user's username/password credentials: " + str(e))
                         die_from_main_frame('Authentication error with user %s on server %s' % (self.username, self.host))
                         return
@@ -1874,8 +1874,8 @@ class LauncherMainFrame(wx.Frame):
                                     if (not checkedShowStart) and self.massiveJobNumber!="0":
                                         checkedShowStart = True
                                         def showStart():
-                                            sshClient2 = paramiko.SSHClient()
-                                            sshClient2.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                                            sshClient2 = ssh.SSHClient()
+                                            sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
                                             sshClient2.connect(self.host,username=self.username,password=self.password)
 
                                             stdoutRead, stderrRead = run_ssh_command(sshClient2, "showstart " + self.massiveJobNumber, ignore_errors=True)
@@ -2162,10 +2162,10 @@ class LauncherMainFrame(wx.Frame):
 
                                     # Earlier sshClient connection may have timed out by now.
                                     logger.debug('Creating sshClient2')
-                                    sshClient2 = paramiko.SSHClient()
+                                    sshClient2 = ssh.SSHClient()
 
                                     logger.debug('Setting missing host policy.')
-                                    sshClient2.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                                    sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
                                     logger.debug('Logging in')
                                     sshClient2.connect(self.host,username=self.username,password=self.password)
@@ -2342,7 +2342,7 @@ class LauncherMainFrame(wx.Frame):
         global logger_output
         global logger_fh
 
-        transport_logger = logging.getLogger('paramiko.transport')
+        transport_logger = logging.getLogger('ssh.transport')
         transport_logger.setLevel(logging.DEBUG)
 
         logger = logging.getLogger('launcher')
