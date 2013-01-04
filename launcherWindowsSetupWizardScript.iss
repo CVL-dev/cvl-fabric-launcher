@@ -34,7 +34,7 @@ SolidCompression=yes
 OutputDir=C:\launcher_build\
 
 [Files]
-Source: "dist\*.*"; DestDir: "{app}"; Flags: recursesubdirs
+Source: "dist\launcher\*.*"; DestDir: "{app}"; Flags: recursesubdirs
 ; Source: "{#LauncherAppName}.chm"; DestDir: "{app}"
 ;Source: "Readme.txt"; DestDir: "{app}"; Flags: isreadme
 
