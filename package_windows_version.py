@@ -31,6 +31,10 @@ os.system('copy /Y sshwindows\\*.* dist\\launcher\\')
 #os.system('copy /Y GPL.txt dist\\')
 os.system('copy /Y GPL.txt dist\\launcher\\')
 
+import requests
+cacert = requests.certs.where()
+os.system('copy /Y ' + cacert + ' dist\\')
+
 # REM Is the filename of the manifest file safe to assume?
 
 #os.system('copy /Y *.manifest dist\\Microsoft.VC90.CRT')

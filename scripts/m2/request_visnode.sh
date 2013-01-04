@@ -26,11 +26,16 @@ PERSISTENT=False
 # "True" this will eventually be the default 
 #### M1 will use True now as the default
 #PERSISTENT=True
+
 if [ $# -ge 3 ] ; then
  VISNODES=$3
 fi
 if [ $# -ge 4 ] ; then
  PERSISTENT=$4
+fi
+QPEEK=True 
+if [ $# -ge 5 ] ; then
+  QPEEK=$5
 fi
 
 cluster=`hostname | grep -o m[1-2]`
@@ -67,9 +72,11 @@ then
     qstat $jobid_full
   done
   echo "Looking good..."
-  echo "Waiting 15 seconds to make sure that there are no errors..."
-  sleep 15
-  qpeek $jobid
+  if [[ "$QPEEK" == "True" ]]; then
+    echo "Waiting 15 seconds to make sure that there are no errors..."
+    sleep 15
+    qpeek $jobid
+  fi
 else
-  qsub -A $PROJECT -N Desktop -I -q vis -l walltime=$HOURS:0:0,nodes=$VISNODES:ppn=12:gpus=2,pmem=16000MB
+  qsub -A $PROJECT -N Desktop -I -q vis -l walltime=$HOURS:0:0,nodes=$VISNODES:ppn=12:gpus=2,mem=192000MB
 fi

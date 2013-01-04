@@ -33,6 +33,7 @@ Windows: http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi
 3.3 pycrypto
 3.4 ssh
 3.5 appdirs
+3.6 requests
 
 
 3.1 wx
@@ -146,6 +147,10 @@ It can be installed using:
 
 python setup.py build
 sudo python setup.py install
+
+3.6 requests
+
+pip install requests
 
 4. PYTHON MODULES REQUIRED TO BUILD THE BUNDLED DISTRIBUTABLE APPLICATION
 
