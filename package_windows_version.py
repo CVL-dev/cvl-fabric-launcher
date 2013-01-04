@@ -33,7 +33,7 @@ os.system('copy /Y GPL.txt dist\\launcher\\')
 
 import requests
 cacert = requests.certs.where()
-os.system('copy /Y ' + cacert + ' dist\\')
+os.system('copy /Y ' + cacert + ' dist\\launcher\\')
 
 # REM Is the filename of the manifest file safe to assume?
 
