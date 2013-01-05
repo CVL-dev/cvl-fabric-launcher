@@ -157,6 +157,7 @@ pip install requests
 4.1 setuptools
 4.2 py2app
 4.3 py2exe
+4.4 pyinstaller
 
 4.1 setuptools
 
@@ -176,9 +177,27 @@ sudo python setup.py install
 
 4.3 py2exe
 
-I use version 0.6.9 of the py2exe module with the Launcher's create_windows_bundle.py script.
+py2exe has been replaced by pyinstaller, because py2exe doesn't support code-signing certificates.
+See section 4.4
+
+I used version 0.6.9 of the py2exe module with the Launcher's create_windows_bundle.py script.
 
 Version 0.6.9 of py2exe can be downloaded from here:
 
 http://downloads.sourceforge.net/project/py2exe/py2exe/0.6.9/py2exe-0.6.9.win32-py2.7.exe
+
+4.4 pyinstaller
+
+I'm currently using version 2.0 for the Windows build.
+
+Version 2.0 of pyinstaller can be downloaded from here:
+
+http://www.pyinstaller.org/
+https://github.com/downloads/pyinstaller/pyinstaller/pyinstaller-2.0.zip
+
+I'm using version 1.5.1 for the Linux build.
+
+Version 1.5.1 of pyinstaller can be downloaded from here:
+
+https://github.com/downloads/pyinstaller/pyinstaller/pyinstaller-1.5.1.zip
 
