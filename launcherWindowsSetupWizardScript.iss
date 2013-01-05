@@ -21,7 +21,7 @@
 ;Change OutputDir to suit your build environment
 
 #define LauncherAppName "MASSIVE Launcher"
-#define LauncherAppExeName "MASSIVE Launcher.exe"
+#define LauncherAppExeName "launcher.exe"
 
 [Setup]
 AppName={#LauncherAppName}
