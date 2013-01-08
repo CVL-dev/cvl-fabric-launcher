@@ -7,8 +7,8 @@ mkdir -p /opt/src
 cd /opt/src
 
 wget -c http://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz
-wget -c http://downloads.sourceforge.net/project/modules/Modules/modules-3.2.9/modules-3.2.9c.tar.gz
-wget -c http://downloads.sourceforge.net/wxpython/wxPython-src-2.8.12.1.tar.bz2
+wget http://downloads.sourceforge.net/project/modules/Modules/modules-3.2.9/modules-3.2.9c.tar.gz
+wget http://downloads.sourceforge.net/wxpython/wxPython-src-2.8.12.1.tar.bz2
 
 yum -y install gcc glibc glibc-devel libgcc  \
                ncurses-libs ncurses-devel \
@@ -63,7 +63,7 @@ make
 make install
 cd ..
 
-mkdir /opt/sw/32bit/centos/modules/3.2.9c/Modules/3.2.9/modulefiles/python
+mkdir -p /opt/sw/32bit/centos/modules/3.2.9c/Modules/3.2.9/modulefiles/python
 
 cat > /opt/sw/32bit/centos/modules/3.2.9c/Modules/3.2.9/modulefiles/python/2.7.3 <<EOF
 #%Module1.0#####################################################################
@@ -90,10 +90,10 @@ tar jxf wxPython-src-2.8.12.1.tar.bz2
 
 cd wxPython-src-2.8.12.1
 export WXDIR=`pwd`
-mkdir bld
+mkdir -p bld
 cd bld
 
-../configure --prefix=/opt/sw/32bit/centos/wxpython/2.8.12.1 \
+../configure --prefix=/opt/sw/32bit/centos/wxwidgets/2.8.12.1 \
              --with-gtk \
              --with-gnomeprint \
              --with-opengl \
@@ -114,18 +114,19 @@ make -C contrib/src/gizmos install
 make -C contrib/src/stc install
 
 
-mkdir /opt/sw/32bit/centos/modules/3.2.9c/Modules/3.2.9/modulefiles/wxpython
+mkdir -p /opt/sw/32bit/centos/modules/3.2.9c/Modules/3.2.9/modulefiles/wxwidgets
 
-cat > /opt/sw/32bit/centos/modules/3.2.9c/Modules/3.2.9/modulefiles/wxpython/2.8.12.1 <<EOF
+cat > /opt/sw/32bit/centos/modules/3.2.9c/Modules/3.2.9/modulefiles/wxwidgets/2.8.12.1 <<EOF
 #%Module1.0#####################################################################
 
 module-whatis "wx 2.8.12.1-i686"
 
-prepend-path PATH               /opt/sw/32bit/centos/wxpython/2.8.12.1/bin
-prepend-path LD_LIBRARY_PATH    /opt/sw/32bit/centos/wxpython/2.8.12.1/lib
+prepend-path PATH               /opt/sw/32bit/centos/wxwidgets/2.8.12.1/bin
+prepend-path LD_LIBRARY_PATH    /opt/sw/32bit/centos/wxwidgets/2.8.12.1/lib
+prepend-path INCLUDE            /opt/sw/32bit/centos/wxwidgets/2.8.12.1/include/wx-2.8
 EOF
 
-module load wxpython/2.8.12.1
+module load wxwidgets/2.8.12.1
 
 cd $WXDIR/wxPython
 
@@ -147,6 +148,6 @@ pip install requests
 echo
 echo "Log out and log in again to load the modules environment."
 echo
-echo "Try: module load python wxpython"
+echo "Try: module load python wxwidgets"
 echo
 echo
