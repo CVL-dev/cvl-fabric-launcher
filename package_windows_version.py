@@ -2,6 +2,13 @@ import os
 import sys
 import glob
 
+if len(sys.argv) < 3:
+    print "Usage: package_windows_version.py <certificate.pfx> <password>"
+    sys.exit(1)
+
+code_signing_certificate = sys.argv[1]
+code_signing_certificate_password = sys.argv[2]
+
 os.system('del /Q dist\\*.*')
 
 # PyInstaller should take care of the Manifests stuff.
@@ -35,6 +42,9 @@ import requests
 cacert = requests.certs.where()
 os.system('copy /Y ' + cacert + ' dist\\launcher\\')
 
+os.system("signtool sign -f " + code_signing_certificate + " -p " + code_signing_certificate_password + " dist\launcher\*.exe")
+os.system("signtool sign -f " + code_signing_certificate + " -p " + code_signing_certificate_password + " dist\launcher\*.dll")
+
 # REM Is the filename of the manifest file safe to assume?
 
 #os.system('copy /Y *.manifest dist\\Microsoft.VC90.CRT')
@@ -45,4 +55,5 @@ os.system('copy /Y ' + cacert + ' dist\\launcher\\')
 # Only one of these will work...
 os.system(r""""C:\Program Files (x86)\Inno Setup 5\Compil32.exe" /cc .\\launcherWindowsSetupWizardScript.iss""")
 os.system(r""""C:\Program Files\Inno Setup 5\Compil32.exe" /cc .\\launcherWindowsSetupWizardScript.iss""")
+os.system("signtool sign -f " + code_signing_certificate + " -p " + code_signing_certificate_password + " C:\launcher_build\setup.exe")
 
