@@ -20,6 +20,6 @@ wget https://github.com/CVL-dev/cvl-fabric-launcher/archive/master.tar.gz -O mas
 tar zxf master.tar.gz
 cd cvl-fabric-launcher-master
 
-module load python wxpython
+module load python wxwidgets
 ./package_centos_version.sh
 

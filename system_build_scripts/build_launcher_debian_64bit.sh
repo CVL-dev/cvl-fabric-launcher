@@ -25,6 +25,6 @@ if [ $? -ne 0 ]; then
 fi
 cd cvl-fabric-launcher
 . /opt/sw/64bit/debian/modules/3.2.9c/Modules/3.2.9/init/bash
-module load python wxpython
+module load python wxwidgets
 ./package_debian_version.sh
 
