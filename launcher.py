@@ -1088,6 +1088,18 @@ class LauncherMainFrame(wx.Frame):
             if launcherMainFrame.cvlTabSelected:
                 launcherMainFrame.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
 
+    def onCloseMassiveDebugWindow(self, event):
+        if launcherMainFrame.massiveTabSelected:
+            self.massiveShowDebugWindowCheckBox.SetValue(False)
+        if launcherMainFrame.logWindow!=None:
+            launcherMainFrame.logWindow.Show(False)
+
+    def onCloseCvlDebugWindow(self, event):
+        if launcherMainFrame.cvlTabSelected:
+            self.cvlShowDebugWindowCheckBox.SetValue(False)
+        if launcherMainFrame.logWindow!=None:
+            launcherMainFrame.logWindow.Show(False)
+
     def onAbout(self, event):
         import commit_def
         dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n"
@@ -2384,8 +2396,10 @@ class LauncherMainFrame(wx.Frame):
 
         if launcherMainFrame.massiveTabSelected:
             self.logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
+            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseMassiveDebugWindow)
         else:
             self.logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
+            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseCvlDebugWindow)
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
