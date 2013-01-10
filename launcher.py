@@ -1534,20 +1534,25 @@ class LauncherMainFrame(wx.Frame):
                         while self.turboVncVersionNumber=="0.0":
                             time.sleep(0.5)
 
-                        # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
-                        turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"  
-                        proc = subprocess.Popen(turboVncFlavourTestCommandString, 
-                            stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                            universal_newlines=True)
-                        stdout, stderr = proc.communicate(input="\n")
-                        if stderr != None:
-                            wx.CallAfter(logger.debug, 'turboVncFlavour stderr: ' + stderr)
-                        if proc.returncode==0:
-                            wx.CallAfter(logger.debug, "Java version of TurboVNC Viewer is installed.")
-                            self.turboVncFlavour = "Java"
-                        else:
-                            wx.CallAfter(logger.debug, "X11 version of TurboVNC Viewer is installed.")
-                            self.turboVncFlavour = "X11"
+                        def getTurboVncFlavour():
+                            # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
+                            turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"  
+                            proc = subprocess.Popen(turboVncFlavourTestCommandString, 
+                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                universal_newlines=True)
+                            stdout, stderr = proc.communicate(input="\n")
+                            if stderr != None:
+                                wx.CallAfter(logger.debug, 'turboVncFlavour stderr: ' + stderr)
+                            if proc.returncode==0:
+                                wx.CallAfter(logger.debug, "Java version of TurboVNC Viewer is installed.")
+                                turboVncFlavour = "Java"
+                            else:
+                                wx.CallAfter(logger.debug, "X11 version of TurboVNC Viewer is installed.")
+                                turboVncFlavour = "X11"
+                            return turboVncFlavour
+
+                        # No need to run this with wx.CallAfter, because the "file" command doesn't launch a GUI application.
+                        self.turboVncFlavour = getTurboVncFlavour()
 
                     wx.CallAfter(logger.debug, "TurboVNC viewer version number = " + launcherMainFrame.loginThread.turboVncVersionNumber)
 
