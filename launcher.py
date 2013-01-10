@@ -2165,17 +2165,29 @@ class LauncherMainFrame(wx.Frame):
                                 universal_newlines=True)
                             turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\n")
 
-                        # The following attempt to grab the focus back from
+                        # The original method used to grab the focus back from
                         # TurboVNC viewer failed rather ungracefully a few
-                        # times recently, so I'm disabling it for now:
+                        # times recently, so it was commented out.
+                        # A new method is now being trialed, using a slightly 
+                        # different Apple Script and using wx.CallAfter
+                        # to prevent GUI threading problems.
 
-                        #if sys.platform.startswith("darwin") and launcherMainFrame.cvlTabSelected:
-                            ## Grab focus back from X11, i.e. reactivate MASSIVE Launcher app.
-                            #subprocess.Popen(['osascript', '-e', 
-                                #"tell application \"System Events\"\r" +
-                                #"  set procName to name of first process whose unix id is " + str(os.getpid()) + "\r" +
-                                #"end tell\r" +
-                                #"tell application procName to activate\r"])
+                        if sys.platform.startswith("darwin") and launcherMainFrame.cvlTabSelected:
+                            def grabFocusBackFromTurboVNC():
+                                subprocess.Popen(['osascript', '-e', 
+                                    #"tell application \"System Events\"\r" +
+                                    #"  set procName to name of first process whose unix id is " + str(os.getpid()) + "\r" +
+                                    #"end tell\r" +
+                                    #"tell application procName to activate\r"])
+                                    "tell application \"System Events\"\r" +
+                                    "  set launcherApps to every process whose name contains \"Launcher\"\r" +
+                                    "  try\r" +
+                                    "    set launcherApp to item 1 of launcherApps\r" +
+                                    "    set frontmost of launcherApp to true\r" +
+                                    "    tell application launcherApp to activate\r" +
+                                    "  end try\r" +
+                                    "end tell\r"])
+                            wx.CallAfter(grabFocusBackFromTurboVNC)
 
                         self.turboVncFinishTime = datetime.datetime.now()
 
