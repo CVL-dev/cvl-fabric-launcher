@@ -1306,7 +1306,7 @@ class LauncherMainFrame(wx.Frame):
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1319,7 +1319,7 @@ class LauncherMainFrame(wx.Frame):
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1332,7 +1332,7 @@ class LauncherMainFrame(wx.Frame):
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1345,7 +1345,7 @@ class LauncherMainFrame(wx.Frame):
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1358,7 +1358,7 @@ class LauncherMainFrame(wx.Frame):
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1371,7 +1371,7 @@ class LauncherMainFrame(wx.Frame):
                                 queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
                                 queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1512,26 +1512,27 @@ class LauncherMainFrame(wx.Frame):
                             dump_log(submit_log=True)
                             os._exit(1)
 
-                    wx.CallAfter(logger.debug, "Here 1");
-
                     if not sys.platform.startswith("win"):
                         # Check TurboVNC version number and flavour (X11 or Java)
 
                         # Check TurboVNC version number
                         # For Windows, this has already been determined using the Registry.
-                        turboVncVersionNumberCommandString = vnc + " -help"
-                        wx.CallAfter(logger.debug, "Here 2");
-                        proc = subprocess.Popen(turboVncVersionNumberCommandString, 
-                            stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                            universal_newlines=True)
-                        wx.CallAfter(logger.debug, "Here 3");
-                        turboVncStdout, turboVncStderr = proc.communicate(input="\n")
-                        wx.CallAfter(logger.debug, "Here 4");
-                        if turboVncStderr != None:
-                            wx.CallAfter(logger.debug, "turboVncStderr: " + turboVncStderr)
-                        turboVncVersionNumberComponents = turboVncStdout.split(" v")
-                        turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
-                        self.turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
+                        self.turboVncVersionNumber = "0.0"
+
+                        def getTurboVncVersionNumber():
+                            turboVncVersionNumberCommandString = vnc + " -help"
+                            proc = subprocess.Popen(turboVncVersionNumberCommandString, 
+                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                universal_newlines=True)
+                            turboVncStdout, turboVncStderr = proc.communicate(input="\n")
+                            if turboVncStderr != None:
+                                wx.CallAfter(logger.debug, "turboVncStderr: " + turboVncStderr)
+                            turboVncVersionNumberComponents = turboVncStdout.split(" v")
+                            turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
+                            launcherMainFrame.loginThread.turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
+                        wx.CallAfter(getTurboVncVersionNumber)
+                        while self.turboVncVersionNumber=="0.0":
+                            time.sleep(1)
 
                         # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
                         turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"  
@@ -1548,9 +1549,9 @@ class LauncherMainFrame(wx.Frame):
                             wx.CallAfter(logger.debug, "X11 version of TurboVNC Viewer is installed.")
                             self.turboVncFlavour = "X11"
 
-                    wx.CallAfter(logger.debug, "TurboVNC viewer version number = " + self.turboVncVersionNumber)
+                    wx.CallAfter(logger.debug, "TurboVNC viewer version number = " + launcherMainFrame.loginThread.turboVncVersionNumber)
 
-                    if self.turboVncVersionNumber.startswith("0.") or self.turboVncVersionNumber.startswith("1.0"):
+                    if launcherMainFrame.loginThread.turboVncVersionNumber.startswith("0.") or launcherMainFrame.loginThread.turboVncVersionNumber.startswith("1.0"):
                         def showOldTurboVncWarningMessageDialog():
                             dlg = wx.MessageDialog(launcherMainFrame, "Warning: Using a TurboVNC viewer earlier than v1.1 means that you will need to enter your password twice.\n",
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
