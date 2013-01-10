@@ -1907,7 +1907,19 @@ class LauncherMainFrame(wx.Frame):
                             showInvalidMassiveProjectErrorDialogAndExit(launcherMainFrame.massiveProject)
 
                         if self.host.startswith("m2"):
-                            run_ssh_command(self.sshClient, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 9 nodes in use")
+                            numberOfBusyVisNodesStdout, _ = run_ssh_command(self.sshClient, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 9 nodes in use")
+
+                            def showAllVisnodesBusyWarningDialog():
+                                dlg = wx.MessageDialog(launcherMainFrame, 
+                                        "All MASSIVE Vis nodes are currently busy.\n" +
+                                        "Your job will not begin immediately.",
+                                                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                dlg.ShowModal()
+                                dlg.Destroy()
+
+                            if "9 of 9" in numberOfBusyVisNodesStdout:
+                                showAllVisnodesBusyWarningDialog()
+
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
 
