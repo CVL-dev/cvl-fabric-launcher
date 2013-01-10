@@ -1532,7 +1532,7 @@ class LauncherMainFrame(wx.Frame):
                             launcherMainFrame.loginThread.turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
                         wx.CallAfter(getTurboVncVersionNumber)
                         while self.turboVncVersionNumber=="0.0":
-                            time.sleep(1)
+                            time.sleep(0.5)
 
                         # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
                         turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"  
@@ -2368,7 +2368,11 @@ class LauncherMainFrame(wx.Frame):
         log_window_handler.setLevel(logging.DEBUG)
         log_window_handler.setFormatter(logging.Formatter(log_format_string))
         logger.addHandler(log_window_handler)
-        transport_logger.addHandler(log_window_handler)
+        # Don't send ssh.transport log messages to
+        # the log window, because they won't be
+        # wrapped in wx.CallAfter, unless we provide
+        # our own customized version of the ssh module.
+        #transport_logger.addHandler(log_window_handler)
 
         # Finally, send all log messages to a log file.
         from os.path import expanduser, join
