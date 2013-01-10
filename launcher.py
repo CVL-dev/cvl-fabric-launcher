@@ -164,7 +164,8 @@ def dump_log(submit_log=False):
         wx.CallAfter(logger.debug, 'about to send debug log')
 
         url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
-        file_info = {'logfile': launcherMainFrame.logger_output.getvalue()}
+        #file_info = {'logfile': launcherMainFrame.logger_output.getvalue()}
+        file_info = {'logfile': logger_output.getvalue()}
 
         # If we are running in an installation then we have to use
         # our packaged cacert.pem file:
@@ -221,6 +222,8 @@ def run_ssh_command(ssh_client, command, ignore_errors=False, log_output=True):
 class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
+
+        self.logWindow = None
 
         if sys.platform.startswith("darwin"):
             wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
@@ -619,6 +622,7 @@ class LauncherMainFrame(wx.Frame):
         self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.massiveShowDebugWindowCheckBox = wx.CheckBox(self.massiveLoginFieldsPanel, wx.ID_ANY, "")
         self.massiveShowDebugWindowCheckBox.SetValue(False)
+        self.massiveShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onDebugWindowCheckBoxStateChanged)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveLoginFieldsPanel.SetSizerAndFit(self.massiveLoginFieldsPanelSizer)
@@ -1072,6 +1076,13 @@ class LauncherMainFrame(wx.Frame):
             self.massivePersistentModeCheckBox.SetValue(True)
         #if selectedMassiveLoginHost.startswith("m2"):
             #self.massivePersistentModeCheckBox.SetValue(False)
+
+    def onDebugWindowCheckBoxStateChanged(self, event):
+        if launcherMainFrame.logWindow!=None:
+            if launcherMainFrame.massiveTabSelected:
+                launcherMainFrame.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
+            else:
+                launcherMainFrame.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
 
     def onAbout(self, event):
         import commit_def
@@ -1839,15 +1850,51 @@ class LauncherMainFrame(wx.Frame):
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
 
-                        run_ssh_command(self.sshClient, "mybalance --hours")
+                        def showInsufficientBalanceRemainingErrorDialogAndExit(massiveProject, cpuHoursRequested, cpuHoursRemaining):
+                            dlg = wx.MessageDialog(launcherMainFrame, 
+                                    "You have requested " + str(cpuHoursRequested) + " CPU hours,\n" +
+                                    "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
+                                    "in your quota for project \"" + massiveProject + "\".",
+                                                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                            dlg.ShowModal()
+                            dlg.Destroy()
+                            dump_log(submit_log=True)
+                            sys.exit(1)
+
+                        mybalanceStdout, _ = run_ssh_command(self.sshClient, "mybalance --hours")
+                        mybalanceLines = mybalanceStdout.split("\n")
+                        foundMassiveProjectInMyBalanceOutput = False
+                        for mybalanceLine in mybalanceLines:
+                            mybalanceLineComponents = mybalanceLine.split()
+                            if len(mybalanceLineComponents)<2:
+                                break
+                            massiveProjectInMyBalanceOutput = mybalanceLineComponents[0]
+                            if massiveProjectInMyBalanceOutput==launcherMainFrame.massiveProject:
+                                foundMassiveProjectInMyBalanceOutput = True
+                                cpusPerVisNode = 12
+                                cpuHoursRequested = int(launcherMainFrame.massiveHoursRequested) * int(launcherMainFrame.massiveVisNodesRequested) * cpusPerVisNode
+                                cpuHoursRemaining = float(mybalanceLineComponents[2])
+                                if cpuHoursRemaining < cpuHoursRequested:
+                                    showInsufficientBalanceRemainingErrorDialogAndExit(launcherMainFrame.massiveProject, cpuHoursRequested, cpuHoursRemaining)
+
+                        def showInvalidMassiveProjectErrorDialogAndExit(massiveProject):
+                            dlg = wx.MessageDialog(launcherMainFrame, 
+                                    "You have requested use of project \"" + massiveProject + "\",\n" +
+                                    "but you don't have access to that project.",
+                                                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                            dlg.ShowModal()
+                            dlg.Destroy()
+                            dump_log(submit_log=True)
+                            sys.exit(1)
+
+                        if foundMassiveProjectInMyBalanceOutput==False:
+                            showInvalidMassiveProjectErrorDialogAndExit(launcherMainFrame.massiveProject)
 
                         if self.host.startswith("m2"):
                             run_ssh_command(self.sshClient, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 9 nodes in use")
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
 
-                        #qsubcmd = "qsub -A " + self.massiveProject + " -I -q vis -l walltime=" + launcherMainFrame.massiveHoursRequested + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
-                        #qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested
                         qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
 
                         wx.CallAfter(logger.debug, 'qsubcmd: ' + qsubcmd)
@@ -2320,22 +2367,22 @@ class LauncherMainFrame(wx.Frame):
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
         if launcherMainFrame.massiveTabSelected:
-            logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
+            self.logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
         else:
-            logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
+            self.logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
-            logWindow.SetIcon(_icon)
+            self.logWindow.SetIcon(_icon)
 
         if sys.platform.startswith("linux"):
             import MASSIVE_icon
-            logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+            self.logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
 
-        self.logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
+        self.logTextCtrl = wx.TextCtrl(self.logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
         logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
         logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
-        logWindow.SetSizer(logWindowSizer)
+        self.logWindow.SetSizer(logWindowSizer)
         if sys.platform.startswith("darwin"):
             font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         else:
@@ -2343,9 +2390,9 @@ class LauncherMainFrame(wx.Frame):
         self.logTextCtrl.SetFont(font)
 
         if launcherMainFrame.massiveTabSelected:
-            logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
+            self.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
         else:
-            logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
+            self.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
 
         global transport_logger
         global logger
