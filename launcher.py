@@ -178,6 +178,34 @@ def dump_log(submit_log=False):
 
 
 
+def die_from_login_thread(error_message, final_actions=None):
+    dump_log(submit_log=True)
+
+    def error_dialog():
+        dlg = wx.MessageDialog(launcherMainFrame, error_message,
+                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+        dlg.Destroy()
+        launcherMainFrame.loginThread.die_from_login_thread_completed = True
+
+    launcherMainFrame.loginThread.die_from_login_thread_completed = False
+    wx.CallAfter(error_dialog)
+
+    while not launcherMainFrame.loginThread.die_from_login_thread_completed:
+        time.sleep(1)
+    try:
+        if final_actions is not None:
+            final_actions()
+    finally:
+        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+        wx.CallAfter(launcherMainFrame.logWindow.Show, False)
+        wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
+        wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, False)
+        wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, False)
+        return
+
+
 def die_from_main_frame(error_message, final_actions=None):
     dump_log(submit_log=True)
 
@@ -1607,7 +1635,7 @@ class LauncherMainFrame(wx.Frame):
                         self.sshClient.connect(self.host,username=self.username,password=self.password)
                     except ssh.AuthenticationException, e:
                         logger_error("Failed to authenticate with user's username/password credentials: " + str(e))
-                        die_from_main_frame('Authentication error with user %s on server %s' % (self.username, self.host))
+                        die_from_login_thread('Authentication error with user %s on server %s' % (self.username, self.host))
                         return
 
                     logger_debug("First login done.")
@@ -1866,17 +1894,6 @@ class LauncherMainFrame(wx.Frame):
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
 
-                        def showInsufficientBalanceRemainingErrorDialogAndExit(massiveProject, cpuHoursRequested, cpuHoursRemaining):
-                            dlg = wx.MessageDialog(launcherMainFrame, 
-                                    "You have requested " + str(cpuHoursRequested) + " CPU hours,\n" +
-                                    "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
-                                    "in your quota for project \"" + massiveProject + "\".",
-                                                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                            dlg.ShowModal()
-                            dlg.Destroy()
-                            dump_log(submit_log=True)
-                            sys.exit(1)
-
                         mybalanceStdout, _ = run_ssh_command(self.sshClient, "mybalance --hours")
                         mybalanceLines = mybalanceStdout.split("\n")
                         foundMassiveProjectInMyBalanceOutput = False
@@ -1891,20 +1908,19 @@ class LauncherMainFrame(wx.Frame):
                                 cpuHoursRequested = int(launcherMainFrame.massiveHoursRequested) * int(launcherMainFrame.massiveVisNodesRequested) * cpusPerVisNode
                                 cpuHoursRemaining = float(mybalanceLineComponents[2])
                                 if cpuHoursRemaining < cpuHoursRequested:
-                                    showInsufficientBalanceRemainingErrorDialogAndExit(launcherMainFrame.massiveProject, cpuHoursRequested, cpuHoursRemaining)
-
-                        def showInvalidMassiveProjectErrorDialogAndExit(massiveProject):
-                            dlg = wx.MessageDialog(launcherMainFrame, 
-                                    "You have requested use of project \"" + massiveProject + "\",\n" +
-                                    "but you don't have access to that project.",
-                                                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                            dlg.ShowModal()
-                            dlg.Destroy()
-                            dump_log(submit_log=True)
-                            sys.exit(1)
+                                    error_string = ("You have requested " + str(cpuHoursRequested) + " CPU hours,\n"
+                                                    "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
+                                                    "in your quota for project \"" + launcherMainFrame.massiveProject + "\".")
+                                    logger_error(error_string)
+                                    die_from_login_thread(error_string)
+                                    return
 
                         if foundMassiveProjectInMyBalanceOutput==False:
-                            showInvalidMassiveProjectErrorDialogAndExit(launcherMainFrame.massiveProject)
+                            error_string = ("You have requested use of project \"" + launcherMainFrame.massiveProject + "\",\n"
+                                             "but you don't have access to that project.")
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
+                            return
 
                         if self.host.startswith("m2"):
                             numberOfBusyVisNodesStdout, _ = run_ssh_command(self.sshClient, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 9 nodes in use")
@@ -1918,6 +1934,7 @@ class LauncherMainFrame(wx.Frame):
                                 dlg.Destroy()
 
                             if "9 of 9" in numberOfBusyVisNodesStdout:
+                                logger_warning("All MASSIVE Vis nodes are currently busy.  Your job will not begin immediately.")
                                 showAllVisnodesBusyWarningDialog()
 
 
@@ -1981,7 +1998,7 @@ class LauncherMainFrame(wx.Frame):
                                 line = lineFragment + buff.readline()
                                 while line != "":
                                     logger_error('channel.recv_stderr_ready(): ' + line)
-                                    wx.CallAfter(launcherMainFrame.SetCursor.StockCursor(wx.CURSOR_ARROW))
+                                    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                             if (channel.recv_ready()):
                                 out = channel.recv(1024)
                                 buff = StringIO(out)
@@ -1995,7 +2012,7 @@ class LauncherMainFrame(wx.Frame):
                                         lineFragment = ""
                                     if "ERROR" in line or "Error" in line or "error" in line:
                                         logger_error('error in line: ' + line)
-                                        wx.CallAfter(launcherMainFrame.SetCursor.StockCursor(wx.CURSOR_ARROW))
+                                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                                     if "waiting for job" in line:
                                         logger_debug('waiting for job in line: ' + line)
                                         lineSplit = line.split(" ")
@@ -2440,6 +2457,7 @@ class LauncherMainFrame(wx.Frame):
         global logger
         global logger_debug
         global logger_error
+        global logger_warning
         global logger_output
         global logger_fh
 
@@ -2452,6 +2470,8 @@ class LauncherMainFrame(wx.Frame):
             wx.CallAfter(logger.debug, message)
         def logger_error(message):
             wx.CallAfter(logger.error, message)
+        def logger_warning(message):
+            wx.CallAfter(logger.warning, message)
 
         log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
 
