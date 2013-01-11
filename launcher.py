@@ -2206,6 +2206,9 @@ class LauncherMainFrame(wx.Frame):
                                 universal_newlines=True)
                             turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\n")
 
+                        # Remove "Launching TurboVNC..." from status bar:
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "") 
+
                         # The original method used to grab the focus back from
                         # TurboVNC viewer failed rather ungracefully a few
                         # times recently, so it was commented out.
