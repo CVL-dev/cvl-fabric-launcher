@@ -221,6 +221,7 @@ def die_from_main_frame(error_message, final_actions=None):
 
     while not launcherMainFrame.loginThread.die_from_main_frame_dialog_completed:
         time.sleep(1)
+
     try:
         if final_actions is not None:
             final_actions()
@@ -243,7 +244,7 @@ def run_ssh_command(ssh_client, command, ignore_errors=False, log_output=True):
     if not ignore_errors and len(stderr) > 0:
         error_message = 'Error running command: "%s" at line %d' % (command, inspect.stack()[1][2])
         logger_error('Nonempty stderr and ignore_errors == False; exiting the launcher with error dialog: ' + error_message)
-        wx.CallAfter(LauncherMainFrame.die_from_main_frame, error_message)
+        die_from_main_frame(error_message) # Don't use wx.CallAfter to ensure that we really do the exit dialog.
 
     return stdout, stderr
 
