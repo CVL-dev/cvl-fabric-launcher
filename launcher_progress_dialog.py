@@ -20,7 +20,7 @@
 import wx
 
 class LauncherProgressDialog(wx.Frame):
-    def __init__(self, parent, id, title, message, maxValue):
+    def __init__(self, parent, id, title, message, maxValue, userCanAbort):
         wx.Frame.__init__(self, parent, id, title, style=wx.STAY_ON_TOP)
 
         self.user_requested_abort = False
@@ -32,7 +32,10 @@ class LauncherProgressDialog(wx.Frame):
 
         self.progressBar.SetSize(wx.Size(250, -1))
         
-        sizer = wx.FlexGridSizer(rows=3, cols=3, vgap=5, hgap=15)
+        if userCanAbort:
+            sizer = wx.FlexGridSizer(rows=3, cols=3, vgap=5, hgap=15)
+        else:
+            sizer = wx.FlexGridSizer(rows=2, cols=3, vgap=5, hgap=15)
 
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
         sizer.Add(self.messageStaticText, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, border=15)
@@ -42,12 +45,13 @@ class LauncherProgressDialog(wx.Frame):
         sizer.Add(self.progressBar, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=15)
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
 
-        sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
-        CANCEL_BUTTON_ID=12345
-        self.cancelButton = wx.Button(self.panel, CANCEL_BUTTON_ID, "Cancel")
-        self.Bind(wx.EVT_BUTTON, self.onCancel, id=CANCEL_BUTTON_ID)
-        sizer.Add(self.cancelButton, flag=wx.ALIGN_CENTER|wx.TOP|wx.BOTTOM, border=15)
-        sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
+        if userCanAbort:
+            sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
+            CANCEL_BUTTON_ID=12345
+            self.cancelButton = wx.Button(self.panel, CANCEL_BUTTON_ID, "Cancel")
+            self.Bind(wx.EVT_BUTTON, self.onCancel, id=CANCEL_BUTTON_ID)
+            sizer.Add(self.cancelButton, flag=wx.ALIGN_CENTER|wx.TOP|wx.BOTTOM, border=15)
+            sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
 
         self.panel.SetSizerAndFit(sizer)
         self.Fit()
@@ -60,7 +64,7 @@ class LauncherProgressDialog(wx.Frame):
         return self.user_requested_abort
 
     def onCancel(self, event):
-        self.messageStaticText.SetLabel("Scheduling abort...")
+        self.messageStaticText.SetLabel("Aborting login...")
         self.user_requested_abort = True
 
     def Update(self, value, message):
