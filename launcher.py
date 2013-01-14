@@ -181,6 +181,12 @@ def dump_log(submit_log=False):
 def die_from_login_thread(error_message, final_actions=None):
     dump_log(submit_log=True)
 
+    if (launcherMainFrame.progressDialog != None):
+        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+        launcherMainFrame.progressDialog = None
+    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+
     def error_dialog():
         dlg = wx.MessageDialog(launcherMainFrame, error_message,
                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
@@ -197,8 +203,6 @@ def die_from_login_thread(error_message, final_actions=None):
         if final_actions is not None:
             final_actions()
     finally:
-        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
-        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
         wx.CallAfter(launcherMainFrame.logWindow.Show, False)
         wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
         wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, False)
@@ -253,6 +257,7 @@ class LauncherMainFrame(wx.Frame):
     def __init__(self, parent, id, title):
 
         self.logWindow = None
+        self.progressDialog = None
 
         if sys.platform.startswith("darwin"):
             wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
@@ -1100,14 +1105,15 @@ class LauncherMainFrame(wx.Frame):
     def onCancel(self, event):
         try:
             try:
-                os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
+                if os.path.isfile(launcherMainFrame.loginThread.privateKeyFile.name):
+                    os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
             except:
                 #logger_debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
                 #logger_debug(traceback.format_exc())
                 pass
 
             if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
-                if launcherMainFrame.loginThread.massiveJobNumber != "0":
+                if launcherMainFrame.loginThread.massiveJobNumber != "0" and launcherMainFrame.loginThread.deletedMassiveJob == False:
                     #logger_debug("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
                     run_ssh_command(launcherMainFrame.loginThread.sshClient, "qdel " + launcherMainFrame.loginThread.massiveJobNumber)
 
@@ -1171,6 +1177,9 @@ class LauncherMainFrame(wx.Frame):
         self.cancelButton.SetCursor(cursor)
         self.loginButton.SetCursor(cursor)
 
+        if self.progressDialog!=None:
+            self.progressDialog.SetCursor(cursor)
+
         super(LauncherMainFrame, self).SetCursor(cursor)
 
     def onLogin(self, event):
@@ -1202,10 +1211,10 @@ class LauncherMainFrame(wx.Frame):
                     maximumProgressBarValue = 10
                     if launcherMainFrame.massiveTabSelected:
                         def initializeProgressDialog():
-                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to MASSIVE...", "", maximumProgressBarValue)
+                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to MASSIVE...", "Connecting to MASSIVE...", maximumProgressBarValue)
                     else:
                         def initializeProgressDialog():
-                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to CVL...", "", maximumProgressBarValue)
+                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to CVL...", "Connecting to CVL...", maximumProgressBarValue)
 
                     wx.CallAfter(initializeProgressDialog)
 
@@ -1490,7 +1499,8 @@ class LauncherMainFrame(wx.Frame):
                             time.sleep(1)
 
                         try:
-                            os.unlink(self.privateKeyFile.name)
+                            if os.path.isfile(launcherMainFrame.loginThread.privateKeyFile.name):
+                                os.unlink(self.privateKeyFile.name)
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
                             self.sshClient.close()
                         finally:
@@ -1561,8 +1571,9 @@ class LauncherMainFrame(wx.Frame):
                     self.updatingProgressDialog = False
                     def updateProgressDialog(value, message):
                         self.updatingProgressDialog = True
-                        launcherMainFrame.progressDialog.Update(value, message)
-                        self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                        if launcherMainFrame.progressDialog!=None:
+                            launcherMainFrame.progressDialog.Update(value, message)
+                            self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
                         self.updatingProgressDialog = False
                         
                     wx.CallAfter(updateProgressDialog, 1, "Logging in to " + self.host)
@@ -1571,7 +1582,9 @@ class LauncherMainFrame(wx.Frame):
                         sleep(0.1)
                     if self.shouldAbort:
                         wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                         die_from_login_thread("User aborted from progress dialog.")
@@ -1603,7 +1616,9 @@ class LauncherMainFrame(wx.Frame):
                         sleep(0.1)
                     if self.shouldAbort:
                         wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                         die_from_login_thread("User aborted from progress dialog.")
@@ -1749,7 +1764,8 @@ class LauncherMainFrame(wx.Frame):
                         except KeyboardInterrupt:
                             logger_debug("C-c: Port forwarding stopped.")
                             try:
-                                os.unlink(tunnelPrivateKeyFileName)
+                                if os.path.isfile(tunnelPrivateKeyFileName):
+                                    os.unlink(tunnelPrivateKeyFileName)
                             finally:
                                 dump_log(submit_log=True)
                                 os._exit(0)
@@ -1782,7 +1798,9 @@ class LauncherMainFrame(wx.Frame):
                         sleep(0.1)
                     if self.shouldAbort:
                         wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                         die_from_login_thread("User aborted from progress dialog.")
@@ -1813,7 +1831,8 @@ class LauncherMainFrame(wx.Frame):
                         while launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted==False:
                             time.sleep(1)
                         try:
-                            os.unlink(self.privateKeyFile.name)
+                            if os.path.isfile(self.privateKeyFile.name):
+                                os.unlink(self.privateKeyFile.name)
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
                             self.sshClient.close()
                         finally:
@@ -1835,7 +1854,9 @@ class LauncherMainFrame(wx.Frame):
                             sleep(0.1)
                         if self.shouldAbort:
                             wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                             die_from_login_thread("User aborted from progress dialog.")
@@ -1851,9 +1872,14 @@ class LauncherMainFrame(wx.Frame):
                             if stdoutRead.strip()!="" and launcherMainFrame.massivePersistentMode==False:
                                 stdoutReadSplit = stdoutRead.split(" ")
                                 jobNumber = stdoutReadSplit[0] # e.g. 3050965
+                                if (launcherMainFrame.progressDialog != None):
+                                    wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                    launcherMainFrame.progressDialog = None
+                                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                                wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                                 logger_error("MASSIVE Launcher only allows you to have one job in the Vis node queue.")
                                 def showExistingJobFoundInVisNodeQueueMessageDialog():
-                                    dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one interactive job in the Vis node queue.\n\n" +
+                                    dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
                                                                             "You already have at least one job in the Vis node queue:\n\n" + 
                                                                             stdoutRead.strip() + "\n\n" +
                                                                             "To delete existing Vis node job(s), SSH to\n" + 
@@ -1870,7 +1896,8 @@ class LauncherMainFrame(wx.Frame):
                                 while launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted==False:
                                     time.sleep(1)
                                 try:
-                                    os.unlink(self.privateKeyFile.name)
+                                    if os.path.isfile(self.privateKeyFile.name):
+                                        os.unlink(self.privateKeyFile.name)
                                     self.sshClient.close()
                                 finally:
                                     dump_log(submit_log=True)
@@ -1885,7 +1912,9 @@ class LauncherMainFrame(wx.Frame):
                             sleep(0.1)
                         if self.shouldAbort:
                             wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                             die_from_login_thread("User aborted from progress dialog.")
@@ -1942,7 +1971,9 @@ class LauncherMainFrame(wx.Frame):
                             sleep(0.1)
                         if self.shouldAbort:
                             wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                             die_from_login_thread("User aborted from progress dialog.")
@@ -1973,6 +2004,7 @@ class LauncherMainFrame(wx.Frame):
                         lineFragment = ""
                         checkedShowStart = False
                         self.massiveJobNumber = "0"
+                        self.deletedMassiveJob = False
 
                         while True:
                             tCheck = 0
@@ -1981,8 +2013,8 @@ class LauncherMainFrame(wx.Frame):
                                 #wx.CallAfter(sys.stdout.write, "*")
                                 time.sleep(1)
                                 tCheck+=1
-                                if tCheck >= 10:
-                                    # After 10 seconds, we still haven't obtained a visnode...
+                                if tCheck >= 5:
+                                    # After 5 seconds, we still haven't obtained a visnode...
                                     if (not checkedShowStart) and self.massiveJobNumber!="0":
                                         checkedShowStart = True
                                         def showStart():
@@ -1995,6 +2027,13 @@ class LauncherMainFrame(wx.Frame):
                                                 logger_debug("showstart " + self.massiveJobNumber + "...")
                                                 logger_debug('showstart stderr: ' + stderrRead)
                                                 logger_debug('showstart stdout: ' + stdoutRead)
+
+                                                showstartLines = stdoutRead.split("\n")
+                                                for showstartLine in showstartLines:
+                                                    if showstartLine.startswith("Estimated Rsv based start"):
+                                                        showstartLineComponents = showstartLine.split(" on ")
+                                                        wx.CallAfter(updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
+                                                        wx.Yield()
                                             sshClient2.close()
 
                                         showStartThread = threading.Thread(target=showStart)
@@ -2049,7 +2088,9 @@ class LauncherMainFrame(wx.Frame):
                             sleep(0.1)
                         if self.shouldAbort:
                             wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                             die_from_login_thread("User aborted from progress dialog.")
@@ -2081,7 +2122,9 @@ class LauncherMainFrame(wx.Frame):
                             sleep(0.1)
                         if self.shouldAbort:
                             wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                             die_from_login_thread("User aborted from progress dialog.")
@@ -2140,7 +2183,9 @@ class LauncherMainFrame(wx.Frame):
                         sleep(0.1)
                     if self.shouldAbort:
                         wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                         die_from_login_thread("User aborted from progress dialog.")
@@ -2168,7 +2213,9 @@ class LauncherMainFrame(wx.Frame):
                         sleep(0.1)
                     if self.shouldAbort:
                         wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                         die_from_login_thread("User aborted from progress dialog.")
@@ -2259,24 +2306,37 @@ class LauncherMainFrame(wx.Frame):
                         def destroyProgressDialog():
                             updateProgressDialog(10, "Launching TurboVNC...")
                             launcherMainFrame.progressDialog.Show(False)
-                            launcherMainFrame.progressDialog.Destroy()
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
 
                         wx.CallAfter(destroyProgressDialog)
 
-                        if sys.platform.startswith("win"):
-                            vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
-                            logger_debug('vncCommandString windows: ' +  vncCommandString)
-                            proc = subprocess.Popen(vncCommandString, 
-                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                                universal_newlines=True)
-                            turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\r\n")
-                        else:
-                            vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
-                            logger_debug('vncCommandString linux/darwin: ' + vncCommandString)
-                            proc = subprocess.Popen(vncCommandString, 
-                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                                universal_newlines=True)
-                            turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\n")
+                        self.turboVncProcess = None
+                        self.turboVncStdout = None
+                        self.turboVncStderr = None
+                        self.turboVncCompleted = False
+
+                        def launchTurboVNC():
+                            if sys.platform.startswith("win"):
+                                vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
+                                logger_debug('vncCommandString windows: ' +  vncCommandString)
+                                self.turboVncProcess = subprocess.Popen(vncCommandString, 
+                                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                    universal_newlines=True)
+                                self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.password + "\r\n")
+                            else:
+                                vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
+                                logger_debug('vncCommandString linux/darwin: ' + vncCommandString)
+                                self.turboVncProcess = subprocess.Popen(vncCommandString, 
+                                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                    universal_newlines=True)
+                                self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.password + "\n")
+                            self.turboVncCompleted = True
+
+                        wx.CallAfter(launchTurboVNC)
+                        while self.turboVncCompleted==False:
+                            time.sleep(1)
 
                         # Remove "Launching TurboVNC..." from status bar:
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "") 
@@ -2309,11 +2369,11 @@ class LauncherMainFrame(wx.Frame):
 
                         logger_debug('turboVncFinishTime = ' + str(self.turboVncFinishTime))
 
-                        if turboVncStderr != None and turboVncStderr.strip()!="":
-                            logger_debug('turboVncStderr: ' + turboVncStderr)
+                        if self.turboVncStderr != None and self.turboVncStderr.strip()!="":
+                            logger_debug('self.turboVncStderr: ' + self.turboVncStderr)
 
-                        if proc.returncode != 0:
-                            logger_debug('turboVncStdout: ' + turboVncStdout)
+                        if self.turboVncProcess.returncode != 0:
+                            logger_debug('self.turboVncStdout: ' + self.turboVncStdout)
 
                         try:
                             logger_debug('at start of try... clause when TurboVNC has exited')
@@ -2376,16 +2436,18 @@ class LauncherMainFrame(wx.Frame):
 
                             try:
                                 logger_debug('Removing the private key file')
-                                os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
+                                if os.path.isfile(launcherMainFrame.loginThread.privateKeyFile.name):
+                                    os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
                             except:
                                 logger_debug('Error while unlinking private key file...')
                                 logger_debug(traceback.format_exc())
 
                             if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
                                 logger_debug('Possibly running qdel for massive visnode...')
-                                if launcherMainFrame.loginThread.massiveJobNumber != "0":
+                                if launcherMainFrame.loginThread.massiveJobNumber != "0" and launcherMainFrame.loginThread.deletedMassiveJob == False:
                                     logger_debug("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
                                     run_ssh_command(launcherMainFrame.loginThread.sshClient, "qdel " + launcherMainFrame.loginThread.massiveJobNumber)
+                                    self.deletedMassiveJob = True
                             else:
                                 logger_debug('Not running qdel for massive visnode.')
 
@@ -2403,7 +2465,7 @@ class LauncherMainFrame(wx.Frame):
                             # than 3 seconds.
                             turboVncElapsedTime = self.turboVncFinishTime - self.turboVncStartTime
                             turboVncElapsedTimeInSeconds = turboVncElapsedTime.total_seconds()
-                            if turboVncElapsedTimeInSeconds>=3 and proc.returncode==0 and (turboVncStderr==None or turboVncStderr.strip()==""):
+                            if turboVncElapsedTimeInSeconds>=3 and self.turboVncProcess.returncode==0 and (self.turboVncStderr==None or self.turboVncStderr.strip()==""):
                                 logger_debug('Elapsed time at least 3 seconds and return code ok, so exiting.')
                                 dump_log()
                                 os._exit(0)
