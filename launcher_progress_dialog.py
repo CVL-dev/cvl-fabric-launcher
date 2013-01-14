@@ -18,12 +18,12 @@
 #  Enquires: James.Wettenhall@monash.edu or help@massive.org.au
 
 import wx
-#import time # Just for testing.
-#import os # Just for testing.
 
 class LauncherProgressDialog(wx.Frame):
-    def __init__(self, parent, id, title, message, maxValue, onCancel):
-        wx.Frame.__init__(self, parent, id, title, style=wx.STAY_ON_TOP|wx.FRAME_FLOAT_ON_PARENT)
+    def __init__(self, parent, id, title, message, maxValue):
+        wx.Frame.__init__(self, parent, id, title, style=wx.STAY_ON_TOP)
+
+        self.user_requested_abort = False
 
         self.panel = wx.Panel(self, wx.ID_ANY) 
         self.messageStaticText = wx.StaticText(self.panel, label = message)
@@ -43,42 +43,29 @@ class LauncherProgressDialog(wx.Frame):
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
 
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
-        CANCEL_BUTTON_ID=123
+        CANCEL_BUTTON_ID=12345
         self.cancelButton = wx.Button(self.panel, CANCEL_BUTTON_ID, "Cancel")
-        self.Bind(wx.EVT_BUTTON, onCancel, id=CANCEL_BUTTON_ID)
+        self.Bind(wx.EVT_BUTTON, self.onCancel, id=CANCEL_BUTTON_ID)
         sizer.Add(self.cancelButton, flag=wx.ALIGN_CENTER|wx.TOP|wx.BOTTOM, border=15)
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
 
         self.panel.SetSizerAndFit(sizer)
         self.Fit()
+        self.Center()
+        self.Show()
 
         return None
 
+    def shouldAbort(self):
+        return self.user_requested_abort
+
+    def onCancel(self, event):
+        self.messageStaticText.SetLabel("Scheduling abort...")
+        self.user_requested_abort = True
+
     def Update(self, value, message):
+        if self.user_requested_abort:
+            return
         self.progressBar.SetValue(value)
         self.messageStaticText.SetLabel(message)
-        wx.Yield()
-
-#class TestApp(wx.App):
-    #def OnInit(self):
-
-        #def onCancel(event):
-            #os._exit(1)
-        ## Parent shouldn't really be None because the progress dialgo uses the wx.FRAME_FLOAT_ON_PARENT style.
-        #progressDialog = LauncherProgressDialog(None, wx.ID_ANY, "Connecting to MASSIVE...", "Connecting to MASSIVE...", 10, onCancel)
-        #progressDialog.Show()
-
-        #self.SetTopWindow(progressDialog)
-
-        #time.sleep(0.5)
-        #progressDialog.Update(1, "One")
-        #time.sleep(0.5)
-        #progressDialog.Update(2, "Two")
-        #time.sleep(0.5)
-        #progressDialog.Update(3, "Three")
-
-        #return True
-
-#app = TestApp(0)
-#app.MainLoop()
 
