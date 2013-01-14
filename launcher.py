@@ -958,7 +958,47 @@ class LauncherMainFrame(wx.Frame):
             dump_log(submit_log=True)
             sys.exit(1)
 
+        # Moved logger definitions to before version number check, because if the 
+        # version number check fails, logger_debug will be called.
 
+        global transport_logger
+        global logger
+        global logger_debug
+        global logger_error
+        global logger_warning
+        global logger_output
+        global logger_fh
+
+        transport_logger = logging.getLogger('ssh.transport')
+        transport_logger.setLevel(logging.DEBUG)
+
+        logger = logging.getLogger('launcher')
+        logger.setLevel(logging.DEBUG)
+        def logger_debug(message):
+            wx.CallAfter(logger.debug, message)
+        def logger_error(message):
+            wx.CallAfter(logger.error, message)
+        def logger_warning(message):
+            wx.CallAfter(logger.warning, message)
+
+        log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
+
+        # Send all log messages to a string.
+        logger_output = StringIO()
+        string_handler = logging.StreamHandler(stream=logger_output)
+        string_handler.setLevel(logging.DEBUG)
+        string_handler.setFormatter(logging.Formatter(log_format_string))
+        logger.addHandler(string_handler)
+        transport_logger.addHandler(string_handler)
+
+        # Finally, send all log messages to a log file.
+        from os.path import expanduser, join
+        logger_fh = logging.FileHandler(join(expanduser("~"), '.MASSIVE_Launcher_debug_log.txt'))
+        logger_fh.setLevel(logging.DEBUG)
+        logger_fh.setFormatter(logging.Formatter(log_format_string))
+        logger.addHandler(logger_fh)
+        transport_logger.addHandler(logger_fh)
+        
         latestVersionNumber = myHtmlParser.latestVersionNumber
         htmlComments = myHtmlParser.htmlComments
         htmlCommentsSplit1 = htmlComments.split("<pre id=\"CHANGES\">")
@@ -966,136 +1006,14 @@ class LauncherMainFrame(wx.Frame):
         latestVersionChanges = htmlCommentsSplit2[0].strip()
 
         if latestVersionNumber!=launcher_version_number.version_number:
-            newVersionAlertDialog = wx.Dialog(launcherMainFrame, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
-
-            if sys.platform.startswith("win"):
-                _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
-                newVersionAlertDialog.SetIcon(_icon)
-
-            if sys.platform.startswith("linux"):
-                import MASSIVE_icon
-                newVersionAlertDialog.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
-
-            massiveIconPanel = wx.Panel(newVersionAlertDialog)
-
-            import MASSIVE_icon
-            massiveIconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
-            wx.StaticBitmap(massiveIconPanel, wx.ID_ANY, 
-                massiveIconAsBitmap,
-                (0, 50),
-                (massiveIconAsBitmap.GetWidth(), massiveIconAsBitmap.GetHeight())) 
-
-            newVersionAlertPanel = wx.Panel(newVersionAlertDialog)
-
-            newVersionAlertPanelSizer = wx.FlexGridSizer(rows=8, cols=1, vgap=5, hgap=5)
-            newVersionAlertPanel.SetSizer(newVersionAlertPanelSizer)
-
-            newVersionAlertTitleLabel = wx.StaticText(newVersionAlertPanel,
-                label = "MASSIVE/CVL Launcher")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            font.SetPointSize(14)
-            font.SetWeight(wx.BOLD)
-            newVersionAlertTitleLabel.SetFont(font)
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel))
-            newVersionAlertPanelSizer.Add(newVersionAlertTitleLabel, flag=wx.EXPAND)
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel))
-
-            newVersionAlertTextLabel1 = wx.StaticText(newVersionAlertPanel, 
-                label = 
-                "You are running version " + launcher_version_number.version_number + "\n\n" +
-                "The latest version is " + latestVersionNumber + "\n\n" +
-                "Please download a new version from:\n\n")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(9)
-            newVersionAlertTextLabel1.SetFont(font)
-            newVersionAlertPanelSizer.Add(newVersionAlertTextLabel1, flag=wx.EXPAND)
-
-            newVersionAlertHyperlink = wx.HyperlinkCtrl(newVersionAlertPanel, 
-                id = wx.ID_ANY,
-                label = LAUNCHER_URL,
-                url = LAUNCHER_URL)
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(8)
-            newVersionAlertHyperlink.SetFont(font)
-            newVersionAlertPanelSizer.Add(newVersionAlertHyperlink, border=10, flag=wx.LEFT|wx.BORDER)
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel))
-
-            self.latestVersionChangesTextCtrl = wx.TextCtrl(newVersionAlertPanel, 
-                size=(600, 200), style=wx.TE_MULTILINE|wx.TE_READONLY)
-            newVersionAlertPanelSizer.Add(self.latestVersionChangesTextCtrl, flag=wx.EXPAND)
-            if sys.platform.startswith("darwin"):
-                font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-            else:
-                font = wx.Font(9, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-            self.latestVersionChangesTextCtrl.SetFont(font)
-            self.latestVersionChangesTextCtrl.AppendText(latestVersionChanges)
-            self.latestVersionChangesTextCtrl.SetInsertionPoint(0)
-
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel, wx.ID_ANY, ""))
-            newVersionAlertQueriesContactLabel = wx.StaticText(newVersionAlertPanel, 
-                label = 
-                "For queries, please contact:")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(9)
-            newVersionAlertQueriesContactLabel.SetFont(font)
-            newVersionAlertPanelSizer.Add(newVersionAlertQueriesContactLabel, border=10, flag=wx.EXPAND|wx.BORDER)
-
-            contactEmailHyperlink = wx.HyperlinkCtrl(newVersionAlertPanel, 
-                id = wx.ID_ANY,
-                label = "help@massive.org.au",
-                url = "mailto:help@massive.org.au")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(8)
-            contactEmailHyperlink.SetFont(font)
-            newVersionAlertPanelSizer.Add(contactEmailHyperlink, border=20, flag=wx.LEFT|wx.BORDER)
-
-            contactEmail2Hyperlink = wx.HyperlinkCtrl(newVersionAlertPanel, 
-                id = wx.ID_ANY,
-                label = "James.Wettenhall@monash.edu",
-                url = "mailto:James.Wettenhall@monash.edu")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(8)
-            contactEmail2Hyperlink.SetFont(font)
-            newVersionAlertPanelSizer.Add(contactEmail2Hyperlink, border=20, flag=wx.LEFT|wx.BORDER)
-
-            def onOK(event):
-                dump_log(submit_log=True)
-                sys.exit(1)
-
-            okButton = wx.Button(newVersionAlertPanel, 1, ' OK ')
-            okButton.SetDefault()
-            newVersionAlertPanelSizer.Add(okButton, flag=wx.ALIGN_RIGHT)
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel))
-            newVersionAlertPanelSizer.Fit(newVersionAlertPanel)
-
-            newVersionAlertDialog.Bind(wx.EVT_BUTTON, onOK, id=1)
-
-            newVersionAlertDialogSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=5)
-            newVersionAlertDialogSizer.Add(massiveIconPanel, flag=wx.EXPAND)
-            newVersionAlertDialogSizer.Add(newVersionAlertPanel, flag=wx.EXPAND)
-            newVersionAlertDialogSizer.Add(wx.StaticText(newVersionAlertDialog,label="       "))
-            newVersionAlertDialog.SetSizer(newVersionAlertDialogSizer)
-            newVersionAlertDialogSizer.Fit(newVersionAlertDialog)
-
+            import new_version_alert_dialog
+            newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
-            newVersionAlertDialog.Destroy()
 
-            dump_log(submit_log=True)
+            # Tried submit_log=True, but it didn't work. 
+            # Maybe the requests stuff hasn't been initialized yet.
+            logger_debug("Failed version number check.")
+            dump_log(submit_log=False)
             sys.exit(1)
 
     def onMassiveLoginHostNameChanged(self, event):
@@ -1278,6 +1196,17 @@ class LauncherMainFrame(wx.Frame):
                     if launcherMainFrame.tabbedView.GetSelection()==CVL_TAB_INDEX:
                         launcherMainFrame.massiveTabSelected = False
                         launcherMainFrame.cvlTabSelected = True
+
+                    import launcher_progress_dialog
+                    maximumProgressBarValue = 10
+                    if launcherMainFrame.massiveTabSelected:
+                        def initializeProgressDialog():
+                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to MASSIVE...", "", maximumProgressBarValue)
+                    else:
+                        def initializeProgressDialog():
+                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to CVL...", "", maximumProgressBarValue)
+
+                    wx.CallAfter(initializeProgressDialog)
 
                     if launcherMainFrame.massiveTabSelected:
                         self.host       = launcherMainFrame.massiveLoginHost
@@ -1626,6 +1555,27 @@ class LauncherMainFrame(wx.Frame):
                     # Initial SSH login
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Logging in to " + self.host)
+
+                    self.shouldAbort = False
+                    self.updatingProgressDialog = False
+                    def updateProgressDialog(value, message):
+                        self.updatingProgressDialog = True
+                        launcherMainFrame.progressDialog.Update(value, message)
+                        self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                        self.updatingProgressDialog = False
+                        
+                    wx.CallAfter(updateProgressDialog, 1, "Logging in to " + self.host)
+                    wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.")
+                        return
+
                     logger_debug("Attempting to log in to " + self.host)
                     
                     self.sshClient = ssh.SSHClient()
@@ -1645,6 +1595,18 @@ class LauncherMainFrame(wx.Frame):
                     logger_debug("Generating SSH key-pair for tunnel.")
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Generating SSH key-pair for tunnel...")
+
+                    wx.CallAfter(updateProgressDialog, 2, "Generating SSH key-pair for tunnel...")
+                    wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.")
+                        return
 
                     run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair*")
                     run_ssh_command(self.sshClient, "/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
@@ -1813,6 +1775,18 @@ class LauncherMainFrame(wx.Frame):
                     testTunnelThread = threading.Thread(target=createTunnel, args=(testLocalPortNumber,testRemoteHost,testRemotePortNumber,testTunnelServer,testTunnelUsername,testTunnelPrivateKeyFileName,testRun))
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Testing SSH tunnelling...")
+                    wx.CallAfter(updateProgressDialog, 3, "Testing SSH tunnelling...")
+                    wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.")
+                        return
+
                     logger_debug("Testing SSH tunnelling.")
 
                     testTunnelThread.start()
@@ -1854,6 +1828,17 @@ class LauncherMainFrame(wx.Frame):
 
                         self.massiveVisNodes = []
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
+                        wx.CallAfter(updateProgressDialog, 4, "Setting display resolution...")
+                        wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.")
+                            return
 
                         set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + self.resolution
                         run_ssh_command(self.sshClient, set_display_resolution_cmd)
@@ -1893,6 +1878,17 @@ class LauncherMainFrame(wx.Frame):
                                 logger_debug("You don't have any jobs already in the Vis node queue, which is good.")
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
+                        wx.CallAfter(updateProgressDialog, 5, "Checking quota...")
+                        wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.")
+                            return
 
                         mybalanceStdout, _ = run_ssh_command(self.sshClient, "mybalance --hours")
                         mybalanceLines = mybalanceStdout.split("\n")
@@ -1939,6 +1935,17 @@ class LauncherMainFrame(wx.Frame):
 
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
+                        wx.CallAfter(updateProgressDialog, 6, "Requesting remote desktop...")
+                        wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.")
+                            return
 
                         qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
 
@@ -2035,6 +2042,17 @@ class LauncherMainFrame(wx.Frame):
 
                         #wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + self.massiveVisNodes[0])
+                        wx.CallAfter(updateProgressDialog, 7, "Acquired desktop node: " + self.massiveVisNodes[0])
+                        wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.")
+                            return
 
                         visnode_id = ''
 
@@ -2050,6 +2068,24 @@ class LauncherMainFrame(wx.Frame):
 
                         # End if launcherMainFrame.massiveTabSelected:
                     else:
+                        if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
+                            wx.CallAfter(updateProgressDialog, 6, "Requesting remote desktop...")
+                            wx.Yield()
+                        else:
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Connecting to remote desktop...")
+                            wx.CallAfter(updateProgressDialog, 6, "Connecting to remote desktop...")
+                            wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.")
+                            return
+
                         self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
                             cvlVncServerCommand = "vncsession --vnc tigervnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
@@ -2093,6 +2129,22 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
+                    if launcherMainFrame.massiveTabSelected:
+                        wx.CallAfter(updateProgressDialog, 8, "Creating secure tunnel...")
+                        wx.Yield()
+                    else:
+                        wx.CallAfter(updateProgressDialog, 7, "Creating secure tunnel...")
+                        wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.")
+                        return
+
                     tunnelThread.start()
 
                     count = 1
@@ -2108,6 +2160,18 @@ class LauncherMainFrame(wx.Frame):
                     # TurboVNC
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Launching TurboVNC...")
+
+                    wx.CallAfter(updateProgressDialog, 9, "Launching TurboVNC...")
+                    wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.")
+                        return
 
                     if launcherMainFrame.massiveTabSelected:
                         logger_debug("Starting MASSIVE VNC.")
@@ -2190,6 +2254,13 @@ class LauncherMainFrame(wx.Frame):
                                     vncOptionsString = vncOptionsString + " /loglevel " + launcherMainFrame.vncOptions['loglevel']
                                 if 'logfile' in launcherMainFrame.vncOptions:
                                     vncOptionsString = vncOptionsString + " /logfile \"" + launcherMainFrame.vncOptions['logfile'] + "\""
+
+                        def destroyProgressDialog():
+                            updateProgressDialog(10, "Launching TurboVNC...")
+                            launcherMainFrame.progressDialog.Show(False)
+                            launcherMainFrame.progressDialog.Destroy()
+
+                        wx.CallAfter(destroyProgressDialog)
 
                         if sys.platform.startswith("win"):
                             vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
@@ -2451,44 +2522,10 @@ class LauncherMainFrame(wx.Frame):
             font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         self.logTextCtrl.SetFont(font)
 
-        if launcherMainFrame.massiveTabSelected:
-            self.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
-        else:
-            self.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
-
-        global transport_logger
-        global logger
-        global logger_debug
-        global logger_error
-        global logger_warning
-        global logger_output
-        global logger_fh
-
-        transport_logger = logging.getLogger('ssh.transport')
-        transport_logger.setLevel(logging.DEBUG)
-
-        logger = logging.getLogger('launcher')
-        logger.setLevel(logging.DEBUG)
-        def logger_debug(message):
-            wx.CallAfter(logger.debug, message)
-        def logger_error(message):
-            wx.CallAfter(logger.error, message)
-        def logger_warning(message):
-            wx.CallAfter(logger.warning, message)
-
-        log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
-
-        # Send all log messages to a string.
-        logger_output = StringIO()
-        string_handler = logging.StreamHandler(stream=logger_output)
-        string_handler.setLevel(logging.DEBUG)
-        string_handler.setFormatter(logging.Formatter(log_format_string))
-        logger.addHandler(string_handler)
-        transport_logger.addHandler(string_handler)
-
         # Send all log messages to the debug window, which may or may not be visible.
         log_window_handler = logging.StreamHandler(stream=self.logTextCtrl)
         log_window_handler.setLevel(logging.DEBUG)
+        log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
         log_window_handler.setFormatter(logging.Formatter(log_format_string))
         logger.addHandler(log_window_handler)
         # Don't send ssh.transport log messages to
@@ -2497,14 +2534,11 @@ class LauncherMainFrame(wx.Frame):
         # our own customized version of the ssh module.
         #transport_logger.addHandler(log_window_handler)
 
-        # Finally, send all log messages to a log file.
-        from os.path import expanduser, join
-        logger_fh = logging.FileHandler(join(expanduser("~"), '.MASSIVE_Launcher_debug_log.txt'))
-        logger_fh.setLevel(logging.DEBUG)
-        logger_fh.setFormatter(logging.Formatter(log_format_string))
-        logger.addHandler(logger_fh)
-        transport_logger.addHandler(logger_fh)
-        
+        if launcherMainFrame.massiveTabSelected:
+            self.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
+        else:
+            self.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
+
         self.loginThread = LoginThread(self)
         self.loginThread.start()
 
