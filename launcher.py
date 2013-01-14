@@ -213,6 +213,12 @@ def die_from_login_thread(error_message, final_actions=None):
 def die_from_main_frame(error_message, final_actions=None):
     dump_log(submit_log=True)
 
+    if (launcherMainFrame.progressDialog != None):
+        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+        launcherMainFrame.progressDialog = None
+    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+
     def error_dialog():
         dlg = wx.MessageDialog(launcherMainFrame, "Error: " + error_message + "\n\n" + "The launcher cannot continue.\n",
                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
