@@ -178,7 +178,7 @@ def dump_log(submit_log=False):
 
 
 
-def die_from_login_thread(error_message, final_actions=None, display_error_dialog=True):
+def die_from_login_thread(error_message, display_error_dialog=True):
     dump_log(submit_log=True)
 
     if (launcherMainFrame.progressDialog != None):
@@ -201,18 +201,13 @@ def die_from_login_thread(error_message, final_actions=None, display_error_dialo
 
     while not launcherMainFrame.loginThread.die_from_login_thread_completed:
         time.sleep(1)
-    try:
-        if final_actions is not None:
-            final_actions()
-    finally:
-        wx.CallAfter(launcherMainFrame.logWindow.Show, False)
-        wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
-        wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, False)
-        wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, False)
-        return
 
+    wx.CallAfter(launcherMainFrame.logWindow.Show, False)
+    wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
+    wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, False)
+    wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, False)
 
-def die_from_main_frame(error_message, final_actions=None):
+def die_from_main_frame(error_message):
     dump_log(submit_log=True)
 
     if (launcherMainFrame.progressDialog != None):
@@ -234,11 +229,7 @@ def die_from_main_frame(error_message, final_actions=None):
     while not launcherMainFrame.loginThread.die_from_main_frame_dialog_completed:
         time.sleep(1)
 
-    try:
-        if final_actions is not None:
-            final_actions()
-    finally:
-        os._exit(1)
+    os._exit(1)
 
 
 
@@ -256,7 +247,7 @@ def run_ssh_command(ssh_client, command, ignore_errors=False, log_output=True):
     if not ignore_errors and len(stderr) > 0:
         error_message = 'Error running command: "%s" at line %d' % (command, inspect.stack()[1][2])
         logger_error('Nonempty stderr and ignore_errors == False; exiting the launcher with error dialog: ' + error_message)
-        die_from_main_frame(error_message) # Don't use wx.CallAfter to ensure that we really do the exit dialog.
+        die_from_main_frame(error_message)
 
     return stdout, stderr
 
