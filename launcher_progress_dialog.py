@@ -66,6 +66,7 @@ class LauncherProgressDialog(wx.Frame):
     def onCancel(self, event):
         self.messageStaticText.SetLabel("Aborting login...")
         self.user_requested_abort = True
+        self.cancelButton.Enable(False)
 
     def Update(self, value, message):
         if self.user_requested_abort:

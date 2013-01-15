@@ -177,6 +177,35 @@ def dump_log(submit_log=False):
     return
 
 
+def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, update_main_progress_bar=False, update_tidying_up_progress_bar=False, ignore_errors=False):
+    if launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary:
+        return
+    
+    launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = True
+    if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
+        if write_debug_log:
+            logger_debug('Possibly running qdel for MASSIVE Vis node...')
+        if launcherMainFrame.loginThread.massiveJobNumber != "0" and launcherMainFrame.loginThread.deletedMassiveJob == False:
+            if update_status_bar:
+                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Deleting MASSIVE Vis node job.")
+            if update_main_progress_bar:
+                wx.CallAfter(launcherMainFrame.loginThread.updateProgressDialog, 6, "Deleting MASSIVE Vis node job...")
+                wx.Yield()
+            if update_tidying_up_progress_bar:
+                wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 2, "Deleting MASSIVE Vis node job...")
+                wx.Yield()
+            if write_debug_log:
+                logger_debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
+            run_ssh_command(launcherMainFrame.loginThread.sshClient,
+                            "qdel -a " + launcherMainFrame.loginThread.massiveJobNumber, ignore_errors=ignore_errors)
+            launcherMainFrame.loginThread.deletedMassiveJob = True
+            if update_status_bar:
+                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+    else:
+        if write_debug_log:
+            logger_debug('Not running qdel for massive visnode.')
+    launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = False
+
 
 def die_from_login_thread(error_message, final_actions=None, display_error_dialog=True):
     dump_log(submit_log=True)
@@ -1120,11 +1149,7 @@ class LauncherMainFrame(wx.Frame):
                 #logger_debug(traceback.format_exc())
                 pass
 
-            if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
-                if launcherMainFrame.loginThread.massiveJobNumber != "0" and launcherMainFrame.loginThread.deletedMassiveJob == False:
-                    #logger_debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
-                    run_ssh_command(launcherMainFrame.loginThread.sshClient,
-                                    "qdel -a " + launcherMainFrame.loginThread.massiveJobNumber, ignore_errors=False)
+            deleteMassiveJobIfNecessary(write_debug_log=False,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=False,ignore_errors=False)
 
             launcherMainFrame.loginThread.sshClient.close()
 
@@ -1199,10 +1224,23 @@ class LauncherMainFrame(wx.Frame):
                 threading.Thread.__init__(self)
                 self._notify_window = notify_window
 
+            def updateProgressDialog(self, value, message):
+                self.updatingProgressDialog = True
+                if launcherMainFrame.progressDialog!=None:
+                    launcherMainFrame.progressDialog.Update(value, message)
+                    self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                self.updatingProgressDialog = False
+                
+            def updateTidyingUpProgressDialog(self, value, message):
+                    launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
+                                
             def run(self):
                 """Run Worker Thread."""
 
                 try:
+
+                    self.runningDeleteMassiveJobIfNecessary = False
+
                     wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
 
                     wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
@@ -1581,14 +1619,7 @@ class LauncherMainFrame(wx.Frame):
 
                     self.shouldAbort = False
                     self.updatingProgressDialog = False
-                    def updateProgressDialog(value, message):
-                        self.updatingProgressDialog = True
-                        if launcherMainFrame.progressDialog!=None:
-                            launcherMainFrame.progressDialog.Update(value, message)
-                            self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
-                        self.updatingProgressDialog = False
-                        
-                    wx.CallAfter(updateProgressDialog, 1, "Logging in to " + self.host)
+                    wx.CallAfter(self.updateProgressDialog, 1, "Logging in to " + self.host)
                     wx.Yield()
                     while (self.updatingProgressDialog):
                         sleep(0.1)
@@ -1622,7 +1653,7 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Generating SSH key-pair for tunnel...")
 
-                    wx.CallAfter(updateProgressDialog, 2, "Generating SSH key-pair for tunnel...")
+                    wx.CallAfter(self.updateProgressDialog, 2, "Generating SSH key-pair for tunnel...")
                     wx.Yield()
                     while (self.updatingProgressDialog):
                         sleep(0.1)
@@ -1804,7 +1835,7 @@ class LauncherMainFrame(wx.Frame):
                     testTunnelThread = threading.Thread(target=createTunnel, args=(testLocalPortNumber,testRemoteHost,testRemotePortNumber,testTunnelServer,testTunnelUsername,testTunnelPrivateKeyFileName,testRun))
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Testing SSH tunnelling...")
-                    wx.CallAfter(updateProgressDialog, 3, "Testing SSH tunnelling...")
+                    wx.CallAfter(self.updateProgressDialog, 3, "Testing SSH tunnelling...")
                     wx.Yield()
                     while (self.updatingProgressDialog):
                         sleep(0.1)
@@ -1860,7 +1891,7 @@ class LauncherMainFrame(wx.Frame):
 
                         self.massiveVisNodes = []
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
-                        wx.CallAfter(updateProgressDialog, 4, "Setting display resolution...")
+                        wx.CallAfter(self.updateProgressDialog, 4, "Setting display resolution...")
                         wx.Yield()
                         while (self.updatingProgressDialog):
                             sleep(0.1)
@@ -1918,7 +1949,7 @@ class LauncherMainFrame(wx.Frame):
                                 logger_debug("You don't have any jobs already in the Vis node queue, which is good.")
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
-                        wx.CallAfter(updateProgressDialog, 5, "Checking quota...")
+                        wx.CallAfter(self.updateProgressDialog, 5, "Checking quota...")
                         wx.Yield()
                         while (self.updatingProgressDialog):
                             sleep(0.1)
@@ -1977,7 +2008,7 @@ class LauncherMainFrame(wx.Frame):
 
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
-                        wx.CallAfter(updateProgressDialog, 6, "Requesting remote desktop...")
+                        wx.CallAfter(self.updateProgressDialog, 6, "Requesting remote desktop...")
                         wx.Yield()
                         while (self.updatingProgressDialog):
                             sleep(0.1)
@@ -2020,13 +2051,26 @@ class LauncherMainFrame(wx.Frame):
 
                         while True:
                             tCheck = 0
+
+                            self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                            if self.shouldAbort:
+                                deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,update_tidying_up_progress_bar=False,ignore_errors=False)
+                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                                if launcherMainFrame.progressDialog != None:
+                                    wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                    launcherMainFrame.progressDialog = None
+                                wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                                die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                                return
+
                             while not channel.recv_ready() and not channel.recv_stderr_ready():
                                 #Use asterisks to simulate progress bar:
                                 #wx.CallAfter(sys.stdout.write, "*")
                                 time.sleep(1)
                                 tCheck+=1
-                                if tCheck >= 5:
-                                    # After 5 seconds, we still haven't obtained a visnode...
+                                if tCheck >= 10:
+                                    # After 10 seconds, we still haven't obtained a visnode...
                                     if (not checkedShowStart) and self.massiveJobNumber!="0":
                                         checkedShowStart = True
                                         def showStart():
@@ -2044,7 +2088,7 @@ class LauncherMainFrame(wx.Frame):
                                                 for showstartLine in showstartLines:
                                                     if showstartLine.startswith("Estimated Rsv based start"):
                                                         showstartLineComponents = showstartLine.split(" on ")
-                                                        wx.CallAfter(updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
+                                                        wx.CallAfter(self.updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
                                                         wx.Yield()
                                             sshClient2.close()
 
@@ -2092,9 +2136,18 @@ class LauncherMainFrame(wx.Frame):
                             if breakOutOfMainLoop:
                                 break
 
-                        #wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
+                        if len(self.massiveVisNodes)==0:
+                            if int(launcherMainFrame.massiveVisNodesRequested) > 1:
+                                error_string = "Couldn't get the requested number of MASSIVE Vis nodes."
+                            else:
+                                error_string = "Couldn't get a MASSIVE Vis node."
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=False,update_main_progress_bar=False,update_tidying_up_progress_bar=False,ignore_errors=False)
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
+                            return
+
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + self.massiveVisNodes[0])
-                        wx.CallAfter(updateProgressDialog, 7, "Acquired desktop node: " + self.massiveVisNodes[0])
+                        wx.CallAfter(self.updateProgressDialog, 7, "Acquired desktop node: " + self.massiveVisNodes[0])
                         wx.Yield()
                         while (self.updatingProgressDialog):
                             sleep(0.1)
@@ -2124,11 +2177,11 @@ class LauncherMainFrame(wx.Frame):
                     else:
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
-                            wx.CallAfter(updateProgressDialog, 6, "Requesting remote desktop...")
+                            wx.CallAfter(self.updateProgressDialog, 6, "Requesting remote desktop...")
                             wx.Yield()
                         else:
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Connecting to remote desktop...")
-                            wx.CallAfter(updateProgressDialog, 6, "Connecting to remote desktop...")
+                            wx.CallAfter(self.updateProgressDialog, 6, "Connecting to remote desktop...")
                             wx.Yield()
                         while (self.updatingProgressDialog):
                             sleep(0.1)
@@ -2186,10 +2239,10 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
                     if launcherMainFrame.massiveTabSelected:
-                        wx.CallAfter(updateProgressDialog, 8, "Creating secure tunnel...")
+                        wx.CallAfter(self.updateProgressDialog, 8, "Creating secure tunnel...")
                         wx.Yield()
                     else:
-                        wx.CallAfter(updateProgressDialog, 7, "Creating secure tunnel...")
+                        wx.CallAfter(self.updateProgressDialog, 7, "Creating secure tunnel...")
                         wx.Yield()
                     while (self.updatingProgressDialog):
                         sleep(0.1)
@@ -2219,7 +2272,7 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Launching TurboVNC...")
 
-                    wx.CallAfter(updateProgressDialog, 9, "Launching TurboVNC...")
+                    wx.CallAfter(self.updateProgressDialog, 9, "Launching TurboVNC...")
                     wx.Yield()
                     while (self.updatingProgressDialog):
                         sleep(0.1)
@@ -2316,7 +2369,7 @@ class LauncherMainFrame(wx.Frame):
                                     vncOptionsString = vncOptionsString + " /logfile \"" + launcherMainFrame.vncOptions['logfile'] + "\""
 
                         def destroyProgressDialog():
-                            updateProgressDialog(10, "Launching TurboVNC...")
+                            self.updateProgressDialog(10, "Launching TurboVNC...")
                             launcherMainFrame.progressDialog.Show(False)
                             if (launcherMainFrame.progressDialog != None):
                                 wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
@@ -2452,9 +2505,6 @@ class LauncherMainFrame(wx.Frame):
                                 launcherMainFrame.tidyingUpProgressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Tidying up the environment...", "Tidying up the environment...", maximumTidyingUpProgressBarValue, userCanAbort)
                             wx.CallAfter(initializeTidyingUpProgressDialog)
 
-                            def updateTidyingUpProgressDialog(value, message):
-                                    launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
-                                
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Removing the private key file.")
                             wx.CallAfter(updateTidyingUpProgressDialog, 1, "Removing the private key file.")
                             wx.Yield()
@@ -2467,19 +2517,7 @@ class LauncherMainFrame(wx.Frame):
                                 logger_debug('Error while unlinking private key file...')
                                 logger_debug(traceback.format_exc())
 
-                            if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
-                                logger_debug('Possibly running qdel for massive visnode...')
-                                if launcherMainFrame.loginThread.massiveJobNumber != "0" and launcherMainFrame.loginThread.deletedMassiveJob == False:
-                                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Deleting MASSIVE Vis node job.")
-                                    wx.CallAfter(updateTidyingUpProgressDialog, 2, "Deleting MASSIVE Vis node job.")
-                                    wx.Yield()
-
-                                    logger_debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
-                                    run_ssh_command(launcherMainFrame.loginThread.sshClient,
-                                                    "qdel -a " + launcherMainFrame.loginThread.massiveJobNumber, ignore_errors=False)
-                                    self.deletedMassiveJob = True
-                            else:
-                                logger_debug('Not running qdel for massive visnode.')
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=True,ignore_errors=False)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Terminating the SSH tunnel process.")
                             wx.CallAfter(updateTidyingUpProgressDialog, 3, "Terminating the SSH tunnel process.")
@@ -2547,12 +2585,32 @@ class LauncherMainFrame(wx.Frame):
                         logger_debug(traceback.format_exc())
 
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        if launcherMainFrame.massiveTabSelected:
+                            wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, True)
+                        else:
+                            wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, True)
+                        if launcherMainFrame.logWindow!=None:
+                            wx.CallAfter(launcherMainFrame.logWindow.Show, True)
 
                 except:
                     logger_debug('Exception (b)')
                     logger_debug(traceback.format_exc())
 
                     wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                    if (launcherMainFrame.progressDialog != None):
+                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        launcherMainFrame.progressDialog = None
+                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                    if launcherMainFrame.massiveTabSelected:
+                        wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, True)
+                    else:
+                        wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, True)
+                    if launcherMainFrame.logWindow!=None:
+                        wx.CallAfter(launcherMainFrame.logWindow.Show, True)
 
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1 
