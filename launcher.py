@@ -5,12 +5,12 @@
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
-#  
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#  
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -20,7 +20,7 @@
 # launcher.py
 """
 A wxPython GUI to provide easy login to the MASSIVE Desktop.
-It can be run using "python launcher.py", assuming that you 
+It can be run using "python launcher.py", assuming that you
 have a 32-bit (*) version of Python installed,
 wxPython, and the dependent Python modules imported below.
 
@@ -32,7 +32,7 @@ application bundle on Mac OS X, which can be built as follows:
    python create_mac_bundle.py py2app
 
 See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Mac+OS+X+build+instructions
-  
+
 The py2exe module is required to build the "CVL Launcher.exe"
 executable on Windows, which can be built as follows:
 
@@ -51,10 +51,10 @@ See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Linux
 ACKNOWLEDGEMENT
 
 Thanks to Michael Eager for a concise, non-GUI Python script
-which demonstrated the use of the Python pexpect module to 
-automate SSH logins and to automate calling TurboVNC 
+which demonstrated the use of the Python pexpect module to
+automate SSH logins and to automate calling TurboVNC
 on Linux and on Mac OS X.
- 
+
 """
 
 import logging
@@ -108,7 +108,7 @@ global cvlLauncherPreferencesFilePath
 cvlLauncherPreferencesFilePath = None
 global turboVncPreferencesFilePath
 turboVncPreferencesFilePath = None
-global turboVncLatestVersion 
+global turboVncLatestVersion
 turboVncLatestVersion = None
 
 #LAUNCHER_URL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
@@ -173,7 +173,7 @@ def dump_log(submit_log=False):
             r = requests.post(url, files=file_info, verify='cacert.pem')
         else:
             r = requests.post(url, files=file_info)
- 
+
     return
 
 
@@ -383,8 +383,8 @@ class LauncherMainFrame(wx.Frame):
         self.massiveProjectLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'MASSIVE project')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        # The pre-populated list of projects in the combo-box is 
-        # hard-coded for now, because 
+        # The pre-populated list of projects in the combo-box is
+        # hard-coded for now, because
         # Karaage (http://code.vpac.org/trac/karaage/)
         # doesn't appear to provide a way to list all projects on MASSIVE
         # without authenticating.
@@ -726,7 +726,7 @@ class LauncherMainFrame(wx.Frame):
         # i.e. always start a new VNC session on the server by default,
         # rather than remember what the user did last time.
         # If a manual choice of display number is remembered, then the
-        # user could accidentally try to connect to a stale or 
+        # user could accidentally try to connect to a stale or
         # non-existent VNC session.
         #if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             #if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number_automatic"):
@@ -972,7 +972,7 @@ class LauncherMainFrame(wx.Frame):
             dump_log(submit_log=True)
             sys.exit(1)
 
-        # Moved logger definitions to before version number check, because if the 
+        # Moved logger definitions to before version number check, because if the
         # version number check fails, logger_debug will be called.
 
         global transport_logger
@@ -1012,7 +1012,7 @@ class LauncherMainFrame(wx.Frame):
         logger_fh.setFormatter(logging.Formatter(log_format_string))
         logger.addHandler(logger_fh)
         transport_logger.addHandler(logger_fh)
-        
+
         latestVersionNumber = myHtmlParser.latestVersionNumber
         htmlComments = myHtmlParser.htmlComments
         htmlCommentsSplit1 = htmlComments.split("<pre id=\"CHANGES\">")
@@ -1024,7 +1024,7 @@ class LauncherMainFrame(wx.Frame):
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
 
-            # Tried submit_log=True, but it didn't work. 
+            # Tried submit_log=True, but it didn't work.
             # Maybe the requests stuff hasn't been initialized yet.
             logger_debug("Failed version number check.")
             dump_log(submit_log=False)
@@ -1208,7 +1208,7 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
 
                     MASSIVE_TAB_INDEX = 0
-                    CVL_TAB_INDEX =1 
+                    CVL_TAB_INDEX =1
 
                     if launcherMainFrame.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
                         launcherMainFrame.massiveTabSelected = True
@@ -1309,9 +1309,9 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 64-bit Windows installation, 64-bit TurboVNC, HKEY_CURRENT_USER
                                 key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
                                 launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
@@ -1322,9 +1322,9 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 64-bit Windows installation, 64-bit TurboVNC, HKEY_LOCAL_MACHINE
                                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
                                 launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
@@ -1335,9 +1335,9 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 32-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
                                 key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
                                 launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
@@ -1348,9 +1348,9 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 32-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
                                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
                                 launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
@@ -1361,9 +1361,9 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 64-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
                                 key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY | _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
                                 launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
@@ -1374,9 +1374,9 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 64-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
                                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY | _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
                                 launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
@@ -1528,7 +1528,7 @@ class LauncherMainFrame(wx.Frame):
 
                         def getTurboVncVersionNumber():
                             turboVncVersionNumberCommandString = vnc + " -help"
-                            proc = subprocess.Popen(turboVncVersionNumberCommandString, 
+                            proc = subprocess.Popen(turboVncVersionNumberCommandString,
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             turboVncStdout, turboVncStderr = proc.communicate(input="\n")
@@ -1543,8 +1543,8 @@ class LauncherMainFrame(wx.Frame):
 
                         def getTurboVncFlavour():
                             # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
-                            turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"  
-                            proc = subprocess.Popen(turboVncFlavourTestCommandString, 
+                            turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"
+                            proc = subprocess.Popen(turboVncFlavourTestCommandString,
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             stdout, stderr = proc.communicate(input="\n")
@@ -1587,7 +1587,7 @@ class LauncherMainFrame(wx.Frame):
                             launcherMainFrame.progressDialog.Update(value, message)
                             self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
                         self.updatingProgressDialog = False
-                        
+
                     wx.CallAfter(updateProgressDialog, 1, "Logging in to " + self.host)
                     wx.Yield()
                     while (self.updatingProgressDialog):
@@ -1603,7 +1603,7 @@ class LauncherMainFrame(wx.Frame):
                         return
 
                     logger_debug("Attempting to log in to " + self.host)
-                    
+
                     self.sshClient = ssh.SSHClient()
                     self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
@@ -1694,7 +1694,7 @@ class LauncherMainFrame(wx.Frame):
                                 import getpass
                                 chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + tunnelPrivateKeyFileName
                                 logger_debug('chown_cmd: ' + chown_cmd)
-                                chownProcess = subprocess.Popen(chown_cmd, 
+                                chownProcess = subprocess.Popen(chown_cmd,
                                     stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                     universal_newlines=True)
                                 chownStdout, chownStderr = chownProcess.communicate(input="\r\n")
@@ -1705,7 +1705,7 @@ class LauncherMainFrame(wx.Frame):
 
                             chmod_cmd = chmodBinary + " 600 " + tunnelPrivateKeyFileName
                             logger_debug('chmod_cmd: ' + chmod_cmd)
-                            chmodProcess = subprocess.Popen(chmod_cmd, 
+                            chmodProcess = subprocess.Popen(chmod_cmd,
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             chmodStdout, chmodStderr = chmodProcess.communicate(input="\r\n")
@@ -1720,8 +1720,8 @@ class LauncherMainFrame(wx.Frame):
                                 # Request an ephemeral port from the operating system (by specifying port 0) :
                                 wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
                                 import socket
-                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-                                sock.bind(('localhost', 0)) 
+                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                                sock.bind(('localhost', 0))
                                 localPortNumber = sock.getsockname()[1]
                                 sock.close()
                                 localPortNumber = str(localPortNumber)
@@ -1850,7 +1850,7 @@ class LauncherMainFrame(wx.Frame):
                         finally:
                             dump_log(submit_log=True)
                             os._exit(1)
-                        
+
                     if launcherMainFrame.massiveTabSelected:
 
                         # Begin if launcherMainFrame.massiveTabSelected:
@@ -1892,9 +1892,9 @@ class LauncherMainFrame(wx.Frame):
                                 logger_error("MASSIVE Launcher only allows you to have one job in the Vis node queue.")
                                 def showExistingJobFoundInVisNodeQueueMessageDialog():
                                     dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
-                                                                            "You already have at least one job in the Vis node queue:\n\n" + 
+                                                                            "You already have at least one job in the Vis node queue:\n\n" +
                                                                             stdoutRead.strip() + "\n\n" +
-                                                                            "To delete existing Vis node job(s), SSH to\n" + 
+                                                                            "To delete existing Vis node job(s), SSH to\n" +
                                                                             self.host + " and run:\n\n" +
                                                                             "qdel <jobNumber>\n\n" +
                                                                             "e.g. qdel " + jobNumber + "\n\n" +
@@ -1964,7 +1964,7 @@ class LauncherMainFrame(wx.Frame):
                             numberOfBusyVisNodesStdout, _ = run_ssh_command(self.sshClient, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 9 nodes in use")
 
                             def showAllVisnodesBusyWarningDialog():
-                                dlg = wx.MessageDialog(launcherMainFrame, 
+                                dlg = wx.MessageDialog(launcherMainFrame,
                                         "All MASSIVE Vis nodes are currently busy.\n" +
                                         "Your job will not begin immediately.",
                                                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
@@ -1994,14 +1994,14 @@ class LauncherMainFrame(wx.Frame):
                         qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
 
                         logger_debug('qsubcmd: ' + qsubcmd)
-                    
+
                         # We will open a channel to allow us to monitor output from qsub,
-                        # even before the "qsub" command has finished running. 
+                        # even before the "qsub" command has finished running.
 
                         # From: http://www.lag.net/paramiko/docs/paramiko.Channel-class.html#recv_stderr_ready
-                        # "Only channels using exec_command or invoke_shell without a pty 
+                        # "Only channels using exec_command or invoke_shell without a pty
                         #  will ever have data on the stderr stream."
- 
+
                         transport = self.sshClient.get_transport()
                         channel = transport.open_session()
                         channel.get_pty()
@@ -2333,14 +2333,14 @@ class LauncherMainFrame(wx.Frame):
                             if sys.platform.startswith("win"):
                                 vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
                                 logger_debug('vncCommandString windows: ' +  vncCommandString)
-                                self.turboVncProcess = subprocess.Popen(vncCommandString, 
+                                self.turboVncProcess = subprocess.Popen(vncCommandString,
                                     stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                     universal_newlines=True)
                                 self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.password + "\r\n")
                             else:
                                 vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
                                 logger_debug('vncCommandString linux/darwin: ' + vncCommandString)
-                                self.turboVncProcess = subprocess.Popen(vncCommandString, 
+                                self.turboVncProcess = subprocess.Popen(vncCommandString,
                                     stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                     universal_newlines=True)
                                 self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.password + "\n")
@@ -2350,18 +2350,18 @@ class LauncherMainFrame(wx.Frame):
                             time.sleep(0.1)
 
                         # Remove "Launching TurboVNC..." from status bar:
-                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "") 
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
 
                         # The original method used to grab the focus back from
                         # TurboVNC viewer failed rather ungracefully a few
                         # times recently, so it was commented out.
-                        # A new method is now being trialed, using a slightly 
+                        # A new method is now being trialed, using a slightly
                         # different Apple Script and using wx.CallAfter
                         # to prevent GUI threading problems.
 
                         if sys.platform.startswith("darwin") and launcherMainFrame.cvlTabSelected:
                             def grabFocusBackFromTurboVNC():
-                                subprocess.Popen(['osascript', '-e', 
+                                subprocess.Popen(['osascript', '-e',
                                     #"tell application \"System Events\"\r" +
                                     #"  set procName to name of first process whose unix id is " + str(os.getpid()) + "\r" +
                                     #"end tell\r" +
@@ -2416,7 +2416,7 @@ class LauncherMainFrame(wx.Frame):
 
                                     logger_debug('About to ask user if they want to keep or kill their VNC session...')
 
-                                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking if user wants to terminate or keep the VNC session...") 
+                                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking if user wants to terminate or keep the VNC session...")
 
                                     launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = False
 
@@ -2454,7 +2454,7 @@ class LauncherMainFrame(wx.Frame):
 
                             def updateTidyingUpProgressDialog(value, message):
                                     launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
-                                
+
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Removing the private key file.")
                             wx.CallAfter(updateTidyingUpProgressDialog, 1, "Removing the private key file.")
                             wx.Yield()
@@ -2499,7 +2499,7 @@ class LauncherMainFrame(wx.Frame):
                             # remain open to display any STDERR from TurboVNC in its Log window,
                             # rather than automatically exiting. This technique is most useful for
                             # the Mac / Linux (X11) version of TurboVNC.  On Windows, the TurboVNC
-                            # viewer may display an error message in a message dialog for longer 
+                            # viewer may display an error message in a message dialog for longer
                             # than 3 seconds.
                             turboVncElapsedTime = self.turboVncFinishTime - self.turboVncStartTime
                             turboVncElapsedTimeInSeconds = turboVncElapsedTime.total_seconds()
@@ -2516,7 +2516,7 @@ class LauncherMainFrame(wx.Frame):
                                 if launcherMainFrame.logWindow!=None:
                                     wx.CallAfter(launcherMainFrame.logWindow.Show, True)
                                     def disabling_auto_quit_because_TurboVNC_exited_abruptly():
-                                        dlg = wx.MessageDialog(launcherMainFrame, 
+                                        dlg = wx.MessageDialog(launcherMainFrame,
                                                         "Disabling auto-quit because TurboVNC exited abruptly.",
                                                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                                         dlg.ShowModal()
@@ -2531,7 +2531,7 @@ class LauncherMainFrame(wx.Frame):
                                 if launcherMainFrame.logWindow!=None:
                                     wx.CallAfter(launcherMainFrame.logWindow.Show, True)
                                     def disabling_auto_quit_because_TurboVNC_returned_an_error_message():
-                                        dlg = wx.MessageDialog(launcherMainFrame, 
+                                        dlg = wx.MessageDialog(launcherMainFrame,
                                                         "Disabling auto-quit because TurboVNC returned an error message.",
                                                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                                         dlg.ShowModal()
@@ -2555,7 +2555,7 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
 
         MASSIVE_TAB_INDEX = 0
-        CVL_TAB_INDEX =1 
+        CVL_TAB_INDEX =1
 
         if launcherMainFrame.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
             launcherMainFrame.massiveTabSelected = True
