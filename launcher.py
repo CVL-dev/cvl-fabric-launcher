@@ -2054,7 +2054,10 @@ class LauncherMainFrame(wx.Frame):
                         while True:
                             tCheck = 0
 
-                            self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                            if launcherMainFrame.progressDialog is not None:
+                                self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                            else:
+                                assert False # how could this happen? FIXME DEBUGGING
                             if self.shouldAbort:
                                 deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,update_tidying_up_progress_bar=False,ignore_errors=False)
                                 wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
