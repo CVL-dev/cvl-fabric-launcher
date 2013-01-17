@@ -21,7 +21,7 @@
 ;Change OutputDir to suit your build environment
 
 #define LauncherAppName "MASSIVE Launcher"
-#define LauncherAppExeName "MASSIVE Launcher.exe"
+#define LauncherAppExeName "launcher.exe"
 
 [Setup]
 AppName={#LauncherAppName}
@@ -34,7 +34,7 @@ SolidCompression=yes
 OutputDir=C:\launcher_build\
 
 [Files]
-Source: "dist\*.*"; DestDir: "{app}"; Flags: recursesubdirs
+Source: "dist\launcher\*.*"; DestDir: "{app}"; Flags: recursesubdirs
 ; Source: "{#LauncherAppName}.chm"; DestDir: "{app}"
 ;Source: "Readme.txt"; DestDir: "{app}"; Flags: isreadme
 

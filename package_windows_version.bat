@@ -1,1 +1,1 @@
-\Python27\python.exe package_windows_version.py
+C:\Python27\python.exe package_windows_version.py %*

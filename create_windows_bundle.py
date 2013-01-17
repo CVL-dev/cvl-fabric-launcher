@@ -32,16 +32,6 @@ from distutils.core import setup, Extension
 import py2exe
 import glob
 
-# THE ssh_tunnel MODULE IS NOT CURRENTLY USED. 
-# ITS IMPLEMENTATION IS INCOMPLETE AND IT DOESN'T WORK IN ITS CURRENT FORM.
-# IT HAS BEEN REPLACED BY CALLS TO EXTERNAL SSH PROCESSES
-# (ssh on Mac, Linux and plink.exe on Windows).
-
-#ssh_tunnel_module = Extension("ssh_tunnel", 
-    #sources = ["ssh_tunnel_module.c"],
-    #extra_compile_args = ['-O3'],
-    #libraries = ['ssh2'])
-
 import launcher_version_number
 
 data_files = [("Microsoft.VC90.CRT", glob.glob(r'C:\WINDOWS\WinSxS\Manifests\x86_Microsoft.VC90.CRT_1fc8b3b9a1e18e3b_9.0.21022.8_x-ww_d08d0375.manifest') + glob.glob(r'C:\WINDOWS\WinSxS\x86_Microsoft.VC90.CRT_1fc8b3b9a1e18e3b_9.0.21022.8_x-ww_d08d0375\*.dll'))]
@@ -58,5 +48,4 @@ setup(
             "dest_base": "MASSIVE Launcher"
         }
     ]
-    #,ext_modules = [ssh_tunnel_module]
     )

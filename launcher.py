@@ -5,12 +5,12 @@
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
-#  
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#  
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -20,7 +20,7 @@
 # launcher.py
 """
 A wxPython GUI to provide easy login to the MASSIVE Desktop.
-It can be run using "python launcher.py", assuming that you 
+It can be run using "python launcher.py", assuming that you
 have a 32-bit (*) version of Python installed,
 wxPython, and the dependent Python modules imported below.
 
@@ -32,7 +32,7 @@ application bundle on Mac OS X, which can be built as follows:
    python create_mac_bundle.py py2app
 
 See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Mac+OS+X+build+instructions
-  
+
 The py2exe module is required to build the "CVL Launcher.exe"
 executable on Windows, which can be built as follows:
 
@@ -51,32 +51,14 @@ See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Linux
 ACKNOWLEDGEMENT
 
 Thanks to Michael Eager for a concise, non-GUI Python script
-which demonstrated the use of the Python pexpect module to 
-automate SSH logins and to automate calling TurboVNC 
+which demonstrated the use of the Python pexpect module to
+automate SSH logins and to automate calling TurboVNC
 on Linux and on Mac OS X.
- 
+
 """
 
 import logging
 from StringIO import StringIO
-
-# The top-level logging object. We call this with things like
-# logger.debug(...), logger.error(...), etc.
-global logger
-logger = None
-
-# We save log messages to a string, namely StringIO.
-global logger_output
-logger_output = None
-
-# We also save log messages to a file, so we need access to the
-# logger FileHandler object.
-global logger_fh
-logger_fh = None
-
-def dump_log():
-    logging.shutdown()
-    return
 
 # Redirect stdout and stderr to the logger output string. While this is
 # somewhat undesirable, it at least allows us to catch any unexpected output,
@@ -94,7 +76,6 @@ import time
 import traceback
 import threading
 import os
-import ssh # Pure Python ssh module, based on Paramiko, published on PyPi
 import HTMLParser
 import urllib
 import launcher_version_number
@@ -105,6 +86,13 @@ import datetime
 #import logging
 import shlex
 import inspect
+import requests
+import ssh
+
+global transport_logger
+global logger
+global logger_output
+global logger_fh
 
 global launcherMainFrame
 launcherMainFrame = None
@@ -120,7 +108,7 @@ global cvlLauncherPreferencesFilePath
 cvlLauncherPreferencesFilePath = None
 global turboVncPreferencesFilePath
 turboVncPreferencesFilePath = None
-global turboVncLatestVersion 
+global turboVncLatestVersion
 turboVncLatestVersion = None
 
 #LAUNCHER_URL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
@@ -169,8 +157,105 @@ class MyHtmlParser(HTMLParser.HTMLParser):
   def handle_comment(self,data):
       self.htmlComments += data.strip()
 
-def die_from_main_frame(error_message, final_actions=None):
-    dump_log()
+def dump_log(submit_log=False):
+    logging.shutdown()
+
+    def yes_no():
+        dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
+        try:
+            result = dlg.ShowModal()
+            launcherMainFrame.loginThread.submit_log = result == wx.ID_YES
+        finally:
+            dlg.Destroy()
+            launcherMainFrame.loginThread.yes_no_completed = True
+
+    launcherMainFrame.loginThread.yes_no_completed = False
+    wx.CallAfter(yes_no)
+    while not launcherMainFrame.loginThread.yes_no_completed:
+        time.sleep(1)
+
+    if submit_log and launcherMainFrame.loginThread.submit_log:
+        logger_debug('about to send debug log')
+
+        url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
+        #file_info = {'logfile': launcherMainFrame.logger_output.getvalue()}
+        file_info = {'logfile': logger_output.getvalue()}
+
+        # If we are running in an installation then we have to use
+        # our packaged cacert.pem file:
+        if os.path.exists('cacert.pem'):
+            r = requests.post(url, files=file_info, verify='cacert.pem')
+        else:
+            r = requests.post(url, files=file_info)
+
+    return
+
+
+def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, update_main_progress_bar=False, update_tidying_up_progress_bar=False, ignore_errors=False):
+    if launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary:
+        return
+    
+    launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = True
+    if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
+        if write_debug_log:
+            logger_debug('Possibly running qdel for MASSIVE Vis node...')
+        if launcherMainFrame.loginThread.massiveJobNumber != "0" and launcherMainFrame.loginThread.deletedMassiveJob == False:
+            if update_status_bar:
+                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Deleting MASSIVE Vis node job.")
+            if update_main_progress_bar:
+                wx.CallAfter(launcherMainFrame.loginThread.updateProgressDialog, 6, "Deleting MASSIVE Vis node job...")
+                wx.Yield()
+            if update_tidying_up_progress_bar:
+                wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 2, "Deleting MASSIVE Vis node job...")
+                wx.Yield()
+            if write_debug_log:
+                logger_debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
+            run_ssh_command(launcherMainFrame.loginThread.sshClient,
+                            "qdel -a " + launcherMainFrame.loginThread.massiveJobNumber, ignore_errors=ignore_errors)
+            launcherMainFrame.loginThread.deletedMassiveJob = True
+            if update_status_bar:
+                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+    else:
+        if write_debug_log:
+            logger_debug('Not running qdel for massive visnode.')
+    launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = False
+
+
+def die_from_login_thread(error_message, display_error_dialog=True):
+    dump_log(submit_log=True)
+
+    if (launcherMainFrame.progressDialog != None):
+        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+        launcherMainFrame.progressDialog = None
+    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+
+    def error_dialog():
+        dlg = wx.MessageDialog(launcherMainFrame, error_message,
+                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+        dlg.Destroy()
+        launcherMainFrame.loginThread.die_from_login_thread_completed = True
+
+    launcherMainFrame.loginThread.die_from_login_thread_completed = False
+
+    if display_error_dialog:
+        wx.CallAfter(error_dialog)
+
+    while not launcherMainFrame.loginThread.die_from_login_thread_completed:
+        time.sleep(1)
+
+    wx.CallAfter(launcherMainFrame.logWindow.Show, False)
+    wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
+    wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, False)
+    wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, False)
+
+def die_from_main_frame(error_message):
+    if (launcherMainFrame.progressDialog != None):
+        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+        launcherMainFrame.progressDialog = None
+    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
 
     def error_dialog():
         dlg = wx.MessageDialog(launcherMainFrame, "Error: " + error_message + "\n\n" + "The launcher cannot continue.\n",
@@ -184,25 +269,24 @@ def die_from_main_frame(error_message, final_actions=None):
 
     while not launcherMainFrame.loginThread.die_from_main_frame_dialog_completed:
         time.sleep(1)
-    try:
-        if final_actions is not None:
-            final_actions()
-    finally:
-        os._exit(1)
 
-def run_ssh_command(ssh_client, command, wx=None, ignore_errors=False):
-    logger.debug('run_ssh_command: "%s"' % command)
-    logger.debug('   called from %s:%d' % inspect.stack()[1][1:3])
+    dump_log(submit_log=True)
+    os._exit(1)
+
+def run_ssh_command(ssh_client, command, ignore_errors=False, log_output=True):
+    logger_debug('run_ssh_command: "%s"' % command)
+    logger_debug('   called from %s:%d' % inspect.stack()[1][1:3])
 
     stdin, stdout, stderr = ssh_client.exec_command(command)
     stdout, stderr = stdout.read(), stderr.read()
 
-    logger.debug('command stdout: %s' % stdout)
-    logger.debug('command stderr: %s' % stderr)
+    if log_output:
+        logger_debug('command stdout: %s' % stdout)
+        logger_debug('command stderr: %s' % stderr)
 
     if not ignore_errors and len(stderr) > 0:
         error_message = 'Error running command: "%s" at line %d' % (command, inspect.stack()[1][2])
-        logger.error('Nonempty stderr and ignore_errors == False; exiting the launcher with error dialog: ' + error_message)
+        logger_error('Nonempty stderr and ignore_errors == False; exiting the launcher with error dialog: ' + error_message)
         die_from_main_frame(error_message)
 
     return stdout, stderr
@@ -210,6 +294,9 @@ def run_ssh_command(ssh_client, command, wx=None, ignore_errors=False):
 class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
+
+        self.logWindow = None
+        self.progressDialog = None
 
         if sys.platform.startswith("darwin"):
             wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
@@ -327,8 +414,8 @@ class LauncherMainFrame(wx.Frame):
         self.massiveProjectLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'MASSIVE project')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        # The pre-populated list of projects in the combo-box is 
-        # hard-coded for now, because 
+        # The pre-populated list of projects in the combo-box is
+        # hard-coded for now, because
         # Karaage (http://code.vpac.org/trac/karaage/)
         # doesn't appear to provide a way to list all projects on MASSIVE
         # without authenticating.
@@ -473,11 +560,6 @@ class LauncherMainFrame(wx.Frame):
                             self.massivePersistentMode = True
                         else:
                             self.massivePersistentMode = False
-
-                    # persistent mode is never used with m2-*
-                    if self.massiveLoginHost.startswith("m2"):
-                        self.massivePersistentMode = False
-
                 else:
                     massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode","False")
                     with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -613,6 +695,7 @@ class LauncherMainFrame(wx.Frame):
         self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.massiveShowDebugWindowCheckBox = wx.CheckBox(self.massiveLoginFieldsPanel, wx.ID_ANY, "")
         self.massiveShowDebugWindowCheckBox.SetValue(False)
+        self.massiveShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onMassiveDebugWindowCheckBoxStateChanged)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveLoginFieldsPanel.SetSizerAndFit(self.massiveLoginFieldsPanelSizer)
@@ -674,7 +757,7 @@ class LauncherMainFrame(wx.Frame):
         # i.e. always start a new VNC session on the server by default,
         # rather than remember what the user did last time.
         # If a manual choice of display number is remembered, then the
-        # user could accidentally try to connect to a stale or 
+        # user could accidentally try to connect to a stale or
         # non-existent VNC session.
         #if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             #if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_number_automatic"):
@@ -846,6 +929,7 @@ class LauncherMainFrame(wx.Frame):
         self.cvlLoginFieldsPanelSizer.Add(self.cvlShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.cvlShowDebugWindowCheckBox = wx.CheckBox(self.cvlLoginFieldsPanel, wx.ID_ANY, "")
         self.cvlShowDebugWindowCheckBox.SetValue(False)
+        self.cvlShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onCvlDebugWindowCheckBoxStateChanged)
         self.cvlLoginFieldsPanelSizer.Add(self.cvlShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlLoginFieldsPanel.SetSizerAndFit(self.cvlLoginFieldsPanelSizer)
@@ -916,9 +1000,49 @@ class LauncherMainFrame(wx.Frame):
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
-            dump_log()
+            dump_log(submit_log=True)
             sys.exit(1)
 
+        # Moved logger definitions to before version number check, because if the
+        # version number check fails, logger_debug will be called.
+
+        global transport_logger
+        global logger
+        global logger_debug
+        global logger_error
+        global logger_warning
+        global logger_output
+        global logger_fh
+
+        transport_logger = logging.getLogger('ssh.transport')
+        transport_logger.setLevel(logging.DEBUG)
+
+        logger = logging.getLogger('launcher')
+        logger.setLevel(logging.DEBUG)
+        def logger_debug(message):
+            wx.CallAfter(logger.debug, message)
+        def logger_error(message):
+            wx.CallAfter(logger.error, message)
+        def logger_warning(message):
+            wx.CallAfter(logger.warning, message)
+
+        log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
+
+        # Send all log messages to a string.
+        logger_output = StringIO()
+        string_handler = logging.StreamHandler(stream=logger_output)
+        string_handler.setLevel(logging.DEBUG)
+        string_handler.setFormatter(logging.Formatter(log_format_string))
+        logger.addHandler(string_handler)
+        transport_logger.addHandler(string_handler)
+
+        # Finally, send all log messages to a log file.
+        from os.path import expanduser, join
+        logger_fh = logging.FileHandler(join(expanduser("~"), '.MASSIVE_Launcher_debug_log.txt'))
+        logger_fh.setLevel(logging.DEBUG)
+        logger_fh.setFormatter(logging.Formatter(log_format_string))
+        logger.addHandler(logger_fh)
+        transport_logger.addHandler(logger_fh)
 
         latestVersionNumber = myHtmlParser.latestVersionNumber
         htmlComments = myHtmlParser.htmlComments
@@ -927,136 +1051,14 @@ class LauncherMainFrame(wx.Frame):
         latestVersionChanges = htmlCommentsSplit2[0].strip()
 
         if latestVersionNumber!=launcher_version_number.version_number:
-            newVersionAlertDialog = wx.Dialog(launcherMainFrame, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
-
-            if sys.platform.startswith("win"):
-                _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
-                newVersionAlertDialog.SetIcon(_icon)
-
-            if sys.platform.startswith("linux"):
-                import MASSIVE_icon
-                newVersionAlertDialog.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
-
-            massiveIconPanel = wx.Panel(newVersionAlertDialog)
-
-            import MASSIVE_icon
-            massiveIconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
-            wx.StaticBitmap(massiveIconPanel, wx.ID_ANY, 
-                massiveIconAsBitmap,
-                (0, 50),
-                (massiveIconAsBitmap.GetWidth(), massiveIconAsBitmap.GetHeight())) 
-
-            newVersionAlertPanel = wx.Panel(newVersionAlertDialog)
-
-            newVersionAlertPanelSizer = wx.FlexGridSizer(rows=8, cols=1, vgap=5, hgap=5)
-            newVersionAlertPanel.SetSizer(newVersionAlertPanelSizer)
-
-            newVersionAlertTitleLabel = wx.StaticText(newVersionAlertPanel,
-                label = "MASSIVE/CVL Launcher")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            font.SetPointSize(14)
-            font.SetWeight(wx.BOLD)
-            newVersionAlertTitleLabel.SetFont(font)
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel))
-            newVersionAlertPanelSizer.Add(newVersionAlertTitleLabel, flag=wx.EXPAND)
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel))
-
-            newVersionAlertTextLabel1 = wx.StaticText(newVersionAlertPanel, 
-                label = 
-                "You are running version " + launcher_version_number.version_number + "\n\n" +
-                "The latest version is " + latestVersionNumber + "\n\n" +
-                "Please download a new version from:\n\n")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(9)
-            newVersionAlertTextLabel1.SetFont(font)
-            newVersionAlertPanelSizer.Add(newVersionAlertTextLabel1, flag=wx.EXPAND)
-
-            newVersionAlertHyperlink = wx.HyperlinkCtrl(newVersionAlertPanel, 
-                id = wx.ID_ANY,
-                label = LAUNCHER_URL,
-                url = LAUNCHER_URL)
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(8)
-            newVersionAlertHyperlink.SetFont(font)
-            newVersionAlertPanelSizer.Add(newVersionAlertHyperlink, border=10, flag=wx.LEFT|wx.BORDER)
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel))
-
-            self.latestVersionChangesTextCtrl = wx.TextCtrl(newVersionAlertPanel, 
-                size=(600, 200), style=wx.TE_MULTILINE|wx.TE_READONLY)
-            newVersionAlertPanelSizer.Add(self.latestVersionChangesTextCtrl, flag=wx.EXPAND)
-            if sys.platform.startswith("darwin"):
-                font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-            else:
-                font = wx.Font(9, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-            self.latestVersionChangesTextCtrl.SetFont(font)
-            self.latestVersionChangesTextCtrl.AppendText(latestVersionChanges)
-            self.latestVersionChangesTextCtrl.SetInsertionPoint(0)
-
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel, wx.ID_ANY, ""))
-            newVersionAlertQueriesContactLabel = wx.StaticText(newVersionAlertPanel, 
-                label = 
-                "For queries, please contact:")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(9)
-            newVersionAlertQueriesContactLabel.SetFont(font)
-            newVersionAlertPanelSizer.Add(newVersionAlertQueriesContactLabel, border=10, flag=wx.EXPAND|wx.BORDER)
-
-            contactEmailHyperlink = wx.HyperlinkCtrl(newVersionAlertPanel, 
-                id = wx.ID_ANY,
-                label = "help@massive.org.au",
-                url = "mailto:help@massive.org.au")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(8)
-            contactEmailHyperlink.SetFont(font)
-            newVersionAlertPanelSizer.Add(contactEmailHyperlink, border=20, flag=wx.LEFT|wx.BORDER)
-
-            contactEmail2Hyperlink = wx.HyperlinkCtrl(newVersionAlertPanel, 
-                id = wx.ID_ANY,
-                label = "James.Wettenhall@monash.edu",
-                url = "mailto:James.Wettenhall@monash.edu")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(8)
-            contactEmail2Hyperlink.SetFont(font)
-            newVersionAlertPanelSizer.Add(contactEmail2Hyperlink, border=20, flag=wx.LEFT|wx.BORDER)
-
-            def onOK(event):
-                dump_log()
-                sys.exit(1)
-
-            okButton = wx.Button(newVersionAlertPanel, 1, ' OK ')
-            okButton.SetDefault()
-            newVersionAlertPanelSizer.Add(okButton, flag=wx.ALIGN_RIGHT)
-            newVersionAlertPanelSizer.Add(wx.StaticText(newVersionAlertPanel))
-            newVersionAlertPanelSizer.Fit(newVersionAlertPanel)
-
-            newVersionAlertDialog.Bind(wx.EVT_BUTTON, onOK, id=1)
-
-            newVersionAlertDialogSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=5)
-            newVersionAlertDialogSizer.Add(massiveIconPanel, flag=wx.EXPAND)
-            newVersionAlertDialogSizer.Add(newVersionAlertPanel, flag=wx.EXPAND)
-            newVersionAlertDialogSizer.Add(wx.StaticText(newVersionAlertDialog,label="       "))
-            newVersionAlertDialog.SetSizer(newVersionAlertDialogSizer)
-            newVersionAlertDialogSizer.Fit(newVersionAlertDialog)
-
+            import new_version_alert_dialog
+            newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
-            newVersionAlertDialog.Destroy()
 
-            dump_log()
+            # Tried submit_log=True, but it didn't work.
+            # Maybe the requests stuff hasn't been initialized yet.
+            logger_debug("Failed version number check.")
+            dump_log(submit_log=False)
             sys.exit(1)
 
     def onMassiveLoginHostNameChanged(self, event):
@@ -1064,11 +1066,35 @@ class LauncherMainFrame(wx.Frame):
         selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
         if selectedMassiveLoginHost.startswith("m1"):
             self.massivePersistentModeCheckBox.SetValue(True)
-        if selectedMassiveLoginHost.startswith("m2"):
-            self.massivePersistentModeCheckBox.SetValue(False)
+        #if selectedMassiveLoginHost.startswith("m2"):
+            #self.massivePersistentModeCheckBox.SetValue(False)
+
+    def onMassiveDebugWindowCheckBoxStateChanged(self, event):
+        if launcherMainFrame.logWindow!=None:
+            if launcherMainFrame.massiveTabSelected:
+                launcherMainFrame.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
+
+    def onCvlDebugWindowCheckBoxStateChanged(self, event):
+        if launcherMainFrame.logWindow!=None:
+            if launcherMainFrame.cvlTabSelected:
+                launcherMainFrame.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
+
+    def onCloseMassiveDebugWindow(self, event):
+        if launcherMainFrame.massiveTabSelected:
+            self.massiveShowDebugWindowCheckBox.SetValue(False)
+        if launcherMainFrame.logWindow!=None:
+            launcherMainFrame.logWindow.Show(False)
+
+    def onCloseCvlDebugWindow(self, event):
+        if launcherMainFrame.cvlTabSelected:
+            self.cvlShowDebugWindowCheckBox.SetValue(False)
+        if launcherMainFrame.logWindow!=None:
+            launcherMainFrame.logWindow.Show(False)
 
     def onAbout(self, event):
-        dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n",
+        import commit_def
+        dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n"
+                                   + 'Commit: ' + commit_def.LATEST_COMMIT + '\n',
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
@@ -1118,21 +1144,21 @@ class LauncherMainFrame(wx.Frame):
     def onCancel(self, event):
         try:
             try:
-                os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
+                if os.path.isfile(launcherMainFrame.loginThread.privateKeyFile.name):
+                    os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
             except:
-                logger.debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
-                logger.debug(traceback.format_exc())
+                #logger_debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
+                #logger_debug(traceback.format_exc())
+                pass
 
-            if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
-                if launcherMainFrame.loginThread.massiveJobNumber != "0":
-                    logger.debug("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
-                    run_ssh_command(launcherMainFrame.loginThread.sshClient, "qdel " + launcherMainFrame.loginThread.massiveJobNumber)
+            deleteMassiveJobIfNecessary(write_debug_log=False,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=False,ignore_errors=False)
 
             launcherMainFrame.loginThread.sshClient.close()
 
         except:
-            logger.debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
-            logger.debug(traceback.format_exc())
+            #logger_debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
+            #logger_debug(traceback.format_exc())
+            pass
 
         finally:
             dump_log()
@@ -1187,6 +1213,9 @@ class LauncherMainFrame(wx.Frame):
         self.cancelButton.SetCursor(cursor)
         self.loginButton.SetCursor(cursor)
 
+        if self.progressDialog!=None:
+            self.progressDialog.SetCursor(cursor)
+
         super(LauncherMainFrame, self).SetCursor(cursor)
 
     def onLogin(self, event):
@@ -1197,14 +1226,29 @@ class LauncherMainFrame(wx.Frame):
                 threading.Thread.__init__(self)
                 self._notify_window = notify_window
 
+            def updateProgressDialog(self, value, message):
+                self.updatingProgressDialog = True
+                if launcherMainFrame.progressDialog!=None:
+                    launcherMainFrame.progressDialog.Update(value, message)
+                    self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                self.updatingProgressDialog = False
+                
+            def updateTidyingUpProgressDialog(self, value, message):
+                    launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
+                                
             def run(self):
                 """Run Worker Thread."""
 
                 try:
+
+                    self.runningDeleteMassiveJobIfNecessary = False
+
                     wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
 
+                    wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
+
                     MASSIVE_TAB_INDEX = 0
-                    CVL_TAB_INDEX =1 
+                    CVL_TAB_INDEX =1
 
                     if launcherMainFrame.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
                         launcherMainFrame.massiveTabSelected = True
@@ -1213,6 +1257,18 @@ class LauncherMainFrame(wx.Frame):
                     if launcherMainFrame.tabbedView.GetSelection()==CVL_TAB_INDEX:
                         launcherMainFrame.massiveTabSelected = False
                         launcherMainFrame.cvlTabSelected = True
+
+                    import launcher_progress_dialog
+                    maximumProgressBarValue = 10
+                    userCanAbort = True
+                    if launcherMainFrame.massiveTabSelected:
+                        def initializeProgressDialog():
+                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to MASSIVE...", "Connecting to MASSIVE...", maximumProgressBarValue, userCanAbort)
+                    else:
+                        def initializeProgressDialog():
+                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to CVL...", "Connecting to CVL...", maximumProgressBarValue, userCanAbort)
+
+                    wx.CallAfter(initializeProgressDialog)
 
                     if launcherMainFrame.massiveTabSelected:
                         self.host       = launcherMainFrame.massiveLoginHost
@@ -1226,7 +1282,41 @@ class LauncherMainFrame(wx.Frame):
                         self.cipher     = launcherMainFrame.cvlSshTunnelCipher
                         self.username   = launcherMainFrame.cvlUsername
                         self.password   = launcherMainFrame.cvlPassword
-                    
+
+                    logger_debug('host: ' + self.host)
+                    logger_debug('resolution: ' + self.resolution)
+                    logger_debug('cipher: ' + self.cipher)
+                    logger_debug('username: ' + self.username)
+                    logger_debug('sys.platform: ' + sys.platform)
+
+                    logger_debug('host: ' + self.host)
+                    logger_debug('resolution: ' + self.resolution)
+                    logger_debug('cipher: ' + self.cipher)
+                    logger_debug('username: ' + self.username)
+                    logger_debug('sys.platform: ' + sys.platform)
+
+                    import platform
+
+                    logger_debug('platform.architecture: '  + str(platform.architecture()))
+                    logger_debug('platform.machine: '       + str(platform.machine()))
+                    logger_debug('platform.node: '          + str(platform.node()))
+                    logger_debug('platform.platform: '      + str(platform.platform()))
+                    logger_debug('platform.processor: '     + str(platform.processor()))
+                    logger_debug('platform.release: '       + str(platform.release()))
+                    logger_debug('platform.system: '        + str(platform.system()))
+                    logger_debug('platform.version: '       + str(platform.version()))
+                    logger_debug('platform.uname: '         + str(platform.uname()))
+
+                    if sys.platform.startswith("win"):
+                        logger_debug('platform.win32_ver: ' + str(platform.win32_ver()))
+
+                    if sys.platform.startswith("darwin"):
+                        logger_debug('platform.mac_ver: ' + str(platform.mac_ver()))
+
+                    if sys.platform.startswith("linux"):
+                        logger_debug('platform.linux_distribution: ' + str(platform.linux_distribution()))
+                        logger_debug('platform.libc_ver: ' + str(platform.libc_ver()))
+
                     # Check for TurboVNC
 
                     # Check for the latest version of TurboVNC on the launcher web page:
@@ -1242,7 +1332,7 @@ class LauncherMainFrame(wx.Frame):
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                         dlg.ShowModal()
                         dlg.Destroy()
-                        dump_log()
+                        dump_log(submit_log=True)
                         sys.exit(1)
 
                     turboVncLatestVersion = myHtmlParser.latestVersionNumber
@@ -1259,10 +1349,10 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 64-bit Windows installation, 64-bit TurboVNC, HKEY_CURRENT_USER
                                 key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1272,10 +1362,10 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 64-bit Windows installation, 64-bit TurboVNC, HKEY_LOCAL_MACHINE
                                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC 64-bit_is1", 0,  _winreg.KEY_WOW64_64KEY | _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1285,10 +1375,10 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 32-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
                                 key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1298,10 +1388,10 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 32-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
                                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1311,10 +1401,10 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 64-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
                                 key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY | _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1324,10 +1414,10 @@ class LauncherMainFrame(wx.Frame):
                             try:
                                 # 64-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
                                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\TurboVNC_is1", 0, _winreg.KEY_WOW64_32KEY | _winreg.KEY_READ)
-                                queryResult = _winreg.QueryValueEx(key, "InstallLocation") 
+                                queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                                 vnc = os.path.join(queryResult[0], "vncviewer.exe")
-                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion") 
-                                self.turboVncVersionNumber = queryResult[0]
+                                queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
+                                launcherMainFrame.loginThread.turboVncVersionNumber = queryResult[0]
                                 foundTurboVncInRegistry = True
                             except:
                                 foundTurboVncInRegistry = False
@@ -1335,10 +1425,10 @@ class LauncherMainFrame(wx.Frame):
                                 #wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
                     if os.path.exists(vnc):
-                        logger.debug("TurboVNC was found in " + vnc)
+                        logger_debug("TurboVNC was found in " + vnc)
                         #if sys.platform.startswith("darwin"):
                             ## Need to determine whether we have the X11 version of TurboVNC or the Java version.
-                            
+
                     else:
                         def showTurboVncNotFoundMessageDialog():
                             turboVncNotFoundDialog = wx.Dialog(launcherMainFrame, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
@@ -1461,11 +1551,12 @@ class LauncherMainFrame(wx.Frame):
                             time.sleep(1)
 
                         try:
-                            os.unlink(self.privateKeyFile.name)
+                            if os.path.isfile(launcherMainFrame.loginThread.privateKeyFile.name):
+                                os.unlink(self.privateKeyFile.name)
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
                             self.sshClient.close()
                         finally:
-                            dump_log()
+                            dump_log(submit_log=True)
                             os._exit(1)
 
                     if not sys.platform.startswith("win"):
@@ -1473,35 +1564,46 @@ class LauncherMainFrame(wx.Frame):
 
                         # Check TurboVNC version number
                         # For Windows, this has already been determined using the Registry.
-                        turboVncVersionNumberCommandString = vnc + " -help"
-                        proc = subprocess.Popen(turboVncVersionNumberCommandString, 
-                            stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                            universal_newlines=True)
-                        turboVncStdout, turboVncStderr = proc.communicate(input="\n")
-                        if turboVncStderr != None:
-                            logger.debug("turboVncStderr: " + turboVncStderr)
-                        turboVncVersionNumberComponents = turboVncStdout.split(" v")
-                        turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
-                        self.turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
+                        self.turboVncVersionNumber = "0.0"
 
-                        # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
-                        turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"  
-                        proc = subprocess.Popen(turboVncFlavourTestCommandString, 
-                            stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                            universal_newlines=True)
-                        stdout, stderr = proc.communicate(input="\n")
-                        if stderr != None:
-                            logger.debug('turboVncFlavour stderr: ' + stderr)
-                        if proc.returncode==0:
-                            logger.debug("Java version of TurboVNC Viewer is installed.")
-                            self.turboVncFlavour = "Java"
-                        else:
-                            logger.debug("X11 version of TurboVNC Viewer is installed.")
-                            self.turboVncFlavour = "X11"
+                        def getTurboVncVersionNumber():
+                            turboVncVersionNumberCommandString = vnc + " -help"
+                            proc = subprocess.Popen(turboVncVersionNumberCommandString,
+                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                universal_newlines=True)
+                            turboVncStdout, turboVncStderr = proc.communicate(input="\n")
+                            if turboVncStderr != None:
+                                logger_debug("turboVncStderr: " + turboVncStderr)
+                            turboVncVersionNumberComponents = turboVncStdout.split(" v")
+                            turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
+                            launcherMainFrame.loginThread.turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
+                        wx.CallAfter(getTurboVncVersionNumber)
+                        while self.turboVncVersionNumber=="0.0":
+                            time.sleep(0.5)
 
-                    logger.debug("TurboVNC viewer version number = " + self.turboVncVersionNumber)
+                        def getTurboVncFlavour():
+                            # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
+                            turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"
+                            proc = subprocess.Popen(turboVncFlavourTestCommandString,
+                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                universal_newlines=True)
+                            stdout, stderr = proc.communicate(input="\n")
+                            if stderr != None:
+                                logger_debug('turboVncFlavour stderr: ' + stderr)
+                            if proc.returncode==0:
+                                logger_debug("Java version of TurboVNC Viewer is installed.")
+                                turboVncFlavour = "Java"
+                            else:
+                                logger_debug("X11 version of TurboVNC Viewer is installed.")
+                                turboVncFlavour = "X11"
+                            return turboVncFlavour
 
-                    if self.turboVncVersionNumber.startswith("0.") or self.turboVncVersionNumber.startswith("1.0"):
+                        # No need to run this with wx.CallAfter, because the "file" command doesn't launch a GUI application.
+                        self.turboVncFlavour = getTurboVncFlavour()
+
+                    logger_debug("TurboVNC viewer version number = " + launcherMainFrame.loginThread.turboVncVersionNumber)
+
+                    if launcherMainFrame.loginThread.turboVncVersionNumber.startswith("0.") or launcherMainFrame.loginThread.turboVncVersionNumber.startswith("1.0"):
                         def showOldTurboVncWarningMessageDialog():
                             dlg = wx.MessageDialog(launcherMainFrame, "Warning: Using a TurboVNC viewer earlier than v1.1 means that you will need to enter your password twice.\n",
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
@@ -1516,37 +1618,69 @@ class LauncherMainFrame(wx.Frame):
                     # Initial SSH login
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Logging in to " + self.host)
-                    logger.debug("Attempting to log in to " + self.host)
-                    
+
+                    self.shouldAbort = False
+                    self.updatingProgressDialog = False
+                    wx.CallAfter(self.updateProgressDialog, 1, "Logging in to " + self.host)
+                    wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                        return
+
+                    logger_debug("Attempting to log in to " + self.host)
+
                     self.sshClient = ssh.SSHClient()
                     self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
                     try:
                         self.sshClient.connect(self.host,username=self.username,password=self.password)
                     except ssh.AuthenticationException, e:
-                        logger.error("Failed to authenticate with user's username/password credentials: " + str(e))
-                        die_from_main_frame('Authentication error with user %s on server %s' % (self.username, self.host))
+                        logger_error("Failed to authenticate with user's username/password credentials: " + str(e))
+                        die_from_login_thread('Authentication error with user %s on server %s' % (self.username, self.host))
+                        return
 
-                    logger.debug("First login done.")
+                    logger_debug("First login done.")
 
                     # Create SSH key pair for tunnel.
 
-                    logger.debug("Generating SSH key-pair for tunnel.")
+                    logger_debug("Generating SSH key-pair for tunnel.")
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Generating SSH key-pair for tunnel...")
 
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair*", wx)
-                    run_ssh_command(self.sshClient, "/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair", wx)
-                    run_ssh_command(self.sshClient, "/bin/mkdir -p ~/.ssh", wx)
-                    run_ssh_command(self.sshClient, "/bin/chmod 700 ~/.ssh", wx)
-                    run_ssh_command(self.sshClient, "/bin/touch ~/.ssh/authorized_keys", wx)
-                    run_ssh_command(self.sshClient, "/bin/chmod 600 ~/.ssh/authorized_keys", wx)
-                    run_ssh_command(self.sshClient, "/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys", wx)
-                    run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys", wx)
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair.pub", wx)
-                    privateKeyString, _ = run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair", wx)
+                    wx.CallAfter(self.updateProgressDialog, 2, "Generating SSH key-pair for tunnel...")
+                    wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                        return
 
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair", wx)
+                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair*")
+                    run_ssh_command(self.sshClient, "/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
+                    run_ssh_command(self.sshClient, "/bin/mkdir -p ~/.ssh")
+                    run_ssh_command(self.sshClient, "/bin/chmod 700 ~/.ssh")
+                    run_ssh_command(self.sshClient, "/bin/touch ~/.ssh/authorized_keys")
+                    run_ssh_command(self.sshClient, "/bin/chmod 600 ~/.ssh/authorized_keys")
+                    run_ssh_command(self.sshClient, "/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys")
+                    run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys", log_output=False)
+                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair.pub")
+                    privateKeyString, _ = run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair", log_output=False)
+
+                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair")
 
                     import tempfile
                     self.privateKeyFile = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
@@ -1559,7 +1693,7 @@ class LauncherMainFrame(wx.Frame):
                     # but we will test the Launcher's ability to create a simple tunnel.
 
                     def createTunnel(localPortNumber,remoteHost,remotePortNumber,tunnelServer,tunnelUsername,tunnelPrivateKeyFileName,testRun):
-                        logger.debug("Starting tunnelled SSH session.")
+                        logger_debug("Starting tunnelled SSH session.")
 
                         try:
                             if sys.platform.startswith("win"):
@@ -1592,26 +1726,26 @@ class LauncherMainFrame(wx.Frame):
                                 # can change the permissions to -rw------.
                                 import getpass
                                 chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + tunnelPrivateKeyFileName
-                                logger.debug('chown_cmd: ' + chown_cmd)
-                                chownProcess = subprocess.Popen(chown_cmd, 
+                                logger_debug('chown_cmd: ' + chown_cmd)
+                                chownProcess = subprocess.Popen(chown_cmd,
                                     stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                     universal_newlines=True)
                                 chownStdout, chownStderr = chownProcess.communicate(input="\r\n")
                                 if chownStderr != None and chownStderr.strip()!="":
-                                    logger.debug('stderr from chown_cmd: ' + chownStderr)
+                                    logger_debug('stderr from chown_cmd: ' + chownStderr)
                                 if chownStdout != None and chownStdout.strip()!="":
-                                    logger.debug('stdout from chown_cmd: ' + chownStdout)
+                                    logger_debug('stdout from chown_cmd: ' + chownStdout)
 
                             chmod_cmd = chmodBinary + " 600 " + tunnelPrivateKeyFileName
-                            logger.debug('chmod_cmd: ' + chmod_cmd)
-                            chmodProcess = subprocess.Popen(chmod_cmd, 
+                            logger_debug('chmod_cmd: ' + chmod_cmd)
+                            chmodProcess = subprocess.Popen(chmod_cmd,
                                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                 universal_newlines=True)
                             chmodStdout, chmodStderr = chmodProcess.communicate(input="\r\n")
                             if chmodStderr != None and chmodStderr.strip()!="":
-                                logger.debug('chmod_cmd stderr: ' + chmodStderr)
+                                logger_debug('chmod_cmd stderr: ' + chmodStderr)
                             if chmodStdout != None and chmodStdout.strip()!="":
-                                logger.debug('chmod_cmd stdout: ' + chmodStdout)
+                                logger_debug('chmod_cmd stdout: ' + chmodStdout)
 
                             localPortNumber = str(localPortNumber)
 
@@ -1619,8 +1753,8 @@ class LauncherMainFrame(wx.Frame):
                                 # Request an ephemeral port from the operating system (by specifying port 0) :
                                 wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting ephemeral port...")
                                 import socket
-                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-                                sock.bind(('localhost', 0)) 
+                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                                sock.bind(('localhost', 0))
                                 localPortNumber = sock.getsockname()[1]
                                 sock.close()
                                 localPortNumber = str(localPortNumber)
@@ -1636,7 +1770,7 @@ class LauncherMainFrame(wx.Frame):
                                 "-oStrictHostKeyChecking=no " \
                                 "-L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer + ' "echo tunnel_hello; bash "'
 
-                            logger.debug('tunnel_cmd: ' + tunnel_cmd)
+                            logger_debug('tunnel_cmd: ' + tunnel_cmd)
 
                             # Not 100% sure if this is necessary on Windows vs Linux. Seems to break the
                             # Windows version of the launcher, but leaving in for Linux/OSX.
@@ -1648,7 +1782,7 @@ class LauncherMainFrame(wx.Frame):
                             launcherMainFrame.loginThread.sshTunnelProcess = subprocess.Popen(tunnel_cmd,
                                 universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
 
-                            logger.debug('pid of ssh tunnel process: ' + str(launcherMainFrame.loginThread.sshTunnelProcess.pid))
+                            logger_debug('pid of ssh tunnel process: ' + str(launcherMainFrame.loginThread.sshTunnelProcess.pid))
 
                             launcherMainFrame.loginThread.sshTunnelReady = False
                             launcherMainFrame.loginThread.sshTunnelExceptionOccurred = False
@@ -1656,32 +1790,33 @@ class LauncherMainFrame(wx.Frame):
                                 time.sleep(0.1)
                                 line = launcherMainFrame.loginThread.sshTunnelProcess.stdout.readline()
                                 if "tunnel_hello" in line:
-                                    logger.debug('Received tunnel_hello so ssh tunnel appears to be ok.')
+                                    logger_debug('Received tunnel_hello so ssh tunnel appears to be ok.')
                                     launcherMainFrame.loginThread.sshTunnelReady = True
                                     break
                                 if line.strip()!="":
-                                    logger.debug('Spurious stdout from tunnel command: ' + line)
+                                    logger_debug('Spurious stdout from tunnel command: ' + line)
                                 if "No such file" in line:
-                                    logger.error('Tunnel command reported "No such file"')
+                                    logger_error('Tunnel command reported "No such file"')
                                     launcherMainFrame.loginThread.sshTunnelExceptionOccurred = True
                                     break
                                 if "is not recognized" in line:
-                                    logger.error('Tunnel command reported "is not recognized"')
+                                    logger_error('Tunnel command reported "is not recognized"')
                                     launcherMainFrame.loginThread.sshTunnelExceptionOccurred = True
                                     break
                             if testRun:
                                 launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
                         except KeyboardInterrupt:
-                            logger.debug("C-c: Port forwarding stopped.")
+                            logger_debug("C-c: Port forwarding stopped.")
                             try:
-                                os.unlink(tunnelPrivateKeyFileName)
+                                if os.path.isfile(tunnelPrivateKeyFileName):
+                                    os.unlink(tunnelPrivateKeyFileName)
                             finally:
-                                dump_log()
+                                dump_log(submit_log=True)
                                 os._exit(0)
                         except:
-                            logger.debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
-                            logger.debug(traceback.format_exc())
+                            logger_debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
+                            logger_debug(traceback.format_exc())
 
                     self.sshTunnelReady = False
                     self.sshTunnelExceptionOccurred = False
@@ -1702,7 +1837,21 @@ class LauncherMainFrame(wx.Frame):
                     testTunnelThread = threading.Thread(target=createTunnel, args=(testLocalPortNumber,testRemoteHost,testRemotePortNumber,testTunnelServer,testTunnelUsername,testTunnelPrivateKeyFileName,testRun))
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Testing SSH tunnelling...")
-                    logger.debug("Testing SSH tunnelling.")
+                    wx.CallAfter(self.updateProgressDialog, 3, "Testing SSH tunnelling...")
+                    wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                        return
+
+                    logger_debug("Testing SSH tunnelling.")
 
                     testTunnelThread.start()
 
@@ -1711,9 +1860,9 @@ class LauncherMainFrame(wx.Frame):
                         time.sleep(1)
                         count = count + 1
                     if self.sshTunnelReady:
-                        logger.debug("SSH tunnelling appears to be working correctly.")
+                        logger_debug("SSH tunnelling appears to be working correctly.")
                     else:
-                        logger.error("Cannot create an SSH tunnel to " + testTunnelServer)
+                        logger_error("Cannot create an SSH tunnel to " + testTunnelServer)
                         def showCantCreateSshTunnelMessageDialog():
                             dlg = wx.MessageDialog(launcherMainFrame, "Error: Cannot create an SSH tunnel to\n\n" +
                                                     "    " + testTunnelServer + "\n\n" +
@@ -1727,39 +1876,58 @@ class LauncherMainFrame(wx.Frame):
                         while launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted==False:
                             time.sleep(1)
                         try:
-                            os.unlink(self.privateKeyFile.name)
+                            if os.path.isfile(self.privateKeyFile.name):
+                                os.unlink(self.privateKeyFile.name)
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
                             self.sshClient.close()
                         finally:
-                            dump_log()
+                            dump_log(submit_log=True)
                             os._exit(1)
-                        
+
                     if launcherMainFrame.massiveTabSelected:
 
                         # Begin if launcherMainFrame.massiveTabSelected:
 
                         # Run sanity check script
-                        run_ssh_command(self.sshClient, "/usr/local/desktop/sanity_check.sh", wx)
+                        run_ssh_command(self.sshClient, "/usr/local/desktop/sanity_check.sh")
 
                         self.massiveVisNodes = []
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
+                        wx.CallAfter(self.updateProgressDialog, 4, "Setting display resolution...")
+                        wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                            return
 
                         set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + self.resolution
-                        run_ssh_command(self.sshClient, set_display_resolution_cmd, wx)
+                        run_ssh_command(self.sshClient, set_display_resolution_cmd)
 
                         if self.host.startswith("m2"):
-                            logger.debug("Checking whether you have any existing jobs in the Vis node queue.")
-                            logger.debug("showq -w class:vis -u " + self.username + " | grep " + self.username)
+                            logger_debug("Checking whether you have any existing jobs in the Vis node queue.")
+                            logger_debug("showq -w class:vis -u " + self.username + " | grep " + self.username)
                             stdoutRead, stderrRead = run_ssh_command(self.sshClient, "showq -w class:vis -u " + self.username + " | grep " + self.username, wx)
                             if stdoutRead.strip()!="" and launcherMainFrame.massivePersistentMode==False:
                                 stdoutReadSplit = stdoutRead.split(" ")
                                 jobNumber = stdoutReadSplit[0] # e.g. 3050965
-                                logger.error("MASSIVE Launcher only allows you to have one job in the Vis node queue.")
+                                if (launcherMainFrame.progressDialog != None):
+                                    wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                    launcherMainFrame.progressDialog = None
+                                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                                wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                                logger_error("MASSIVE Launcher only allows you to have one job in the Vis node queue.")
                                 def showExistingJobFoundInVisNodeQueueMessageDialog():
-                                    dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one interactive job in the Vis node queue.\n\n" +
-                                                                            "You already have at least one job in the Vis node queue:\n\n" + 
+                                    dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
+                                                                            "You already have at least one job in the Vis node queue:\n\n" +
                                                                             stdoutRead.strip() + "\n\n" +
-                                                                            "To delete existing Vis node job(s), SSH to\n" + 
+                                                                            "To delete existing Vis node job(s), SSH to\n" +
                                                                             self.host + " and run:\n\n" +
                                                                             "qdel <jobNumber>\n\n" +
                                                                             "e.g. qdel " + jobNumber + "\n\n" +
@@ -1773,36 +1941,100 @@ class LauncherMainFrame(wx.Frame):
                                 while launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted==False:
                                     time.sleep(1)
                                 try:
-                                    os.unlink(self.privateKeyFile.name)
+                                    if os.path.isfile(self.privateKeyFile.name):
+                                        os.unlink(self.privateKeyFile.name)
                                     self.sshClient.close()
                                 finally:
-                                    dump_log()
+                                    dump_log(submit_log=True)
                                     os._exit(1)
                             if stdoutRead.strip()=="":
-                                logger.debug("You don't have any jobs already in the Vis node queue, which is good.")
+                                logger_debug("You don't have any jobs already in the Vis node queue, which is good.")
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
+                        wx.CallAfter(self.updateProgressDialog, 5, "Checking quota...")
+                        wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                            return
 
-                        run_ssh_command(self.sshClient, "mybalance --hours", wx)
+                        mybalanceStdout, _ = run_ssh_command(self.sshClient, "mybalance --hours")
+                        mybalanceLines = mybalanceStdout.split("\n")
+                        foundMassiveProjectInMyBalanceOutput = False
+                        for mybalanceLine in mybalanceLines:
+                            mybalanceLineComponents = mybalanceLine.split()
+                            if len(mybalanceLineComponents)<2:
+                                break
+                            massiveProjectInMyBalanceOutput = mybalanceLineComponents[0]
+                            if massiveProjectInMyBalanceOutput==launcherMainFrame.massiveProject:
+                                foundMassiveProjectInMyBalanceOutput = True
+                                cpusPerVisNode = 12
+                                cpuHoursRequested = int(launcherMainFrame.massiveHoursRequested) * int(launcherMainFrame.massiveVisNodesRequested) * cpusPerVisNode
+                                cpuHoursRemaining = float(mybalanceLineComponents[2])
+                                if cpuHoursRemaining < cpuHoursRequested:
+                                    error_string = ("You have requested " + str(cpuHoursRequested) + " CPU hours,\n"
+                                                    "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
+                                                    "in your quota for project \"" + launcherMainFrame.massiveProject + "\".")
+                                    logger_error(error_string)
+                                    die_from_login_thread(error_string)
+                                    return
+
+                        if foundMassiveProjectInMyBalanceOutput==False:
+                            error_string = ("You have requested use of project \"" + launcherMainFrame.massiveProject + "\",\n"
+                                             "but you don't have access to that project.")
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
+                            return
 
                         if self.host.startswith("m2"):
-                            run_ssh_command(self.sshClient, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 9 nodes in use", wx)
+                            numberOfBusyVisNodesStdout, _ = run_ssh_command(self.sshClient, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 9 nodes in use")
+
+                            def showAllVisnodesBusyWarningDialog():
+                                dlg = wx.MessageDialog(launcherMainFrame,
+                                        "All MASSIVE Vis nodes are currently busy.\n" +
+                                        "Your job will not begin immediately.",
+                                                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                dlg.ShowModal()
+                                dlg.Destroy()
+
+                            if "9 of 9" in numberOfBusyVisNodesStdout:
+                                logger_warning("All MASSIVE Vis nodes are currently busy.  Your job will not begin immediately.")
+                                showAllVisnodesBusyWarningDialog()
+
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
+                        wx.CallAfter(self.updateProgressDialog, 6, "Requesting remote desktop...")
+                        wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                            return
 
-                        #qsubcmd = "qsub -A " + self.massiveProject + " -I -q vis -l walltime=" + launcherMainFrame.massiveHoursRequested + ":0:0,nodes=1:ppn=12:gpus=2,pmem=16000MB"
-                        #qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested
                         qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
 
-                        logger.debug('qsubcmd: ' + qsubcmd)
-                    
+                        logger_debug('qsubcmd: ' + qsubcmd)
+
                         # We will open a channel to allow us to monitor output from qsub,
-                        # even before the "qsub" command has finished running. 
+                        # even before the "qsub" command has finished running.
 
                         # From: http://www.lag.net/paramiko/docs/paramiko.Channel-class.html#recv_stderr_ready
-                        # "Only channels using exec_command or invoke_shell without a pty 
+                        # "Only channels using exec_command or invoke_shell without a pty
                         #  will ever have data on the stderr stream."
- 
+
                         transport = self.sshClient.get_transport()
                         channel = transport.open_session()
                         channel.get_pty()
@@ -1817,9 +2049,26 @@ class LauncherMainFrame(wx.Frame):
                         lineFragment = ""
                         checkedShowStart = False
                         self.massiveJobNumber = "0"
+                        self.deletedMassiveJob = False
 
                         while True:
                             tCheck = 0
+
+                            if launcherMainFrame.progressDialog is not None:
+                                self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                            else:
+                                assert False # how could this happen? FIXME DEBUGGING
+                            if self.shouldAbort:
+                                deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,update_tidying_up_progress_bar=False,ignore_errors=False)
+                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                                if launcherMainFrame.progressDialog != None:
+                                    wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                    launcherMainFrame.progressDialog = None
+                                wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                                die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                                return
+
                             while not channel.recv_ready() and not channel.recv_stderr_ready():
                                 #Use asterisks to simulate progress bar:
                                 #wx.CallAfter(sys.stdout.write, "*")
@@ -1834,11 +2083,18 @@ class LauncherMainFrame(wx.Frame):
                                             sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
                                             sshClient2.connect(self.host,username=self.username,password=self.password)
 
-                                            stdoutRead, stderrRead = run_ssh_command(sshClient2, "showstart " + self.massiveJobNumber, wx, ignore_errors=True)
+                                            stdoutRead, stderrRead = run_ssh_command(sshClient2, "showstart " + self.massiveJobNumber, ignore_errors=True)
                                             if not "00:00:00" in stdoutRead:
-                                                logger.debug("showstart " + self.massiveJobNumber + "...")
-                                                logger.debug('showstart stderr: ' + stderrRead)
-                                                logger.debug('showstart stdout: ' + stdoutRead)
+                                                logger_debug("showstart " + self.massiveJobNumber + "...")
+                                                logger_debug('showstart stderr: ' + stderrRead)
+                                                logger_debug('showstart stdout: ' + stdoutRead)
+
+                                                showstartLines = stdoutRead.split("\n")
+                                                for showstartLine in showstartLines:
+                                                    if showstartLine.startswith("Estimated Rsv based start"):
+                                                        showstartLineComponents = showstartLine.split(" on ")
+                                                        wx.CallAfter(self.updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
+                                                        wx.Yield()
                                             sshClient2.close()
 
                                         showStartThread = threading.Thread(target=showStart)
@@ -1849,8 +2105,8 @@ class LauncherMainFrame(wx.Frame):
                                 buff = StringIO(out)
                                 line = lineFragment + buff.readline()
                                 while line != "":
-                                    logger.error('channel.recv_stderr_ready(): ' + line)
-                                    launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+                                    logger_error('channel.recv_stderr_ready(): ' + line)
+                                    wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                             if (channel.recv_ready()):
                                 out = channel.recv(1024)
                                 buff = StringIO(out)
@@ -1863,10 +2119,10 @@ class LauncherMainFrame(wx.Frame):
                                     else:
                                         lineFragment = ""
                                     if "ERROR" in line or "Error" in line or "error" in line:
-                                        logger.error('error in line: ' + line)
-                                        launcherMainFrame.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+                                        logger_error('error in line: ' + line)
+                                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
                                     if "waiting for job" in line:
-                                        logger.debug('waiting for job in line: ' + line)
+                                        logger_debug('waiting for job in line: ' + line)
                                         lineSplit = line.split(" ")
                                         jobNumberString = lineSplit[4] # e.g. 3050965.m2-m
                                         jobNumberSplit = jobNumberString.split(".")
@@ -1885,8 +2141,30 @@ class LauncherMainFrame(wx.Frame):
                             if breakOutOfMainLoop:
                                 break
 
-                        #wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + visnode)
+                        if len(self.massiveVisNodes)==0:
+                            if int(launcherMainFrame.massiveVisNodesRequested) > 1:
+                                error_string = "Couldn't get the requested number of MASSIVE Vis nodes."
+                            else:
+                                error_string = "Couldn't get a MASSIVE Vis node."
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=False,update_main_progress_bar=False,update_tidying_up_progress_bar=False,ignore_errors=False)
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
+                            return
+
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Acquired desktop node:" + self.massiveVisNodes[0])
+                        wx.CallAfter(self.updateProgressDialog, 7, "Acquired desktop node: " + self.massiveVisNodes[0])
+                        wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                            return
 
                         visnode_id = ''
 
@@ -1898,17 +2176,37 @@ class LauncherMainFrame(wx.Frame):
                         for visNodeNumber in range(0,int(launcherMainFrame.massiveVisNodesRequested)):
                             visnode_id += self.massiveVisNodes[visNodeNumber] + " "
 
-                        logger.debug("Massive Desktop visnode" + visnode_id)
+                        logger_debug("Massive Desktop visnode" + visnode_id)
 
                         # End if launcherMainFrame.massiveTabSelected:
                     else:
+                        if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Requesting remote desktop...")
+                            wx.CallAfter(self.updateProgressDialog, 6, "Requesting remote desktop...")
+                            wx.Yield()
+                        else:
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Connecting to remote desktop...")
+                            wx.CallAfter(self.updateProgressDialog, 6, "Connecting to remote desktop...")
+                            wx.Yield()
+                        while (self.updatingProgressDialog):
+                            sleep(0.1)
+                        if self.shouldAbort:
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                            return
+
                         self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
                             cvlVncServerCommand = "vncsession --vnc tigervnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
                             if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                                 cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
-                            logger.debug('cvlVncServerCommand: ' + cvlVncServerCommand)
-                            stdoutRead, stderrRead = run_ssh_command(self.sshClient, cvlVncServerCommand, wx, ignore_errors=True) # vncsession sends output to stderr? Really?
+                            logger_debug('cvlVncServerCommand: ' + cvlVncServerCommand)
+                            stdoutRead, stderrRead = run_ssh_command(self.sshClient, cvlVncServerCommand, ignore_errors=True) # vncsession sends output to stderr? Really?
                             lines = stderrRead.split("\n")
                             foundDisplayNumber = False
                             for line in lines:
@@ -1920,13 +2218,13 @@ class LauncherMainFrame(wx.Frame):
                                     foundDisplayNumber = True
 
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
-                            logger.debug("CVL VNC Display Number is " + str(self.cvlVncDisplayNumber))
+                            logger_debug("CVL VNC Display Number is " + str(self.cvlVncDisplayNumber))
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
                             if foundDisplayNumber:
-                                logger.debug("CVL VNC Display Number is " + str(self.cvlVncDisplayNumber))
-                                launcherMainFrame.cvlVncDisplayNumberSpinCtrl.SetValue(int(self.cvlVncDisplayNumber))
+                                logger_debug("CVL VNC Display Number is " + str(self.cvlVncDisplayNumber))
+                                wx.CallAfter(launcherMainFrame.cvlVncDisplayNumberSpinCtrl.SetValue, int(self.cvlVncDisplayNumber))
                             else:
-                                logger.error("Failed to parse vncserver output for display number.")
+                                logger_error("Failed to parse vncserver output for display number.")
 
                     self.sshTunnelReady = False
                     self.sshTunnelExceptionOccurred = False
@@ -1945,6 +2243,24 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
+                    if launcherMainFrame.massiveTabSelected:
+                        wx.CallAfter(self.updateProgressDialog, 8, "Creating secure tunnel...")
+                        wx.Yield()
+                    else:
+                        wx.CallAfter(self.updateProgressDialog, 7, "Creating secure tunnel...")
+                        wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                        return
+
                     tunnelThread.start()
 
                     count = 1
@@ -1961,10 +2277,24 @@ class LauncherMainFrame(wx.Frame):
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Launching TurboVNC...")
 
+                    wx.CallAfter(self.updateProgressDialog, 9, "Launching TurboVNC...")
+                    wx.Yield()
+                    while (self.updatingProgressDialog):
+                        sleep(0.1)
+                    if self.shouldAbort:
+                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                        return
+
                     if launcherMainFrame.massiveTabSelected:
-                        logger.debug("Starting MASSIVE VNC.")
+                        logger_debug("Starting MASSIVE VNC.")
                     if launcherMainFrame.cvlTabSelected:
-                        logger.debug("Starting CVL VNC...")
+                        logger_debug("Starting CVL VNC...")
 
                     try:
                         if sys.platform.startswith("win"):
@@ -2043,53 +2373,87 @@ class LauncherMainFrame(wx.Frame):
                                 if 'logfile' in launcherMainFrame.vncOptions:
                                     vncOptionsString = vncOptionsString + " /logfile \"" + launcherMainFrame.vncOptions['logfile'] + "\""
 
-                        if sys.platform.startswith("win"):
-                            vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
-                            logger.debug('vncCommandString windows: ' +  vncCommandString)
-                            proc = subprocess.Popen(vncCommandString, 
-                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                                universal_newlines=True)
-                            turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\r\n")
-                        else:
-                            vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
-                            logger.debug('vncCommandString linux/darwin: ' + vncCommandString)
-                            proc = subprocess.Popen(vncCommandString, 
-                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                                universal_newlines=True)
-                            turboVncStdout, turboVncStderr = proc.communicate(input=self.password + "\n")
+                        def destroyProgressDialog():
+                            self.updateProgressDialog(10, "Launching TurboVNC...")
+                            launcherMainFrame.progressDialog.Show(False)
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
 
-                        # The following attempt to grab the focus back from
+                        wx.CallAfter(destroyProgressDialog)
+
+                        self.turboVncProcess = None
+                        self.turboVncStdout = None
+                        self.turboVncStderr = None
+                        self.turboVncCompleted = False
+
+                        def launchTurboVNC():
+                            if sys.platform.startswith("win"):
+                                vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
+                                logger_debug('vncCommandString windows: ' +  vncCommandString)
+                                self.turboVncProcess = subprocess.Popen(vncCommandString,
+                                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                    universal_newlines=True)
+                                self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.password + "\r\n")
+                            else:
+                                vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
+                                logger_debug('vncCommandString linux/darwin: ' + vncCommandString)
+                                self.turboVncProcess = subprocess.Popen(vncCommandString,
+                                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                                    universal_newlines=True)
+                                self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.password + "\n")
+                            self.turboVncCompleted = True
+                        wx.CallAfter(launchTurboVNC)
+                        while self.turboVncCompleted==False:
+                            time.sleep(0.1)
+
+                        # Remove "Launching TurboVNC..." from status bar:
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+
+                        # The original method used to grab the focus back from
                         # TurboVNC viewer failed rather ungracefully a few
-                        # times recently, so I'm disabling it for now:
+                        # times recently, so it was commented out.
+                        # A new method is now being trialed, using a slightly
+                        # different Apple Script and using wx.CallAfter
+                        # to prevent GUI threading problems.
 
-                        #if sys.platform.startswith("darwin") and launcherMainFrame.cvlTabSelected:
-                            ## Grab focus back from X11, i.e. reactivate MASSIVE Launcher app.
-                            #subprocess.Popen(['osascript', '-e', 
-                                #"tell application \"System Events\"\r" +
-                                #"  set procName to name of first process whose unix id is " + str(os.getpid()) + "\r" +
-                                #"end tell\r" +
-                                #"tell application procName to activate\r"])
+                        if sys.platform.startswith("darwin") and launcherMainFrame.cvlTabSelected:
+                            def grabFocusBackFromTurboVNC():
+                                subprocess.Popen(['osascript', '-e',
+                                    #"tell application \"System Events\"\r" +
+                                    #"  set procName to name of first process whose unix id is " + str(os.getpid()) + "\r" +
+                                    #"end tell\r" +
+                                    #"tell application procName to activate\r"])
+                                    "tell application \"System Events\"\r" +
+                                    "  set launcherApps to every process whose name contains \"Launcher\"\r" +
+                                    "  try\r" +
+                                    "    set launcherApp to item 1 of launcherApps\r" +
+                                    "    set frontmost of launcherApp to true\r" +
+                                    "    tell application launcherApp to activate\r" +
+                                    "  end try\r" +
+                                    "end tell\r"])
+                            wx.CallAfter(grabFocusBackFromTurboVNC)
 
                         self.turboVncFinishTime = datetime.datetime.now()
 
-                        logger.debug('turboVncFinishTime = ' + str(self.turboVncFinishTime))
+                        logger_debug('turboVncFinishTime = ' + str(self.turboVncFinishTime))
 
-                        if turboVncStderr != None and turboVncStderr.strip()!="":
-                            logger.debug('turboVncStderr: ' + turboVncStderr)
+                        if self.turboVncStderr != None and self.turboVncStderr.strip()!="":
+                            logger_debug('self.turboVncStderr: ' + self.turboVncStderr)
 
-                        if proc.returncode != 0:
-                            logger.debug('turboVncStdout: ' + turboVncStdout)
+                        if self.turboVncProcess.returncode != 0:
+                            logger_debug('self.turboVncStdout: ' + self.turboVncStdout)
 
                         try:
-                            logger.debug('at start of try... clause when TurboVNC has exited')
+                            logger_debug('at start of try... clause when TurboVNC has exited')
 
                             if launcherMainFrame.cvlTabSelected:
-                                logger.debug('launcherMainFrame.cvlTabSelected == True')
+                                logger_debug('launcherMainFrame.cvlTabSelected == True')
 
                                 if launcherMainFrame.cvlVncDisplayNumberAutomatic:
-                                    logger.debug('launcherMainFrame.cvlVncDisplayNumberAutomatic == True')
+                                    logger_debug('launcherMainFrame.cvlVncDisplayNumberAutomatic == True')
 
-                                    def askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession():
+                                    def askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession(sshClient2):
                                         import questionDialog
                                         result = questionDialog.questionDialog("Do you want to keep your VNC session (Display #" + str(self.cvlVncDisplayNumber) + ") running for future use?",
                                             #buttons=["Discard VNC Session", wx.ID_CANCEL, "Save VNC Session"])
@@ -2097,87 +2461,164 @@ class LauncherMainFrame(wx.Frame):
                                             caption="MASSIVE/CVL Launcher")
                                         if result == "Discard VNC Session":
                                             cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
-                                            logger.debug('cvlVncSessionStopCommand: ' + cvlVncSessionStopCommand)
+                                            logger_debug('cvlVncSessionStopCommand: ' + cvlVncSessionStopCommand)
 
-                                            # Earlier sshClient connection may have timed out by now.
-                                            sshClient2 = ssh.SSHClient()
-                                            sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
-                                            sshClient2.connect(self.host,username=self.username,password=self.password)
-                                            run_ssh_command(sshClient2, cvlVncSessionStopCommand, wx, ignore_errors=True) # yet another command that sends output to stderr FIXME we should parse this and check for real errors
-                                            sshClient2.close()
+                                            logger_debug('Running cvlVncSessionStopCommand')
+                                            # run_ssh_command(sshClient2, cvlVncSessionStopCommand, ignore_errors=True, log_output=True) # yet another command that sends output to stderr FIXME we should parse this and check for real errors
+
+                                            logger_debug('Closing sshClient2.')
+                                            # sshClient2.close()
+                                            logger_debug('Closed sshClient2 connection.')
 
                                         launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = True
 
-                                    logger.debug('About to ask user if they want to keep or kill their VNC session...')
+                                    logger_debug('About to ask user if they want to keep or kill their VNC session...')
+
+                                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking if user wants to terminate or keep the VNC session...")
 
                                     launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = False
-                                    wx.CallAfter(askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession)
 
-                                    logger.debug('Now waiting for the user to click keep or discard...')
+                                    # Earlier sshClient connection may have timed out by now.
+                                    logger_debug('Creating sshClient2')
+                                    sshClient2 = ssh.SSHClient()
+
+                                    logger_debug('Setting missing host policy.')
+                                    sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
+
+                                    logger_debug('Logging in')
+                                    sshClient2.connect(self.host,username=self.username,password=self.password)
+
+                                    wx.CallAfter(askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession, sshClient2)
+
+                                    logger_debug('Now waiting for the user to click keep or discard...')
                                     while launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted==False:
-                                        logger.debug('launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted == False, sleeping for one second...')
+                                        logger_debug('launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted == False, sleeping for one second...')
                                         time.sleep(1)
 
+                                    sshClient2.close()
                                     self.turboVncFinishTime = datetime.datetime.now()
-                                    logger.debug('self.turboVncFinishTime = ' + str(self.turboVncFinishTime))
+                                    logger_debug('self.turboVncFinishTime = ' + str(self.turboVncFinishTime))
                                 else:
-                                    logger.debug("launcherMainFrame.cvlVncDisplayNumberAutomatic == False, so we don't need to stop the VNC session.")
+                                    logger_debug("launcherMainFrame.cvlVncDisplayNumberAutomatic == False, so we don't need to stop the VNC session.")
 
-                            logger.debug('Now tidying up the environment.')
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
+                            logger_debug('Now tidying up the environment.')
+                            maximumTidyingUpProgressBarValue = 4
+                            userCanAbort = False
+                            launcherMainFrame.tidyingUpProgressDialog = None
+                            def initializeTidyingUpProgressDialog():
+                                launcherMainFrame.tidyingUpProgressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Tidying up the environment...", "Tidying up the environment...", maximumTidyingUpProgressBarValue, userCanAbort)
+                            wx.CallAfter(initializeTidyingUpProgressDialog)
+
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Removing the private key file.")
+                            wx.CallAfter(updateTidyingUpProgressDialog, 1, "Removing the private key file.")
+                            wx.Yield()
 
                             try:
-                                logger.debug('Removing the private key file')
-                                os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
+                                logger_debug('Removing the private key file')
+                                if os.path.isfile(launcherMainFrame.loginThread.privateKeyFile.name):
+                                    os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
                             except:
-                                logger.debug('Error while unlinking private key file...')
-                                logger.debug(traceback.format_exc())
+                                logger_debug('Error while unlinking private key file...')
+                                logger_debug(traceback.format_exc())
 
-                            if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
-                                logger.debug('Possibly running qdel for massive visnode...')
-                                if launcherMainFrame.loginThread.massiveJobNumber != "0":
-                                    logger.debug("qdel " + launcherMainFrame.loginThread.massiveJobNumber)
-                                    run_ssh_command(launcherMainFrame.loginThread.sshClient, "qdel " + launcherMainFrame.loginThread.massiveJobNumber, wx)
-                            else:
-                                logger.debug('Not running qdel for massive visnode.')
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=True,ignore_errors=False)
 
-                            logger.debug('Now terminating the ssh tunnel process.')
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Terminating the SSH tunnel process.")
+                            wx.CallAfter(updateTidyingUpProgressDialog, 3, "Terminating the SSH tunnel process.")
+                            wx.Yield()
+
+                            logger_debug('Now terminating the ssh tunnel process.')
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
                         finally:
-                            logger.debug('In the "finally" clause for tidying up TurboVNC.')
+                            if launcherMainFrame.tidyingUpProgressDialog != None:
+                                wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Show, False)
+                                wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
+
+                            logger_debug('In the "finally" clause for tidying up TurboVNC.')
                             # If the TurboVNC process completed less than 3 seconds after it started,
                             # then the Launcher assumes that something went wrong, so it will
                             # remain open to display any STDERR from TurboVNC in its Log window,
                             # rather than automatically exiting. This technique is most useful for
                             # the Mac / Linux (X11) version of TurboVNC.  On Windows, the TurboVNC
-                            # viewer may display an error message in a message dialog for longer 
+                            # viewer may display an error message in a message dialog for longer
                             # than 3 seconds.
                             turboVncElapsedTime = self.turboVncFinishTime - self.turboVncStartTime
                             turboVncElapsedTimeInSeconds = turboVncElapsedTime.total_seconds()
-                            if turboVncElapsedTimeInSeconds>=3 and proc.returncode==0 and (turboVncStderr==None or turboVncStderr.strip()==""):
-                                logger.debug('Elapsed time at least 3 seconds and return code ok, so exiting.')
+                            if turboVncElapsedTimeInSeconds>=3 and (self.turboVncStderr==None or self.turboVncStderr.strip()==""):
+                                logger_debug('Elapsed time at least 3 seconds and return code ok, so exiting.')
                                 dump_log()
                                 os._exit(0)
                             elif turboVncElapsedTimeInSeconds<3:
-                                logger.debug("Disabling auto-quit because TurboVNC's elapsed time is less than 3 seconds.")
+                                logger_debug("Disabling auto-quit because TurboVNC's elapsed time is less than 3 seconds.")
+                                if launcherMainFrame.massiveTabSelected:
+                                    wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, True)
+                                else:
+                                    wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, True)
+                                if launcherMainFrame.logWindow!=None:
+                                    wx.CallAfter(launcherMainFrame.logWindow.Show, True)
+                                    def disabling_auto_quit_because_TurboVNC_exited_abruptly():
+                                        dlg = wx.MessageDialog(launcherMainFrame,
+                                                        "Disabling auto-quit because TurboVNC exited abruptly.",
+                                                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                        dlg.ShowModal()
+                                        dlg.Destroy()
+                                    wx.CallAfter(disabling_auto_quit_because_TurboVNC_exited_abruptly)
+                            elif self.turboVncStderr!=None and self.turboVncStderr.strip()!="":
+                                logger_debug("Disabling auto-quit because TurboVNC returned an error message.")
+                                if launcherMainFrame.massiveTabSelected:
+                                    wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, True)
+                                else:
+                                    wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, True)
+                                if launcherMainFrame.logWindow!=None:
+                                    wx.CallAfter(launcherMainFrame.logWindow.Show, True)
+                                    def disabling_auto_quit_because_TurboVNC_returned_an_error_message():
+                                        dlg = wx.MessageDialog(launcherMainFrame,
+                                                        "Disabling auto-quit because TurboVNC returned an error message.",
+                                                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                        dlg.ShowModal()
+                                        dlg.Destroy()
+                                    wx.CallAfter(disabling_auto_quit_because_TurboVNC_returned_an_error_message)
 
-                        logger.debug('Setting the cursor back to CURSOR_ARROW.')
+                        logger_debug('Setting the cursor back to CURSOR_ARROW.')
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
 
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
                     except:
-                        logger.debug('Exception (a)')
-                        logger.debug(traceback.format_exc())
+                        logger_debug('Exception (a)')
+                        logger_debug(traceback.format_exc())
 
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        if launcherMainFrame.massiveTabSelected:
+                            wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, True)
+                        else:
+                            wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, True)
+                        if launcherMainFrame.logWindow!=None:
+                            wx.CallAfter(launcherMainFrame.logWindow.Show, True)
 
                 except:
-                    logger.debug('Exception (b)')
-                    logger.debug(traceback.format_exc())
+                    logger_debug('Exception (b)')
+                    logger_debug(traceback.format_exc())
 
                     wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                    if (launcherMainFrame.progressDialog != None):
+                        wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                        launcherMainFrame.progressDialog = None
+                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                    if launcherMainFrame.massiveTabSelected:
+                        wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, True)
+                    else:
+                        wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, True)
+                    if launcherMainFrame.logWindow!=None:
+                        wx.CallAfter(launcherMainFrame.logWindow.Show, True)
 
         MASSIVE_TAB_INDEX = 0
-        CVL_TAB_INDEX =1 
+        CVL_TAB_INDEX =1
 
         if launcherMainFrame.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
             launcherMainFrame.massiveTabSelected = True
@@ -2250,61 +2691,46 @@ class LauncherMainFrame(wx.Frame):
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
         if launcherMainFrame.massiveTabSelected:
-            logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
+            self.logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
+            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseMassiveDebugWindow)
         else:
-            logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
+            self.logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
+            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseCvlDebugWindow)
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
-            logWindow.SetIcon(_icon)
+            self.logWindow.SetIcon(_icon)
 
         if sys.platform.startswith("linux"):
             import MASSIVE_icon
-            logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+            self.logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
 
-        self.logTextCtrl = wx.TextCtrl(logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
+        self.logTextCtrl = wx.TextCtrl(self.logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
         logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
         logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
-        logWindow.SetSizer(logWindowSizer)
+        self.logWindow.SetSizer(logWindowSizer)
         if sys.platform.startswith("darwin"):
             font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         else:
             font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         self.logTextCtrl.SetFont(font)
 
-        if launcherMainFrame.massiveTabSelected:
-            logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
-        else:
-            logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
-
-        global logger
-        global logger_output
-        global logger_fh
-
-        logger = logging.getLogger('launcher')
-        logger.setLevel(logging.DEBUG)
-
-        log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
-
-        # Send all log messages to a string.
-        logger_output = StringIO()
-        string_handler = logging.StreamHandler(stream=logger_output)
-        string_handler.setLevel(logging.DEBUG)
-        string_handler.setFormatter(logging.Formatter(log_format_string))
-        logger.addHandler(string_handler)
-
         # Send all log messages to the debug window, which may or may not be visible.
         log_window_handler = logging.StreamHandler(stream=self.logTextCtrl)
         log_window_handler.setLevel(logging.DEBUG)
+        log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
         log_window_handler.setFormatter(logging.Formatter(log_format_string))
         logger.addHandler(log_window_handler)
+        # Don't send ssh.transport log messages to
+        # the log window, because they won't be
+        # wrapped in wx.CallAfter, unless we provide
+        # our own customized version of the ssh module.
+        #transport_logger.addHandler(log_window_handler)
 
-        # Finally, send all log messages to a log file.
-        from os.path import expanduser, join
-        logger_fh = logging.FileHandler(join(expanduser("~"), '.MASSIVE_Launcher_debug_log.txt'))
-        logger_fh.setLevel(logging.DEBUG)
-        logger_fh.setFormatter(logging.Formatter(log_format_string))
-        logger.addHandler(logger_fh)
+        if launcherMainFrame.massiveTabSelected:
+            self.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
+        else:
+            self.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
 
         self.loginThread = LoginThread(self)
         self.loginThread.start()

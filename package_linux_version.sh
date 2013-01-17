@@ -3,9 +3,10 @@
 # Utility for packaging the Linux version of the installer.
 #
 # You may have to change PYINSTALLERDIR to point to the directory where
-# pyinstaller 1.5.1 was unpacked.
+# pyinstaller was unpacked.
 
-PYINSTALLERDIR=`pwd`/pyinstaller-1.5.1
+#PYINSTALLERDIR=`pwd`/pyinstaller-1.5.1
+PYINSTALLERDIR=`pwd`/pyinstaller-2.0
 
 set -o nounset
 set -e
@@ -14,10 +15,15 @@ VERSION=`grep '^version_number' launcher_version_number.py | cut -f 2 -d '"'`
 ARCHITECTURE=`uname -m | sed s/x86_64/amd64/g | sed s/i686/i386/g`
 
 rm -fr dist
-python $PYINSTALLERDIR/Configure.py
-rm -f launcher.spec
-python ${PYINSTALLERDIR}/Makespec.py launcher.py
-python ${PYINSTALLERDIR}/Build.py launcher.spec
+
+# PyInstaller 1.5.1
+#python $PYINSTALLERDIR/Configure.py
+#rm -f launcher.spec
+#python ${PYINSTALLERDIR}/Makespec.py launcher.py
+#python ${PYINSTALLERDIR}/Build.py launcher.spec
+
+# PyInstaller 2.0
+python ${PYINSTALLERDIR}/pyinstaller.py launcher.py
 
 cp "MASSIVE Launcher.desktop" 	dist/launcher/
 cp massiveLauncher.sh 		dist/launcher/
@@ -25,6 +31,8 @@ cp massiveLauncher.sh 		dist/launcher/
 mkdir dist/launcher/icons
 cp IconPngs/* dist/launcher/icons/
 cp README_LINUX dist/launcher/
+
+cp `python -c 'import requests; print requests.certs.where()'` dist/launcher/
 
 cd dist
 mv launcher MassiveLauncher-${VERSION}_${ARCHITECTURE}
