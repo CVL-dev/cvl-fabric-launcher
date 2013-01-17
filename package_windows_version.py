@@ -27,7 +27,7 @@ os.system('del /Q dist\\*.*')
 #os.system('copy /Y C:\\WINDOWS\\WinSxS\\Manifests\\' + vc90_dirs[0] + '.manifest')
 
 #os.system('\\Python27\\python.exe create_windows_bundle.py py2exe')
-os.system('C:\\Python27\\python.exe  .\\pyinstaller-2.0\\pyinstaller.py launcher.py')
+os.system('C:\\Python27\\python.exe  .\\pyinstaller-2.0\\pyinstaller.py --windowed launcher.py')
 
 #os.system('copy /Y MASSIVE.ico dist\\')
 os.system('copy /Y MASSIVE.ico dist\\launcher\\')

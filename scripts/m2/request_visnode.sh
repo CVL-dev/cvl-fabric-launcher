@@ -33,9 +33,13 @@ fi
 if [ $# -ge 4 ] ; then
  PERSISTENT=$4
 fi
-QPEEK=True 
+QSTAT=True 
 if [ $# -ge 5 ] ; then
-  QPEEK=$5
+  QSTAT=$5
+fi
+QPEEK=True 
+if [ $# -ge 6 ] ; then
+  QPEEK=$6
 fi
 
 cluster=`hostname | grep -o m[1-2]`
@@ -56,22 +60,24 @@ then
      fi
   fi
   echo $jobid_full
-  # need jobid without server name for qpeek
-  jobid=`echo $jobid_full | cut -d '.' -f 1`
-  checktime=1
-  echo sleep $checktime
-  sleep $checktime
-  isrunning=`qstat -f $jobid_full | grep "job_state = R"`
-  echo $isrunning
-  while [[ "$isrunning" == "" ]]
-  do
-    checktime=$[$checktime+1]
-    echo sleep $checktime
-    sleep $checktime
-    isrunning=`qstat -f $jobid_full | grep "job_state = R"`
-    qstat $jobid_full
-  done
-  echo "Looking good..."
+  if [[ "$QSTAT" == "True" ]]; then
+	  # need jobid without server name for qpeek
+	  jobid=`echo $jobid_full | cut -d '.' -f 1`
+	  checktime=1
+	  echo sleep $checktime
+	  sleep $checktime
+	  isrunning=`qstat -f $jobid_full | grep "job_state = R"`
+	  echo $isrunning
+	  while [[ "$isrunning" == "" ]]
+	  do
+	    checktime=$[$checktime+1]
+	    echo sleep $checktime
+	    sleep $checktime
+	    isrunning=`qstat -f $jobid_full | grep "job_state = R"`
+	    qstat $jobid_full
+	  done
+	  echo "Looking good..."
+  fi
   if [[ "$QPEEK" == "True" ]]; then
     echo "Waiting 15 seconds to make sure that there are no errors..."
     sleep 15

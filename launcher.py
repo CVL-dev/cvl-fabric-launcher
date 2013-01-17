@@ -160,7 +160,21 @@ class MyHtmlParser(HTMLParser.HTMLParser):
 def dump_log(submit_log=False):
     logging.shutdown()
 
-    if submit_log:
+    def yes_no():
+        dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
+        try:
+            result = dlg.ShowModal()
+            launcherMainFrame.loginThread.submit_log = result == wx.ID_YES
+        finally:
+            dlg.Destroy()
+            launcherMainFrame.loginThread.yes_no_completed = True
+
+    launcherMainFrame.loginThread.yes_no_completed = False
+    wx.CallAfter(yes_no)
+    while not launcherMainFrame.loginThread.yes_no_completed:
+        time.sleep(1)
+
+    if submit_log and launcherMainFrame.loginThread.submit_log:
         logger_debug('about to send debug log')
 
         url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
@@ -235,8 +249,6 @@ def die_from_login_thread(error_message, display_error_dialog=True):
     wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, False)
 
 def die_from_main_frame(error_message):
-    dump_log(submit_log=True)
-
     if (launcherMainFrame.progressDialog != None):
         wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
         launcherMainFrame.progressDialog = None
@@ -256,9 +268,8 @@ def die_from_main_frame(error_message):
     while not launcherMainFrame.loginThread.die_from_main_frame_dialog_completed:
         time.sleep(1)
 
+    dump_log(submit_log=True)
     os._exit(1)
-
-
 
 def run_ssh_command(ssh_client, command, ignore_errors=False, log_output=True):
     logger_debug('run_ssh_command: "%s"' % command)
@@ -2049,7 +2060,10 @@ class LauncherMainFrame(wx.Frame):
                         while True:
                             tCheck = 0
 
-                            self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                            if launcherMainFrame.progressDialog is not None:
+                                self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                            else:
+                                assert False # how could this happen? FIXME DEBUGGING
                             if self.shouldAbort:
                                 deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,update_tidying_up_progress_bar=False,ignore_errors=False)
                                 wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
