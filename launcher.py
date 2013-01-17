@@ -161,6 +161,10 @@ def dump_log(submit_log=False):
     logging.shutdown()
 
     def yes_no():
+        if (launcherMainFrame.progressDialog != None):
+            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+            launcherMainFrame.progressDialog = None
+
         dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
         try:
             result = dlg.ShowModal()
