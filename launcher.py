@@ -161,10 +161,6 @@ class MyHtmlParser(HTMLParser.HTMLParser):
 def dump_log(submit_log=False):
     logging.shutdown()
 
-    if launcherMainFrame.tidyingUpProgressDialog != None:
-        wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Show, False)
-        wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
-
     def yes_no():
         dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
         try:
@@ -175,9 +171,11 @@ def dump_log(submit_log=False):
             launcherMainFrame.loginThread.yes_no_completed = True
 
     launcherMainFrame.loginThread.yes_no_completed = False
-    wx.CallAfter(yes_no)
-    while not launcherMainFrame.loginThread.yes_no_completed:
-        time.sleep(1)
+
+    if submit_log:
+        wx.CallAfter(yes_no)
+        while not launcherMainFrame.loginThread.yes_no_completed:
+            time.sleep(1)
 
     if submit_log and launcherMainFrame.loginThread.submit_log:
         logger_debug('about to send debug log')
