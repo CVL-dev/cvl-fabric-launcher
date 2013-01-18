@@ -65,9 +65,8 @@ from StringIO import StringIO
 # and also avoids the case where the launcher tries to write to CVL Launcher.exe.log
 # which may not be possible due to permissions problems on Windows.
 import sys
-# FIXME uncomment these
-#sys.stdout = logger_output
-#sys.stderr = logger_output
+sys.stdout = logger_output
+sys.stderr = logger_output
 
 if sys.platform.startswith("win"):
     import _winreg
@@ -160,6 +159,16 @@ class MyHtmlParser(HTMLParser.HTMLParser):
 
 def dump_log(submit_log=False):
     logging.shutdown()
+
+    while True:
+        try:
+            if launcherMainFrame.tidyingUpProgressDialog is None: break
+
+            time.sleep(0.01)
+            wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
+            wx.Yield()
+        except wx._core.PyDeadObjectError:
+            break
 
     def yes_no():
         dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
@@ -2065,8 +2074,7 @@ class LauncherMainFrame(wx.Frame):
 
                             if launcherMainFrame.progressDialog is not None:
                                 self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
-                            else:
-                                assert False # how could this happen? FIXME DEBUGGING
+
                             if self.shouldAbort:
                                 deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,update_tidying_up_progress_bar=False,ignore_errors=False)
                                 wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
