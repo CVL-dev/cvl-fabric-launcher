@@ -65,6 +65,7 @@ from StringIO import StringIO
 # and also avoids the case where the launcher tries to write to CVL Launcher.exe.log
 # which may not be possible due to permissions problems on Windows.
 import sys
+# FIXME uncomment these
 #sys.stdout = logger_output
 #sys.stderr = logger_output
 
@@ -160,11 +161,11 @@ class MyHtmlParser(HTMLParser.HTMLParser):
 def dump_log(submit_log=False):
     logging.shutdown()
 
-    def yes_no():
-        if (launcherMainFrame.progressDialog != None):
-            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
-            launcherMainFrame.progressDialog = None
+    if launcherMainFrame.tidyingUpProgressDialog != None:
+        wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Show, False)
+        wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
 
+    def yes_no():
         dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
         try:
             result = dlg.ShowModal()
