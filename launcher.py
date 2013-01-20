@@ -57,22 +57,13 @@ on Linux and on Mac OS X.
 
 """
 
-import logging
-from StringIO import StringIO
 
-global transport_logger
-global logger
-global logger_output
-global logger_fh
-
-# Redirect stdout and stderr to the logger output string. While this is
-# somewhat undesirable, it at least allows us to catch any unexpected output,
-# and also avoids the case where the launcher tries to write to CVL Launcher.exe.log
-# which may not be possible due to permissions problems on Windows.
-
+# Make sure that the Launcher doesn't attempt to write to
+# "CVL Launcher.exe.log", because it might not have
+# permission to do so.
 import sys
-#sys.stdout = logger_output
-#sys.stderr = logger_output
+if sys.platform.startswith("win"):
+    sys.stderr = sys.stdout
 
 if sys.platform.startswith("win"):
     import _winreg
@@ -94,6 +85,13 @@ import shlex
 import inspect
 import requests
 import ssh
+from StringIO import StringIO
+import logging
+
+global transport_logger
+global logger
+global logger_output
+global logger_fh
 
 global launcherMainFrame
 launcherMainFrame = None
@@ -168,6 +166,8 @@ def dump_log(submit_log=False):
             time.sleep(0.01)
             wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
             wx.Yield()
+        except AttributeError:
+            break
         except wx._core.PyDeadObjectError:
             break
 
@@ -207,7 +207,7 @@ def dump_log(submit_log=False):
 def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, update_main_progress_bar=False, update_tidying_up_progress_bar=False, ignore_errors=False):
     if launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary:
         return
-    
+
     launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = True
     if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
         if write_debug_log:
@@ -232,12 +232,25 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
     launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = False
 
 
-def die_from_login_thread(error_message, display_error_dialog=True):
-    dump_log(submit_log=True)
-
+def die_from_login_thread(error_message, display_error_dialog=True, submit_log=False):
     if (launcherMainFrame.progressDialog != None):
+        wx.CallAfter(launcherMainFrame.progressDialog.Hide)
+        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
         wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
-        launcherMainFrame.progressDialog = None
+
+        while True:
+            try:
+                if launcherMainFrame.progressDialog is None: break
+
+                time.sleep(0.01)
+                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                wx.Yield()
+            except AttributeError:
+                break
+            except wx._core.PyDeadObjectError:
+                break
+
+    launcherMainFrame.progressDialog = None
     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
     wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
 
@@ -260,6 +273,8 @@ def die_from_login_thread(error_message, display_error_dialog=True):
     wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
     wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, False)
     wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, False)
+
+    dump_log(submit_log=submit_log)
 
 def die_from_main_frame(error_message):
     if (launcherMainFrame.progressDialog != None):
@@ -1243,10 +1258,10 @@ class LauncherMainFrame(wx.Frame):
                     launcherMainFrame.progressDialog.Update(value, message)
                     self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
                 self.updatingProgressDialog = False
-                
+
             def updateTidyingUpProgressDialog(self, value, message):
                     launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
-                                
+
             def run(self):
                 """Run Worker Thread."""
 
@@ -1658,10 +1673,10 @@ class LauncherMainFrame(wx.Frame):
                     self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
                     try:
-                        self.sshClient.connect(self.host,username=self.username,password=self.password)
+                        self.sshClient.connect(self.host, username=self.username, password=self.password, look_for_keys=False)
                     except ssh.AuthenticationException, e:
                         logger_error("Failed to authenticate with user's username/password credentials: " + str(e))
-                        die_from_login_thread('Authentication error with user %s on server %s' % (self.username, self.host))
+                        die_from_login_thread('Authentication error with user %s on server %s' % (self.username, self.host), submit_log=False)
                         return
 
                     logger_debug("First login done.")
