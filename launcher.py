@@ -226,6 +226,28 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
             launcherMainFrame.loginThread.deletedMassiveJob = True
             if update_status_bar:
                 wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+    elif launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==True:
+        if write_debug_log:
+            logger_debug('Not running qdel for massive visnode because persistent mode is active.')
+
+        if (launcherMainFrame.progressDialog != None):
+            wx.CallAfter(launcherMainFrame.progressDialog.Hide)
+            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+            launcherMainFrame.progressDialog = None
+
+        if launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob == False:
+            def showNotDeletingMassiveJobWarning():
+                launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob = True
+                dlg = wx.MessageDialog(launcherMainFrame, "Warning: MASSIVE job will not be deleted, because persistent mode is active.\n",
+                                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+                launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = True
+            launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = False
+            wx.CallAfter(showNotDeletingMassiveJobWarning)
+            while launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted==False:
+                time.sleep(0.1)
     else:
         if write_debug_log:
             logger_debug('Not running qdel for massive visnode.')
@@ -237,6 +259,7 @@ def die_from_login_thread(error_message, display_error_dialog=True, submit_log=F
         wx.CallAfter(launcherMainFrame.progressDialog.Hide)
         wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
         wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+        launcherMainFrame.progressDialog = None
 
         while True:
             try:
@@ -1658,8 +1681,8 @@ class LauncherMainFrame(wx.Frame):
                     while (self.updatingProgressDialog):
                         sleep(0.1)
                     if self.shouldAbort:
-                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                         if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                             launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -1692,8 +1715,8 @@ class LauncherMainFrame(wx.Frame):
                     while (self.updatingProgressDialog):
                         time.sleep(0.1)
                     if self.shouldAbort:
-                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                         if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                             launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -1873,8 +1896,8 @@ class LauncherMainFrame(wx.Frame):
                     while (self.updatingProgressDialog):
                         time.sleep(0.1)
                     if self.shouldAbort:
-                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                         if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                             launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -1928,8 +1951,8 @@ class LauncherMainFrame(wx.Frame):
                         while (self.updatingProgressDialog):
                             time.sleep(0.1)
                         if self.shouldAbort:
-                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                 wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                                 launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -1985,8 +2008,8 @@ class LauncherMainFrame(wx.Frame):
                         while (self.updatingProgressDialog):
                             time.sleep(0.1)
                         if self.shouldAbort:
-                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                 wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                                 launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -2043,8 +2066,8 @@ class LauncherMainFrame(wx.Frame):
                         while (self.updatingProgressDialog):
                             time.sleep(0.1)
                         if self.shouldAbort:
-                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                 wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                                 launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -2089,6 +2112,7 @@ class LauncherMainFrame(wx.Frame):
                         checkedShowStart = False
                         self.massiveJobNumber = "0"
                         self.deletedMassiveJob = False
+                        self.warnedUserAboutNotDeletingJob = False
 
                         while True:
                             tCheck = 0
@@ -2098,8 +2122,8 @@ class LauncherMainFrame(wx.Frame):
 
                             if self.shouldAbort:
                                 deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,update_tidying_up_progress_bar=False,ignore_errors=False)
-                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                 if launcherMainFrame.progressDialog != None:
+                                    wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                     wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                                     launcherMainFrame.progressDialog = None
                                 wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -2112,8 +2136,8 @@ class LauncherMainFrame(wx.Frame):
                                 #wx.CallAfter(sys.stdout.write, "*")
                                 time.sleep(1)
                                 tCheck+=1
-                                if tCheck >= 10:
-                                    # After 10 seconds, we still haven't obtained a visnode...
+                                if tCheck >= 5:
+                                    # After 5 seconds, we still haven't obtained a visnode...
                                     if (not checkedShowStart) and self.massiveJobNumber!="0":
                                         checkedShowStart = True
                                         def showStart():
@@ -2131,7 +2155,8 @@ class LauncherMainFrame(wx.Frame):
                                                 for showstartLine in showstartLines:
                                                     if showstartLine.startswith("Estimated Rsv based start"):
                                                         showstartLineComponents = showstartLine.split(" on ")
-                                                        wx.CallAfter(self.updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
+                                                        if not showstartLineComponents[1].startswith("-"):
+                                                            wx.CallAfter(self.updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
                                             sshClient2.close()
 
                                         showStartThread = threading.Thread(target=showStart)
@@ -2203,8 +2228,8 @@ class LauncherMainFrame(wx.Frame):
                         while (self.updatingProgressDialog):
                             time.sleep(0.1)
                         if self.shouldAbort:
-                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                 wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                                 launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -2235,8 +2260,8 @@ class LauncherMainFrame(wx.Frame):
                         while (self.updatingProgressDialog):
                             time.sleep(0.1)
                         if self.shouldAbort:
-                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                 wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                                 launcherMainFrame.progressDialog = None
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -2294,8 +2319,8 @@ class LauncherMainFrame(wx.Frame):
                     while (self.updatingProgressDialog):
                         time.sleep(0.1)
                     if self.shouldAbort:
-                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                         if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                             launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -2307,6 +2332,18 @@ class LauncherMainFrame(wx.Frame):
 
                     count = 1
                     while not self.sshTunnelReady and not self.sshTunnelExceptionOccurred and count < 30:
+                        if launcherMainFrame.progressDialog is not None:
+                            self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                        if self.shouldAbort:
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                            return
+
                         time.sleep(1)
                         count = count + 1
 
@@ -2323,8 +2360,8 @@ class LauncherMainFrame(wx.Frame):
                     while (self.updatingProgressDialog):
                         time.sleep(0.1)
                     if self.shouldAbort:
-                        wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                         if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                             wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                             launcherMainFrame.progressDialog = None
                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
