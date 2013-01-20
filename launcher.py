@@ -60,13 +60,19 @@ on Linux and on Mac OS X.
 import logging
 from StringIO import StringIO
 
+global transport_logger
+global logger
+global logger_output
+global logger_fh
+
 # Redirect stdout and stderr to the logger output string. While this is
 # somewhat undesirable, it at least allows us to catch any unexpected output,
 # and also avoids the case where the launcher tries to write to CVL Launcher.exe.log
 # which may not be possible due to permissions problems on Windows.
+
 import sys
-sys.stdout = logger_output
-sys.stderr = logger_output
+#sys.stdout = logger_output
+#sys.stderr = logger_output
 
 if sys.platform.startswith("win"):
     import _winreg
@@ -88,11 +94,6 @@ import shlex
 import inspect
 import requests
 import ssh
-
-global transport_logger
-global logger
-global logger_output
-global logger_fh
 
 global launcherMainFrame
 launcherMainFrame = None
@@ -2036,11 +2037,16 @@ class LauncherMainFrame(wx.Frame):
                             die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
                             return
 
-                        # Commenting out for now because this is work in progress, but I want to commit some other stuff first.
+                        # There are two new options added to the request_visnode.sh script, 
+                        # which can be used to disable the server-side qstat and qpeek,
+                        # both of which require running sleep on the server side.
+                        # However neither option is used in this version of the wxPython
+                        # Launcher.  They are needed more for the Java Launcher.
+
                         #whetherServerSideScriptShouldRunQstat = False
                         #whetherServerSideScriptShouldRunQpeek = False
-
                         #qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode) + " " + str(whetherServerSideScriptShouldRunQstat) + " " + str(whetherServerSideScriptShouldRunQpeek)
+
                         qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
 
                         logger_debug('qsubcmd: ' + qsubcmd)
@@ -2152,7 +2158,7 @@ class LauncherMainFrame(wx.Frame):
                                         logger_debug("Parsing the line following \"jobid_full\" for job number.")
                                         jobNumberSplit = line.split(".")
                                         self.massiveJobNumber = jobNumberSplit[0]
-                                        logger_debug("Batch mode self.mssiveJobNumber = " + self.massiveJobNumber)
+                                        logger_debug("Batch mode self.massiveJobNumber = " + self.massiveJobNumber)
                                     if "Starting XServer on the following nodes" in line:
                                         startingXServerLineNumber = lineNumber
                                     if startingXServerLineNumber!=-1 and \
