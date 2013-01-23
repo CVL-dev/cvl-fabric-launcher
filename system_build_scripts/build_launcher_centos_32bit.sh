@@ -16,7 +16,7 @@ fi
 mkdir $WDIR
 cd $WDIR
 rm -f master.tar.gz
-wget https://github.com/CVL-dev/cvl-fabric-launcher/archive/master.tar.gz -O master.tar.gz
+wget --no-check-certificate https://github.com/CVL-dev/cvl-fabric-launcher/archive/master.tar.gz -O master.tar.gz
 tar zxf master.tar.gz
 cd cvl-fabric-launcher-master
 
