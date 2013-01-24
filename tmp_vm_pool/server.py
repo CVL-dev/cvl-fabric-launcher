@@ -23,8 +23,7 @@ while True:
     connstream = ssl.wrap_socket(newsocket,
                                  server_side=True,
                                  certfile="server.crt",
-                                 keyfile="server.key",
-                                 ssl_version=ssl.PROTOCOL_TLSv1)
+                                 keyfile="server.key")
     try:
         deal_with_client(connstream)
     finally:
