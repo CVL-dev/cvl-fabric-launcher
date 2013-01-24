@@ -1681,7 +1681,7 @@ class LauncherMainFrame(wx.Frame):
                         launcherMainFrame.loginThread.showOldTurboVncWarningMessageDialogCompleted = False
                         wx.CallAfter(showOldTurboVncWarningMessageDialog)
                         while launcherMainFrame.loginThread.showOldTurboVncWarningMessageDialogCompleted==False:
-                            time.sleep(1)
+                            time.sleep(0.1)
 
                     # Initial SSH login
 
@@ -1876,17 +1876,10 @@ class LauncherMainFrame(wx.Frame):
                             if testRun:
                                 launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
-                        except KeyboardInterrupt:
-                            logger_debug("C-c: Port forwarding stopped.")
-                            try:
-                                if os.path.isfile(tunnelPrivateKeyFileName):
-                                    os.unlink(tunnelPrivateKeyFileName)
-                            finally:
-                                dump_log(submit_log=True)
-                                os._exit(0)
                         except:
                             logger_debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
                             logger_debug(traceback.format_exc())
+                            launcherMainFrame.loginThread.sshTunnelExceptionOccurred = True
 
                     self.sshTunnelReady = False
                     self.sshTunnelExceptionOccurred = False
@@ -1926,7 +1919,7 @@ class LauncherMainFrame(wx.Frame):
 
                     count = 1
                     while not self.sshTunnelReady and not self.sshTunnelExceptionOccurred and count < 15:
-                        time.sleep(1)
+                        time.sleep(0.1)
                         count = count + 1
                     if self.sshTunnelReady:
                         logger_debug("SSH tunnelling appears to be working correctly.")
@@ -1940,10 +1933,17 @@ class LauncherMainFrame(wx.Frame):
                             dlg.ShowModal()
                             dlg.Destroy()
                             launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted = True
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Hide)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.logWindow.Show, True)
                         launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted = False
                         wx.CallAfter(showCantCreateSshTunnelMessageDialog)
                         while launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted==False:
-                            time.sleep(1)
+                            time.sleep(0.1)
                         try:
                             if os.path.isfile(self.privateKeyFile.name):
                                 os.unlink(self.privateKeyFile.name)
