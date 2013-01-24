@@ -14,7 +14,17 @@ print repr(ssl_sock.getpeername())
 print ssl_sock.cipher()
 print pprint.pformat(ssl_sock.getpeercert())
 
-ssl_sock.write("boo!")
+info = {'username': 'bob',
+        'vmtype':   'neuroimaging',
+       }
+
+x = ''
+for key, value in info.iteritems():
+    assert '\t' not in key
+    assert '\t' not in value
+    x += key + '\t' + value + '\n'
+
+ssl_sock.write(x)
 
 if False: # from the Python 2.7.3 docs
     # Set a simple HTTP request -- use httplib in actual code.

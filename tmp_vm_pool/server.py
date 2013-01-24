@@ -5,7 +5,10 @@ bindsocket.bind(('', 10023))
 bindsocket.listen(5)
 
 def do_something(connstream, data):
-    print "do_something:", data
+    for line in data.splitlines():
+        x = line.split('\t')
+        assert len(x) == 2
+        print '%s = %s' % (x[0], x[1],)
     return False
 
 def deal_with_client(connstream):
