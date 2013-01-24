@@ -1588,6 +1588,7 @@ class LauncherMainFrame(wx.Frame):
 
                             def onOK(event):
                                 launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted = True
+                                turboVncNotFoundDialog.Show(False)
 
                             okButton = wx.Button(turboVncNotFoundPanel, 1, ' OK ')
                             okButton.SetDefault()
@@ -1607,10 +1608,15 @@ class LauncherMainFrame(wx.Frame):
                             turboVncNotFoundDialog.ShowModal()
                             turboVncNotFoundDialog.Destroy()
 
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Hide)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
                         launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted = False
                         wx.CallAfter(showTurboVncNotFoundMessageDialog)
                         while launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted == False:
-                            time.sleep(1)
+                            time.sleep(0.1)
 
                         try:
                             if os.path.isfile(launcherMainFrame.loginThread.privateKeyFile.name):
