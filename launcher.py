@@ -185,7 +185,7 @@ def dump_log(submit_log=False):
     if submit_log:
         wx.CallAfter(yes_no)
         while not launcherMainFrame.yes_no_completed:
-            time.sleep(1)
+            time.sleep(0.1)
 
     if submit_log and launcherMainFrame.submit_log:
         logger_debug('about to send debug log')
@@ -290,7 +290,7 @@ def die_from_login_thread(error_message, display_error_dialog=True, submit_log=F
         wx.CallAfter(error_dialog)
 
     while not launcherMainFrame.loginThread.die_from_login_thread_completed:
-        time.sleep(1)
+        time.sleep(0.1)
 
     wx.CallAfter(launcherMainFrame.logWindow.Show, False)
     wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
@@ -317,7 +317,7 @@ def die_from_main_frame(error_message):
     wx.CallAfter(error_dialog)
 
     while not launcherMainFrame.loginThread.die_from_main_frame_dialog_completed:
-        time.sleep(1)
+        time.sleep(0.1)
 
     dump_log(submit_log=True)
     os._exit(1)
@@ -2007,7 +2007,7 @@ class LauncherMainFrame(wx.Frame):
                                 launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted = False
                                 wx.CallAfter(showExistingJobFoundInVisNodeQueueMessageDialog)
                                 while launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted==False:
-                                    time.sleep(1)
+                                    time.sleep(0.1)
                                 try:
                                     if os.path.isfile(self.privateKeyFile.name):
                                         os.unlink(self.privateKeyFile.name)
@@ -2586,7 +2586,7 @@ class LauncherMainFrame(wx.Frame):
                                     logger_debug('Now waiting for the user to click keep or discard...')
                                     while launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted==False:
                                         logger_debug('launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted == False, sleeping for one second...')
-                                        time.sleep(1)
+                                        time.sleep(0.1)
 
                                     sshClient2.close()
                                     self.turboVncFinishTime = datetime.datetime.now()
