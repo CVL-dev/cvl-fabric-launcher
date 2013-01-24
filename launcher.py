@@ -178,13 +178,13 @@ def dump_log(submit_log=False):
             launcherMainFrame.loginThread.submit_log = result == wx.ID_YES
         finally:
             dlg.Destroy()
-            launcherMainFrame.loginThread.yes_no_completed = True
+            launcherMainFrame.yes_no_completed = True
 
-    launcherMainFrame.loginThread.yes_no_completed = False
+    launcherMainFrame.yes_no_completed = False
 
     if submit_log:
         wx.CallAfter(yes_no)
-        while not launcherMainFrame.loginThread.yes_no_completed:
+        while not launcherMainFrame.yes_no_completed:
             time.sleep(1)
 
     if submit_log and launcherMainFrame.loginThread.submit_log:
@@ -343,6 +343,9 @@ def run_ssh_command(ssh_client, command, ignore_errors=False, log_output=True):
 class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
+
+        global launcherMainFrame
+        launcherMainFrame = self
 
         self.logWindow = None
         self.progressDialog = None
@@ -1090,7 +1093,10 @@ class LauncherMainFrame(wx.Frame):
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
-            dump_log(submit_log=True)
+            # If we can't contact the MASSIVE website, it's probably because
+            # there's no active network connection, so don't try to submit
+            # the log to cvl.massive.org.au
+            dump_log(submit_log=False)
             sys.exit(1)
 
         latestVersionNumber = myHtmlParser.latestVersionNumber
@@ -1384,7 +1390,10 @@ class LauncherMainFrame(wx.Frame):
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                             dlg.ShowModal()
                             dlg.Destroy()
-                            dump_log(submit_log=True)
+                            # If we can't contact the MASSIVE website, it's probably because
+                            # there's no active network connection, so don't try to submit
+                            # the log to cvl.massive.org.au
+                            dump_log(submit_log=False)
                             sys.exit(1)
                         wx.CallAfter(error_dialog)
 
