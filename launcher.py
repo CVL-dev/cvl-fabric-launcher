@@ -175,7 +175,7 @@ def dump_log(submit_log=False):
         dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
         try:
             result = dlg.ShowModal()
-            launcherMainFrame.loginThread.submit_log = result == wx.ID_YES
+            launcherMainFrame.submit_log = result == wx.ID_YES
         finally:
             dlg.Destroy()
             launcherMainFrame.yes_no_completed = True
@@ -187,7 +187,7 @@ def dump_log(submit_log=False):
         while not launcherMainFrame.yes_no_completed:
             time.sleep(1)
 
-    if submit_log and launcherMainFrame.loginThread.submit_log:
+    if submit_log and launcherMainFrame.submit_log:
         logger_debug('about to send debug log')
 
         url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
