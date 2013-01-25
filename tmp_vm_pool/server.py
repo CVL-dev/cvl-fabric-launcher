@@ -5,6 +5,9 @@ bindsocket.bind(('', 10023))
 bindsocket.listen(5)
 
 def do_something(connstream, data):
+    print x
+    return
+
     for line in data.splitlines():
         x = line.split('\t')
         assert len(x) == 2
