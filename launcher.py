@@ -175,19 +175,19 @@ def dump_log(submit_log=False):
         dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
         try:
             result = dlg.ShowModal()
-            launcherMainFrame.loginThread.submit_log = result == wx.ID_YES
+            launcherMainFrame.submit_log = result == wx.ID_YES
         finally:
             dlg.Destroy()
-            launcherMainFrame.loginThread.yes_no_completed = True
+            launcherMainFrame.yes_no_completed = True
 
-    launcherMainFrame.loginThread.yes_no_completed = False
+    launcherMainFrame.yes_no_completed = False
 
     if submit_log:
         wx.CallAfter(yes_no)
-        while not launcherMainFrame.loginThread.yes_no_completed:
-            time.sleep(1)
+        while not launcherMainFrame.yes_no_completed:
+            time.sleep(0.1)
 
-    if submit_log and launcherMainFrame.loginThread.submit_log:
+    if submit_log and launcherMainFrame.submit_log:
         logger_debug('about to send debug log')
 
         url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
@@ -290,7 +290,7 @@ def die_from_login_thread(error_message, display_error_dialog=True, submit_log=F
         wx.CallAfter(error_dialog)
 
     while not launcherMainFrame.loginThread.die_from_login_thread_completed:
-        time.sleep(1)
+        time.sleep(0.1)
 
     wx.CallAfter(launcherMainFrame.logWindow.Show, False)
     wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
@@ -317,7 +317,7 @@ def die_from_main_frame(error_message):
     wx.CallAfter(error_dialog)
 
     while not launcherMainFrame.loginThread.die_from_main_frame_dialog_completed:
-        time.sleep(1)
+        time.sleep(0.1)
 
     dump_log(submit_log=True)
     os._exit(1)
@@ -343,6 +343,9 @@ def run_ssh_command(ssh_client, command, ignore_errors=False, log_output=True):
 class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
+
+        global launcherMainFrame
+        launcherMainFrame = self
 
         self.logWindow = None
         self.progressDialog = None
@@ -1090,7 +1093,10 @@ class LauncherMainFrame(wx.Frame):
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
-            dump_log(submit_log=True)
+            # If we can't contact the MASSIVE website, it's probably because
+            # there's no active network connection, so don't try to submit
+            # the log to cvl.massive.org.au
+            dump_log(submit_log=False)
             sys.exit(1)
 
         latestVersionNumber = myHtmlParser.latestVersionNumber
@@ -1384,7 +1390,10 @@ class LauncherMainFrame(wx.Frame):
                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                             dlg.ShowModal()
                             dlg.Destroy()
-                            dump_log(submit_log=True)
+                            # If we can't contact the MASSIVE website, it's probably because
+                            # there's no active network connection, so don't try to submit
+                            # the log to cvl.massive.org.au
+                            dump_log(submit_log=False)
                             sys.exit(1)
                         wx.CallAfter(error_dialog)
 
@@ -1579,6 +1588,7 @@ class LauncherMainFrame(wx.Frame):
 
                             def onOK(event):
                                 launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted = True
+                                turboVncNotFoundDialog.Show(False)
 
                             okButton = wx.Button(turboVncNotFoundPanel, 1, ' OK ')
                             okButton.SetDefault()
@@ -1598,10 +1608,15 @@ class LauncherMainFrame(wx.Frame):
                             turboVncNotFoundDialog.ShowModal()
                             turboVncNotFoundDialog.Destroy()
 
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Hide)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
                         launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted = False
                         wx.CallAfter(showTurboVncNotFoundMessageDialog)
                         while launcherMainFrame.loginThread.showTurboVncNotFoundMessageDialogCompleted == False:
-                            time.sleep(1)
+                            time.sleep(0.1)
 
                         try:
                             if os.path.isfile(launcherMainFrame.loginThread.privateKeyFile.name):
@@ -1666,7 +1681,7 @@ class LauncherMainFrame(wx.Frame):
                         launcherMainFrame.loginThread.showOldTurboVncWarningMessageDialogCompleted = False
                         wx.CallAfter(showOldTurboVncWarningMessageDialog)
                         while launcherMainFrame.loginThread.showOldTurboVncWarningMessageDialogCompleted==False:
-                            time.sleep(1)
+                            time.sleep(0.1)
 
                     # Initial SSH login
 
@@ -1861,17 +1876,10 @@ class LauncherMainFrame(wx.Frame):
                             if testRun:
                                 launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
-                        except KeyboardInterrupt:
-                            logger_debug("C-c: Port forwarding stopped.")
-                            try:
-                                if os.path.isfile(tunnelPrivateKeyFileName):
-                                    os.unlink(tunnelPrivateKeyFileName)
-                            finally:
-                                dump_log(submit_log=True)
-                                os._exit(0)
                         except:
                             logger_debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
                             logger_debug(traceback.format_exc())
+                            launcherMainFrame.loginThread.sshTunnelExceptionOccurred = True
 
                     self.sshTunnelReady = False
                     self.sshTunnelExceptionOccurred = False
@@ -1911,7 +1919,7 @@ class LauncherMainFrame(wx.Frame):
 
                     count = 1
                     while not self.sshTunnelReady and not self.sshTunnelExceptionOccurred and count < 15:
-                        time.sleep(1)
+                        time.sleep(0.1)
                         count = count + 1
                     if self.sshTunnelReady:
                         logger_debug("SSH tunnelling appears to be working correctly.")
@@ -1925,10 +1933,17 @@ class LauncherMainFrame(wx.Frame):
                             dlg.ShowModal()
                             dlg.Destroy()
                             launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted = True
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Hide)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.logWindow.Show, True)
                         launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted = False
                         wx.CallAfter(showCantCreateSshTunnelMessageDialog)
                         while launcherMainFrame.loginThread.showCantCreateSshTunnelMessageDialogCompleted==False:
-                            time.sleep(1)
+                            time.sleep(0.1)
                         try:
                             if os.path.isfile(self.privateKeyFile.name):
                                 os.unlink(self.privateKeyFile.name)
@@ -1992,7 +2007,7 @@ class LauncherMainFrame(wx.Frame):
                                 launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted = False
                                 wx.CallAfter(showExistingJobFoundInVisNodeQueueMessageDialog)
                                 while launcherMainFrame.loginThread.showExistingJobFoundInVisNodeQueueMessageDialogCompleted==False:
-                                    time.sleep(1)
+                                    time.sleep(0.1)
                                 try:
                                     if os.path.isfile(self.privateKeyFile.name):
                                         os.unlink(self.privateKeyFile.name)
@@ -2571,7 +2586,7 @@ class LauncherMainFrame(wx.Frame):
                                     logger_debug('Now waiting for the user to click keep or discard...')
                                     while launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted==False:
                                         logger_debug('launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted == False, sleeping for one second...')
-                                        time.sleep(1)
+                                        time.sleep(0.1)
 
                                     sshClient2.close()
                                     self.turboVncFinishTime = datetime.datetime.now()
