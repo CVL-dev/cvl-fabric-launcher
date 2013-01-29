@@ -1296,7 +1296,7 @@ class LauncherMainFrame(wx.Frame):
 
         if do_lookup:
             self.cvlUserVMLatestLookup = now
-            r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=jupitertest1', 'query': 'Send to user management'})
+            r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'})
             if r.ok:
                 self.cvlUserVMList = json.loads(r.text)['VM_IPs']
                 new_host_list = self.cvlLoginHostComboBox.GetItems() + [x for x in self.cvlUserVMList if x not in self.cvlLoginHostComboBox.GetItems()]
