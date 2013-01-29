@@ -841,9 +841,13 @@ class LauncherMainFrame(wx.Frame):
         self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlLoginHost = ""
-        cvlLoginHosts = ["115.146.93.128","115.146.94.0"]
-        defaultCvlHost = "115.146.93.128"
-        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.cvlLoginHosts = ["115.146.93.128","115.146.94.0"]
+        self.defaultCvlHost = "115.146.93.128"
+        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value=self.defaultCvlHost, choices=self.cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+
+        self.cvlLoginHostComboBox.Bind(wx.EVT_MOUSE_EVENTS, self.onCvlLoginHostComboClick)
+        self.cvlLoginHostComboBox.Bind(wx.EVT_SET_FOCUS,    self.onCvlLoginHostComboClick)
+
         self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
@@ -858,8 +862,8 @@ class LauncherMainFrame(wx.Frame):
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         self.cvlLoginHost = self.cvlLoginHost.strip()
         if self.cvlLoginHost!="":
-            if self.cvlLoginHost in cvlLoginHosts:
-                self.cvlLoginHostComboBox.SetSelection(cvlLoginHosts.index(self.cvlLoginHost))
+            if self.cvlLoginHost in self.cvlLoginHosts:
+                self.cvlLoginHostComboBox.SetSelection(self.cvlLoginHosts.index(self.cvlLoginHost))
             else:
                 # Hostname was not found in combo-box.
                 self.cvlLoginHostComboBox.SetSelection(-1)
@@ -1061,13 +1065,10 @@ class LauncherMainFrame(wx.Frame):
         self.cvlUsernameTextField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
         self.cvlUserVMLatestLookup = None
         self.cvlUserVMList         = None
-        self.onUsernameUpdate(None)
 
         self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
         if self.cvlUsername.strip()!="":
             self.cvlUsernameTextField.SelectAll()
-
-        self.cvlUsernameTextField.Bind(wx.EVT_TEXT, self.onUsernameUpdate)
 
         self.cvlPasswordLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Password')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -1279,28 +1280,33 @@ class LauncherMainFrame(wx.Frame):
             self.cvlVncServerComboBox.Disable()
             self.cvlVncServerLabel.Disable()
 
-    def onUsernameUpdate(self, event):
-        now = datetime.datetime.now()
+    def onCvlLoginHostComboClick(self, event):
+        event.Skip()
+
+        username = self.cvlUsernameTextField.GetValue()
 
         do_lookup = False
 
         if self.cvlUserVMLatestLookup is None:
-            self.cvlUserVMLatestLookup = now
             do_lookup = True
-        else:
-            delta = now - self.cvlUserVMLatestLookup
-            delta = delta.seconds + delta.microseconds/1E6
+            self.cvlUserVMLatestLookup = username
 
-            if delta > 1.5:
-                do_lookup = True
+        if do_lookup or username != self.cvlUserVMLatestLookup:
+            self.cvlUserVMLatestLookup = username
 
-        if do_lookup:
-            self.cvlUserVMLatestLookup = now
-            r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'})
-            if r.ok:
+            if os.path.exists('cacert.pem'):
+                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'}, verify='cacert.pem')
+            else:
+                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'})
+
+            print r.text
+
+            if r.ok and not 'error' in r.text:
                 self.cvlUserVMList = json.loads(r.text)['VM_IPs']
                 new_host_list = self.cvlLoginHostComboBox.GetItems() + [x for x in self.cvlUserVMList if x not in self.cvlLoginHostComboBox.GetItems()]
                 self.cvlLoginHostComboBox.SetItems(new_host_list)
+            else:
+                self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts)
 
     def onOptions(self, event):
 
