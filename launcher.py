@@ -87,6 +87,7 @@ import requests
 import ssh
 from StringIO import StringIO
 import logging
+import json
 
 global transport_logger
 global logger
@@ -1058,9 +1059,15 @@ class LauncherMainFrame(wx.Frame):
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         self.cvlUsernameTextField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
+        self.cvlUserVMLatestLookup = None
+        self.cvlUserVMList         = None
+        self.onUsernameUpdate(None)
+
         self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
         if self.cvlUsername.strip()!="":
             self.cvlUsernameTextField.SelectAll()
+
+        self.cvlUsernameTextField.Bind(wx.EVT_TEXT, self.onUsernameUpdate)
 
         self.cvlPasswordLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Password')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -1271,6 +1278,29 @@ class LauncherMainFrame(wx.Frame):
             self.cvlVncDisplayResolutionLabel.Disable()
             self.cvlVncServerComboBox.Disable()
             self.cvlVncServerLabel.Disable()
+
+    def onUsernameUpdate(self, event):
+        now = datetime.datetime.now()
+
+        do_lookup = False
+
+        if self.cvlUserVMLatestLookup is None:
+            self.cvlUserVMLatestLookup = now
+            do_lookup = True
+        else:
+            delta = now - self.cvlUserVMLatestLookup
+            delta = delta.seconds + delta.microseconds/1E6
+
+            if delta > 1.5:
+                do_lookup = True
+
+        if do_lookup:
+            self.cvlUserVMLatestLookup = now
+            r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=jupitertest1', 'query': 'Send to user management'})
+            if r.ok:
+                self.cvlUserVMList = json.loads(r.text)['VM_IPs']
+                new_host_list = self.cvlLoginHostComboBox.GetItems() + [x for x in self.cvlUserVMList if x not in self.cvlLoginHostComboBox.GetItems()]
+                self.cvlLoginHostComboBox.SetItems(new_host_list)
 
     def onOptions(self, event):
 
