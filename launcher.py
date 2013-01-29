@@ -1070,6 +1070,8 @@ class LauncherMainFrame(wx.Frame):
         if self.cvlUsername.strip()!="":
             self.cvlUsernameTextField.SelectAll()
 
+        self.cvlUsernameTextField.Bind(wx.EVT_TEXT, self.onUsernameUpdate)
+
         self.cvlPasswordLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Password')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -1280,33 +1282,28 @@ class LauncherMainFrame(wx.Frame):
             self.cvlVncServerComboBox.Disable()
             self.cvlVncServerLabel.Disable()
 
-    def onCvlLoginHostComboClick(self, event):
-        event.Skip()
-
-        username = self.cvlUsernameTextField.GetValue()
+    def onUsernameUpdate(self, event):
+        now = datetime.datetime.now()
 
         do_lookup = False
 
         if self.cvlUserVMLatestLookup is None:
+            self.cvlUserVMLatestLookup = now
             do_lookup = True
-            self.cvlUserVMLatestLookup = username
+        else:
+            delta = now - self.cvlUserVMLatestLookup
+            delta = delta.seconds + delta.microseconds/1E6
 
-        if do_lookup or username != self.cvlUserVMLatestLookup:
-            self.cvlUserVMLatestLookup = username
+            if delta > 1.5:
+                do_lookup = True
 
-            if os.path.exists('cacert.pem'):
-                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'}, verify='cacert.pem')
-            else:
-                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'})
-
-            print r.text
-
-            if r.ok and not 'error' in r.text:
+        if do_lookup:
+            self.cvlUserVMLatestLookup = now
+            r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=jupitertest1', 'query': 'Send to user management'})
+            if r.ok:
                 self.cvlUserVMList = json.loads(r.text)['VM_IPs']
                 new_host_list = self.cvlLoginHostComboBox.GetItems() + [x for x in self.cvlUserVMList if x not in self.cvlLoginHostComboBox.GetItems()]
                 self.cvlLoginHostComboBox.SetItems(new_host_list)
-            else:
-                self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts)
 
     def onOptions(self, event):
 
