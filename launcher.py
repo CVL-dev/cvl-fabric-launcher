@@ -1388,7 +1388,8 @@ class LauncherMainFrame(wx.Frame):
                     logger_debug('host: ' + self.host)
                     logger_debug('resolution: ' + self.resolution)
                     logger_debug('cipher: ' + self.cipher)
-                    logger_debug('vncServer: ' + self.vncServer)
+                    if launcherMainFrame.cvlTabSelected:
+                        logger_debug('vncServer: ' + self.vncServer)
                     logger_debug('username: ' + self.username)
                     logger_debug('sys.platform: ' + sys.platform)
 
