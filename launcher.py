@@ -1325,7 +1325,7 @@ class LauncherMainFrame(wx.Frame):
                 self.updatingProgressDialog = False
 
             def updateTidyingUpProgressDialog(self, value, message):
-                    launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
+                launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
 
             def run(self):
                 """Run Worker Thread."""
@@ -2069,27 +2069,29 @@ class LauncherMainFrame(wx.Frame):
                             return
 
                         mybalanceStdout, _ = run_ssh_command(self.sshClient, "mybalance --hours")
-                        mybalanceLines = mybalanceStdout.split("\n")
-                        foundMassiveProjectInMyBalanceOutput = False
-                        for mybalanceLine in mybalanceLines:
-                            mybalanceLineComponents = mybalanceLine.split()
-                            if len(mybalanceLineComponents)<2:
-                                break
-                            massiveProjectInMyBalanceOutput = mybalanceLineComponents[0]
-                            if massiveProjectInMyBalanceOutput==launcherMainFrame.massiveProject:
-                                foundMassiveProjectInMyBalanceOutput = True
-                                cpusPerVisNode = 12
-                                cpuHoursRequested = int(launcherMainFrame.massiveHoursRequested) * int(launcherMainFrame.massiveVisNodesRequested) * cpusPerVisNode
-                                cpuHoursRemaining = float(mybalanceLineComponents[2])
-                                if cpuHoursRemaining < cpuHoursRequested:
-                                    error_string = ("You have requested " + str(cpuHoursRequested) + " CPU hours,\n"
-                                                    "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
-                                                    "in your quota for project \"" + launcherMainFrame.massiveProject + "\".")
-                                    logger_error(error_string)
-                                    die_from_login_thread(error_string)
-                                    return
+                        mybalanceLines = [x for x in mybalanceStdout.splitlines() if launcherMainFrame.massiveProject in x and len(x.split()) >= 2]
 
-                        if foundMassiveProjectInMyBalanceOutput==False:
+                        if len(mybalanceLines) > 1:
+                            logger_warning('Found project <%s> on more than one line of "mybalance --hours" output: %s' % (launcherMainFrame.massiveProject, str(mybalanceLines)))
+
+                        if mybalanceLines == []:
+                            foundMassiveProjectInMyBalanceOutput = False
+                        else:
+                            foundMassiveProjectInMyBalanceOutput = True
+                            mybalanceLineComponents = mybalanceLines[-1].split() # FIXME refer to earlier logger_warning; currently using the last line of output with the user's project present
+
+                            cpusPerVisNode = 12
+                            cpuHoursRequested = int(launcherMainFrame.massiveHoursRequested) * int(launcherMainFrame.massiveVisNodesRequested) * cpusPerVisNode
+                            cpuHoursRemaining = float(mybalanceLineComponents[2])
+                            if cpuHoursRemaining < cpuHoursRequested:
+                                error_string = ("You have requested " + str(cpuHoursRequested) + " CPU hours,\n"
+                                                "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
+                                                "in your quota for project \"" + launcherMainFrame.massiveProject + "\".")
+                                logger_error(error_string)
+                                die_from_login_thread(error_string)
+                                return
+
+                        if not foundMassiveProjectInMyBalanceOutput:
                             error_string = ("You have requested use of project \"" + launcherMainFrame.massiveProject + "\",\n"
                                              "but you don't have access to that project.")
                             logger_error(error_string)
@@ -2640,7 +2642,7 @@ class LauncherMainFrame(wx.Frame):
                             wx.CallAfter(initializeTidyingUpProgressDialog)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Removing the private key file.")
-                            wx.CallAfter(updateTidyingUpProgressDialog, 1, "Removing the private key file.")
+                            wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 1, "Removing the private key file.")
 
                             try:
                                 logger_debug('Removing the private key file')
@@ -2653,7 +2655,7 @@ class LauncherMainFrame(wx.Frame):
                             deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=True,ignore_errors=False)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Terminating the SSH tunnel process.")
-                            wx.CallAfter(updateTidyingUpProgressDialog, 3, "Terminating the SSH tunnel process.")
+                            wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 3, "Terminating the SSH tunnel process.")
 
                             logger_debug('Now terminating the ssh tunnel process.')
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
