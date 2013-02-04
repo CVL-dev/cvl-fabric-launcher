@@ -26,7 +26,13 @@ class LauncherProgressDialog(wx.Frame):
         self.user_requested_abort = False
 
         self.panel = wx.Panel(self, wx.ID_ANY) 
-        self.messageStaticText = wx.StaticText(self.panel, label = message)
+        # We'll just set a temporary message while the dialog,
+        # is constructed, to represent the longest message
+        # likely to appear in the progress dialog.
+        # At the end of the __init__ method, we will use
+        # SetLabel to set the initial message correctly.
+        temporaryMessage = "#Logging in to m2-login2.massive.org.au#"
+        self.messageStaticText = wx.StaticText(self.panel, label = temporaryMessage)
 
         self.progressBar = wx.Gauge(self, -1, maxValue)
 
@@ -55,6 +61,7 @@ class LauncherProgressDialog(wx.Frame):
 
         self.panel.SetSizerAndFit(sizer)
         self.Fit()
+        self.messageStaticText.SetLabel(message)
         self.Center()
         self.Show()
 
