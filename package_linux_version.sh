@@ -22,6 +22,8 @@ rm -fr dist
 #python ${PYINSTALLERDIR}/Makespec.py launcher.py
 #python ${PYINSTALLERDIR}/Build.py launcher.spec
 
+python create_commit_def.py
+
 # PyInstaller 2.0
 python ${PYINSTALLERDIR}/pyinstaller.py launcher.py
 
