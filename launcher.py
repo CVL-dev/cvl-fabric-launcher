@@ -232,8 +232,8 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
                 wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Deleting MASSIVE Vis node job.")
             if update_main_progress_bar:
                 wx.CallAfter(launcherMainFrame.loginThread.updateProgressDialog, 6, "Deleting MASSIVE Vis node job...")
-            if update_tidying_up_progress_bar:
-                wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 2, "Deleting MASSIVE Vis node job...")
+            #if update_tidying_up_progress_bar:
+            #    wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 2, "Deleting MASSIVE Vis node job...")
             if write_debug_log:
                 logger_debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
             run_ssh_command(launcherMainFrame.loginThread.sshClient,
@@ -255,17 +255,17 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
                 launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = True
             launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = False
 
-            logger_debug('launcherMainFrame.progressDialog = ' + str(launcherMainFrame.progressDialog))
-            if launcherMainFrame.progressDialog != None:
-                logger_debug('destroying the progress dialog')
-                destroy_dialog(launcherMainFrame.progressDialog)
-                launcherMainFrame.progressDialog = None
+            #logger_debug('launcherMainFrame.progressDialog = ' + str(launcherMainFrame.progressDialog))
+            #if launcherMainFrame.progressDialog != None:
+            #    logger_debug('destroying the progress dialog')
+            #    destroy_dialog(launcherMainFrame.progressDialog)
+            #    launcherMainFrame.progressDialog = None
 
-            logger_debug('launcherMainFrame.tidyingUpProgressDialog = ' + str(launcherMainFrame.tidyingUpProgressDialog))
-            if launcherMainFrame.tidyingUpProgressDialog != None:
-                logger_debug('destroying the tidying up progress dialog')
-                destroy_dialog(launcherMainFrame.tidyingUpProgressDialog)
-                launcherMainFrame.tidyingUpProgressDialog = None
+            #logger_debug('launcherMainFrame.tidyingUpProgressDialog = ' + str(launcherMainFrame.tidyingUpProgressDialog))
+            #if launcherMainFrame.tidyingUpProgressDialog != None:
+            #    logger_debug('destroying the tidying up progress dialog')
+            #    destroy_dialog(launcherMainFrame.tidyingUpProgressDialog)
+            #    launcherMainFrame.tidyingUpProgressDialog = None
 
             logger_debug('About to run showNotDeletingMassiveJobWarning()')
             wx.CallAfter(showNotDeletingMassiveJobWarning)
@@ -2668,19 +2668,19 @@ class LauncherMainFrame(wx.Frame):
 
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
                             logger_debug('Now tidying up the environment.')
-                            maximumTidyingUpProgressBarValue = 4
+                            #maximumTidyingUpProgressBarValue = 4
 
-                            userCanAbort = False
+                            #userCanAbort = False
                             launcherMainFrame.tidyingUpProgressDialog = None
 
-                            def initializeTidyingUpProgressDialog():
-                                launcherMainFrame.tidyingUpProgressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Tidying up the environment...", "Tidying up the environment...", maximumTidyingUpProgressBarValue, userCanAbort)
-                            wx.CallAfter(initializeTidyingUpProgressDialog)
-                            while launcherMainFrame.tidyingUpProgressDialog is None:
-                                time.sleep(0.1)
+                            #def initializeTidyingUpProgressDialog():
+                            #    launcherMainFrame.tidyingUpProgressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Tidying up the environment...", "Tidying up the environment...", maximumTidyingUpProgressBarValue, userCanAbort)
+                            #wx.CallAfter(initializeTidyingUpProgressDialog)
+                            #while launcherMainFrame.tidyingUpProgressDialog is None:
+                            #    time.sleep(0.1)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Removing the private key file.")
-                            wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 1, "Removing the private key file.")
+                            #wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 1, "Removing the private key file.")
 
                             try:
                                 logger_debug('Removing the private key file')
@@ -2693,7 +2693,7 @@ class LauncherMainFrame(wx.Frame):
                             deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=True,ignore_errors=False)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Terminating the SSH tunnel process.")
-                            wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 3, "Terminating the SSH tunnel process.")
+                            #wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 3, "Terminating the SSH tunnel process.")
 
                             logger_debug('Now terminating the ssh tunnel process.')
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
