@@ -116,7 +116,6 @@ LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massiv
 # TURBOVNC_BASE_URL = "http://www.virtualgl.org/DeveloperInfo/PreReleases"
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
 
-
 class MyHtmlParser(HTMLParser.HTMLParser):
   def __init__(self, valueString):
     HTMLParser.HTMLParser.__init__(self)
@@ -155,6 +154,22 @@ class MyHtmlParser(HTMLParser.HTMLParser):
 
   def handle_comment(self,data):
       self.htmlComments += data.strip()
+
+def destroy_dialog(dialog):
+    wx.CallAfter(dialog.Hide)
+    wx.CallAfter(dialog.Show, False)
+
+    while True:
+        try:
+            if dialog is None: break
+
+            time.sleep(0.01)
+            wx.CallAfter(dialog.Destroy)
+            wx.Yield()
+        except AttributeError:
+            break
+        except wx._core.PyDeadObjectError:
+            break
 
 def dump_log(submit_log=False):
     logging.shutdown()
@@ -226,17 +241,11 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
             launcherMainFrame.loginThread.deletedMassiveJob = True
             if update_status_bar:
                 wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
-    elif launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==True:
+    elif launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode:
         if write_debug_log:
             logger_debug('Not running qdel for massive visnode because persistent mode is active.')
 
-        if (launcherMainFrame.progressDialog != None):
-            wx.CallAfter(launcherMainFrame.progressDialog.Hide)
-            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
-            launcherMainFrame.progressDialog = None
-
-        if launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob == False:
+        if not launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob:
             def showNotDeletingMassiveJobWarning():
                 launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob = True
                 dlg = wx.MessageDialog(launcherMainFrame, "Warning: MASSIVE job will not be deleted, because persistent mode is active.\n",
@@ -245,9 +254,25 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
                 dlg.Destroy()
                 launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = True
             launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = False
+
+            logger_debug('launcherMainFrame.progressDialog = ' + str(launcherMainFrame.progressDialog))
+            if launcherMainFrame.progressDialog != None:
+                logger_debug('destroying the progress dialog')
+                destroy_dialog(launcherMainFrame.progressDialog)
+                launcherMainFrame.progressDialog = None
+
+            logger_debug('launcherMainFrame.tidyingUpProgressDialog = ' + str(launcherMainFrame.tidyingUpProgressDialog))
+            if launcherMainFrame.tidyingUpProgressDialog != None:
+                logger_debug('destroying the tidying up progress dialog')
+                destroy_dialog(launcherMainFrame.tidyingUpProgressDialog)
+                launcherMainFrame.tidyingUpProgressDialog = None
+
+            logger_debug('About to run showNotDeletingMassiveJobWarning()')
             wx.CallAfter(showNotDeletingMassiveJobWarning)
-            while launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted==False:
+            while not launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted:
                 time.sleep(0.1)
+
+            logger_debug('User clicked ok on showNotDeletingMassiveJobWarning()')
     else:
         if write_debug_log:
             logger_debug('Not running qdel for massive visnode.')
@@ -2643,11 +2668,15 @@ class LauncherMainFrame(wx.Frame):
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
                             logger_debug('Now tidying up the environment.')
                             maximumTidyingUpProgressBarValue = 4
+
                             userCanAbort = False
                             launcherMainFrame.tidyingUpProgressDialog = None
+
                             def initializeTidyingUpProgressDialog():
                                 launcherMainFrame.tidyingUpProgressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Tidying up the environment...", "Tidying up the environment...", maximumTidyingUpProgressBarValue, userCanAbort)
                             wx.CallAfter(initializeTidyingUpProgressDialog)
+                            while launcherMainFrame.tidyingUpProgressDialog is None:
+                                time.sleep(0.1)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Removing the private key file.")
                             wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 1, "Removing the private key file.")
