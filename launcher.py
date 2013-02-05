@@ -1268,6 +1268,34 @@ class LauncherMainFrame(wx.Frame):
             else:
                 self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts)
 
+    def onCvlLoginHostComboClick(self, event):
+        event.Skip()
+
+        username = self.cvlUsernameTextField.GetValue()
+
+        do_lookup = False
+
+        if self.cvlUserVMLatestLookup is None:
+            do_lookup = True
+            self.cvlUserVMLatestLookup = username
+
+        if do_lookup or username != self.cvlUserVMLatestLookup:
+            self.cvlUserVMLatestLookup = username
+
+            if os.path.exists('cacert.pem'):
+                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'}, verify='cacert.pem')
+            else:
+                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'})
+
+            print r.text
+
+            if r.ok and not 'error' in r.text:
+                self.cvlUserVMList = json.loads(r.text)['VM_IPs']
+                new_host_list = self.cvlLoginHostComboBox.GetItems() + [x for x in self.cvlUserVMList if x not in self.cvlLoginHostComboBox.GetItems()]
+                self.cvlLoginHostComboBox.SetItems(new_host_list)
+            else:
+                self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts)
+
     def onOptions(self, event):
 
         import optionsDialog
