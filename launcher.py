@@ -1354,7 +1354,8 @@ class LauncherMainFrame(wx.Frame):
                 self.updatingProgressDialog = False
 
             def updateTidyingUpProgressDialog(self, value, message):
-                launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
+                if launcherMainFrame.tidyingUpProgressDialog is not None:
+                    launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
 
             def run(self):
                 """Run Worker Thread."""
