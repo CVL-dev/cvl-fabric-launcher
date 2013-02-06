@@ -2050,7 +2050,7 @@ class LauncherMainFrame(wx.Frame):
                         if self.host.startswith("m2"):
                             logger_debug("Checking whether you have any existing jobs in the Vis node queue.")
                             logger_debug("showq -w class:vis -u " + self.username + " | grep " + self.username)
-                            stdoutRead, stderrRead = run_ssh_command(self.sshClient, "showq -w class:vis -u " + self.username + " | grep " + self.username, wx)
+                            stdoutRead, stderrRead = run_ssh_command(self.sshClient, "showq -w class:vis -u " + self.username + " | grep " + self.username)
                             if stdoutRead.strip()!="" and launcherMainFrame.massivePersistentMode==False:
                                 stdoutReadSplit = stdoutRead.split(" ")
                                 jobNumber = stdoutReadSplit[0] # e.g. 3050965
