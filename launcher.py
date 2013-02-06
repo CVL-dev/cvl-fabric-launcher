@@ -218,6 +218,27 @@ def dump_log(submit_log=False):
 
     return
 
+def seconds_to_hours_minutes(seconds):
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return h, m
+
+def remaining_visnode_walltime():
+    ssh_client = ssh.SSHClient()
+    ssh_client.set_missing_host_key_policy(ssh.AutoAddPolicy())
+    try:
+        ssh_client.connect(launcherMainFrame.massiveLoginHost, username=launcherMainFrame.massiveUsername, password=launcherMainFrame.massivePassword)
+    except ssh.AuthenticationException, e:
+        return
+
+    # Parse the job id, if it exists.
+    stdout, stderr = run_ssh_command(self.sshClient, "showq -w class:vis -u " + launcherMainFrame.username + " | grep " + launcherMainFrame.username)
+    try:
+        job_id         = int(stdout.split()[0])
+        remaining_time = int(run_ssh_command(ssh_client, 'qstat -f %d | grep Remaining' % (job_id,))[0])
+        return seconds_to_hours_minutes(float(remaining_time))
+    except:
+        return
 
 def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, update_main_progress_bar=False, update_tidying_up_progress_bar=False, ignore_errors=False):
     if launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary:
@@ -244,6 +265,9 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
     elif launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode:
         if write_debug_log:
             logger_debug('Not running qdel for massive visnode because persistent mode is active.')
+
+            # Check the user's remaining balance.
+            print 'remaining visnode walltime:', remaining_visnode_walltime()
 
         if not launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob:
             def showNotDeletingMassiveJobWarning():
