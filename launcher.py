@@ -3021,6 +3021,7 @@ class MyApp(wx.App):
         launcherMainFrame.Show(True)
         return True
 
-app = MyApp(False) # Don't automatically redirect sys.stdout and sys.stderr to a Window.
-app.MainLoop()
+if __name__ == '__main__':
+    app = MyApp(False) # Don't automatically redirect sys.stdout and sys.stderr to a Window.
+    app.MainLoop()
 
