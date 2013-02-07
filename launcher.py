@@ -303,7 +303,7 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
         if not launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob:
             def showNotDeletingMassiveJobWarning():
                 launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob = True
-                dlg = wx.MessageDialog(launcherMainFrame, "Warning: MASSIVE job will not be deleted because persistent mode is active.\n\nRemaining walltime %d hours %d minutes." % (remaining_hours, remaining_minutes,), "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                dlg = wx.MessageDialog(launcherMainFrame, "MASSIVE job will not be deleted because persistent mode is active.\n\nRemaining walltime %d hours %d minutes." % (remaining_hours, remaining_minutes,), "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
                 dlg.Destroy()
                 launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = True
