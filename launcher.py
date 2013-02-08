@@ -88,6 +88,8 @@ import ssh
 from StringIO import StringIO
 import logging
 import json
+import user_management
+from os.path import expanduser, join
 
 global transport_logger
 global logger
@@ -393,6 +395,14 @@ class LauncherMainFrame(wx.Frame):
                 if value=='False':
                     value = False
                 self.vncOptions[key] = value
+
+        self.CVL_UM_username            = None
+        self.CVL_UM_password            = None
+        self.CVL_UM_massive_account     = None
+        self.CVL_UM_private_key         = None
+        self.CVL_UM_private_key_name    = None
+        self.CVL_UM_vm_ip               = None
+        self.CVL_UM_private_key_file    = None
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -1072,8 +1082,13 @@ class LauncherMainFrame(wx.Frame):
 
         self.buttonsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
 
-        self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=10)
+        self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=4, vgap=5, hgap=10)
         self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
+
+        IDENTITY_SETUP_BUTTON_ID = 4
+        self.identityButton = wx.Button(self.buttonsPanel, IDENTITY_SETUP_BUTTON_ID, 'Identity...')
+        self.buttonsPanelSizer.Add(self.identityButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
+        self.Bind(wx.EVT_BUTTON, self.setup_identity, id=IDENTITY_SETUP_BUTTON_ID)
 
         OPTIONS_BUTTON_ID = 1
         self.optionsButton = wx.Button(self.buttonsPanel, OPTIONS_BUTTON_ID, 'Options...')
@@ -1141,7 +1156,6 @@ class LauncherMainFrame(wx.Frame):
         transport_logger.addHandler(string_handler)
 
         # Finally, send all log messages to a log file.
-        from os.path import expanduser, join
         logger_fh = logging.FileHandler(join(expanduser("~"), '.MASSIVE_Launcher_debug_log.txt'))
         logger_fh.setLevel(logging.DEBUG)
         logger_fh.setFormatter(logging.Formatter(log_format_string))
@@ -1226,6 +1240,72 @@ class LauncherMainFrame(wx.Frame):
         dump_log()
         self.onCancel(event)
 
+    def setup_identity(self, event):
+        dlg = wx.TextEntryDialog(None, "Username:", 'Username:')
+        if dlg.ShowModal() == wx.ID_OK:
+            username = dlg.GetValue()
+        else:
+            return
+        dlg.Destroy()
+
+        self.CVL_UM_username = username
+
+        dlg = wx.PasswordEntryDialog(None, "Password:", 'Password:')
+        if dlg.ShowModal() == wx.ID_OK:
+            password = dlg.GetValue()
+        else:
+            return
+        dlg.Destroy()
+
+        self.CVL_UM_password = password
+
+        try:
+            payload = user_management.get_key(username, password)
+        except:
+            dlg = wx.MessageDialog(launcherMainFrame, 'Error contacting CVL user management system', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+
+        try:
+            self.CVL_UM_massive_account  = payload['massive_account']
+            self.CVL_UM_private_key      = payload['private_key']
+            self.CVL_UM_private_key_name = payload['private_key_name']
+            self.CVL_UM_vm_ip            = payload['vm_ip']
+        except:
+            dlg = wx.MessageDialog(launcherMainFrame, 'Error parsing CVL user info', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+
+        os.system('mkdir -p ' + join(expanduser("~"), '.MASSIVE_keys'))
+        f = open(join(expanduser("~"), '.MASSIVE_keys', self.CVL_UM_private_key_name), 'w')
+        f.write(self.CVL_UM_private_key)
+        f.close()
+
+        try:
+            self.CVL_UM_vnc_password  = user_management.set_vnc_password(self.CVL_UM_vm_ip, self.CVL_UM_username, join(expanduser("~"), '.MASSIVE_keys', self.CVL_UM_private_key_name))
+        except:
+            dlg = wx.MessageDialog(launcherMainFrame, 'Could not set VNC password on host %s for user %s' % (self.CVL_UM_vm_ip, self.CVL_UM_username,), "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+
+        dlg = wx.MessageDialog(launcherMainFrame, 'Identity setup :)', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+        dlg.Destroy()
+
+        self.cvlLoginHostComboBox.SetValue(self.CVL_UM_vm_ip)
+        self.cvlUsernameTextField.SetValue(self.CVL_UM_username)
+
+        cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_username',            self.CVL_UM_username)
+        cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_massive_account',     self.CVL_UM_massive_account)
+        cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_private_key_name',    self.CVL_UM_private_key_name)
+        cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_vm_ip',               self.CVL_UM_vm_ip)
+        cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_vnc_password',        self.CVL_UM_vnc_password)
+        with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+            cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+
     def onToggleCvlVncDisplayNumberAutomaticCheckBox(self, event):
         if self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
             self.cvlVncDisplayNumberSpinCtrl.Disable()
@@ -1282,15 +1362,17 @@ class LauncherMainFrame(wx.Frame):
         if do_lookup or username != self.cvlUserVMLatestLookup:
             self.cvlUserVMLatestLookup = username
 
+            query_message = 'username=' + self.cvlUsernameTextField.GetValue() + ' request_user_data='
+
             if os.path.exists('cacert.pem'):
-                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'}, verify='cacert.pem')
+                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': query_message, 'query': 'Send to user management'}, verify='cacert.pem')
             else:
-                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'})
+                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': query_message, 'query': 'Send to user management'})
 
             print r.text
 
             if r.ok and not 'error' in r.text:
-                self.cvlUserVMList = json.loads(r.text)['VM_IPs']
+                self.cvlUserVMList = [json.loads(r.text)['vm_ip']]
                 new_host_list = self.cvlLoginHostComboBox.GetItems() + [x for x in self.cvlUserVMList if x not in self.cvlLoginHostComboBox.GetItems()]
                 self.cvlLoginHostComboBox.SetItems(new_host_list)
             else:
@@ -1844,7 +1926,12 @@ class LauncherMainFrame(wx.Frame):
                     self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
                     try:
-                        self.sshClient.connect(self.host, username=self.username, password=self.password, look_for_keys=False)
+                        if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_private_key_name'):
+                            logger_debug('Using CVL UM private key file')
+                            self.sshClient.connect(self.host, username=self.username, key_filename=join(expanduser("~"), '.MASSIVE_keys', cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_private_key_name')))
+                        else:
+                            logger_debug('Using plain username/password authentication.')
+                            self.sshClient.connect(self.host, username=self.username, password=self.password, look_for_keys=False)
                     except ssh.AuthenticationException, e:
                         logger_error("Failed to authenticate with user's username/password credentials: " + str(e))
                         die_from_login_thread('Authentication error with user %s on server %s' % (self.username, self.host), submit_log=False)
@@ -2616,6 +2703,9 @@ class LauncherMainFrame(wx.Frame):
                         self.turboVncStderr = None
                         self.turboVncCompleted = False
 
+                        if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_vnc_password'):
+                            self.password = cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vnc_password')
+
                         def launchTurboVNC():
                             if sys.platform.startswith("win"):
                                 vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
@@ -2715,7 +2805,14 @@ class LauncherMainFrame(wx.Frame):
                                     sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
                                     logger_debug('Logging in')
-                                    sshClient2.connect(self.host,username=self.username,password=self.password)
+                                    
+
+                                    if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_private_key_name'):
+                                        logger_debug('Using CVL UM private key file')
+                                        sshClient2.connect(self.host,username=self.username, key_filename=join(expanduser("~"), '.MASSIVE_keys', cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_private_key_name')))
+                                    else:
+                                        logger_debug('Using plain username/password authentication.')
+                                        sshClient2.connect(self.host,username=self.username,password=self.password)
 
                                     wx.CallAfter(askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession, sshClient2)
 
@@ -2763,9 +2860,12 @@ class LauncherMainFrame(wx.Frame):
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
                         finally:
-                            if launcherMainFrame.tidyingUpProgressDialog != None:
-                                wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Show, False)
-                                wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
+                            try:
+                                if launcherMainFrame.tidyingUpProgressDialog != None:
+                                    wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Show, False)
+                                    wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
+                            except:
+                                pass # Might not have a tidyingUpProgressDialog at this point.
 
                             logger_debug('In the "finally" clause for tidying up TurboVNC.')
                             # If the TurboVNC process completed less than 3 seconds after it started,
