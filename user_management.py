@@ -70,7 +70,7 @@ def set_vnc_password(hostname, username, key_file):
 
         ssh_client.connect(hostname, username=username, look_for_keys=False, key_filename=key_file)
 
-        run_ssh_command(ssh_client, 'mkdir ~/.vnc/passwd')
+        run_ssh_command(ssh_client, 'mkdir ~/.vnc')
         stdout, stderr = run_ssh_command(ssh_client, 'module load tigervnc; echo %s | vncpasswd -f %s --stdin > ~/.vnc/passwd' % (vnc_password, username,))
     except:
         raise IOError, 'Could not set VNC password on host %s for user %s' % (hostname, username,)
