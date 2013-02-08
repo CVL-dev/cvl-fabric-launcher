@@ -77,18 +77,3 @@ def set_vnc_password(hostname, username, key_file):
 
     return vnc_password
 
-def get_vnc_password(hostname, username, key_file):
-    try:
-        ssh_client = ssh.SSHClient()
-        ssh_client.set_missing_host_key_policy(ssh.AutoAddPolicy())
-
-        ssh_client.connect(hostname, username=username, look_for_keys=False, key_filename=key_file)
-
-        stdout, _ = run_ssh_command(ssh_client, 'cat ~/.vnc/passwd')
-    except:
-        raise IOError, 'Could not set VNC password on host %s for user %s' % (hostname, username,)
-
-    return stdout
-
-
-
