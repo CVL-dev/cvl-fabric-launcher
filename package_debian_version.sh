@@ -28,6 +28,10 @@ sed -i "s/VERSION/${VERSION}/g" $TMP/DEBIAN/control
 sed -i "s/ARCHITECTURE/${ARCHITECTURE}/g" $TMP/DEBIAN/control
 sed -i "s/XXINSTALLEDSIZE/${installedSize}/g" $TMP/DEBIAN/control
 
+sudo chown -R root.root $TMP
+sudo find $TMP/ -iname '*.so' -exec chmod a-x {} \;
+sudo find $TMP/ -iname '*.so' -exec strip     {} \;
+
 DEB=massive-launcher_${VERSION}_${ARCHITECTURE}.deb
 dpkg -b $TMP $DEB
 
