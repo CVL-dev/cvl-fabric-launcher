@@ -40,6 +40,11 @@ yum -y install gcc glibc glibc-devel libgcc  \
                PackageKit-gtk-module \
                make cmake rpm-build
 
+wget http://packages.sw.be/rpmforge-release/rpmforge-release-0.5.2-2.el5.rf.i386.rpm
+rpm --import http://apt.sw.be/RPM-GPG-KEY.dag.txt
+rpm -K rpmforge-release-0.5.2-2.el5.rf.i386.rpm
+rpm -i rpmforge-release-0.5.2-2.el5.rf.i386.rpm
+yum -y install git
 
 tar zxf modules-3.2.9c.tar.gz
 cd modules-3.2.9

@@ -221,22 +221,47 @@ def dump_log(submit_log=False):
 def seconds_to_hours_minutes(seconds):
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
-    return h, m
+    return int(h), int(m)
+
+def job_has_been_canceled(ssh_client, job_id):
+    """
+    When a visnode job is canceled, a file of the form
+    $HOME/.vnc/shutdown_${JOB_ID}.${NODE} is created, e.g.
+    $HOME/.vnc/shutdown_1234567.m2-m. This function checks if
+    a particular shutdown file exists.
+
+    We do minimal error checking because this code is used just as
+    the launcher exits.
+    """
+
+    try:
+        return str(job_id) in run_ssh_command(ssh_client, 'ls ~/.vnc/shutdown_%d*' % (job_id,), ignore_errors=True)[0]
+    except:
+        return None
 
 def remaining_visnode_walltime():
+    """
+    Get the remaining walltime for the user's visnode job. We do
+    minimal error checking because this code is used just as the user
+    is exiting the launcher.
+    """
+
     ssh_client = ssh.SSHClient()
     ssh_client.set_missing_host_key_policy(ssh.AutoAddPolicy())
+
     try:
         ssh_client.connect(launcherMainFrame.massiveLoginHost, username=launcherMainFrame.massiveUsername, password=launcherMainFrame.massivePassword)
-    except ssh.AuthenticationException, e:
+    except:
         return
 
-    # Parse the job id, if it exists.
-    stdout, stderr = run_ssh_command(self.sshClient, "showq -w class:vis -u " + launcherMainFrame.username + " | grep " + launcherMainFrame.username)
+    stdout, stderr = run_ssh_command(ssh_client, "showq -w class:vis -u " + launcherMainFrame.massiveUsername + " | grep " + launcherMainFrame.massiveUsername, ignore_errors=True)
+
     try:
-        job_id         = int(stdout.split()[0])
-        remaining_time = int(run_ssh_command(ssh_client, 'qstat -f %d | grep Remaining' % (job_id,))[0])
-        return seconds_to_hours_minutes(float(remaining_time))
+        job_id = int(stdout.split()[0])
+        if job_has_been_canceled(ssh_client, job_id):
+            return
+        else: 
+            return seconds_to_hours_minutes(float(run_ssh_command(ssh_client, 'qstat -f %d | grep Remaining' % (job_id,), ignore_errors=True)[0].split()[-1]))
     except:
         return
 
@@ -266,30 +291,23 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
         if write_debug_log:
             logger_debug('Not running qdel for massive visnode because persistent mode is active.')
 
-            # Check the user's remaining balance.
-            print 'remaining visnode walltime:', remaining_visnode_walltime()
+        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, 'Checking remaining visnode walltime...')
+        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
+
+        try:
+            remaining_hours, remaining_minutes = remaining_visnode_walltime()
+            launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob = False
+        except:
+            launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob = True
 
         if not launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob:
             def showNotDeletingMassiveJobWarning():
                 launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob = True
-                dlg = wx.MessageDialog(launcherMainFrame, "Warning: MASSIVE job will not be deleted, because persistent mode is active.\n",
-                                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                dlg = wx.MessageDialog(launcherMainFrame, "MASSIVE job will not be deleted because persistent mode is active.\n\nRemaining walltime %d hours %d minutes." % (remaining_hours, remaining_minutes,), "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
                 dlg.Destroy()
                 launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = True
             launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = False
-
-            #logger_debug('launcherMainFrame.progressDialog = ' + str(launcherMainFrame.progressDialog))
-            #if launcherMainFrame.progressDialog != None:
-            #    logger_debug('destroying the progress dialog')
-            #    destroy_dialog(launcherMainFrame.progressDialog)
-            #    launcherMainFrame.progressDialog = None
-
-            #logger_debug('launcherMainFrame.tidyingUpProgressDialog = ' + str(launcherMainFrame.tidyingUpProgressDialog))
-            #if launcherMainFrame.tidyingUpProgressDialog != None:
-            #    logger_debug('destroying the tidying up progress dialog')
-            #    destroy_dialog(launcherMainFrame.tidyingUpProgressDialog)
-            #    launcherMainFrame.tidyingUpProgressDialog = None
 
             logger_debug('About to run showNotDeletingMassiveJobWarning()')
             wx.CallAfter(showNotDeletingMassiveJobWarning)
@@ -2981,6 +2999,7 @@ class MyApp(wx.App):
         launcherMainFrame.Show(True)
         return True
 
-app = MyApp(False) # Don't automatically redirect sys.stdout and sys.stderr to a Window.
-app.MainLoop()
+if __name__ == '__main__':
+    app = MyApp(False) # Don't automatically redirect sys.stdout and sys.stderr to a Window.
+    app.MainLoop()
 
