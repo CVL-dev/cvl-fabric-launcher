@@ -454,8 +454,11 @@ class LauncherMainFrame(wx.Frame):
 
         self.menu_bar  = wx.MenuBar()
 
+        self.file_menu = wx.Menu()
+        self.file_menu.Append(wx.ID_ANY, "Forget private key", "Forget private key.")
+        self.Bind(wx.EVT_MENU, self.forget_private_key, id=wx.ID_ANY)
+
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
-            self.file_menu = wx.Menu()
             self.file_menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window and exit program.")
             self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
             self.menu_bar.Append(self.file_menu, "&File")
@@ -1280,6 +1283,31 @@ class LauncherMainFrame(wx.Frame):
         dump_log()
         self.onCancel(event)
 
+    def forget_private_key(self, event):
+        if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_private_key_name'):
+            try:
+                os.unlink(join(expanduser("~"), '.MASSIVE_keys', cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_private_key_name')))
+
+                dlg = wx.MessageDialog(launcherMainFrame, 'Removed the private key.', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+            except:
+                dlg = wx.MessageDialog(launcherMainFrame, 'Error removing the private key.', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+        else:
+            dlg = wx.MessageDialog(launcherMainFrame, 'You don\'t have a private key. Nothing to do.', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+
+        cvlLauncherConfig.remove_option("CVL Launcher Preferences", 'CVL_UM_username')
+        cvlLauncherConfig.remove_option("CVL Launcher Preferences", 'CVL_UM_massive_account')
+        cvlLauncherConfig.remove_option("CVL Launcher Preferences", 'CVL_UM_private_key_name')
+        cvlLauncherConfig.remove_option("CVL Launcher Preferences", 'CVL_UM_vm_ip')
+        cvlLauncherConfig.remove_option("CVL Launcher Preferences", 'CVL_UM_vnc_password')
+        with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+            cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+
     def setup_identity(self, event):
         dlg = wx.TextEntryDialog(None, "Username:", 'Username:')
         if dlg.ShowModal() == wx.ID_OK:
@@ -1375,9 +1403,9 @@ class LauncherMainFrame(wx.Frame):
             self.cvlUserVMLatestLookup = username
 
             if os.path.exists('cacert.pem'):
-                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'}, verify='cacert.pem')
+                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username="%s"' % self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'}, verify='cacert.pem')
             else:
-                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username=' + self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'})
+                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': 'username="%s"' % self.cvlUsernameTextField.GetValue(), 'query': 'Send to user management'})
 
             print r.text
 
@@ -1402,7 +1430,7 @@ class LauncherMainFrame(wx.Frame):
         if do_lookup or username != self.cvlUserVMLatestLookup:
             self.cvlUserVMLatestLookup = username
 
-            query_message = 'username=' + self.cvlUsernameTextField.GetValue() + ' request_user_data='
+            query_message = 'username="' + self.cvlUsernameTextField.GetValue() + '" request_user_data='
 
             if os.path.exists('cacert.pem'):
                 r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': query_message, 'query': 'Send to user management'}, verify='cacert.pem')

@@ -35,7 +35,7 @@ def get_key(username, password):
 
     """
 
-    query_message = 'request_user_data= request_private_key= ' + 'username=' + username + ' password=' + password
+    query_message = 'request_user_data= request_private_key= ' + 'username="' + username + '" password=' + password
 
     try:
         if os.path.exists('cacert.pem'):
@@ -46,6 +46,7 @@ def get_key(username, password):
         raise ValueError, 'Could not query CVL user management system.'
 
     if r.ok and not 'error' in r.text:
+        print 'r.text:', r.text
         try:
             payload = json.loads(r.text)
             if 'private_key' in payload:
