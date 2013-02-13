@@ -1430,20 +1430,11 @@ class LauncherMainFrame(wx.Frame):
         if do_lookup or username != self.cvlUserVMLatestLookup:
             self.cvlUserVMLatestLookup = username
 
-            query_message = 'username="' + self.cvlUsernameTextField.GetValue() + '" request_user_data='
-
-            if os.path.exists('cacert.pem'):
-                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': query_message, 'query': 'Send to user management'}, verify='cacert.pem')
-            else:
-                r = requests.post('https://cvl.massive.org.au/usermanagement/query.php', {'queryMessage': query_message, 'query': 'Send to user management'})
-
-            print r.text
-
-            if r.ok and not 'error' in r.text:
-                self.cvlUserVMList = [json.loads(r.text)['vm_ip']]
+            try:
+                self.cvlUserVMList = cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')
                 new_host_list = self.cvlLoginHostComboBox.GetItems() + [x for x in self.cvlUserVMList if x not in self.cvlLoginHostComboBox.GetItems()]
                 self.cvlLoginHostComboBox.SetItems(new_host_list)
-            else:
+            except:
                 self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts)
 
     def onOptions(self, event):
