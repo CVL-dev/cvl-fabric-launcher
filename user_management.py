@@ -20,7 +20,7 @@ def run_ssh_command(ssh_client, command):
 
 USER_MANAGEMENT_URL = 'https://cvl.massive.org.au/usermanagement/query.php'
 
-def get_key(username, password):
+def _get_key(username, password):
     """
     Query the user management system to get the user's private key file and other info.
 
@@ -42,6 +42,27 @@ def get_key(username, password):
             r = requests.post(USER_MANAGEMENT_URL, {'queryMessage': query_message, 'query': 'Send to user management'}, verify='cacert.pem')
         else:
             r = requests.post(USER_MANAGEMENT_URL, {'queryMessage': query_message, 'query': 'Send to user management'})
+    except:
+        raise ValueError, 'Could not query CVL user management system.'
+
+    if r.ok and not 'error' in r.text:
+        print 'r.text:', r.text
+        try:
+            payload = json.loads(r.text)
+            if 'private_key' in payload:
+                payload['private_key'] = b64decode(payload['private_key'])
+            return payload
+        except:
+            raise ValueError, 'Error parsing output from CVL user management system: <%s>' % (r.text,)
+
+def get_key(username, password):
+    query_message = 'request_user_data=True request_private_key=True username=' + username + ' password=' + password
+
+    try:
+        if os.path.exists('cacert.pem'):
+            r = requests.post('http://115.146.85.243/query.php', {'queryMessage': query_message, 'query': 'Send to user management'}, verify='cacert.pem')
+        else:
+            r = requests.post('http://115.146.85.243/query.php', {'queryMessage': query_message, 'query': 'Send to user management'})
     except:
         raise ValueError, 'Could not query CVL user management system.'
 
