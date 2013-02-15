@@ -60,9 +60,9 @@ def get_key(username, password):
 
     try:
         if os.path.exists('cacert.pem'):
-            r = requests.post('http://115.146.85.243/query.php', {'queryMessage': query_message, 'query': 'Send to user management'}, verify='cacert.pem')
+            r = requests.post('http://115.146.94.161/query.php', {'queryMessage': query_message, 'query': 'Send to user management'}, verify='cacert.pem')
         else:
-            r = requests.post('http://115.146.85.243/query.php', {'queryMessage': query_message, 'query': 'Send to user management'})
+            r = requests.post('http://115.146.94.161/query.php', {'queryMessage': query_message, 'query': 'Send to user management'})
     except:
         raise ValueError, 'Could not query CVL user management system.'
 
