@@ -36,7 +36,9 @@ class LauncherProgressDialog(wx.Frame):
 
         self.progressBar = wx.Gauge(self, -1, maxValue)
 
-        self.progressBar.SetSize(wx.Size(250, -1))
+        #self.progressBar.SetSize(wx.Size(250, -1))
+        statusMessageWidth = self.messageStaticText.GetSize().width
+        self.progressBar.SetSize(wx.Size(statusMessageWidth, -1))
         
         if userCanAbort:
             sizer = wx.FlexGridSizer(rows=3, cols=3, vgap=5, hgap=15)
