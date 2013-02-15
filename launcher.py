@@ -1426,10 +1426,10 @@ class LauncherMainFrame(wx.Frame):
                     userCanAbort = True
                     if launcherMainFrame.massiveTabSelected:
                         def initializeProgressDialog():
-                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to MASSIVE...", "Connecting to MASSIVE...", maximumProgressBarValue, userCanAbort)
+                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to MASSIVE...", "Checking installed version of TurboVNC...", maximumProgressBarValue, userCanAbort)
                     else:
                         def initializeProgressDialog():
-                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to CVL...", "Connecting to CVL...", maximumProgressBarValue, userCanAbort)
+                            launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to CVL...", "Checking installed version of TurboVNC...", maximumProgressBarValue, userCanAbort)
 
                     wx.CallAfter(initializeProgressDialog)
 
