@@ -31,7 +31,7 @@ class LauncherProgressDialog(wx.Frame):
         # likely to appear in the progress dialog.
         # At the end of the __init__ method, we will use
         # SetLabel to set the initial message correctly.
-        temporaryMessage = "#Logging in to m2-login2.massive.org.au#"
+        temporaryMessage = "Checking installed version of TurboVNC..."
         self.messageStaticText = wx.StaticText(self.panel, label = temporaryMessage)
 
         self.progressBar = wx.Gauge(self, -1, maxValue)
