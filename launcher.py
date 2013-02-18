@@ -344,20 +344,18 @@ def die_from_login_thread(error_message, display_error_dialog=True, submit_log=F
     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
     wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
 
-    def error_dialog():
-        dlg = wx.MessageDialog(launcherMainFrame, error_message,
-                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
-        dlg.Destroy()
-        launcherMainFrame.loginThread.die_from_login_thread_completed = True
-
-    launcherMainFrame.loginThread.die_from_login_thread_completed = False
-
     if display_error_dialog:
-        wx.CallAfter(error_dialog)
+        def error_dialog():
+            dlg = wx.MessageDialog(launcherMainFrame, error_message,
+                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+            launcherMainFrame.loginThread.die_from_login_thread_completed = True
 
-    while not launcherMainFrame.loginThread.die_from_login_thread_completed:
-        time.sleep(0.1)
+        launcherMainFrame.loginThread.die_from_login_thread_completed = False
+        wx.CallAfter(error_dialog)
+        while not launcherMainFrame.loginThread.die_from_login_thread_completed:
+            time.sleep(0.1)
 
     wx.CallAfter(launcherMainFrame.logWindow.Show, False)
     wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
