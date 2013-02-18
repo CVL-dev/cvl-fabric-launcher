@@ -1798,6 +1798,8 @@ class LauncherMainFrame(wx.Frame):
                         while launcherMainFrame.loginThread.showOldTurboVncWarningMessageDialogCompleted==False:
                             time.sleep(0.1)
 
+                    if launcherMainFrame.progressDialog is not None:
+                        self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
                     if self.shouldAbort:
                         if (launcherMainFrame.progressDialog != None):
                             wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
@@ -1882,6 +1884,18 @@ class LauncherMainFrame(wx.Frame):
                     self.privateKeyFile.flush()
                     self.privateKeyFile.close()
 
+                    if launcherMainFrame.progressDialog is not None:
+                        self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                    if self.shouldAbort:
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                        return
+
                     # Define method to create SSH tunnel.
                     # We won't actually create the VNC over SSH tunnel to MASSIVE/CVL yet,
                     # but we will test the Launcher's ability to create a simple tunnel.
@@ -1954,6 +1968,15 @@ class LauncherMainFrame(wx.Frame):
                                 localPortNumber = str(localPortNumber)
 
                             launcherMainFrame.loginThread.localPortNumber = localPortNumber
+
+                            if launcherMainFrame.progressDialog is not None:
+                                launcherMainFrame.loginThread.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                            if launcherMainFrame.loginThread.shouldAbort:
+                                # Don't do the usual clean up, because we are in the SSH tunnel thread.
+                                # We will leave the clean up to the login thread when it detects
+                                # the abort request within the while loop which waits for the tunnel
+                                # to be established.
+                                return
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
@@ -2043,8 +2066,21 @@ class LauncherMainFrame(wx.Frame):
 
                     count = 1
                     while not self.sshTunnelReady and not self.sshTunnelExceptionOccurred and count < 15:
+                        if launcherMainFrame.progressDialog is not None:
+                            self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
+                        if self.shouldAbort:
+                            if (launcherMainFrame.progressDialog != None):
+                                wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                                wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                                launcherMainFrame.progressDialog = None
+                            wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                            wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                            die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                            return
+
                         time.sleep(1)
                         count = count + 1
+
                     if self.sshTunnelReady:
                         logger_debug("SSH tunnelling appears to be working correctly.")
                     else:
