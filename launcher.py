@@ -1430,6 +1430,7 @@ class LauncherMainFrame(wx.Frame):
                             launcherMainFrame.progressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Connecting to CVL...", "Checking installed version of TurboVNC...", maximumProgressBarValue, userCanAbort)
 
                     wx.CallAfter(initializeProgressDialog)
+                    self.shouldAbort = False
 
                     if launcherMainFrame.massiveTabSelected:
                         self.host       = launcherMainFrame.massiveLoginHost
@@ -1797,11 +1798,20 @@ class LauncherMainFrame(wx.Frame):
                         while launcherMainFrame.loginThread.showOldTurboVncWarningMessageDialogCompleted==False:
                             time.sleep(0.1)
 
+                    if self.shouldAbort:
+                        if (launcherMainFrame.progressDialog != None):
+                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
+                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
+                            launcherMainFrame.progressDialog = None
+                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
+                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
+                        die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
+                        return
+
                     # Initial SSH login
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Logging in to " + self.host)
 
-                    self.shouldAbort = False
                     self.updatingProgressDialog = False
                     wx.CallAfter(self.updateProgressDialog, 1, "Logging in to " + self.host)
                     time.sleep(0.1)
