@@ -1447,6 +1447,11 @@ class LauncherMainFrame(wx.Frame):
                         self.username   = launcherMainFrame.cvlUsername
                         self.password   = launcherMainFrame.cvlPassword
 
+                    self.host       = self.host.lstrip().rstrip()
+                    self.resolution = self.resolution.lstrip().rstrip()
+                    self.cipher     = self.cipher.lstrip().rstrip()
+                    self.username   = self.username.lstrip().rstrip()
+
                     logger_debug('host: ' + self.host)
                     logger_debug('resolution: ' + self.resolution)
                     logger_debug('cipher: ' + self.cipher)
