@@ -2179,7 +2179,7 @@ class LauncherMainFrame(wx.Frame):
                             return
 
                         if self.host.startswith("m2"):
-                            numberOfBusyVisNodesStdout, _ = run_ssh_command(self.sshClient, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 9 nodes in use")
+                            numberOfBusyVisNodesStdout, _ = run_ssh_command(self.sshClient, "echo `showq -w class:vis | grep \"processors in use by local jobs\" | awk '{print $1}'` of 10 nodes in use")
 
                             def showAllVisnodesBusyWarningDialog():
                                 dlg = wx.MessageDialog(launcherMainFrame,
@@ -2189,7 +2189,7 @@ class LauncherMainFrame(wx.Frame):
                                 dlg.ShowModal()
                                 dlg.Destroy()
 
-                            if "9 of 9" in numberOfBusyVisNodesStdout:
+                            if "10 of 10" in numberOfBusyVisNodesStdout:
                                 logger_warning("All MASSIVE Vis nodes are currently busy.  Your job will not begin immediately.")
                                 showAllVisnodesBusyWarningDialog()
 
