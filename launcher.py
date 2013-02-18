@@ -2657,56 +2657,53 @@ class LauncherMainFrame(wx.Frame):
                             if launcherMainFrame.cvlTabSelected:
                                 logger_debug('launcherMainFrame.cvlTabSelected == True')
 
-                                if launcherMainFrame.cvlVncDisplayNumberAutomatic:
-                                    logger_debug('launcherMainFrame.cvlVncDisplayNumberAutomatic == True')
+                                def askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession(sshClient2):
+                                    import questionDialog
+                                    result = questionDialog.questionDialog("Do you want to keep your VNC session (Display #" + str(self.cvlVncDisplayNumber) + ") running for future use?",
+                                        #buttons=["Discard VNC Session", wx.ID_CANCEL, "Save VNC Session"])
+                                        buttons=["Discard VNC Session", "Save VNC Session"],
+                                        caption="MASSIVE/CVL Launcher")
+                                    if result == "Discard VNC Session":
+                                        cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
+                                        logger_debug('cvlVncSessionStopCommand: ' + cvlVncSessionStopCommand)
 
-                                    def askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession(sshClient2):
-                                        import questionDialog
-                                        result = questionDialog.questionDialog("Do you want to keep your VNC session (Display #" + str(self.cvlVncDisplayNumber) + ") running for future use?",
-                                            #buttons=["Discard VNC Session", wx.ID_CANCEL, "Save VNC Session"])
-                                            buttons=["Discard VNC Session", "Save VNC Session"],
-                                            caption="MASSIVE/CVL Launcher")
-                                        if result == "Discard VNC Session":
-                                            cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
-                                            logger_debug('cvlVncSessionStopCommand: ' + cvlVncSessionStopCommand)
+                                        logger_debug('Running cvlVncSessionStopCommand')
+                                        run_ssh_command(sshClient2, cvlVncSessionStopCommand, ignore_errors=True, log_output=True) # yet another command that sends output to stderr FIXME we should parse this and check for real errors
 
-                                            logger_debug('Running cvlVncSessionStopCommand')
-                                            run_ssh_command(sshClient2, cvlVncSessionStopCommand, ignore_errors=True, log_output=True) # yet another command that sends output to stderr FIXME we should parse this and check for real errors
+                                        logger_debug('Closing sshClient2.')
+                                        # sshClient2.close()
+                                        logger_debug('Closed sshClient2 connection.')
 
-                                            logger_debug('Closing sshClient2.')
-                                            # sshClient2.close()
-                                            logger_debug('Closed sshClient2 connection.')
+                                    launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = True
 
-                                        launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = True
+                                logger_debug('About to ask user if they want to keep or kill their VNC session...')
 
-                                    logger_debug('About to ask user if they want to keep or kill their VNC session...')
+                                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking if user wants to terminate or keep the VNC session...")
 
-                                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking if user wants to terminate or keep the VNC session...")
+                                launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = False
 
-                                    launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted = False
+                                # Earlier sshClient connection may have timed out by now.
+                                logger_debug('Creating sshClient2')
+                                sshClient2 = ssh.SSHClient()
 
-                                    # Earlier sshClient connection may have timed out by now.
-                                    logger_debug('Creating sshClient2')
-                                    sshClient2 = ssh.SSHClient()
+                                logger_debug('Setting missing host policy.')
+                                sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
-                                    logger_debug('Setting missing host policy.')
-                                    sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                                logger_debug('Logging in')
+                                sshClient2.connect(self.host,username=self.username,password=self.password)
 
-                                    logger_debug('Logging in')
-                                    sshClient2.connect(self.host,username=self.username,password=self.password)
+                                wx.CallAfter(askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession, sshClient2)
 
-                                    wx.CallAfter(askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSession, sshClient2)
+                                logger_debug('Now waiting for the user to click keep or discard...')
+                                while launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted==False:
+                                    #logger_debug('launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted == False, sleeping for one second...')
+                                    time.sleep(0.1)
 
-                                    logger_debug('Now waiting for the user to click keep or discard...')
-                                    while launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted==False:
-                                        #logger_debug('launcherMainFrame.loginThread.askCvlUserWhetherTheyWantToKeepOrDiscardTheirVncSessionCompleted == False, sleeping for one second...')
-                                        time.sleep(0.1)
-
-                                    sshClient2.close()
-                                    self.turboVncFinishTime = datetime.datetime.now()
-                                    logger_debug('self.turboVncFinishTime = ' + str(self.turboVncFinishTime))
-                                else:
-                                    logger_debug("launcherMainFrame.cvlVncDisplayNumberAutomatic == False, so we don't need to stop the VNC session.")
+                                sshClient2.close()
+                                self.turboVncFinishTime = datetime.datetime.now()
+                                logger_debug('self.turboVncFinishTime = ' + str(self.turboVncFinishTime))
+                            else:
+                                logger_debug("launcherMainFrame.cvlTabSelected == False, so we don't need to stop the VNC session.")
 
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
                             logger_debug('Now tidying up the environment.')
