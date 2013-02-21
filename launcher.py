@@ -2912,7 +2912,6 @@ class LauncherMainFrame(wx.Frame):
                                 sshClient2.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
                                 logger_debug('Logging in')
-                                
 
                                 if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_private_key_name'):
                                     logger_debug('Using CVL UM private key file')
