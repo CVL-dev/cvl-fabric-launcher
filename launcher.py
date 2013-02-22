@@ -390,6 +390,10 @@ def die_from_main_frame(error_message):
     dump_log(submit_log=True)
     os._exit(1)
 
+def is_managed_session():
+    return cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')    == launcherMainFrame.cvlLoginHostComboBox.GetValue() and \
+           cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_username') == launcherMainFrame.cvlUsername
+
 def run_ssh_command(ssh_client, command, ignore_errors=False, log_output=True):
     logger_debug('run_ssh_command: "%s"' % command)
     logger_debug('   called from %s:%d' % inspect.stack()[1][1:3])
@@ -2002,7 +2006,7 @@ class LauncherMainFrame(wx.Frame):
                     self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
                     try:
-                        if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_private_key_name'):
+                        if is_managed_session():
                             logger_debug('Using CVL UM private key file')
                             self.sshClient.connect(self.host, username=self.username, key_filename=join(expanduser("~"), '.MASSIVE_keys', cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_private_key_name')))
                         else:
@@ -2813,7 +2817,7 @@ class LauncherMainFrame(wx.Frame):
                         self.turboVncStderr = None
                         self.turboVncCompleted = False
 
-                        if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_vnc_password'):
+                        if is_managed_session() and cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_vnc_password'):
                             self.password = cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vnc_password')
 
                         def launchTurboVNC():
@@ -2913,7 +2917,7 @@ class LauncherMainFrame(wx.Frame):
 
                                 logger_debug('Logging in')
 
-                                if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_private_key_name'):
+                                if is_managed_session():
                                     logger_debug('Using CVL UM private key file')
                                     sshClient2.connect(self.host,username=self.username, key_filename=join(expanduser("~"), '.MASSIVE_keys', cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_private_key_name')))
                                 else:
