@@ -2192,32 +2192,28 @@ class LauncherMainFrame(wx.Frame):
                             die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
                             return
 
-                        mybalanceStdout, _ = run_ssh_command(self.sshClient, "mybalance --hours")
-                        mybalanceLines = [x for x in mybalanceStdout.splitlines() if launcherMainFrame.massiveProject in x and len(x.split()) >= 2]
+                        gbalance_stdout, gbalance_stderr = run_ssh_command(self.sshClient, "gbalance -u %s -p %s --hours --total" % (self.username, launcherMainFrame.massiveProject,))
+                        if gbalance_stdout is None: gbalance_stdout = ''
+                        if gbalance_stderr is None: gbalance_stderr = ''
 
-                        if len(mybalanceLines) > 1:
-                            logger_warning('Found project <%s> on more than one line of "mybalance --hours" output: %s' % (launcherMainFrame.massiveProject, str(mybalanceLines)))
+                        gbalance_stdout = gbalance_stdout.splitlines()
 
-                        if mybalanceLines == []:
-                            foundMassiveProjectInMyBalanceOutput = False
-                        else:
-                            foundMassiveProjectInMyBalanceOutput = True
-                            mybalanceLineComponents = mybalanceLines[-1].split() # FIXME refer to earlier logger_warning; currently using the last line of output with the user's project present
+                        try:
+                            if gbalance_stdout[0].rstrip() == 'Balance' and gbalance_stdout[1].rstrip() == '-------':
+                                cpuHoursRemaining = float(gbalance_stdout[2])
+                            else:
+                                raise ValueError, 'Could not parse gbalance output.'
+                        except:
+                            error_string = "Could not determine balance for user <%s> in project <%s>" % (self.username, launcherMainFrame.massiveProject,)
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
 
-                            cpusPerVisNode = 12
-                            cpuHoursRequested = int(launcherMainFrame.massiveHoursRequested) * int(launcherMainFrame.massiveVisNodesRequested) * cpusPerVisNode
-                            cpuHoursRemaining = float(mybalanceLineComponents[2])
-                            if cpuHoursRemaining < cpuHoursRequested:
-                                error_string = ("You have requested " + str(cpuHoursRequested) + " CPU hours,\n"
-                                                "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
-                                                "in your quota for project \"" + launcherMainFrame.massiveProject + "\".")
-                                logger_error(error_string)
-                                die_from_login_thread(error_string)
-                                return
-
-                        if not foundMassiveProjectInMyBalanceOutput:
-                            error_string = ("You have requested use of project \"" + launcherMainFrame.massiveProject + "\",\n"
-                                             "but you don't have access to that project.")
+                        cpusPerVisNode = 12
+                        cpuHoursRequested = int(launcherMainFrame.massiveHoursRequested) * int(launcherMainFrame.massiveVisNodesRequested) * cpusPerVisNode
+                        if cpuHoursRemaining < cpuHoursRequested:
+                            error_string = ("You have requested " + str(cpuHoursRequested) + " CPU hours,\n"
+                                            "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
+                                            "in your quota for project \"" + launcherMainFrame.massiveProject + "\".")
                             logger_error(error_string)
                             die_from_login_thread(error_string)
                             return
