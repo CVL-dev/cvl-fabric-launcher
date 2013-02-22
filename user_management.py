@@ -18,63 +18,31 @@ def run_ssh_command(ssh_client, command):
     return stdout, stderr
 
 
-USER_MANAGEMENT_URL = 'https://cvl.massive.org.au/usermanagement/query.php'
-
-def _get_key(username, password):
-    """
-    Query the user management system to get the user's private key file and other info.
-
-    Example:
-
-    get_key('testuser', 'testpassword') returns
-
-    {u'massive_account': u'testuser@massive',
-     u'private_key': '-----BEGIN RSA PRIVATE KEY-----\n...',
-     u'private_key_name': u'cvl_massive_key',
-     u'vm_ip': u'192.168.1.1'}
-
-    """
-
-    query_message = 'request_user_data= request_private_key= ' + 'username="' + username + '" password=' + password
-
-    try:
-        if os.path.exists('cacert.pem'):
-            r = requests.post(USER_MANAGEMENT_URL, {'queryMessage': query_message, 'query': 'Send to user management'}, verify='cacert.pem')
-        else:
-            r = requests.post(USER_MANAGEMENT_URL, {'queryMessage': query_message, 'query': 'Send to user management'})
-    except:
-        raise ValueError, 'Could not query CVL user management system.'
-
-    if r.ok and not 'error' in r.text:
-        print 'r.text:', r.text
-        try:
-            payload = json.loads(r.text)
-            if 'private_key' in payload:
-                payload['private_key'] = b64decode(payload['private_key'])
-            return payload
-        except:
-            raise ValueError, 'Error parsing output from CVL user management system: <%s>' % (r.text,)
+USER_MANAGEMENT_URL = 'http://115.146.94.161/UserManagement/query.php'
 
 def get_key(username, password):
-    query_message = 'request_user_data=True request_private_key=True username=' + username + ' password=' + password
+    query_message = {'request_user_data': 'True', 'request_private_key': 'True', 'username': username, 'password': password} # FIXME sanity check username, password
 
     try:
         if os.path.exists('cacert.pem'):
-            r = requests.post('http://115.146.94.161/query.php', {'queryMessage': query_message, 'query': 'Send to user management'}, verify='cacert.pem')
+            r = requests.post(USER_MANAGEMENT_URL, data={'queryMessage': json.dumps(query_message), 'query': 'Send to user management'}, verify='cacert.pem') # Does not make sense to json.dumps() here!
         else:
-            r = requests.post('http://115.146.94.161/query.php', {'queryMessage': query_message, 'query': 'Send to user management'})
+            r = requests.post(USER_MANAGEMENT_URL, data={'queryMessage': json.dumps(query_message), 'query': 'Send to user management'})                      # Does not make sense to json.dumps() here!
     except:
         raise ValueError, 'Could not query CVL user management system.'
 
-    if r.ok and not 'error' in r.text:
-        print 'r.text:', r.text
-        try:
-            payload = json.loads(r.text)
-            if 'private_key' in payload:
-                payload['private_key'] = b64decode(payload['private_key'])
-            return payload
-        except:
-            raise ValueError, 'Error parsing output from CVL user management system: <%s>' % (r.text,)
+    if r.ok:
+        r = json.loads(r.text)
+
+        if 'error' in r:
+            raise ValueError, 'User Management error: <%s>' % (r['error'],)
+        else:
+            try:
+                if 'private_key' in r:
+                    r['private_key'] = b64decode(r['private_key'])
+                return r
+            except:
+                raise ValueError, 'Could not find private key in User Management response; keys were: <%s>' % (r.keys(),)
 
 def set_vnc_password(hostname, username, key_file):
     """
