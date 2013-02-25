@@ -836,66 +836,67 @@ class LauncherOptionsDialog(wx.Dialog):
 
         self.globalsPanel.Layout()
 
-        # File Sharing tab
+        if False: # FIXME review this feature in the future
+            # File Sharing tab
 
-        self.fileSharingPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
-        self.fileSharingPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=15, hgap=25)
+            self.fileSharingPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
+            self.fileSharingPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=15, hgap=25)
 
-        self.fileSharingLeftBorderPanel = wx.Panel(self.fileSharingPanel, wx.ID_ANY)
-        self.fileSharingPanelSizer.Add(self.fileSharingLeftBorderPanel)
+            self.fileSharingLeftBorderPanel = wx.Panel(self.fileSharingPanel, wx.ID_ANY)
+            self.fileSharingPanelSizer.Add(self.fileSharingLeftBorderPanel)
 
-        self.fileSharingMainPanel = wx.Panel(self.fileSharingPanel, wx.ID_ANY)
-        if sys.platform.startswith("darwin"):
-            self.fileSharingPanelSizer.Add(self.fileSharingMainPanel, flag=wx.EXPAND|wx.TOP, border=0)
-        else:
-            self.fileSharingPanelSizer.Add(self.fileSharingMainPanel, flag=wx.EXPAND|wx.TOP, border=15)
-        self.fileSharingMainPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
+            self.fileSharingMainPanel = wx.Panel(self.fileSharingPanel, wx.ID_ANY)
+            if sys.platform.startswith("darwin"):
+                self.fileSharingPanelSizer.Add(self.fileSharingMainPanel, flag=wx.EXPAND|wx.TOP, border=0)
+            else:
+                self.fileSharingPanelSizer.Add(self.fileSharingMainPanel, flag=wx.EXPAND|wx.TOP, border=15)
+            self.fileSharingMainPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
 
-        self.fileSharingRightBorderPanel = wx.Panel(self.fileSharingPanel, wx.ID_ANY)
-        self.fileSharingPanelSizer.Add(self.fileSharingRightBorderPanel)
+            self.fileSharingRightBorderPanel = wx.Panel(self.fileSharingPanel, wx.ID_ANY)
+            self.fileSharingPanelSizer.Add(self.fileSharingRightBorderPanel)
 
-        # Share Local Home Folder group box
+            # Share Local Home Folder group box
 
-        self.shareLocalHomeFolderPanel = wx.Panel(self.fileSharingMainPanel, wx.ID_ANY)
-        self.fileSharingMainPanelSizer.Add(self.shareLocalHomeFolderPanel, flag=wx.EXPAND)
+            self.shareLocalHomeFolderPanel = wx.Panel(self.fileSharingMainPanel, wx.ID_ANY)
+            self.fileSharingMainPanelSizer.Add(self.shareLocalHomeFolderPanel, flag=wx.EXPAND)
 
-        self.makeLocalFolderAvailableOnRemoteDesktopGroupBox = wx.StaticBox(self.shareLocalHomeFolderPanel, wx.ID_ANY, label="Make local folder available on remote desktop")
-        self.makeLocalFolderAvailableOnRemoteDesktopGroupBox.SetFont(self.smallFont)
-        self.makeLocalFolderAvailableOnRemoteDesktopGroupBoxSizer = wx.StaticBoxSizer(self.makeLocalFolderAvailableOnRemoteDesktopGroupBox, wx.VERTICAL)
-        self.shareLocalHomeFolderPanel.SetSizer(self.makeLocalFolderAvailableOnRemoteDesktopGroupBoxSizer)
+            self.makeLocalFolderAvailableOnRemoteDesktopGroupBox = wx.StaticBox(self.shareLocalHomeFolderPanel, wx.ID_ANY, label="Make local folder available on remote desktop")
+            self.makeLocalFolderAvailableOnRemoteDesktopGroupBox.SetFont(self.smallFont)
+            self.makeLocalFolderAvailableOnRemoteDesktopGroupBoxSizer = wx.StaticBoxSizer(self.makeLocalFolderAvailableOnRemoteDesktopGroupBox, wx.VERTICAL)
+            self.shareLocalHomeFolderPanel.SetSizer(self.makeLocalFolderAvailableOnRemoteDesktopGroupBoxSizer)
 
-        self.innerShareLocalHomeFolderPanel = wx.Panel(self.shareLocalHomeFolderPanel, wx.ID_ANY)
-        self.innerShareLocalHomeFolderPanelSizer = wx.FlexGridSizer(rows=2, cols = 1, vgap=5,hgap=5)
-        self.innerShareLocalHomeFolderPanel.SetSizer(self.innerShareLocalHomeFolderPanelSizer)
+            self.innerShareLocalHomeFolderPanel = wx.Panel(self.shareLocalHomeFolderPanel, wx.ID_ANY)
+            self.innerShareLocalHomeFolderPanelSizer = wx.FlexGridSizer(rows=2, cols = 1, vgap=5,hgap=5)
+            self.innerShareLocalHomeFolderPanel.SetSizer(self.innerShareLocalHomeFolderPanelSizer)
 
-        self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox = wx.CheckBox(self.innerShareLocalHomeFolderPanel, wx.ID_ANY, "Share local home directory on remote desktop")
-        self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetValue(False)
-        if 'share_local_home_directory_on_remote_desktop' in vncOptions:
-            self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetValue(vncOptions['share_local_home_directory_on_remote_desktop'])
+            self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox = wx.CheckBox(self.innerShareLocalHomeFolderPanel, wx.ID_ANY, "Share local home directory on remote desktop")
+            self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetValue(False)
+            if 'share_local_home_directory_on_remote_desktop' in vncOptions:
+                self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetValue(vncOptions['share_local_home_directory_on_remote_desktop'])
 
-        self.innerShareLocalHomeFolderPanelSizer.Add(self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox)
-        self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetFont(self.smallFont)
-       
-        #self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Delete SSH key-pair immediately after connecting (most secure)")
-        #self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton.SetValue(True)
-        #if 'delete_sshfs_key_pair_immediately_after_connecting' in vncOptions:
-            #self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton.SetValue(vncOptions['track_remote_cursor_locally'])
-        #self.innerMouseCursorPanelSizer.Add(self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton)
-        #self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton.SetFont(self.smallFont)
+            self.innerShareLocalHomeFolderPanelSizer.Add(self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox)
+            self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetFont(self.smallFont)
+           
+            #self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Delete SSH key-pair immediately after connecting (most secure)")
+            #self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton.SetValue(True)
+            #if 'delete_sshfs_key_pair_immediately_after_connecting' in vncOptions:
+                #self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton.SetValue(vncOptions['track_remote_cursor_locally'])
+            #self.innerMouseCursorPanelSizer.Add(self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton)
+            #self.deleteSshFsKeyPairImmediatelyAfterConnectingRadioButton.SetFont(self.smallFont)
 
-        self.innerShareLocalHomeFolderPanel.SetSizerAndFit(self.innerShareLocalHomeFolderPanelSizer)
-        self.makeLocalFolderAvailableOnRemoteDesktopGroupBoxSizer.Add(self.innerShareLocalHomeFolderPanel, flag=wx.EXPAND)
-        self.shareLocalHomeFolderPanel.SetSizerAndFit(self.makeLocalFolderAvailableOnRemoteDesktopGroupBoxSizer)
+            self.innerShareLocalHomeFolderPanel.SetSizerAndFit(self.innerShareLocalHomeFolderPanelSizer)
+            self.makeLocalFolderAvailableOnRemoteDesktopGroupBoxSizer.Add(self.innerShareLocalHomeFolderPanel, flag=wx.EXPAND)
+            self.shareLocalHomeFolderPanel.SetSizerAndFit(self.makeLocalFolderAvailableOnRemoteDesktopGroupBoxSizer)
 
-        self.fileSharingMainPanel.SetSizerAndFit(self.fileSharingMainPanelSizer)
-        self.fileSharingPanel.SetSizerAndFit(self.fileSharingPanelSizer)
-        self.fileSharingPanel.Layout()
+            self.fileSharingMainPanel.SetSizerAndFit(self.fileSharingMainPanelSizer)
+            self.fileSharingPanel.SetSizerAndFit(self.fileSharingPanelSizer)
+            self.fileSharingPanel.Layout()
 
 
         # Adding Connection tab and Globals tab to tabbed view
         self.tabbedView.AddPage(self.connectionPanel, "Connection")
         self.tabbedView.AddPage(self.globalsPanel, "Globals")
-        if False: # FIXME remove this feature in the future
+        if False: # FIXME review this feature in the future
             if sys.platform.startswith("darwin") or sys.platform.startswith("linux"):
                 self.tabbedView.AddPage(self.fileSharingPanel, "File Sharing")
        
