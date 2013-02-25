@@ -2193,10 +2193,18 @@ class LauncherMainFrame(wx.Frame):
                             return
 
                         # Get list of user's MASSIVE projects from Karaage:
-                        xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
-                        xmlrpcQueryResult = xmlrpcServer.get_users_projects(self.username, self.password)
-                        self.massive_projects_of_current_user = xmlrpcQueryResult[1]
-                        logger_debug("self.massive_projects_of_current_user = " + str(self.massive_projects_of_current_user))
+                        try:
+                            xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
+                            xmlrpcQueryResult = xmlrpcServer.get_users_projects(self.username, self.password)
+                            logger_debug("xmlrpcQueryResult = <%s>" % (xmlrpcQueryResult,))
+
+                            self.massive_projects_of_current_user = xmlrpcQueryResult[1]
+                        except:
+                            error_string = 'Error contacting Massive to retrieve user projects list'
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
+                            return
+
                         if not launcherMainFrame.massiveProject in self.massive_projects_of_current_user:
                             error_string = ("You have requested use of project \"" + launcherMainFrame.massiveProject + "\",\n"
                                              "but you don't have access to that project.")
@@ -2911,12 +2919,19 @@ class LauncherMainFrame(wx.Frame):
             self.massivePersistentMode = self.massivePersistentModeCheckBox.GetValue()
             self.massiveProject = self.massiveProjectComboBox.GetValue()
             if self.massiveProject == self.defaultProjectPlaceholder:
-                xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
-                # Get list of user's massiveProjects from Karaage:
-                # users_massiveProjects = xmlrpcServer.get_users_massiveProjects(self.massiveUsername, self.massivePassword)
-                # self.massiveProjects = users_massiveProjects[1]
-                # Get user's default massiveProject from Karaage:
-                self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
+                try:
+                    xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
+                    # Get list of user's massiveProjects from Karaage:
+                    # users_massiveProjects = xmlrpcServer.get_users_massiveProjects(self.massiveUsername, self.massivePassword)
+                    # self.massiveProjects = users_massiveProjects[1]
+                    # Get user's default massiveProject from Karaage:
+                    self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
+                except:
+                    error_string = "Error contacting Massive to retrieve user's default project"
+                    logger_error(error_string)
+                    die_from_main_frame(error_string)
+                    return
+
                 if self.massiveProject in self.massiveProjects:
                     self.massiveProjectComboBox.SetSelection(self.massiveProjects.index(self.massiveProject))
                 else:
