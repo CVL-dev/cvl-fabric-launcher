@@ -2192,6 +2192,18 @@ class LauncherMainFrame(wx.Frame):
                             die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
                             return
 
+                        # Get list of user's MASSIVE projects from Karaage:
+                        xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
+                        xmlrpcQueryResult = xmlrpcServer.get_users_projects(self.username, self.password)
+                        self.massive_projects_of_current_user = xmlrpcQueryResult[1]
+                        logger_debug("self.massive_projects_of_current_user = " + str(self.massive_projects_of_current_user))
+                        if not launcherMainFrame.massiveProject in self.massive_projects_of_current_user:
+                            error_string = ("You have requested use of project \"" + launcherMainFrame.massiveProject + "\",\n"
+                                             "but you don't have access to that project.")
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
+                            return
+
                         gbalance_stdout, gbalance_stderr = run_ssh_command(self.sshClient, "gbalance -u %s -p %s --hours --total" % (self.username, launcherMainFrame.massiveProject,))
                         if gbalance_stdout is None: gbalance_stdout = ''
                         if gbalance_stderr is None: gbalance_stderr = ''
