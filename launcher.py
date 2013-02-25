@@ -448,6 +448,10 @@ class LauncherMainFrame(wx.Frame):
         self.CVL_UM_vm_ip               = None
         self.CVL_UM_private_key_file    = None
 
+        if not cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_server_URL'):
+            from user_management import DEFAULT_USER_MANAGEMENT_URL
+            cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_server_URL', DEFAULT_USER_MANAGEMENT_URL)
+
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
             self.SetIcon(_icon)
@@ -1332,7 +1336,7 @@ class LauncherMainFrame(wx.Frame):
         self.CVL_UM_password = password
 
         try:
-            payload = user_management.get_key(username, password)
+            payload = user_management.get_key(cvlLauncherConfig, username, password)
         except:
             dlg = wx.MessageDialog(launcherMainFrame, 'Error contacting CVL user management system', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
@@ -1457,7 +1461,7 @@ class LauncherMainFrame(wx.Frame):
                         value = False
                     self.vncOptions[key] = value
 
-        launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher Options", self.vncOptions)
+        launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher Options", self.vncOptions, cvlLauncherConfig, cvlLauncherPreferencesFilePath)
         launcherOptionsDialog.ShowModal()
 
         if launcherOptionsDialog.okClicked:

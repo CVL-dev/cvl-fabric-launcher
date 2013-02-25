@@ -4,6 +4,8 @@ import requests
 import ssh
 from base64 import b64decode
 
+DEFAULT_USER_MANAGEMENT_URL = 'http://115.146.94.161/UserManagement/query.php'
+
 def run_ssh_command(ssh_client, command):
     """
     Run a command using the supplied ssh client, returning stdout and stderr.
@@ -17,17 +19,16 @@ def run_ssh_command(ssh_client, command):
 
     return stdout, stderr
 
+def get_key(cvlLauncherConfig, username, password):
+    url = cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_server_URL')
 
-USER_MANAGEMENT_URL = 'http://115.146.94.161/UserManagement/query.php'
-
-def get_key(username, password):
     query_message = {'request_user_data': 'True', 'request_private_key': 'True', 'username': username, 'password': password} # FIXME sanity check username, password
 
     try:
         if os.path.exists('cacert.pem'):
-            r = requests.post(USER_MANAGEMENT_URL, data={'queryMessage': json.dumps(query_message), 'query': 'Send to user management'}, verify='cacert.pem') # Does not make sense to json.dumps() here!
+            r = requests.post(url, data={'queryMessage': json.dumps(query_message), 'query': 'Send to user management'}, verify='cacert.pem') # Does not make sense to json.dumps() here!
         else:
-            r = requests.post(USER_MANAGEMENT_URL, data={'queryMessage': json.dumps(query_message), 'query': 'Send to user management'})                      # Does not make sense to json.dumps() here!
+            r = requests.post(url, data={'queryMessage': json.dumps(query_message), 'query': 'Send to user management'})                      # Does not make sense to json.dumps() here!
     except:
         raise ValueError, 'Could not query CVL user management system.'
 
