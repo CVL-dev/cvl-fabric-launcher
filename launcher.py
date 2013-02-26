@@ -563,41 +563,116 @@ class LauncherMainFrame(wx.Frame):
         self.defaultProjectPlaceholder = '[Use my default project]'
         self.massiveProjects = [
             self.defaultProjectPlaceholder,
-            'ASync001','ASync002','ASync003','ASync004','ASync005','ASync006',
-            'ASync007','ASync008','ASync009','ASync010','ASync011',
-
-            'CSIRO001','CSIRO002','CSIRO003','CSIRO004','CSIRO005','CSIRO006',
+            'ASync001',
+            'ASync002',
+            'ASync003',
+            'ASync004',
+            'ASync005',
+            'ASync006',
+            'ASync008',
+            'ASync009',
+            'ASync010',
+            'ASync011',
+            'ASync012',
+            'ASync013',
+            'ASync_IMBL',
+            'CSIRO001',
+            'CSIRO002',
+            'CSIRO003',
+            'CSIRO004',
+            'CSIRO005',
+            'CSIRO006',
             'CSIRO007',
-
-            'Desc001','Desc002','Desc003','Desc004',
-
-            'Monash001','Monash002','Monash003','Monash004',
-            'Monash005','Monash006','Monash007','Monash008',
-            'Monash009','Monash010','Monash011','Monash012','Monash013',
-            'Monash014','Monash015','Monash016','Monash017','Monash018',
-            'Monash019','Monash020','Monash021','Monash022','Monash023',
-            'Monash024','Monash025','Monash026','Monash027','Monash028',
-            'Monash029','Monash030','Monash031','Monash032','Monash033',
-            'Monash034','Monash035','Monash036',
-
-            'NCId75','NCIdb5','NCIdc0','NCIdd2','NCIg61','NCIg75',
-            'NCIq97','NCIr14','NCIw25','NCIw27','NCIw67','NCIw81','NCIw91',
-            'NCIy40','NCIy95','NCIy96',
-
-            'pDeak0023','pDeak0024','pDeak0026',
-
+            'Desc001',
+            'Desc002',
+            'Desc003',
+            'Desc004',
+            'Desc005',
+            'Desc006',
+            'Desc007',
+            'Monash001',
+            'Monash002',
+            'Monash003',
+            'Monash004',
+            'Monash005',
+            'Monash006',
+            'Monash007',
+            'Monash008',
+            'Monash009',
+            'Monash010',
+            'Monash012',
+            'Monash013',
+            'Monash014',
+            'Monash015',
+            'Monash016',
+            'Monash017',
+            'Monash018',
+            'Monash019',
+            'Monash020',
+            'Monash021',
+            'Monash022',
+            'Monash023',
+            'Monash024',
+            'Monash025',
+            'Monash026',
+            'Monash027',
+            'Monash028',
+            'Monash029',
+            'Monash030',
+            'Monash031',
+            'Monash032',
+            'Monash033',
+            'Monash034',
+            'Monash035',
+            'Monash036',
+            'Monash037',
+            'Monash038',
+            'Monash039',
+            'Monash040',
+            'Monash041',
+            'Monash042',
+            'Monash043',
+            'Monash044',
+            'Monash045',
+            'NCId75',
+            'NCIdb5',
+            'NCIdc0',
+            'NCIdd2',
+            'NCIdv0',
+            'NCIdw3',
+            'NCIdy4',
+            'NCIdy7',
+            'NCIdz3',
+            'NCIea0',
+            'NCIg61',
+            'NCIg75',
+            'NCIh77',
+            'NCIq97',
+            'NCIr14',
+            'NCIv43',
+            'NCIw25',
+            'NCIw27',
+            'NCIw67',
+            'NCIw81',
+            'NCIw91',
+            'NCIy40',
+            'NCIy95',
+            'NCIy96',
+            'pDeak0023',
+            'pDeak0026',
             'pLaTr0011',
-
-            'pMelb0095','pMelb0100','pMelb0103','pMelb0104',
-
+            'pMelb0095',
+            'pMelb0100',
+            'pMelb0103',
+            'pMelb0104',
+            'pMelb0106',
+            'pMelb0107',
             'pMOSP',
-
-            'pRMIT0074','pRMIT0078','pRMIT0083',
-
-            'pVPAC0005',
-
-            'Training'
-            ]
+            'pRMIT0074',
+            'pRMIT0078',
+            'pRMIT0083',
+            'pVPAC0008',
+            'Training',]
         self.massiveProjectComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=self.massiveProjects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.massiveProject = ""
@@ -2370,32 +2445,48 @@ class LauncherMainFrame(wx.Frame):
                             die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
                             return
 
-                        mybalanceStdout, _ = run_ssh_command(self.sshClient, "mybalance --hours")
-                        mybalanceLines = [x for x in mybalanceStdout.splitlines() if launcherMainFrame.massiveProject in x and len(x.split()) >= 2]
+                        # Get list of user's MASSIVE projects from Karaage:
+                        try:
+                            xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
+                            xmlrpcQueryResult = xmlrpcServer.get_users_projects(self.username, self.password)
+                            logger_debug("xmlrpcQueryResult = <%s>" % (xmlrpcQueryResult,))
 
-                        if len(mybalanceLines) > 1:
-                            logger_warning('Found project <%s> on more than one line of "mybalance --hours" output: %s' % (launcherMainFrame.massiveProject, str(mybalanceLines)))
+                            self.massive_projects_of_current_user = xmlrpcQueryResult[1]
+                        except:
+                            error_string = 'Error contacting Massive to retrieve user projects list'
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
+                            return
 
-                        if mybalanceLines == []:
-                            foundMassiveProjectInMyBalanceOutput = False
-                        else:
-                            foundMassiveProjectInMyBalanceOutput = True
-                            mybalanceLineComponents = mybalanceLines[-1].split() # FIXME refer to earlier logger_warning; currently using the last line of output with the user's project present
-
-                            cpusPerVisNode = 12
-                            cpuHoursRequested = int(launcherMainFrame.massiveHoursRequested) * int(launcherMainFrame.massiveVisNodesRequested) * cpusPerVisNode
-                            cpuHoursRemaining = float(mybalanceLineComponents[2])
-                            if cpuHoursRemaining < cpuHoursRequested:
-                                error_string = ("You have requested " + str(cpuHoursRequested) + " CPU hours,\n"
-                                                "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
-                                                "in your quota for project \"" + launcherMainFrame.massiveProject + "\".")
-                                logger_error(error_string)
-                                die_from_login_thread(error_string)
-                                return
-
-                        if not foundMassiveProjectInMyBalanceOutput:
+                        if not launcherMainFrame.massiveProject in self.massive_projects_of_current_user:
                             error_string = ("You have requested use of project \"" + launcherMainFrame.massiveProject + "\",\n"
                                              "but you don't have access to that project.")
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
+                            return
+
+                        gbalance_stdout, gbalance_stderr = run_ssh_command(self.sshClient, "gbalance -u %s -p %s --hours --total" % (self.username, launcherMainFrame.massiveProject,))
+                        if gbalance_stdout is None: gbalance_stdout = ''
+                        if gbalance_stderr is None: gbalance_stderr = ''
+
+                        gbalance_stdout = gbalance_stdout.splitlines()
+
+                        try:
+                            if gbalance_stdout[0].rstrip() == 'Balance' and gbalance_stdout[1].rstrip() == '-------':
+                                cpuHoursRemaining = float(gbalance_stdout[2])
+                            else:
+                                raise ValueError, 'Could not parse gbalance output.'
+                        except:
+                            error_string = "Could not determine balance for user <%s> in project <%s>" % (self.username, launcherMainFrame.massiveProject,)
+                            logger_error(error_string)
+                            die_from_login_thread(error_string)
+
+                        cpusPerVisNode = 12
+                        cpuHoursRequested = int(launcherMainFrame.massiveHoursRequested) * int(launcherMainFrame.massiveVisNodesRequested) * cpusPerVisNode
+                        if cpuHoursRemaining < cpuHoursRequested:
+                            error_string = ("You have requested " + str(cpuHoursRequested) + " CPU hours,\n"
+                                            "but you only have " + str(cpuHoursRemaining) + " CPU hours remaining\n"
+                                            "in your quota for project \"" + launcherMainFrame.massiveProject + "\".")
                             logger_error(error_string)
                             die_from_login_thread(error_string)
                             return
@@ -2535,7 +2626,7 @@ class LauncherMainFrame(wx.Frame):
                                         break
                                     else:
                                         lineFragment = ""
-                                        logger_debug("request_visnode.sh: " + line);
+                                        logger_debug("request_visnode.sh: " + line)
                                     if "ERROR" in line or "Error" in line or "error" in line:
                                         logger_error('error in line: ' + line)
                                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
@@ -3093,12 +3184,19 @@ class LauncherMainFrame(wx.Frame):
             self.massivePersistentMode = self.massivePersistentModeCheckBox.GetValue()
             self.massiveProject = self.massiveProjectComboBox.GetValue()
             if self.massiveProject == self.defaultProjectPlaceholder:
-                xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
-                # Get list of user's massiveProjects from Karaage:
-                # users_massiveProjects = xmlrpcServer.get_users_massiveProjects(self.massiveUsername, self.massivePassword)
-                # self.massiveProjects = users_massiveProjects[1]
-                # Get user's default massiveProject from Karaage:
-                self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
+                try:
+                    xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
+                    # Get list of user's massiveProjects from Karaage:
+                    # users_massiveProjects = xmlrpcServer.get_users_massiveProjects(self.massiveUsername, self.massivePassword)
+                    # self.massiveProjects = users_massiveProjects[1]
+                    # Get user's default massiveProject from Karaage:
+                    self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
+                except:
+                    error_string = "Error contacting Massive to retrieve user's default project"
+                    logger_error(error_string)
+                    die_from_main_frame(error_string)
+                    return
+
                 if self.massiveProject in self.massiveProjects:
                     self.massiveProjectComboBox.SetSelection(self.massiveProjects.index(self.massiveProject))
                 else:
