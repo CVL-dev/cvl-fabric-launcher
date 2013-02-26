@@ -2448,7 +2448,7 @@ class LauncherMainFrame(wx.Frame):
                                         break
                                     else:
                                         lineFragment = ""
-                                        logger_debug("request_visnode.sh: " + line);
+                                        logger_debug("request_visnode.sh: " + line)
                                     if "ERROR" in line or "Error" in line or "error" in line:
                                         logger_error('error in line: ' + line)
                                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
