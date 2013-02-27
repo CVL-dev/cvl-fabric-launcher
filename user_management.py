@@ -19,8 +19,13 @@ def run_ssh_command(ssh_client, command):
 
     return stdout, stderr
 
-def get_key(cvlLauncherConfig, username, password):
-    url = cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_server_URL')
+def get_key(cvlLauncherConfig, username, password, use_default_url=False):
+    if use_default_url:
+        url = DEFAULT_USER_MANAGEMENT_URL
+    else:
+        url = cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_server_URL')
+
+    print url
 
     query_message = {'request_user_data': 'True', 'request_private_key': 'True', 'username': username, 'password': password} # FIXME sanity check username, password
 
