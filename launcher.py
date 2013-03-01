@@ -933,6 +933,39 @@ class LauncherMainFrame(wx.Frame):
         self.cvlLoginFieldsPanelSizer = wx.FlexGridSizer(rows=7, cols=2, vgap=3, hgap=5)
         self.cvlLoginFieldsPanel.SetSizer(self.cvlLoginFieldsPanelSizer)
 
+
+        self.cvlUsernameLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Username')
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.cvlUsername = ""
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_username"):
+                self.cvlUsername = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_username")
+            else:
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username","")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        else:
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
+            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        self.cvlUsernameTextField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
+        self.cvlUserVMLatestLookup = None
+        self.cvlUserVMList         = None
+
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
+        if self.cvlUsername.strip()!="":
+            self.cvlUsernameTextField.SelectAll()
+
+        self.cvlPasswordLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Password')
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.cvlPassword = ""
+        self.cvlPasswordField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlPassword, size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
+        self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
+
+
+
         self.cvlLoginHostLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Host')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -1143,35 +1176,6 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.cvlVncServerComboBox.SetValue(defaultVncServer)
 
-        self.cvlUsernameLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Username')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.cvlUsername = ""
-        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
-            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_username"):
-                self.cvlUsername = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_username")
-            else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username","")
-                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        else:
-            cvlLauncherConfig.add_section("CVL Launcher Preferences")
-            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        self.cvlUsernameTextField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
-        self.cvlUserVMLatestLookup = None
-        self.cvlUserVMList         = None
-
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
-        if self.cvlUsername.strip()!="":
-            self.cvlUsernameTextField.SelectAll()
-
-        self.cvlPasswordLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Password')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.cvlPassword = ""
-        self.cvlPasswordField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlPassword, size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
 
         self.cvlVncDisplayNumberPanel.MoveAfterInTabOrder(self.cvlLoginHostComboBox)
         self.cvlVncDisplayNumberPanel.MoveAfterInTabOrder(self.cvlVncDisplayNumberPanel)
@@ -1392,27 +1396,27 @@ class LauncherMainFrame(wx.Frame):
             cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
     def setup_identity(self, event):
-        dlg = wx.TextEntryDialog(None, "Username:", 'Username:')
-        if dlg.ShowModal() == wx.ID_OK:
-            username = dlg.GetValue()
-        else:
+        self.CVL_UM_username = self.cvlUsernameTextField.GetValue().lstrip().rstrip()
+        self.CVL_UM_password = self.cvlPasswordField.GetValue()
+
+        if self.CVL_UM_username == '':
+            dlg = wx.MessageDialog(launcherMainFrame, 'Please enter your CVL username.', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
             return
-        dlg.Destroy()
 
-        self.CVL_UM_username = username
-
-        dlg = wx.PasswordEntryDialog(None, "Password:", 'Password:')
-        if dlg.ShowModal() == wx.ID_OK:
-            password = dlg.GetValue()
-        else:
+        if self.CVL_UM_password == '':
+            dlg = wx.MessageDialog(launcherMainFrame, 'Please enter your CVL password.', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
             return
-        dlg.Destroy()
-
-        self.CVL_UM_password = password
 
         try:
-            payload = user_management.get_key(cvlLauncherConfig, username, password)
-        except:
+            payload = user_management.get_key(cvlLauncherConfig, self.CVL_UM_username, self.CVL_UM_password)
+        except e:
+            logger_debug("Error from key_key()")
+            logger_debug(traceback.format_exc())
+
             dlg = wx.MessageDialog(launcherMainFrame, 'Error contacting CVL user management system', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
@@ -1434,6 +1438,9 @@ class LauncherMainFrame(wx.Frame):
         f.write(self.CVL_UM_private_key)
         f.close()
 
+        """
+        # FIXME this will not be needed because we do passwordless VNC login with TurboVNC?
+
         try:
             self.CVL_UM_vnc_password  = user_management.set_vnc_password(self.CVL_UM_vm_ip, self.CVL_UM_username, join(expanduser("~"), '.MASSIVE_keys', self.CVL_UM_private_key_name))
         except:
@@ -1441,19 +1448,29 @@ class LauncherMainFrame(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
             return
+        """
 
-        dlg = wx.MessageDialog(launcherMainFrame, 'Identity setup :)', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
-        dlg.Destroy()
+        # dlg = wx.MessageDialog(launcherMainFrame, 'Identity setup :)', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+        # dlg.ShowModal()
+        # dlg.Destroy()
 
-        self.cvlLoginHostComboBox.SetValue(self.CVL_UM_vm_ip)
-        self.cvlUsernameTextField.SetValue(self.CVL_UM_username)
+
+        if len(self.CVL_UM_vm_ip) == 0:
+            dlg = wx.MessageDialog(launcherMainFrame, 'Warning: CVL VM list is empty!', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+
+        self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + self.CVL_UM_vm_ip)
+        self.cvlLoginHostComboBox.SetValue((self.CVL_UM_vm_ip + self.cvlLoginHosts + [''])[0]) # If no VM IPs available, use the first default, or the empty string.
+
+        self.cvlVncServer = "TurboVNC"
+        self.cvlVncServerComboBox.SetValue("TurboVNC")
 
         cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_username',            self.CVL_UM_username)
         cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_massive_account',     self.CVL_UM_massive_account)
         cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_private_key_name',    self.CVL_UM_private_key_name)
         cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_vm_ip',               self.CVL_UM_vm_ip)
-        cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_vnc_password',        self.CVL_UM_vnc_password)
+        # cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_vnc_password',        self.CVL_UM_vnc_password)
         with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
             cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 

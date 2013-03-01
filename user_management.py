@@ -20,18 +20,10 @@ def run_ssh_command(ssh_client, command):
     return stdout, stderr
 
 def get_key(cvlLauncherConfig, username, password, use_default_url=False):
-    # FIXME Just for testing, return a list of VMs and keys.
-
-    return [{u'massive_account': u'carlo@m2.massive.org.au', u'private_key': 'keystring1', u'private_key_name': u'vm_key_192.168.1.1', u'vm_ip': u'192.168.1.1'},
-            {u'massive_account': u'carlo@m2.massive.org.au', u'private_key': 'keystring2', u'private_key_name': u'vm_key_192.168.1.2', u'vm_ip': u'192.168.1.2'},
-            {u'massive_account': u'carlo@m2.massive.org.au', u'private_key': 'keystring3', u'private_key_name': u'vm_key_192.168.1.3', u'vm_ip': u'192.168.1.3'},]
-
     if use_default_url:
         url = DEFAULT_USER_MANAGEMENT_URL
     else:
         url = cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_server_URL')
-
-    print url
 
     query_message = {'request_user_data': 'True', 'request_private_key': 'True', 'username': username, 'password': password} # FIXME sanity check username, password
 
