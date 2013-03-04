@@ -391,7 +391,7 @@ def die_from_main_frame(error_message):
     os._exit(1)
 
 def is_managed_session():
-    return cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')    == launcherMainFrame.cvlLoginHostComboBox.GetValue() and \
+    return launcherMainFrame.cvlLoginHostComboBox.GetValue() in cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip') and \
            cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_username') == launcherMainFrame.cvlUsername
 
 def run_ssh_command(ssh_client, command, ignore_errors=False, log_output=True):
@@ -998,6 +998,10 @@ class LauncherMainFrame(wx.Frame):
                 self.cvlLoginHostComboBox.SetSelection(-1)
             self.cvlLoginHostComboBox.SetValue(self.cvlLoginHost)
 
+            # Add the user's managed VM IPs if available.
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_vm_ip'):
+                self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + eval(cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')))
+
         self.cvlVncDisplayNumberLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Display number')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -1491,6 +1495,9 @@ class LauncherMainFrame(wx.Frame):
     def onCvlLoginHostComboClick(self, event):
         event.Skip()
 
+        # Not sure how to deal with the UI at the moment, so disabling this.
+        # User will have to click the Identity button to get things going.
+        """
         username = self.cvlUsernameTextField.GetValue()
 
         do_lookup = False
@@ -1515,27 +1522,7 @@ class LauncherMainFrame(wx.Frame):
                 self.cvlLoginHostComboBox.SetItems(new_host_list)
             else:
                 self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts)
-
-    def onCvlLoginHostComboClick(self, event):
-        event.Skip()
-
-        username = self.cvlUsernameTextField.GetValue()
-
-        do_lookup = False
-
-        if self.cvlUserVMLatestLookup is None:
-            do_lookup = True
-            self.cvlUserVMLatestLookup = username
-
-        if do_lookup or username != self.cvlUserVMLatestLookup:
-            self.cvlUserVMLatestLookup = username
-
-            try:
-                self.cvlUserVMList = cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')
-                new_host_list = self.cvlLoginHostComboBox.GetItems() + [x for x in self.cvlUserVMList if x not in self.cvlLoginHostComboBox.GetItems()]
-                self.cvlLoginHostComboBox.SetItems(new_host_list)
-            except:
-                self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts)
+        """
 
     def onOptions(self, event):
 
