@@ -2551,11 +2551,9 @@ class LauncherMainFrame(wx.Frame):
                             lines = stderrRead.split("\n")
                             foundDisplayNumber = False
                             for line in lines:
-                                if "desktop is" in line:
+                                if "desktop is" in line or "started on display" in line:
                                     lineComponents = line.split(":")
-                                    # An extra parsing step is required for TigerVNC server output, compared with TurboVNC
-                                    displayComponents = lineComponents[1].split(" ")
-                                    self.cvlVncDisplayNumber = int(displayComponents[0])
+                                    self.cvlVncDisplayNumber = int(lineComponents[-1])
                                     foundDisplayNumber = True
 
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
@@ -2566,6 +2564,8 @@ class LauncherMainFrame(wx.Frame):
                                 wx.CallAfter(launcherMainFrame.cvlVncDisplayNumberSpinCtrl.SetValue, int(self.cvlVncDisplayNumber))
                             else:
                                 logger_error("Failed to parse vncserver output for display number.")
+                                die_from_login_thread('Failed to parse vncserver output for display number.', submit_log=True)
+                                return
 
                     self.sshTunnelReady = False
                     self.sshTunnelExceptionOccurred = False
