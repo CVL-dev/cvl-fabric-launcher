@@ -1920,6 +1920,9 @@ class LauncherMainFrame(wx.Frame):
 
                     logger_debug("First login done.")
 
+                    logger_debug('Calling "module load massive"')
+                    run_ssh_command(self.sshClient, 'module load massive', ignore_errors=True)
+
                     # Create SSH key pair for tunnel.
 
                     logger_debug("Generating SSH key-pair for tunnel.")
