@@ -21,16 +21,18 @@ import sys
 import wx
 
 class LauncherOptionsDialog(wx.Dialog):
-    def __init__(self, parent, id, title, vncOptions):
+    def __init__(self, parent, id, title, vncOptions, cvlLauncherConfig, cvlLauncherPreferencesFilePath):
         wx.Dialog.__init__(self, parent, id, title, 
             style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
 
-        self.vncOptions = vncOptions
+        self.vncOptions                     = vncOptions
+        self.cvlLauncherConfig              = cvlLauncherConfig
+        self.cvlLauncherPreferencesFilePath = cvlLauncherPreferencesFilePath
 
         self.okClicked = False
-       
+ 
         self.Center()
-        
+ 
         self.notebookContainerPanel = wx.Panel(self, wx.ID_ANY)
 
         self.tabbedView = wx.Notebook(self.notebookContainerPanel, wx.ID_ANY, style=(wx.NB_TOP))
@@ -892,6 +894,57 @@ class LauncherOptionsDialog(wx.Dialog):
             self.fileSharingPanel.SetSizerAndFit(self.fileSharingPanelSizer)
             self.fileSharingPanel.Layout()
 
+        # User management tab
+
+        self.userManagementPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
+        self.userManagementPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=15, hgap=25)
+
+        self.userManagementLeftBorderPanel = wx.Panel(self.userManagementPanel, wx.ID_ANY)
+        self.userManagementPanelSizer.Add(self.userManagementLeftBorderPanel)
+
+        self.userManagementMainPanel = wx.Panel(self.userManagementPanel, wx.ID_ANY)
+        if sys.platform.startswith("darwin"):
+            self.userManagementPanelSizer.Add(self.userManagementMainPanel, flag=wx.EXPAND|wx.TOP, border=0)
+        else:
+            self.userManagementPanelSizer.Add(self.userManagementMainPanel, flag=wx.EXPAND|wx.TOP, border=15)
+        self.userManagementMainPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
+
+        self.userManagementRightBorderPanel = wx.Panel(self.userManagementPanel, wx.ID_ANY)
+        self.userManagementPanelSizer.Add(self.userManagementRightBorderPanel)
+
+        # User management server URL
+
+        self.userManagementServerPanel = wx.Panel(self.userManagementMainPanel, wx.ID_ANY)
+        self.userManagementMainPanelSizer.Add(self.userManagementServerPanel, flag=wx.EXPAND)
+
+        self.fooBarChangeMeGroupBox = wx.StaticBox(self.userManagementServerPanel, wx.ID_ANY, label="CVL User Management server URL")
+        self.fooBarChangeMeGroupBox.SetFont(self.smallFont)
+        self.fooBarChangeMeGroupBoxSizer = wx.StaticBoxSizer(self.fooBarChangeMeGroupBox, wx.VERTICAL)
+        self.userManagementServerPanel.SetSizer(self.fooBarChangeMeGroupBoxSizer)
+
+        self.innerUserManagementServerPanel = wx.Panel(self.userManagementServerPanel, wx.ID_ANY)
+        self.innerUserManagementServerPanelSizer = wx.FlexGridSizer(rows=2, cols = 1, vgap=5,hgap=5)
+        self.innerUserManagementServerPanel.SetSizer(self.innerUserManagementServerPanelSizer)
+
+
+        if self.cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_server_URL'):
+            cvl_server_url = self.cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_server_URL')
+        else:
+            from user_management import DEFAULT_USER_MANAGEMENT_URL
+            cvl_server_url = DEFAULT_USER_MANAGEMENT_URL
+
+        self.cvlUserManagementServerTextField = wx.TextCtrl(self.innerUserManagementServerPanel, wx.ID_ANY, cvl_server_url, size=(600, -1))
+        self.innerUserManagementServerPanelSizer.Add(self.cvlUserManagementServerTextField)
+        self.cvlUserManagementServerTextField.SetFont(self.smallFont)
+
+        self.innerUserManagementServerPanel.SetSizerAndFit(self.innerUserManagementServerPanelSizer)
+        self.fooBarChangeMeGroupBoxSizer.Add(self.innerUserManagementServerPanel, flag=wx.EXPAND)
+        self.userManagementServerPanel.SetSizerAndFit(self.fooBarChangeMeGroupBoxSizer)
+
+        self.userManagementMainPanel.SetSizerAndFit(self.userManagementMainPanelSizer)
+        self.userManagementPanel.SetSizerAndFit(self.userManagementPanelSizer)
+        self.userManagementPanel.Layout()
+
 
         # Adding Connection tab and Globals tab to tabbed view
         self.tabbedView.AddPage(self.connectionPanel, "Connection")
@@ -899,7 +952,7 @@ class LauncherOptionsDialog(wx.Dialog):
         if False: # FIXME review this feature in the future
             if sys.platform.startswith("darwin") or sys.platform.startswith("linux"):
                 self.tabbedView.AddPage(self.fileSharingPanel, "File Sharing")
-       
+ 
         # Buttons panel
 
         self.buttonsPanel = wx.Panel(self.notebookContainerPanel, wx.ID_ANY)
@@ -962,6 +1015,11 @@ class LauncherOptionsDialog(wx.Dialog):
             self.vncOptions['writelog'] = self.writeLogToAFileCheckBox.GetValue()
             self.vncOptions['loglevel'] = str(self.verbosityLevelSpinCtrl.GetValue())
             self.vncOptions['logfile'] = self.vncViewerLogFilenameTextField.GetValue()
+
+        self.cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_server_URL', self.cvlUserManagementServerTextField.GetValue())
+        with open(self.cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+            self.cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+
         self.Close(True)
       
     def enableZlibCompressionLevelWidgets(self):
