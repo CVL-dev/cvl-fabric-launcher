@@ -1000,7 +1000,14 @@ class LauncherMainFrame(wx.Frame):
 
             # Add the user's managed VM IPs if available.
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_vm_ip'):
-                self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + eval(cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')))
+                try:
+                    # Might fail if user has old-format preferences data.
+                    self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + eval(cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')))
+                except:
+                    try:
+                        self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + [cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')])
+                    except:
+                        self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts)
 
         self.cvlVncDisplayNumberLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Display number')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -1417,7 +1424,7 @@ class LauncherMainFrame(wx.Frame):
 
         try:
             payload = user_management.get_key(cvlLauncherConfig, self.CVL_UM_username, self.CVL_UM_password)
-        except e:
+        except:
             logger_debug("Error from key_key()")
             logger_debug(traceback.format_exc())
 
@@ -1454,11 +1461,6 @@ class LauncherMainFrame(wx.Frame):
             return
         """
 
-        # dlg = wx.MessageDialog(launcherMainFrame, 'Identity setup :)', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-        # dlg.ShowModal()
-        # dlg.Destroy()
-
-
         if len(self.CVL_UM_vm_ip) == 0:
             dlg = wx.MessageDialog(launcherMainFrame, 'Warning: CVL VM list is empty!', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
@@ -1477,6 +1479,10 @@ class LauncherMainFrame(wx.Frame):
         # cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_vnc_password',        self.CVL_UM_vnc_password)
         with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
             cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+
+        dlg = wx.MessageDialog(launcherMainFrame, 'Identity setup :)', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+        dlg.Destroy()
 
     def onToggleCvlVncDisplayNumberAutomaticCheckBox(self, event):
         if self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
