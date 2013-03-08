@@ -13,6 +13,7 @@ License: GPL+
 Group: Development/Tools
 SOURCE0 : %{name}-%{version}.tar.gz
 URL: https://www.massive.org.au/userguide/cluster-instructions/massive-launcher
+Vendor: Carlo Hamalainen (Monash University - CVL) <carlo.hamalainen@gmail.com>
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
