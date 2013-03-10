@@ -7,8 +7,8 @@ ARCHITECTURE=`uname -m | sed s/x86_64/amd64/g | sed s/i686/i386/g`
 
 TMP="tmp_debian_build"
 
-rm -fr $TMP
-rm -f *.deb
+sudo rm -fr $TMP
+sudo rm -f *.deb
 
 TARGET=$TMP/opt/MassiveLauncher
 mkdir -p $TARGET
@@ -28,8 +28,14 @@ sed -i "s/VERSION/${VERSION}/g" $TMP/DEBIAN/control
 sed -i "s/ARCHITECTURE/${ARCHITECTURE}/g" $TMP/DEBIAN/control
 sed -i "s/XXINSTALLEDSIZE/${installedSize}/g" $TMP/DEBIAN/control
 
+sudo chown -R root.root $TMP
+sudo find $TMP/ -iname '*.so.*' -exec chmod a-x {} \;
+sudo find $TMP/ -iname '*.so.*' -exec strip     {} \;
+sudo chmod a-x $TMP/opt/MassiveLauncher/icons/MASSIVElogoTransparent144x144.png
+sudo chmod a-x $TMP/opt/MassiveLauncher/"MASSIVE Launcher.desktop"
+
 DEB=massive-launcher_${VERSION}_${ARCHITECTURE}.deb
-dpkg -b $TMP $DEB
+sudo dpkg -b $TMP $DEB
 
 echo
 echo

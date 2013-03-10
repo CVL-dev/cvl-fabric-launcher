@@ -26,11 +26,19 @@ class LauncherProgressDialog(wx.Frame):
         self.user_requested_abort = False
 
         self.panel = wx.Panel(self, wx.ID_ANY) 
-        self.messageStaticText = wx.StaticText(self.panel, label = message)
+        # We'll just set a temporary message while the dialog,
+        # is constructed, to represent the longest message
+        # likely to appear in the progress dialog.
+        # At the end of the __init__ method, we will use
+        # SetLabel to set the initial message correctly.
+        temporaryMessage = "Checking installed version of TurboVNC..."
+        self.messageStaticText = wx.StaticText(self.panel, label = temporaryMessage)
 
         self.progressBar = wx.Gauge(self, -1, maxValue)
 
-        self.progressBar.SetSize(wx.Size(250, -1))
+        #self.progressBar.SetSize(wx.Size(250, -1))
+        statusMessageWidth = self.messageStaticText.GetSize().width
+        self.progressBar.SetSize(wx.Size(statusMessageWidth, -1))
         
         if userCanAbort:
             sizer = wx.FlexGridSizer(rows=3, cols=3, vgap=5, hgap=15)
@@ -55,6 +63,7 @@ class LauncherProgressDialog(wx.Frame):
 
         self.panel.SetSizerAndFit(sizer)
         self.Fit()
+        self.messageStaticText.SetLabel(message)
         self.Center()
         self.Show()
 

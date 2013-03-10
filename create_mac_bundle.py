@@ -31,15 +31,7 @@ from setuptools import setup, Extension
 
 import launcher_version_number
 
-# THE ssh_tunnel MODULE IS NOT CURRENTLY USED. 
-# ITS IMPLEMENTATION IS INCOMPLETE AND IT DOESN'T WORK IN ITS CURRENT FORM.
-# IT HAS BEEN REPLACED BY CALLS TO EXTERNAL SSH PROCESSES
-# (ssh on Mac, Linux and plink.exe on Windows).
-
-#ssh_tunnel_module = Extension("ssh_tunnel", 
-    #sources = ["ssh_tunnel_module.c"],
-    #extra_compile_args = ['-O3'],
-    #libraries = ['ssh2'])
+import create_commit_def
 
 setup(
     options=dict(py2app=dict(
@@ -59,5 +51,4 @@ setup(
     name="MASSIVE Launcher",
     setup_requires=["py2app"],
     app=['launcher.py']
-    #,ext_modules = [ssh_tunnel_module]
 )

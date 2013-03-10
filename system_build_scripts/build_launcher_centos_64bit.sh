@@ -15,10 +15,16 @@ fi
 
 mkdir $WDIR
 cd $WDIR
-rm -f master.tar.gz
-wget https://github.com/CVL-dev/cvl-fabric-launcher/archive/master.tar.gz -O master.tar.gz
-tar zxf master.tar.gz
-cd cvl-fabric-launcher-master
+
+git clone git@github.com:CVL-dev/cvl-fabric-launcher.git
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "*** Attempting to use git with SSH keys failed. ***"
+    echo "*** Cloning the Launcher's repository as read-only instead. ***"
+    echo ""
+    git clone git://github.com/CVL-dev/cvl-fabric-launcher
+fi
+cd cvl-fabric-launcher
 
 module load python wxwidgets
 ./package_centos_version.sh
