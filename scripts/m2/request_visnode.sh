@@ -26,6 +26,7 @@ PERSISTENT=False
 # "True" this will eventually be the default 
 #### M1 will use True now as the default
 #PERSISTENT=True
+export MASSIVE_PROJECT=$PROJECT
 
 if [ $# -ge 3 ] ; then
  VISNODES=$3
