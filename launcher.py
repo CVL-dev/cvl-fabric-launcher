@@ -1042,8 +1042,6 @@ class LauncherMainFrame(wx.Frame):
         if self.cvlVncDisplayNumberAutomatic==False:
             self.cvlVncDisplayResolutionComboBox.Disable()
             self.cvlVncDisplayResolutionLabel.Disable()
-            self.cvlVncServerComboBox.Disable()
-            self.cvlVncServerLabel.Disable()
 
         self.cvlSshTunnelCipherLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -1085,38 +1083,6 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.cvlSshTunnelCipherComboBox.SetValue(defaultCipher)
 
-        self.cvlVncServerLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'VNC server')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncServerLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.cvlVncServer = "TigerVNC"
-        defaultVncServer = "TigerVNC"
-        cvlVncServers = ["TigerVNC", "TurboVNC"]
-        self.cvlVncServerComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlVncServers, size=(widgetWidth2, -1), style=wx.CB_READONLY)
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncServerComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
-            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_server"):
-                self.cvlVncServer = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_server")
-            else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_server","")
-                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        else:
-            cvlLauncherConfig.add_section("CVL Launcher Preferences")
-            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        self.cvlVncServer = self.cvlVncServer.strip()
-        if self.cvlVncServer=="":
-            self.cvlVncServer = defaultVncServer
-        if self.cvlVncServer!="":
-            if self.cvlVncServer in cvlVncServers:
-                self.cvlVncServerComboBox.SetSelection(cvlVncServers.index(self.cvlVncServer))
-            else:
-                # Cipher was not found in combo-box.
-                self.cvlVncServerComboBox.SetSelection(-1)
-            self.cvlVncServerComboBox.SetValue(self.cvlVncServer)
-        else:
-            self.cvlVncServerComboBox.SetValue(defaultVncServer)
-
         self.cvlUsernameLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Username')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -1148,8 +1114,7 @@ class LauncherMainFrame(wx.Frame):
         self.cvlVncDisplayNumberPanel.MoveAfterInTabOrder(self.cvlVncDisplayNumberPanel)
         self.cvlVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.cvlVncDisplayNumberPanel)
         self.cvlSshTunnelCipherComboBox.MoveAfterInTabOrder(self.cvlVncDisplayResolutionComboBox)
-        self.cvlVncServerComboBox.MoveAfterInTabOrder(self.cvlSshTunnelCipherComboBox)
-        self.cvlUsernameTextField.MoveAfterInTabOrder(self.cvlVncServerComboBox)
+        self.cvlUsernameTextField.MoveAfterInTabOrder(self.cvlSshTunnelCipherComboBox)
         self.cvlPasswordField.MoveAfterInTabOrder(self.cvlUsernameTextField)
 
         self.cvlShowDebugWindowLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
@@ -1338,14 +1303,10 @@ class LauncherMainFrame(wx.Frame):
             self.cvlVncDisplayNumberSpinCtrl.Disable()
             self.cvlVncDisplayResolutionComboBox.Enable()
             self.cvlVncDisplayResolutionLabel.Enable()
-            self.cvlVncServerComboBox.Enable()
-            self.cvlVncServerLabel.Enable()
         else:
             self.cvlVncDisplayNumberSpinCtrl.Enable()
             self.cvlVncDisplayResolutionComboBox.Disable()
             self.cvlVncDisplayResolutionLabel.Disable()
-            self.cvlVncServerComboBox.Disable()
-            self.cvlVncServerLabel.Disable()
 
     def onOptions(self, event):
 
@@ -1441,7 +1402,6 @@ class LauncherMainFrame(wx.Frame):
         self.cvlPasswordField.SetCursor(cursor)
         self.cvlVncDisplayResolutionComboBox.SetCursor(cursor)
         self.cvlSshTunnelCipherComboBox.SetCursor(cursor)
-        self.cvlVncServerComboBox.SetCursor(cursor)
 
         self.buttonsPanel.SetCursor(cursor)
         self.optionsButton.SetCursor(cursor)
@@ -1517,7 +1477,6 @@ class LauncherMainFrame(wx.Frame):
                         self.host       = launcherMainFrame.cvlLoginHost
                         self.resolution = launcherMainFrame.cvlVncDisplayResolution
                         self.cipher     = launcherMainFrame.cvlSshTunnelCipher
-                        self.vncServer  = launcherMainFrame.cvlVncServer
                         self.username   = launcherMainFrame.cvlUsername
                         self.password   = launcherMainFrame.cvlPassword
 
@@ -1535,8 +1494,6 @@ class LauncherMainFrame(wx.Frame):
                     logger_debug('host: ' + self.host)
                     logger_debug('resolution: ' + self.resolution)
                     logger_debug('cipher: ' + self.cipher)
-                    if launcherMainFrame.cvlTabSelected:
-                        logger_debug('vncServer: ' + self.vncServer)
                     logger_debug('username: ' + self.username)
                     logger_debug('sys.platform: ' + sys.platform)
 
@@ -2542,8 +2499,7 @@ class LauncherMainFrame(wx.Frame):
 
                         self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
-                            #cvlVncServerCommand = "vncsession --vnc tigervnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
-                            cvlVncServerCommand = "vncsession --vnc " + launcherMainFrame.cvlVncServer.lower() + " --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
+                            cvlVncServerCommand = "vncsession --vnc turbovnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
                             if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                                 cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
                             logger_debug('cvlVncServerCommand: ' + cvlVncServerCommand)
@@ -2989,7 +2945,6 @@ class LauncherMainFrame(wx.Frame):
             self.cvlPassword = self.cvlPasswordField.GetValue()
             self.cvlVncDisplayResolution = self.cvlVncDisplayResolutionComboBox.GetValue()
             self.cvlSshTunnelCipher = self.cvlSshTunnelCipherComboBox.GetValue()
-            self.cvlVncServer = self.cvlVncServerComboBox.GetValue()
 
         if launcherMainFrame.massiveTabSelected:
             self.massiveHoursRequested = str(self.massiveHoursField.GetValue())
@@ -3033,7 +2988,6 @@ class LauncherMainFrame(wx.Frame):
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher", self.cvlSshTunnelCipher)
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_server", self.cvlVncServer)
 
         if launcherMainFrame.massiveTabSelected:
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
