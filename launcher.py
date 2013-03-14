@@ -1943,7 +1943,7 @@ class LauncherMainFrame(wx.Frame):
                         die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
                         return
 
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair*")
+                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair*", ignore_errors=True)
                     run_ssh_command(self.sshClient, "/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
                     run_ssh_command(self.sshClient, "/bin/mkdir -p ~/.ssh")
                     run_ssh_command(self.sshClient, "/bin/chmod 700 ~/.ssh")
@@ -1951,10 +1951,10 @@ class LauncherMainFrame(wx.Frame):
                     run_ssh_command(self.sshClient, "/bin/chmod 600 ~/.ssh/authorized_keys")
                     run_ssh_command(self.sshClient, "/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys")
                     run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys", log_output=False)
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair.pub")
+                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair.pub", ignore_errors=True)
                     privateKeyString, _ = run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair", log_output=False)
 
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair")
+                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair", ignore_errors=True)
 
                     import tempfile
                     self.privateKeyFile = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
