@@ -4,4 +4,10 @@
 *.DS_Store
 *.swp
 *.out
-
+*.pyc
+build/*
+dist/*
+commit_def.py
+launcher.spec
+tmp_debian_build/
+warnlauncher.txt
