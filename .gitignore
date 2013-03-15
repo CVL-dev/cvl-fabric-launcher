@@ -11,3 +11,5 @@ commit_def.py
 launcher.spec
 tmp_debian_build/
 warnlauncher.txt
+logdict*log
+massive*.deb
