@@ -33,6 +33,8 @@ import launcher_version_number
 
 import create_commit_def
 
+import requests
+
 setup(
     options=dict(py2app=dict(
         plist=dict(
@@ -47,7 +49,7 @@ setup(
             )
         )
     ),
-    data_files=["MASSIVE.icns"],
+    data_files=["MASSIVE.icns",requests.certs.where()],
     name="MASSIVE Launcher",
     setup_requires=["py2app"],
     app=['launcher.py']
