@@ -215,6 +215,10 @@ def dump_log(submit_log=False):
             r = requests.post(url, files=file_info, verify='cacert.pem')
         elif os.path.exists('/opt/MassiveLauncher/cacert.pem'):
             r = requests.post(url, files=file_info, verify='/opt/MassiveLauncher/cacert.pem')
+        elif os.path.exists('c:/program files/massive launcher/cacert.pem'):
+            r = requests.post(url, files=file_info, verify='c:/program files/massive launcher/cacert.pem'):
+        elif os.path.exists('c:/program files (x86)/massive launcher/cacert.pem'):
+            r = requests.post(url, files=file_info, verify='c:/program files (x86)/massive launcher/cacert.pem'):
         else:
             r = requests.post(url, files=file_info)
 
