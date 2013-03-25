@@ -1002,10 +1002,12 @@ class LauncherMainFrame(wx.Frame):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", 'CVL_UM_vm_ip'):
                 try:
                     # Might fail if user has old-format preferences data.
-                    self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + eval(cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')))
+                    #self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + eval(cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')))
+                    self.cvlLoginHostComboBox.SetItems(eval(cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')))
                 except:
                     try:
-                        self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + [cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')])
+                        #self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + [cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')])
+                        self.cvlLoginHostComboBox.SetItems([cvlLauncherConfig.get("CVL Launcher Preferences", 'CVL_UM_vm_ip')])
                     except:
                         self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts)
 
@@ -1488,8 +1490,10 @@ class LauncherMainFrame(wx.Frame):
             dlg.ShowModal()
             dlg.Destroy()
 
-        self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + self.CVL_UM_vm_ip)
-        self.cvlLoginHostComboBox.SetValue((self.CVL_UM_vm_ip + self.cvlLoginHosts + [''])[0]) # If no VM IPs available, use the first default, or the empty string.
+        #self.cvlLoginHostComboBox.SetItems(self.cvlLoginHosts + self.CVL_UM_vm_ip)
+        self.cvlLoginHostComboBox.SetItems(self.CVL_UM_vm_ip)
+        #self.cvlLoginHostComboBox.SetValue((self.CVL_UM_vm_ip + self.cvlLoginHosts + [''])[0]) # If no VM IPs available, use the first default, or the empty string.
+        self.cvlLoginHostComboBox.SetValue((self.CVL_UM_vm_ip + [''])[0]) # If no VM IPs available, use the first default, or the empty string.
 
         cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_username',            self.CVL_UM_username)
         cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_massive_account',     self.CVL_UM_massive_account)
