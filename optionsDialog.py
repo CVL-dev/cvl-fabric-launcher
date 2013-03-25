@@ -949,6 +949,7 @@ class LauncherOptionsDialog(wx.Dialog):
         # Adding Connection tab and Globals tab to tabbed view
         self.tabbedView.AddPage(self.connectionPanel, "Connection")
         self.tabbedView.AddPage(self.globalsPanel, "Globals")
+        self.tabbedView.AddPage(self.userManagementPanel, "User Management")
         if False: # FIXME review this feature in the future
             if sys.platform.startswith("darwin") or sys.platform.startswith("linux"):
                 self.tabbedView.AddPage(self.fileSharingPanel, "File Sharing")
