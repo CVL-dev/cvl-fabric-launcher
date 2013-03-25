@@ -4,7 +4,7 @@ import requests
 import ssh
 from base64 import b64decode
 
-DEFAULT_USER_MANAGEMENT_URL = 'http://115.146.94.161/UserManagement/query.php'
+DEFAULT_USER_MANAGEMENT_URL = 'https://cvl.massive.org.au/cvl/query.php'
 
 def run_ssh_command(ssh_client, command):
     """
