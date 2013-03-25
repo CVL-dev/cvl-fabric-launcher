@@ -1178,9 +1178,9 @@ class LauncherMainFrame(wx.Frame):
         self.cvlShowAdvancedOptionsLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Show advanced options')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlShowAdvancedOptionsLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.cvlShowAdvancedOptions = False
-        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "cvl_show_advanced_options"):
-                self.cvlShowAdvancedOptions = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "cvl_show_advanced_options")
+        if cvlLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if cvlLauncherConfig.has_option("MASSIVE Launcher Preferences", "cvl_show_advanced_options"):
+                self.cvlShowAdvancedOptions = cvlLauncherConfig.get("MASSIVE Launcher Preferences", "cvl_show_advanced_options")
                 if self.cvlShowAdvancedOptions.strip() == "":
                     self.cvlShowAdvancedOptions = False
                 else:
@@ -1189,13 +1189,13 @@ class LauncherMainFrame(wx.Frame):
                     else:
                         self.cvlShowAdvancedOptions = False
             else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "cvl_show_advanced_options","False")
+                cvlLauncherConfig.set("MASSIVE Launcher Preferences", "cvl_show_advanced_options","False")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+                    cvlLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
-            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
+            cvlLauncherConfig.add_section("MASSIVE Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+                cvlLauncherConfig.write(massiveLauncherPreferencesFileObject)
         self.cvlShowAdvancedOptionsCheckBox = wx.CheckBox(self.cvlLoginFieldsPanel, wx.ID_ANY, "")
         self.cvlShowAdvancedOptionsCheckBox.SetValue(self.cvlShowAdvancedOptions)
         self.cvlShowAdvancedOptionsCheckBox.Bind(wx.EVT_CHECKBOX, self.onCvlAdvancedOptionsCheckBoxStateChanged)
