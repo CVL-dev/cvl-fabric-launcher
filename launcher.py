@@ -970,8 +970,10 @@ class LauncherMainFrame(wx.Frame):
         self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlLoginHost = ""
-        self.cvlLoginHosts = ["115.146.93.128","115.146.94.0"]
-        self.defaultCvlHost = "115.146.93.128"
+        #self.cvlLoginHosts = ["115.146.93.128","115.146.94.0"]
+        self.cvlLoginHosts = []
+        #self.defaultCvlHost = "115.146.93.128"
+        self.defaultCvlHost = ""
         self.cvlLoginHostComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value=self.defaultCvlHost, choices=self.cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
 
         self.cvlLoginHostComboBox.Bind(wx.EVT_MOUSE_EVENTS, self.onCvlLoginHostComboClick)
