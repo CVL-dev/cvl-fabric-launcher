@@ -2164,7 +2164,10 @@ class LauncherMainFrame(wx.Frame):
                         if self.host.startswith("m2"):
                             logger_debug("Checking whether you have any existing jobs in the Vis node queue.")
                             logger_debug("showq -w class:vis -u " + self.username + " | grep " + self.username)
-                            stdoutRead, stderrRead = run_ssh_command(self.sshClient, "showq -w class:vis -u " + self.username + " | grep " + self.username)
+                            # Using ignore_errors=True, because if we run "showq" for a new user, before they
+                            # have submitted any jobs, we can get the following error:
+                            # ERROR:    unknown user specified
+                            stdoutRead, stderrRead = run_ssh_command(self.sshClient, "showq -w class:vis -u " + self.username + " | grep " + self.username, ignore_errors=True)
                             if stdoutRead.strip()!="" and launcherMainFrame.massivePersistentMode==False:
                                 stdoutReadSplit = stdoutRead.split(" ")
                                 jobNumber = stdoutReadSplit[0] # e.g. 3050965
