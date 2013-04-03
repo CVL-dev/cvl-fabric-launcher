@@ -177,18 +177,6 @@ def destroy_dialog(dialog):
 def dump_log(submit_log=False):
     logging.shutdown()
 
-    while True:
-        try:
-            if launcherMainFrame.tidyingUpProgressDialog is None: break
-
-            time.sleep(0.01)
-            wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
-            wx.Yield()
-        except AttributeError:
-            break
-        except wx._core.PyDeadObjectError:
-            break
-
     def yes_no():
         dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
         try:
@@ -268,7 +256,7 @@ def remaining_visnode_walltime():
     except:
         return
 
-def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, update_main_progress_bar=False, update_tidying_up_progress_bar=False, ignore_errors=False):
+def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, update_main_progress_bar=False, ignore_errors=False):
     if launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary:
         return
 
@@ -281,8 +269,6 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
                 wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Deleting MASSIVE Vis node job.")
             if update_main_progress_bar:
                 wx.CallAfter(launcherMainFrame.loginThread.updateProgressDialog, 6, "Deleting MASSIVE Vis node job...")
-            #if update_tidying_up_progress_bar:
-            #    wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 2, "Deleting MASSIVE Vis node job...")
             if write_debug_log:
                 logger_debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
             run_ssh_command(launcherMainFrame.loginThread.sshClient,
@@ -1589,7 +1575,7 @@ class LauncherMainFrame(wx.Frame):
                 #logger_debug(traceback.format_exc())
                 pass
 
-            deleteMassiveJobIfNecessary(write_debug_log=False,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=False,ignore_errors=False)
+            deleteMassiveJobIfNecessary(write_debug_log=False,update_status_bar=True,update_main_progress_bar=False,ignore_errors=False)
 
             launcherMainFrame.loginThread.sshClient.close()
 
@@ -1670,10 +1656,6 @@ class LauncherMainFrame(wx.Frame):
                     launcherMainFrame.progressDialog.Update(value, message)
                     self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
                 self.updatingProgressDialog = False
-
-            def updateTidyingUpProgressDialog(self, value, message):
-                if launcherMainFrame.tidyingUpProgressDialog is not None:
-                    launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
 
             def run(self):
                 """Run Worker Thread."""
@@ -2600,7 +2582,7 @@ class LauncherMainFrame(wx.Frame):
                                 self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
 
                             if self.shouldAbort:
-                                deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,update_tidying_up_progress_bar=False,ignore_errors=False)
+                                deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,ignore_errors=False)
                                 if launcherMainFrame.progressDialog != None:
                                     wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                     wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
@@ -2697,7 +2679,7 @@ class LauncherMainFrame(wx.Frame):
                                 error_string = "Couldn't get the requested number of MASSIVE Vis nodes."
                             else:
                                 error_string = "Couldn't get a MASSIVE Vis node."
-                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=False,update_main_progress_bar=False,update_tidying_up_progress_bar=False,ignore_errors=False)
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=False,update_main_progress_bar=False,ignore_errors=False)
                             logger_error(error_string)
                             die_from_login_thread(error_string)
                             return
@@ -3066,19 +3048,8 @@ class LauncherMainFrame(wx.Frame):
 
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
                             logger_debug('Now tidying up the environment.')
-                            #maximumTidyingUpProgressBarValue = 4
-
-                            #userCanAbort = False
-                            launcherMainFrame.tidyingUpProgressDialog = None
-
-                            #def initializeTidyingUpProgressDialog():
-                            #    launcherMainFrame.tidyingUpProgressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Tidying up the environment...", "Tidying up the environment...", maximumTidyingUpProgressBarValue, userCanAbort)
-                            #wx.CallAfter(initializeTidyingUpProgressDialog)
-                            #while launcherMainFrame.tidyingUpProgressDialog is None:
-                            #    time.sleep(0.1)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Removing the private key file.")
-                            #wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 1, "Removing the private key file.")
 
                             try:
                                 logger_debug('Removing the private key file')
@@ -3088,22 +3059,14 @@ class LauncherMainFrame(wx.Frame):
                                 logger_debug('Error while unlinking private key file...')
                                 logger_debug(traceback.format_exc())
 
-                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=True,ignore_errors=False)
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,ignore_errors=False)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Terminating the SSH tunnel process.")
-                            #wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 3, "Terminating the SSH tunnel process.")
 
                             logger_debug('Now terminating the ssh tunnel process.')
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
                         finally:
-                            try:
-                                if launcherMainFrame.tidyingUpProgressDialog != None:
-                                    wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Show, False)
-                                    wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
-                            except:
-                                pass # Might not have a tidyingUpProgressDialog at this point.
-
                             logger_debug('In the "finally" clause for tidying up TurboVNC.')
                             # If the TurboVNC process completed less than 3 seconds after it started,
                             # then the Launcher assumes that something went wrong, so it will
