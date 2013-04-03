@@ -1575,7 +1575,8 @@ class LauncherMainFrame(wx.Frame):
                 #logger_debug(traceback.format_exc())
                 pass
 
-            deleteMassiveJobIfNecessary(write_debug_log=False,update_status_bar=True,update_main_progress_bar=False,ignore_errors=False)
+            # Now using ignore_errors=True, because of CVLFAB-449
+            deleteMassiveJobIfNecessary(write_debug_log=False,update_status_bar=True,update_main_progress_bar=False,ignore_errors=True)
 
             launcherMainFrame.loginThread.sshClient.close()
 
@@ -2582,7 +2583,8 @@ class LauncherMainFrame(wx.Frame):
                                 self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
 
                             if self.shouldAbort:
-                                deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,ignore_errors=False)
+                                # Now using ignore_errors=True, because of CVLFAB-449
+                                deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,ignore_errors=True)
                                 if launcherMainFrame.progressDialog != None:
                                     wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                     wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
@@ -2679,7 +2681,8 @@ class LauncherMainFrame(wx.Frame):
                                 error_string = "Couldn't get the requested number of MASSIVE Vis nodes."
                             else:
                                 error_string = "Couldn't get a MASSIVE Vis node."
-                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=False,update_main_progress_bar=False,ignore_errors=False)
+                            # Now using ignore_errors=True, because of CVLFAB-449
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=False,update_main_progress_bar=False,ignore_errors=True)
                             logger_error(error_string)
                             die_from_login_thread(error_string)
                             return
@@ -3059,7 +3062,8 @@ class LauncherMainFrame(wx.Frame):
                                 logger_debug('Error while unlinking private key file...')
                                 logger_debug(traceback.format_exc())
 
-                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,ignore_errors=False)
+                            # Now using ignore_errors=True, because of CVLFAB-449
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,ignore_errors=True)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Terminating the SSH tunnel process.")
 
