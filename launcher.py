@@ -240,18 +240,13 @@ def remaining_visnode_walltime():
     is exiting the launcher.
     """
 
-    ssh_client = ssh.SSHClient()
-    ssh_client.set_missing_host_key_policy(ssh.AutoAddPolicy())
-
     try:
+        ssh_client = ssh.SSHClient()
+        ssh_client.set_missing_host_key_policy(ssh.AutoAddPolicy())
         ssh_client.connect(launcherMainFrame.massiveLoginHost, username=launcherMainFrame.massiveUsername, password=launcherMainFrame.massivePassword)
-    except:
-        return
 
-    stdout, stderr = run_ssh_command(ssh_client, "showq -w class:vis -u " + launcherMainFrame.massiveUsername + " | grep " + launcherMainFrame.massiveUsername, ignore_errors=True)
+        job_id = int(launcherMainFrame.loginThread.massiveJobNumber)
 
-    try:
-        job_id = int(stdout.split()[0])
         if job_has_been_canceled(ssh_client, job_id):
             return
         else: 
