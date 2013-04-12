@@ -1183,11 +1183,20 @@ class LauncherMainFrame(wx.Frame):
         logger = logging.getLogger('launcher')
         logger.setLevel(logging.DEBUG)
         def logger_debug(message):
-            wx.CallAfter(logger.debug, message)
+            if threading.current_thread().name=="MainThread":
+                logger.debug(message)
+            else:
+                wx.CallAfter(logger.debug, message)
         def logger_error(message):
-            wx.CallAfter(logger.error, message)
+            if threading.current_thread().name=="MainThread":
+                logger.error(message)
+            else:
+                wx.CallAfter(logger.error, message)
         def logger_warning(message):
-            wx.CallAfter(logger.warning, message)
+            if threading.current_thread().name=="MainThread":
+                logger.warning(message)
+            else:
+                wx.CallAfter(logger.warning, message)
 
         log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
 

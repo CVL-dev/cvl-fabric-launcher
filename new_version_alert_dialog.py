@@ -133,14 +133,8 @@ class NewVersionAlertDialog(wx.Dialog):
         newVersionAlertPanelSizer.Add(contactEmail2Hyperlink, border=20, flag=wx.LEFT|wx.BORDER)
 
         def onOK(event):
+            self.EndModal(0)
             self.Destroy()
-            #dump_log(submit_log=True)
-            sys.exit(1)
-
-        def onClose(event):
-            self.Destroy()
-            #dump_log(submit_log=True)
-            sys.exit(1)
 
         okButton = wx.Button(newVersionAlertPanel, 1, ' OK ')
         okButton.SetDefault()
@@ -156,7 +150,4 @@ class NewVersionAlertDialog(wx.Dialog):
         newVersionAlertDialogSizer.Add(wx.StaticText(self,label="       "))
         self.SetSizer(newVersionAlertDialogSizer)
         newVersionAlertDialogSizer.Fit(self)
-
-    def OnClose(self, event):
-        self.Destroy()
 
