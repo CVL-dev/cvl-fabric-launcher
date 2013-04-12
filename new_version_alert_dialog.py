@@ -133,7 +133,7 @@ class NewVersionAlertDialog(wx.Dialog):
         newVersionAlertPanelSizer.Add(contactEmail2Hyperlink, border=20, flag=wx.LEFT|wx.BORDER)
 
         def onOK(event):
-            self.EndModal(0)
+            self.EndModal(wx.ID_OK)
             self.Destroy()
 
         okButton = wx.Button(newVersionAlertPanel, 1, ' OK ')
