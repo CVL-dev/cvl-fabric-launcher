@@ -135,12 +135,12 @@ class NewVersionAlertDialog(wx.Dialog):
         def onOK(event):
             self.Destroy()
             #dump_log(submit_log=True)
-            #sys.exit(1)
+            sys.exit(1)
 
         def onClose(event):
             self.Destroy()
             #dump_log(submit_log=True)
-            #sys.exit(1)
+            sys.exit(1)
 
         okButton = wx.Button(newVersionAlertPanel, 1, ' OK ')
         okButton.SetDefault()
