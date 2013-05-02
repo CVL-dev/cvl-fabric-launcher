@@ -1261,6 +1261,8 @@ class LauncherMainFrame(wx.Frame):
             latestVersionNumber = launcher_version_number.version_number
             latestVersionChanges = ''
 
+        launcherMainFrame.latestVersionNumber = latestVersionNumber
+
         if latestVersionNumber != launcher_version_number.version_number:
             import new_version_alert_dialog
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
