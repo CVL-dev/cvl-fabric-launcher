@@ -1245,25 +1245,23 @@ class LauncherMainFrame(wx.Frame):
             html = feed.read()
             myHtmlParser.feed(html)
             myHtmlParser.close()
+
+            latestVersionNumber = myHtmlParser.latestVersionNumber
+            htmlComments = myHtmlParser.htmlComments
+            htmlCommentsSplit1 = htmlComments.split("<pre id=\"CHANGES\">")
+            htmlCommentsSplit2 = htmlCommentsSplit1[1].split("</pre>")
+            latestVersionChanges = htmlCommentsSplit2[0].strip()
+            self.contacted_massive_website = True
         except:
-            dlg = wx.MessageDialog(self, "Error: Unable to contact MASSIVE website to check version number.\n\n" +
-                                        "The launcher cannot continue.\n",
+            self.contacted_massive_website = False
+            dlg = wx.MessageDialog(self, "Warning: Could not contact the MASSIVE website to check version number.\n\n",
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
-            dlg.Destroy()
-            # If we can't contact the MASSIVE website, it's probably because
-            # there's no active network connection, so don't try to submit
-            # the log to cvl.massive.org.au
-            dump_log(submit_log=False)
-            sys.exit(1)
 
-        latestVersionNumber = myHtmlParser.latestVersionNumber
-        htmlComments = myHtmlParser.htmlComments
-        htmlCommentsSplit1 = htmlComments.split("<pre id=\"CHANGES\">")
-        htmlCommentsSplit2 = htmlCommentsSplit1[1].split("</pre>")
-        latestVersionChanges = htmlCommentsSplit2[0].strip()
+            latestVersionNumber = launcher_version_number.version_number
+            latestVersionChanges = ''
 
-        if latestVersionNumber!=launcher_version_number.version_number:
+        if latestVersionNumber != launcher_version_number.version_number:
             import new_version_alert_dialog
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
@@ -1536,30 +1534,45 @@ class LauncherMainFrame(wx.Frame):
 
                     # Check for TurboVNC
 
-                    # Check for the latest version of TurboVNC on the launcher web page:
-                    try:
-                        myHtmlParser = MyHtmlParser('TurboVncLatestVersionNumber')
-                        feed = urllib.urlopen(LAUNCHER_URL)
-                        html = feed.read()
-                        myHtmlParser.feed(html)
-                        myHtmlParser.close()
-                    except:
-                        logger_debug("Exception while checking TurboVNC version number.")
+                    # Check for the latest version of TurboVNC on the launcher web page.
+                    # Don't bother to do this if we couldn't get to the Massive website earlier.
+                    # Somewhat strangely, if the earlier check to Massive failed due to a 404 (or similar)
+                    # then we get wxPython problems here:
+                    # Traceback (most recent call last):
+                    #   File "/opt/sw/32bit/debian/python/2.7.3/lib/python2.7/site-packages/wx-2.8-gtk2-unicode/wx/_core.py", line 14665, in <lambda>
+                    #     lambda event: event.callable(*event.args, **event.kw) )
+                    #   File "launcher.py", line 1549, in error_dialog
+                    #     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    #   File "/opt/sw/32bit/debian/python/2.7.3/lib/python2.7/site-packages/wx-2.8-gtk2-unicode/wx/_windows.py", line 2914, in __init__
+                    #     _windows_.MessageDialog_swiginit(self,_windows_.new_MessageDialog(*args, **kwargs))
+                    # TypeError: in method 'new_MessageDialog', expected argument 1 of type 'wxWindow *'
 
-                        def error_dialog():
-                            dlg = wx.MessageDialog(self, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
-                                                    "The launcher cannot continue.\n",
-                                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                            dlg.ShowModal()
-                            dlg.Destroy()
-                            # If we can't contact the MASSIVE website, it's probably because
-                            # there's no active network connection, so don't try to submit
-                            # the log to cvl.massive.org.au
-                            dump_log(submit_log=False)
-                            sys.exit(1)
-                        wx.CallAfter(error_dialog)
+                    if launcherMainFrame.contacted_massive_website:
+                        try:
+                            myHtmlParser = MyHtmlParser('TurboVncLatestVersionNumber')
+                            feed = urllib.urlopen(LAUNCHER_URL)
+                            html = feed.read()
+                            myHtmlParser.feed(html)
+                            myHtmlParser.close()
+                        except:
+                            logger_debug("Exception while checking TurboVNC version number.")
 
-                    turboVncLatestVersion = myHtmlParser.latestVersionNumber
+                            def error_dialog():
+                                dlg = wx.MessageDialog(self, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
+                                                        "The launcher cannot continue.\n",
+                                                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                dlg.ShowModal()
+                                dlg.Destroy()
+                                # If we can't contact the MASSIVE website, it's probably because
+                                # there's no active network connection, so don't try to submit
+                                # the log to cvl.massive.org.au
+                                dump_log(submit_log=False)
+                                sys.exit(1)
+                            wx.CallAfter(error_dialog)
+
+                        turboVncLatestVersion = myHtmlParser.latestVersionNumber
+                    else:
+                        turboVncLatestVersion = ''
 
                     if sys.platform.startswith("win"):
                         vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
