@@ -1261,8 +1261,6 @@ class LauncherMainFrame(wx.Frame):
             latestVersionNumber = launcher_version_number.version_number
             latestVersionChanges = ''
 
-        launcherMainFrame.latestVersionNumber = latestVersionNumber
-
         if latestVersionNumber != launcher_version_number.version_number:
             import new_version_alert_dialog
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
@@ -2183,7 +2181,8 @@ class LauncherMainFrame(wx.Frame):
                         # Begin if launcherMainFrame.massiveTabSelected:
 
                         # Run sanity check script
-                        run_ssh_command(self.sshClient, "/usr/local/desktop/sanity_check.sh")
+
+                        run_ssh_command(self.sshClient, '/usr/local/desktop/sanity_check.sh ' + launcher_version_number.version_number)
 
                         self.massiveVisNodes = []
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Setting display resolution...")
