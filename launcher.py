@@ -96,7 +96,7 @@ import traceback
 import threading
 import os
 import HTMLParser
-import urllib
+import urllib2
 import launcher_version_number
 import xmlrpclib
 import appdirs
@@ -1241,7 +1241,7 @@ class LauncherMainFrame(wx.Frame):
         # Check for the latest version of the launcher:
         try:
             myHtmlParser = MyHtmlParser('MassiveLauncherLatestVersionNumber')
-            feed = urllib.urlopen(LAUNCHER_URL)
+            feed = urllib2.urlopen(LAUNCHER_URL, timeout=10)
             html = feed.read()
             myHtmlParser.feed(html)
             myHtmlParser.close()
@@ -1550,7 +1550,7 @@ class LauncherMainFrame(wx.Frame):
                     if launcherMainFrame.contacted_massive_website:
                         try:
                             myHtmlParser = MyHtmlParser('TurboVncLatestVersionNumber')
-                            feed = urllib.urlopen(LAUNCHER_URL)
+                            feed = urllib2.urlopen(LAUNCHER_URL, timeout=10)
                             html = feed.read()
                             myHtmlParser.feed(html)
                             myHtmlParser.close()
