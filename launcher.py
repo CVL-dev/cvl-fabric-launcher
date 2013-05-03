@@ -1902,6 +1902,11 @@ class LauncherMainFrame(wx.Frame):
                         logger_error("Failed to authenticate with user's username/password credentials: " + str(e))
                         die_from_login_thread('Authentication error with user %s on server %s' % (self.username, self.host), submit_log=False)
                         return
+                    except:
+                        logger_error("Error when connecting to " + self.host)
+                        logger_error(traceback.format_exc())
+                        die_from_login_thread('Network error when connecting to %s' % (self.host,), submit_log=False)
+                        return
 
                     logger_debug("First login done.")
 
