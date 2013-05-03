@@ -1,8 +1,14 @@
 #!/bin/bash
 
-echo "::: start of /usr/local/desktop/sanity_check.sh"
+echo "::: start of $0"
+echo "::: Checking for version issues..."
+echo "Launcher version $1"
 
-echo "testing 1.. 2.. 3.. sanity_check.sh"
+echo "::: System MOTD..."
+cat /etc/motd
 
-echo "::: end of /usr/local/desktop/sanity_check.sh"
+echo "::: Home Filesystem Quota..."
+check_quota -v
+
+echo "::: end of $0"
 
