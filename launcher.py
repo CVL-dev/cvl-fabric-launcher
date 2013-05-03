@@ -1,21 +1,43 @@
-#  MASSIVE/CVL Launcher - easy secure login for the MASSIVE Desktop and the CVL
-#  Copyright (C) 2012  James Wettenhall, Monash University
+# MASSIVE/CVL Launcher - easy secure login for the MASSIVE Desktop and the CVL
 #
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
+# Copyright (c) 2012-2013, Monash e-Research Centre (Monash University, Australia)
+# All rights reserved.
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+# 
+# In addition, redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+# -  Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+# 
+# -  Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+# 
+# -  Neither the name of the Monash University nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. SEE THE
+# GNU GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#
-#  Enquires: James.Wettenhall@monash.edu or help@massive.org.au
+# Enquires: James.Wettenhall@monash.edu or help@massive.org.au
 
 # launcher.py
 """
@@ -174,18 +196,6 @@ def destroy_dialog(dialog):
 def dump_log(submit_log=False):
     logging.shutdown()
 
-    while True:
-        try:
-            if launcherMainFrame.tidyingUpProgressDialog is None: break
-
-            time.sleep(0.01)
-            wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
-            wx.Yield()
-        except AttributeError:
-            break
-        except wx._core.PyDeadObjectError:
-            break
-
     def yes_no():
         dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
         try:
@@ -213,6 +223,12 @@ def dump_log(submit_log=False):
         # our packaged cacert.pem file:
         if os.path.exists('cacert.pem'):
             r = requests.post(url, files=file_info, verify='cacert.pem')
+        elif os.path.exists('/opt/MassiveLauncher/cacert.pem'):
+            r = requests.post(url, files=file_info, verify='/opt/MassiveLauncher/cacert.pem')
+        elif os.path.exists('c:/program files/massive launcher/cacert.pem'):
+            r = requests.post(url, files=file_info, verify='c:/program files/massive launcher/cacert.pem')
+        elif os.path.exists('c:/program files (x86)/massive launcher/cacert.pem'):
+            r = requests.post(url, files=file_info, verify='c:/program files (x86)/massive launcher/cacert.pem')
         else:
             r = requests.post(url, files=file_info)
 
@@ -246,18 +262,13 @@ def remaining_visnode_walltime():
     is exiting the launcher.
     """
 
-    ssh_client = ssh.SSHClient()
-    ssh_client.set_missing_host_key_policy(ssh.AutoAddPolicy())
-
     try:
+        ssh_client = ssh.SSHClient()
+        ssh_client.set_missing_host_key_policy(ssh.AutoAddPolicy())
         ssh_client.connect(launcherMainFrame.massiveLoginHost, username=launcherMainFrame.massiveUsername, password=launcherMainFrame.massivePassword)
-    except:
-        return
 
-    stdout, stderr = run_ssh_command(ssh_client, "showq -w class:vis -u " + launcherMainFrame.massiveUsername + " | grep " + launcherMainFrame.massiveUsername, ignore_errors=True)
+        job_id = int(launcherMainFrame.loginThread.massiveJobNumber)
 
-    try:
-        job_id = int(stdout.split()[0])
         if job_has_been_canceled(ssh_client, job_id):
             return
         else: 
@@ -265,7 +276,7 @@ def remaining_visnode_walltime():
     except:
         return
 
-def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, update_main_progress_bar=False, update_tidying_up_progress_bar=False, ignore_errors=False):
+def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, update_main_progress_bar=False, ignore_errors=False):
     if launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary:
         return
 
@@ -278,8 +289,6 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
                 wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Deleting MASSIVE Vis node job.")
             if update_main_progress_bar:
                 wx.CallAfter(launcherMainFrame.loginThread.updateProgressDialog, 6, "Deleting MASSIVE Vis node job...")
-            #if update_tidying_up_progress_bar:
-            #    wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 2, "Deleting MASSIVE Vis node job...")
             if write_debug_log:
                 logger_debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
             run_ssh_command(launcherMainFrame.loginThread.sshClient,
@@ -1042,8 +1051,6 @@ class LauncherMainFrame(wx.Frame):
         if self.cvlVncDisplayNumberAutomatic==False:
             self.cvlVncDisplayResolutionComboBox.Disable()
             self.cvlVncDisplayResolutionLabel.Disable()
-            self.cvlVncServerComboBox.Disable()
-            self.cvlVncServerLabel.Disable()
 
         self.cvlSshTunnelCipherLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -1085,38 +1092,6 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.cvlSshTunnelCipherComboBox.SetValue(defaultCipher)
 
-        self.cvlVncServerLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'VNC server')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncServerLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.cvlVncServer = "TigerVNC"
-        defaultVncServer = "TigerVNC"
-        cvlVncServers = ["TigerVNC", "TurboVNC"]
-        self.cvlVncServerComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlVncServers, size=(widgetWidth2, -1), style=wx.CB_READONLY)
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncServerComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
-            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_server"):
-                self.cvlVncServer = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_server")
-            else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_server","")
-                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        else:
-            cvlLauncherConfig.add_section("CVL Launcher Preferences")
-            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        self.cvlVncServer = self.cvlVncServer.strip()
-        if self.cvlVncServer=="":
-            self.cvlVncServer = defaultVncServer
-        if self.cvlVncServer!="":
-            if self.cvlVncServer in cvlVncServers:
-                self.cvlVncServerComboBox.SetSelection(cvlVncServers.index(self.cvlVncServer))
-            else:
-                # Cipher was not found in combo-box.
-                self.cvlVncServerComboBox.SetSelection(-1)
-            self.cvlVncServerComboBox.SetValue(self.cvlVncServer)
-        else:
-            self.cvlVncServerComboBox.SetValue(defaultVncServer)
-
         self.cvlUsernameLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Username')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -1148,8 +1123,7 @@ class LauncherMainFrame(wx.Frame):
         self.cvlVncDisplayNumberPanel.MoveAfterInTabOrder(self.cvlVncDisplayNumberPanel)
         self.cvlVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.cvlVncDisplayNumberPanel)
         self.cvlSshTunnelCipherComboBox.MoveAfterInTabOrder(self.cvlVncDisplayResolutionComboBox)
-        self.cvlVncServerComboBox.MoveAfterInTabOrder(self.cvlSshTunnelCipherComboBox)
-        self.cvlUsernameTextField.MoveAfterInTabOrder(self.cvlVncServerComboBox)
+        self.cvlUsernameTextField.MoveAfterInTabOrder(self.cvlSshTunnelCipherComboBox)
         self.cvlPasswordField.MoveAfterInTabOrder(self.cvlUsernameTextField)
 
         self.cvlShowDebugWindowLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
@@ -1231,11 +1205,20 @@ class LauncherMainFrame(wx.Frame):
         logger = logging.getLogger('launcher')
         logger.setLevel(logging.DEBUG)
         def logger_debug(message):
-            wx.CallAfter(logger.debug, message)
+            if threading.current_thread().name=="MainThread":
+                logger.debug(message)
+            else:
+                wx.CallAfter(logger.debug, message)
         def logger_error(message):
-            wx.CallAfter(logger.error, message)
+            if threading.current_thread().name=="MainThread":
+                logger.error(message)
+            else:
+                wx.CallAfter(logger.error, message)
         def logger_warning(message):
-            wx.CallAfter(logger.warning, message)
+            if threading.current_thread().name=="MainThread":
+                logger.warning(message)
+            else:
+                wx.CallAfter(logger.warning, message)
 
         log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
 
@@ -1338,14 +1321,10 @@ class LauncherMainFrame(wx.Frame):
             self.cvlVncDisplayNumberSpinCtrl.Disable()
             self.cvlVncDisplayResolutionComboBox.Enable()
             self.cvlVncDisplayResolutionLabel.Enable()
-            self.cvlVncServerComboBox.Enable()
-            self.cvlVncServerLabel.Enable()
         else:
             self.cvlVncDisplayNumberSpinCtrl.Enable()
             self.cvlVncDisplayResolutionComboBox.Disable()
             self.cvlVncDisplayResolutionLabel.Disable()
-            self.cvlVncServerComboBox.Disable()
-            self.cvlVncServerLabel.Disable()
 
     def onOptions(self, event):
 
@@ -1385,7 +1364,8 @@ class LauncherMainFrame(wx.Frame):
                 #logger_debug(traceback.format_exc())
                 pass
 
-            deleteMassiveJobIfNecessary(write_debug_log=False,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=False,ignore_errors=False)
+            # Now using ignore_errors=True, because of CVLFAB-449
+            deleteMassiveJobIfNecessary(write_debug_log=False,update_status_bar=True,update_main_progress_bar=False,ignore_errors=True)
 
             launcherMainFrame.loginThread.sshClient.close()
 
@@ -1441,7 +1421,6 @@ class LauncherMainFrame(wx.Frame):
         self.cvlPasswordField.SetCursor(cursor)
         self.cvlVncDisplayResolutionComboBox.SetCursor(cursor)
         self.cvlSshTunnelCipherComboBox.SetCursor(cursor)
-        self.cvlVncServerComboBox.SetCursor(cursor)
 
         self.buttonsPanel.SetCursor(cursor)
         self.optionsButton.SetCursor(cursor)
@@ -1467,10 +1446,6 @@ class LauncherMainFrame(wx.Frame):
                     launcherMainFrame.progressDialog.Update(value, message)
                     self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
                 self.updatingProgressDialog = False
-
-            def updateTidyingUpProgressDialog(self, value, message):
-                if launcherMainFrame.tidyingUpProgressDialog is not None:
-                    launcherMainFrame.tidyingUpProgressDialog.Update(value, message)
 
             def run(self):
                 """Run Worker Thread."""
@@ -1517,7 +1492,6 @@ class LauncherMainFrame(wx.Frame):
                         self.host       = launcherMainFrame.cvlLoginHost
                         self.resolution = launcherMainFrame.cvlVncDisplayResolution
                         self.cipher     = launcherMainFrame.cvlSshTunnelCipher
-                        self.vncServer  = launcherMainFrame.cvlVncServer
                         self.username   = launcherMainFrame.cvlUsername
                         self.password   = launcherMainFrame.cvlPassword
 
@@ -1535,8 +1509,6 @@ class LauncherMainFrame(wx.Frame):
                     logger_debug('host: ' + self.host)
                     logger_debug('resolution: ' + self.resolution)
                     logger_debug('cipher: ' + self.cipher)
-                    if launcherMainFrame.cvlTabSelected:
-                        logger_debug('vncServer: ' + self.vncServer)
                     logger_debug('username: ' + self.username)
                     logger_debug('sys.platform: ' + sys.platform)
 
@@ -1943,7 +1915,7 @@ class LauncherMainFrame(wx.Frame):
                         die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
                         return
 
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair*")
+                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair*", ignore_errors=True)
                     run_ssh_command(self.sshClient, "/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
                     run_ssh_command(self.sshClient, "/bin/mkdir -p ~/.ssh")
                     run_ssh_command(self.sshClient, "/bin/chmod 700 ~/.ssh")
@@ -1951,10 +1923,10 @@ class LauncherMainFrame(wx.Frame):
                     run_ssh_command(self.sshClient, "/bin/chmod 600 ~/.ssh/authorized_keys")
                     run_ssh_command(self.sshClient, "/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys")
                     run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys", log_output=False)
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair.pub")
+                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair.pub", ignore_errors=True)
                     privateKeyString, _ = run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair", log_output=False)
 
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair")
+                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair", ignore_errors=True)
 
                     import tempfile
                     self.privateKeyFile = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
@@ -2219,7 +2191,10 @@ class LauncherMainFrame(wx.Frame):
                         if self.host.startswith("m2"):
                             logger_debug("Checking whether you have any existing jobs in the Vis node queue.")
                             logger_debug("showq -w class:vis -u " + self.username + " | grep " + self.username)
-                            stdoutRead, stderrRead = run_ssh_command(self.sshClient, "showq -w class:vis -u " + self.username + " | grep " + self.username)
+                            # Using ignore_errors=True, because if we run "showq" for a new user, before they
+                            # have submitted any jobs, we can get the following error:
+                            # ERROR:    unknown user specified
+                            stdoutRead, stderrRead = run_ssh_command(self.sshClient, "showq -w class:vis -u " + self.username + " | grep " + self.username, ignore_errors=True)
                             if stdoutRead.strip()!="" and launcherMainFrame.massivePersistentMode==False:
                                 stdoutReadSplit = stdoutRead.split(" ")
                                 jobNumber = stdoutReadSplit[0] # e.g. 3050965
@@ -2392,7 +2367,8 @@ class LauncherMainFrame(wx.Frame):
                                 self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
 
                             if self.shouldAbort:
-                                deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,update_tidying_up_progress_bar=False,ignore_errors=False)
+                                # Now using ignore_errors=True, because of CVLFAB-449
+                                deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=True,ignore_errors=True)
                                 if launcherMainFrame.progressDialog != None:
                                     wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
                                     wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
@@ -2489,7 +2465,8 @@ class LauncherMainFrame(wx.Frame):
                                 error_string = "Couldn't get the requested number of MASSIVE Vis nodes."
                             else:
                                 error_string = "Couldn't get a MASSIVE Vis node."
-                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=False,update_main_progress_bar=False,update_tidying_up_progress_bar=False,ignore_errors=False)
+                            # Now using ignore_errors=True, because of CVLFAB-449
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=False,update_main_progress_bar=False,ignore_errors=True)
                             logger_error(error_string)
                             die_from_login_thread(error_string)
                             return
@@ -2542,8 +2519,7 @@ class LauncherMainFrame(wx.Frame):
 
                         self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
-                            #cvlVncServerCommand = "vncsession --vnc tigervnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
-                            cvlVncServerCommand = "vncsession --vnc " + launcherMainFrame.cvlVncServer.lower() + " --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
+                            cvlVncServerCommand = "vncsession --vnc turbovnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
                             if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                                 cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
                             logger_debug('cvlVncServerCommand: ' + cvlVncServerCommand)
@@ -2850,19 +2826,8 @@ class LauncherMainFrame(wx.Frame):
 
                             wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
                             logger_debug('Now tidying up the environment.')
-                            #maximumTidyingUpProgressBarValue = 4
-
-                            #userCanAbort = False
-                            launcherMainFrame.tidyingUpProgressDialog = None
-
-                            #def initializeTidyingUpProgressDialog():
-                            #    launcherMainFrame.tidyingUpProgressDialog = launcher_progress_dialog.LauncherProgressDialog(launcherMainFrame, wx.ID_ANY, "Tidying up the environment...", "Tidying up the environment...", maximumTidyingUpProgressBarValue, userCanAbort)
-                            #wx.CallAfter(initializeTidyingUpProgressDialog)
-                            #while launcherMainFrame.tidyingUpProgressDialog is None:
-                            #    time.sleep(0.1)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Removing the private key file.")
-                            #wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 1, "Removing the private key file.")
 
                             try:
                                 logger_debug('Removing the private key file')
@@ -2872,19 +2837,15 @@ class LauncherMainFrame(wx.Frame):
                                 logger_debug('Error while unlinking private key file...')
                                 logger_debug(traceback.format_exc())
 
-                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,update_tidying_up_progress_bar=True,ignore_errors=False)
+                            # Now using ignore_errors=True, because of CVLFAB-449
+                            deleteMassiveJobIfNecessary(write_debug_log=True,update_status_bar=True,update_main_progress_bar=False,ignore_errors=True)
 
                             wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Terminating the SSH tunnel process.")
-                            #wx.CallAfter(launcherMainFrame.loginThread.updateTidyingUpProgressDialog, 3, "Terminating the SSH tunnel process.")
 
                             logger_debug('Now terminating the ssh tunnel process.')
                             launcherMainFrame.loginThread.sshTunnelProcess.terminate()
 
                         finally:
-                            if launcherMainFrame.tidyingUpProgressDialog != None:
-                                wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Show, False)
-                                wx.CallAfter(launcherMainFrame.tidyingUpProgressDialog.Destroy)
-
                             logger_debug('In the "finally" clause for tidying up TurboVNC.')
                             # If the TurboVNC process completed less than 3 seconds after it started,
                             # then the Launcher assumes that something went wrong, so it will
@@ -2989,7 +2950,6 @@ class LauncherMainFrame(wx.Frame):
             self.cvlPassword = self.cvlPasswordField.GetValue()
             self.cvlVncDisplayResolution = self.cvlVncDisplayResolutionComboBox.GetValue()
             self.cvlSshTunnelCipher = self.cvlSshTunnelCipherComboBox.GetValue()
-            self.cvlVncServer = self.cvlVncServerComboBox.GetValue()
 
         if launcherMainFrame.massiveTabSelected:
             self.massiveHoursRequested = str(self.massiveHoursField.GetValue())
@@ -3033,7 +2993,6 @@ class LauncherMainFrame(wx.Frame):
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher", self.cvlSshTunnelCipher)
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_server", self.cvlVncServer)
 
         if launcherMainFrame.massiveTabSelected:
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
