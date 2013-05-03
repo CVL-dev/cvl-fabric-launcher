@@ -22,10 +22,16 @@ fi
 PROJECT=$1
 HOURS=$2
 VISNODES=1
-PERSISTENT=False 
-# "True" this will eventually be the default 
-#### M1 will use True now as the default
-#PERSISTENT=True
+
+cluster=`hostname | grep -o m[1-2]`
+
+# Set persistent defaults for each cluster
+if [[ "$cluster" == "m1" ]]; then
+ PERSISTENT=True
+else
+ PERSISTENT=False
+fi
+
 export MASSIVE_PROJECT=$PROJECT
 
 if [ $# -ge 3 ] ; then
@@ -43,7 +49,6 @@ if [ $# -ge 6 ] ; then
   QPEEK=$6
 fi
 
-cluster=`hostname | grep -o m[1-2]`
 
 if [[ "$PERSISTENT" == "True" ]]
 then
@@ -55,9 +60,9 @@ then
      # this is a new job
      if [[ "$cluster" == "m1" ]];
      then
-     jobid_full=`qsub -A $PROJECT -N desktop\_$USER  -l walltime=$HOURS:00:00,nodes=$VISNODES:ppn=12:gpus=2,gres=xsrv,pmem=4000MB /usr/local/desktop/pbs_hold_script`
+     jobid_full=`qsub -A $PROJECT -N desktop\_$USER  -l walltime=$HOURS:00:00,nodes=$VISNODES:ppn=12:gpus=2,gres=xsrv,mem=48000MB /usr/local/desktop/pbs_hold_script`
      else  # m2
-     jobid_full=`qsub -A $PROJECT -N desktop\_$USER -q vis -l walltime=$HOURS:00:00,nodes=$VISNODES:ppn=12:gpus=2,pmem=16000MB /usr/local/desktop/pbs_hold_script`
+     jobid_full=`qsub -A $PROJECT -N desktop\_$USER -q vis -l walltime=$HOURS:00:00,nodes=$VISNODES:ppn=12:gpus=2,mem=192000MB /usr/local/desktop/pbs_hold_script`
      fi
   fi
   echo $jobid_full
@@ -85,5 +90,11 @@ then
     qpeek $jobid
   fi
 else
-  qsub -A $PROJECT -N Desktop -I -q vis -l walltime=$HOURS:0:0,nodes=$VISNODES:ppn=12:gpus=2,mem=192000MB
+  if [[ "$cluster" == "m1" ]];
+  then
+    qsub -A $PROJECT -N desktop\_$USER -I -l walltime=$HOURS:00:00,nodes=$VISNODES:ppn=12:gpus=2,gres=xsrv,mem=48000MB
+    sleep 10
+  else # on m2
+    qsub -A $PROJECT -N Desktop -I -q vis -l walltime=$HOURS:0:0,nodes=$VISNODES:ppn=12:gpus=2,mem=192000MB
+  fi
 fi
