@@ -39,5 +39,5 @@
 #
 # Enquires: James.Wettenhall@monash.edu or help@massive.org.au
 
-version_number = "0.4.2"
+version_number = "0.4.3"
 
