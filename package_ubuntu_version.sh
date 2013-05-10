@@ -23,6 +23,10 @@ cp release/control  $TMP/DEBIAN
 # This is not necessary on Ubuntu 13.04 when building for Ubuntu
 # cp release/postinst $TMP/DEBIAN
 
+# Remove pango from the control file, not needed on Ubuntu 13
+sed -i 's/libpango1.0-dev,//g' $TMP/DEBIAN/control
+
+
 installedSize=`du -sx --exclude DEBIAN $TMP | awk '{print $1}'`
 
 sed -i "s/VERSION/${VERSION}/g" $TMP/DEBIAN/control
