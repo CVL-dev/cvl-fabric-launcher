@@ -177,6 +177,18 @@ class MyHtmlParser(HTMLParser.HTMLParser):
   def handle_comment(self,data):
       self.htmlComments += data.strip()
 
+def unsafe_coerce_to_bool(x):
+    # Apparently getboolean is/isn't broken in Python's RawConfigParser.
+    # http://bugs.python.org/issue10387
+    #
+    # In a sensible language: read x :: Bool
+
+    if type(x) == bool: return x
+
+    if type(x) == str: return x.lower() == 'true'
+
+    raise ValueError, 'Unknown type %s' % str(type(x))
+
 def destroy_dialog(dialog):
     wx.CallAfter(dialog.Hide)
     wx.CallAfter(dialog.Show, False)
@@ -281,7 +293,7 @@ def deleteMassiveJobIfNecessary(write_debug_log=False, update_status_bar=True, u
         return
 
     launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = True
-    if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
+    if launcherMainFrame.massiveTabSelected and not launcherMainFrame.massivePersistentMode:
         if write_debug_log:
             logger_debug('Possibly running qdel for MASSIVE Vis node...')
         if launcherMainFrame.loginThread.massiveJobNumber != "0" and launcherMainFrame.loginThread.deletedMassiveJob == False:
@@ -747,33 +759,48 @@ class LauncherMainFrame(wx.Frame):
         self.massiveHoursAndVisNodesPanel.SetSizerAndFit(self.massiveHoursAndVisNodesPanelSizer)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursAndVisNodesPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
+        # If the user does not have a Massive Launcher Preferences section, create one.
+        if not massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
+
+        # If the user has the old-style massive_persistent_mode option and no new options, migrate to
+        # the new format, consisting of massive_persistent_mode_m1 and massive_persistent_mode_m2.
+        if (massiveLauncherConfig.has_option('MASSIVE Launcher Preferences', 'massive_persistent_mode') and
+           (not massiveLauncherConfig.has_option('MASSIVE Launcher Preferences', 'massive_persistent_mode_m1')) and
+           (not massiveLauncherConfig.has_option('MASSIVE Launcher Preferences', 'massive_persistent_mode_m2'))):
+            # Default for m1 persistent mode: True
+            massiveLauncherConfig.set('MASSIVE Launcher Preferences', 'massive_persistent_mode_m1', True)
+
+            # Default for m2 persistent mode: whatever they had before.
+            massiveLauncherConfig.set('MASSIVE Launcher Preferences', 'massive_persistent_mode_m2', massiveLauncherConfig.get('MASSIVE Launcher Preferences', 'massive_persistent_mode'))
+
+            # Remove the old option.
+            massiveLauncherConfig.remove_option('MASSIVE Launcher Preferences', 'massive_persistent_mode')
+
+        # Fallback to default values
+        if not massiveLauncherConfig.has_option('MASSIVE Launcher Preferences', 'massive_persistent_mode_m1') or \
+           not massiveLauncherConfig.has_option('MASSIVE Launcher Preferences', 'massive_persistent_mode_m2'):
+            massiveLauncherConfig.set('MASSIVE Launcher Preferences', 'massive_persistent_mode_m1', True)
+            massiveLauncherConfig.set('MASSIVE Launcher Preferences', 'massive_persistent_mode_m2', False)
+
+        # Write config to file.
+        with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+            massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+
+        # Now grab the settings
+        self.massivePersistentModeM1 = unsafe_coerce_to_bool(massiveLauncherConfig.get('MASSIVE Launcher Preferences', 'massive_persistent_mode_m1'))
+        self.massivePersistentModeM2 = unsafe_coerce_to_bool(massiveLauncherConfig.get('MASSIVE Launcher Preferences', 'massive_persistent_mode_m2'))
+
         if self.massiveLoginHost.startswith("m1"):
-            self.massivePersistentMode = True
+            self.massivePersistentMode = self.massivePersistentModeM1
         else:
-            self.massivePersistentMode = False
-            if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-                if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_persistent_mode"):
-                    self.massivePersistentMode = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_persistent_mode")
-                    if self.massivePersistentMode.strip() == "":
-                        self.massivePersistentMode = True
-                    else:
-                        if self.massivePersistentMode==True or self.massivePersistentMode=='True':
-                            self.massivePersistentMode = True
-                        else:
-                            self.massivePersistentMode = False
-                else:
-                    massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode","False")
-                    with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                        massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-            else:
-                massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
-                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+            self.massivePersistentMode = self.massivePersistentModeM2
 
         self.massivePersistentModeLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Persistent mode')
         self.massiveLoginFieldsPanelSizer.Add(self.massivePersistentModeLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.massivePersistentModeCheckBox = wx.CheckBox(self.massiveLoginFieldsPanel, wx.ID_ANY, "")
         self.massivePersistentModeCheckBox.SetValue(self.massivePersistentMode)
+        self.massivePersistentModeCheckBox.Bind(wx.EVT_CHECKBOX, self.onMassivePersistentModeCheckboxChanged)
         self.massiveLoginFieldsPanelSizer.Add(self.massivePersistentModeCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveVncDisplayResolutionLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Resolution')
@@ -1272,13 +1299,32 @@ class LauncherMainFrame(wx.Frame):
             dump_log(submit_log=False)
             sys.exit(1)
 
+    def onMassivePersistentModeCheckboxChanged(self, event):
+        selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
+
+        if selectedMassiveLoginHost.startswith('m1'):
+            self.massivePersistentModeM1 = self.massivePersistentModeCheckBox.GetValue()
+            massiveLauncherConfig.set('MASSIVE Launcher Preferences', 'massive_persistent_mode_m1', self.massivePersistentModeM1)
+            self.massivePersistentMode = self.massivePersistentModeM1
+        if selectedMassiveLoginHost.startswith('m2'):
+            self.massivePersistentModeM2 = self.massivePersistentModeCheckBox.GetValue()
+            massiveLauncherConfig.set('MASSIVE Launcher Preferences', 'massive_persistent_mode_m2', self.massivePersistentModeM2)
+            self.massivePersistentMode = self.massivePersistentModeM2
+
+        with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+            massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()
         selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
-        if selectedMassiveLoginHost.startswith("m1"):
-            self.massivePersistentModeCheckBox.SetValue(True)
-        #if selectedMassiveLoginHost.startswith("m2"):
-            #self.massivePersistentModeCheckBox.SetValue(False)
+        if selectedMassiveLoginHost.startswith('m1'):
+            self.massivePersistentModeM1 = unsafe_coerce_to_bool(massiveLauncherConfig.get('MASSIVE Launcher Preferences', 'massive_persistent_mode_m1'))
+            self.massivePersistentMode = self.massivePersistentModeM1
+            self.massivePersistentModeCheckBox.SetValue(self.massivePersistentMode)
+        if selectedMassiveLoginHost.startswith('m2'):
+            self.massivePersistentModeM2 = unsafe_coerce_to_bool(massiveLauncherConfig.get('MASSIVE Launcher Preferences', 'massive_persistent_mode_m2'))
+            self.massivePersistentMode = self.massivePersistentModeM2
+            self.massivePersistentModeCheckBox.SetValue(self.massivePersistentMode)
 
     def onMassiveDebugWindowCheckBoxStateChanged(self, event):
         if launcherMainFrame.logWindow!=None:
@@ -2214,7 +2260,7 @@ class LauncherMainFrame(wx.Frame):
                             # have submitted any jobs, we can get the following error:
                             # ERROR:    unknown user specified
                             stdoutRead, stderrRead = run_ssh_command(self.sshClient, "showq -w class:vis -u " + self.username + " | grep " + self.username, ignore_errors=True)
-                            if stdoutRead.strip()!="" and launcherMainFrame.massivePersistentMode==False:
+                            if stdoutRead.strip()!="" and not launcherMainFrame.massivePersistentMode:
                                 stdoutReadSplit = stdoutRead.split(" ")
                                 jobNumber = stdoutReadSplit[0] # e.g. 3050965
                                 if (launcherMainFrame.progressDialog != None):
@@ -3017,7 +3063,10 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested", self.massiveVisNodesRequested)
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode", self.massivePersistentMode)
+            if selectedMassiveLoginHost.startswith('m1'):
+                massiveLauncherConfig.set('MASSIVE Launcher Preferences', 'massive_persistent_mode_m1', self.massivePersistentModeM1)
+            if selectedMassiveLoginHost.startswith('m2'):
+                massiveLauncherConfig.set('MASSIVE Launcher Preferences', 'massive_persistent_mode_m2', self.massivePersistentModeM2)
 
         if launcherMainFrame.massiveTabSelected:
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
