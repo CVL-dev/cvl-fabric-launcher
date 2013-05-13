@@ -3063,6 +3063,7 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested", self.massiveVisNodesRequested)
+            selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
             if selectedMassiveLoginHost.startswith('m1'):
                 massiveLauncherConfig.set('MASSIVE Launcher Preferences', 'massive_persistent_mode_m1', self.massivePersistentModeM1)
             if selectedMassiveLoginHost.startswith('m2'):
