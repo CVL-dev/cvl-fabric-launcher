@@ -490,6 +490,8 @@ class LauncherMainFrame(wx.Frame):
 
         self.tabbedView = wx.Notebook(self.loginDialogPanel, wx.ID_ANY, style=(wx.NB_TOP))
 
+        self.tabbedView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onTabbedViewChanging)
+
         # MASSIVE tab
 
         self.massiveLoginDialogPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
@@ -910,24 +912,30 @@ class LauncherMainFrame(wx.Frame):
 
         # CVL tab
 
+        # Overall CVL login panel:
         self.cvlLoginDialogPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
-
         self.tabbedView.AddPage(self.cvlLoginDialogPanel, "CVL")
 
         self.cvlLoginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
 
-        self.cvlLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
-        self.cvlLoginFieldsPanelSizer = wx.FlexGridSizer(rows=7, cols=2, vgap=3, hgap=5)
-        self.cvlLoginFieldsPanel.SetSizer(self.cvlLoginFieldsPanelSizer)
+        # Simple login fields: host, username, password, advanced settings checkbox
+        self.cvlSimpleLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
+        self.cvlSimpleLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
+        self.cvlSimpleLoginFieldsPanel.SetSizer(self.cvlSimpleLoginFieldsPanelSizer)
 
-        self.cvlLoginHostLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Host')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.cvlAdvancedLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
+        self.cvlAdvancedLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
+        self.cvlAdvancedLoginFieldsPanel.SetSizer(self.cvlAdvancedLoginFieldsPanelSizer)
+
+        self.cvlLoginHostLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Host')
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlLoginHost = ""
         cvlLoginHosts = ["115.146.93.128","115.146.94.0"]
         defaultCvlHost = "115.146.93.128"
-        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
                 self.cvlLoginHost = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_login_host")
@@ -948,8 +956,8 @@ class LauncherMainFrame(wx.Frame):
                 self.cvlLoginHostComboBox.SetSelection(-1)
             self.cvlLoginHostComboBox.SetValue(self.cvlLoginHost)
 
-        self.cvlVncDisplayNumberLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Display number')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlVncDisplayNumberLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Display number')
+        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlVncDisplayNumberAutomatic = True
         self.cvlVncDisplayNumber = 1
@@ -989,7 +997,7 @@ class LauncherMainFrame(wx.Frame):
             #with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 #cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
-        self.cvlVncDisplayNumberPanel = wx.Panel(self.cvlLoginFieldsPanel, wx.ID_ANY)
+        self.cvlVncDisplayNumberPanel = wx.Panel(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY)
         self.cvlVncDisplayNumberPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=20)
         self.cvlVncDisplayNumberPanel.SetSizer(self.cvlVncDisplayNumberPanelSizer)
 
@@ -1008,11 +1016,11 @@ class LauncherMainFrame(wx.Frame):
 
         self.cvlVncDisplayNumberPanel.SetSizerAndFit(self.cvlVncDisplayNumberPanelSizer)
 
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberPanel, flag=wx.ALIGN_RIGHT|wx.RIGHT, border=10)
+        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberPanel, flag=wx.ALIGN_RIGHT|wx.RIGHT, border=10)
 
 
-        self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Resolution')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Resolution')
+        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         displaySize = wx.DisplaySize()
         desiredWidth = displaySize[0] * 0.99
@@ -1022,8 +1030,8 @@ class LauncherMainFrame(wx.Frame):
         cvlVncDisplayResolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        self.cvlVncDisplayResolutionComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlVncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlVncDisplayResolutionComboBox = wx.ComboBox(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlVncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_vnc_display_resolution"):
                 self.cvlVncDisplayResolution = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_vnc_display_resolution")
@@ -1052,8 +1060,8 @@ class LauncherMainFrame(wx.Frame):
             self.cvlVncDisplayResolutionComboBox.Disable()
             self.cvlVncDisplayResolutionLabel.Disable()
 
-        self.cvlSshTunnelCipherLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlSshTunnelCipherLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
+        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         defaultCipher = ""
         self.cvlSshTunnelCipher = ""
@@ -1064,8 +1072,8 @@ class LauncherMainFrame(wx.Frame):
         else:
             defaultCipher = "arcfour128"
             cvlSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
-        self.cvlSshTunnelCipherComboBox = wx.ComboBox(self.cvlLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlSshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlSshTunnelCipherComboBox = wx.ComboBox(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, value='', choices=cvlSshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher"):
                 self.cvlSshTunnelCipher = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher")
@@ -1092,8 +1100,8 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.cvlSshTunnelCipherComboBox.SetValue(defaultCipher)
 
-        self.cvlUsernameLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Username')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlUsernameLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Username')
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlUsername = ""
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
@@ -1107,35 +1115,36 @@ class LauncherMainFrame(wx.Frame):
             cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        self.cvlUsernameTextField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
+        self.cvlUsernameTextField = wx.TextCtrl(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
         if self.cvlUsername.strip()!="":
             self.cvlUsernameTextField.SelectAll()
 
-        self.cvlPasswordLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Password')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlPasswordLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Password')
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlPasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlPassword = ""
-        self.cvlPasswordField = wx.TextCtrl(self.cvlLoginFieldsPanel, wx.ID_ANY, self.cvlPassword, size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlPasswordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
+        self.cvlPasswordField = wx.TextCtrl(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, self.cvlPassword, size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlPasswordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
 
-        self.cvlVncDisplayNumberPanel.MoveAfterInTabOrder(self.cvlLoginHostComboBox)
-        self.cvlVncDisplayNumberPanel.MoveAfterInTabOrder(self.cvlVncDisplayNumberPanel)
-        self.cvlVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.cvlVncDisplayNumberPanel)
-        self.cvlSshTunnelCipherComboBox.MoveAfterInTabOrder(self.cvlVncDisplayResolutionComboBox)
-        self.cvlUsernameTextField.MoveAfterInTabOrder(self.cvlSshTunnelCipherComboBox)
-        self.cvlPasswordField.MoveAfterInTabOrder(self.cvlUsernameTextField)
+        self.cvlShowAdvancedLoginLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Show advanced options')
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlShowAdvancedLoginLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlAdvancedLoginCheckBox = wx.CheckBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, "")
+        self.cvlAdvancedLoginCheckBox.SetValue(False)
+        self.cvlAdvancedLoginCheckBox.Bind(wx.EVT_CHECKBOX, self.onCvlAdvancedLoginCheckBox)
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlAdvancedLoginCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.cvlShowDebugWindowLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.cvlShowDebugWindowCheckBox = wx.CheckBox(self.cvlLoginFieldsPanel, wx.ID_ANY, "")
+        self.cvlShowDebugWindowLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
+        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlShowDebugWindowCheckBox = wx.CheckBox(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, "")
         self.cvlShowDebugWindowCheckBox.SetValue(False)
         self.cvlShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onCvlDebugWindowCheckBoxStateChanged)
-        self.cvlLoginFieldsPanelSizer.Add(self.cvlShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.cvlLoginFieldsPanel.SetSizerAndFit(self.cvlLoginFieldsPanelSizer)
+        self.cvlSimpleLoginFieldsPanel.SetSizerAndFit(self.cvlSimpleLoginFieldsPanelSizer)
 
-        self.cvlLoginDialogPanelSizer.Add(self.cvlLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
+        self.cvlLoginDialogPanelSizer.Add(self.cvlSimpleLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
+        self.cvlLoginDialogPanelSizer.Add(self.cvlAdvancedLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
 
         self.cvlLoginDialogPanel.SetSizerAndFit(self.cvlLoginDialogPanelSizer)
         self.cvlLoginDialogPanel.Layout()
@@ -1157,7 +1166,7 @@ class LauncherMainFrame(wx.Frame):
         self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
 
         OPTIONS_BUTTON_ID = 1
-        self.optionsButton = wx.Button(self.buttonsPanel, OPTIONS_BUTTON_ID, 'Options...')
+        self.optionsButton = wx.Button(self.buttonsPanel, OPTIONS_BUTTON_ID, 'VNC Options')
         self.buttonsPanelSizer.Add(self.optionsButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
         self.Bind(wx.EVT_BUTTON, self.onOptions, id=OPTIONS_BUTTON_ID)
 
@@ -1272,6 +1281,13 @@ class LauncherMainFrame(wx.Frame):
             dump_log(submit_log=False)
             sys.exit(1)
 
+    def onTabbedViewChanging(self, event):
+        if launcherMainFrame.tabbedView.GetSelection() == 1:
+            if self.cvlAdvancedLoginCheckBox.GetValue():
+                launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
+            else:
+                launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
+
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()
         selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
@@ -1289,6 +1305,12 @@ class LauncherMainFrame(wx.Frame):
         if launcherMainFrame.logWindow!=None:
             if launcherMainFrame.cvlTabSelected:
                 launcherMainFrame.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
+
+    def onCvlAdvancedLoginCheckBox(self, event):
+        if self.cvlAdvancedLoginCheckBox.GetValue():
+            launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
+        else:
+            launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
 
     def onCloseMassiveDebugWindow(self, event):
         if launcherMainFrame.massiveTabSelected:
@@ -1457,7 +1479,7 @@ class LauncherMainFrame(wx.Frame):
                     wx.CallAfter(launcherMainFrame.logTextCtrl.Clear)
 
                     MASSIVE_TAB_INDEX = 0
-                    CVL_TAB_INDEX =1
+                    CVL_TAB_INDEX = 1
 
                     if launcherMainFrame.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
                         launcherMainFrame.massiveTabSelected = True
