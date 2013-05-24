@@ -255,6 +255,44 @@ def job_has_been_canceled(ssh_client, job_id):
     except:
         return None
 
+def find_existing_visnode_job_m1(ssh_client, username):
+    """
+    Created for CVLFAB-546. Look for a job on M1 that is a desktop job.
+    """
+
+    logger_debug('Checking whether you have any existing jobs in the Vis node queue on m1.')
+    logger_debug('qstat -u ' + username)
+
+    stdout, stderr = run_ssh_command(ssh_client, 'qstat -u ' + username, ignore_errors=True)
+
+    if stdout.strip() != '':
+        jobs = [x for x in stdout.split('\n') if len(x) > 0 and x[0].isdigit()]
+        jobs = [x.split() for x in jobs]
+        job_ids = [x[0] for x in jobs]
+
+        logger_debug('Found job IDs: ' + str(job_ids))
+
+        for job_id in job_ids:
+            logger_debug('qstat -f ' + job_id)
+            stdout, _ = run_ssh_command(ssh_client, 'qstat -f ' + job_id, ignore_errors=True)
+            if 'gres=xsrv' in stdout and 'job_state = C' not in stdout: return job_id
+
+    return None
+
+def find_existing_visnode_job_m2(ssh_client, username):
+    logger_debug("Checking whether you have any existing jobs in the Vis node queue.")
+    logger_debug("showq -w class:vis -u " + username + " | grep " + username)
+    # Using ignore_errors=True, because if we run "showq" for a new user, before they
+    # have submitted any jobs, we can get the following error:
+    # ERROR:    unknown user specified
+    stdoutRead, stderrRead = run_ssh_command(ssh_client, "showq -w class:vis -u " + username + " | grep " + username, ignore_errors=True)
+    if stdoutRead.strip() != '':
+        stdoutReadSplit = stdoutRead.split(' ')
+        jobNumber = stdoutReadSplit[0] # e.g. 3050965
+        return jobNumber
+
+    return None
+
 def remaining_visnode_walltime():
     """
     Get the remaining walltime for the user's visnode job. We do
@@ -2207,16 +2245,13 @@ class LauncherMainFrame(wx.Frame):
                         set_display_resolution_cmd = "/usr/local/desktop/set_display_resolution.sh " + self.resolution
                         run_ssh_command(self.sshClient, set_display_resolution_cmd)
 
-                        if self.host.startswith("m2"):
-                            logger_debug("Checking whether you have any existing jobs in the Vis node queue.")
-                            logger_debug("showq -w class:vis -u " + self.username + " | grep " + self.username)
-                            # Using ignore_errors=True, because if we run "showq" for a new user, before they
-                            # have submitted any jobs, we can get the following error:
-                            # ERROR:    unknown user specified
-                            stdoutRead, stderrRead = run_ssh_command(self.sshClient, "showq -w class:vis -u " + self.username + " | grep " + self.username, ignore_errors=True)
-                            if stdoutRead.strip()!="" and launcherMainFrame.massivePersistentMode==False:
-                                stdoutReadSplit = stdoutRead.split(" ")
-                                jobNumber = stdoutReadSplit[0] # e.g. 3050965
+                        if not launcherMainFrame.massivePersistentMode:
+                            existing_visnode_job = None
+
+                            if self.host.startswith("m1"): existing_visnode_job = find_existing_visnode_job_m1(self.sshClient, self.username)
+                            if self.host.startswith("m2"): existing_visnode_job = find_existing_visnode_job_m2(self.sshClient, self.username)
+
+                            if existing_visnode_job:
                                 if (launcherMainFrame.progressDialog != None):
                                     wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
                                     launcherMainFrame.progressDialog = None
@@ -2226,11 +2261,11 @@ class LauncherMainFrame(wx.Frame):
                                 def showExistingJobFoundInVisNodeQueueMessageDialog():
                                     dlg = wx.MessageDialog(launcherMainFrame, "Error: MASSIVE Launcher only allows you to have one job in the Vis node queue.\n\n" +
                                                                             "You already have at least one job in the Vis node queue:\n\n" +
-                                                                            stdoutRead.strip() + "\n\n" +
+                                                                            existing_visnode_job + "\n\n" +
                                                                             "To delete existing Vis node job(s), SSH to\n" +
                                                                             self.host + " and run:\n\n" +
                                                                             "qdel <jobNumber>\n\n" +
-                                                                            "e.g. qdel " + jobNumber + "\n\n" +
+                                                                            "e.g. qdel " + existing_visnode_job + "\n\n" +
                                                             "The launcher cannot continue.\n",
                                                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                                     dlg.ShowModal()
@@ -2247,7 +2282,7 @@ class LauncherMainFrame(wx.Frame):
                                 finally:
                                     dump_log(submit_log=True)
                                     os._exit(1)
-                            if stdoutRead.strip()=="":
+                            else:
                                 logger_debug("You don't have any jobs already in the Vis node queue, which is good.")
 
                         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Checking quota...")
