@@ -275,7 +275,7 @@ def find_existing_visnode_job_m1(ssh_client, username):
         for job_id in job_ids:
             logger_debug('qstat -f ' + job_id)
             stdout, _ = run_ssh_command(ssh_client, 'qstat -f ' + job_id, ignore_errors=True)
-            if 'gres=xsrv' in stdout and 'job_state = C' not in stdout: return job_id
+            if 'gres=xsrv' in stdout: return job_id
 
     return None
 
