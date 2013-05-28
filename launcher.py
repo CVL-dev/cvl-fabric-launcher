@@ -109,6 +109,7 @@ import requests
 import ssh
 from StringIO import StringIO
 import logging
+import sshKeyDist
 
 global transport_logger
 global logger
@@ -1915,6 +1916,13 @@ class LauncherMainFrame(wx.Frame):
 
                     logger_debug("Attempting to log in to " + self.host)
 
+
+		    skd = sshKeyDist.KeyDist(self.username,self.host,launcherMainFrame)
+		    skd.distributeKey()
+		    while (not skd.complete()):
+			wx.Yield()
+                        time.sleep(0.1)
+
                     self.sshClient = ssh.SSHClient()
                     self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
@@ -1933,46 +1941,7 @@ class LauncherMainFrame(wx.Frame):
                     logger_debug("First login done.")
 
                     logger_debug('Calling "module load massive"')
-                    run_ssh_command(self.sshClient, 'module load massive', ignore_errors=True)
 
-                    # Create SSH key pair for tunnel.
-
-                    logger_debug("Generating SSH key-pair for tunnel.")
-
-                    wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Generating SSH key-pair for tunnel...")
-
-                    wx.CallAfter(self.updateProgressDialog, 2, "Generating SSH key-pair for tunnel...")
-                    time.sleep(0.1)
-                    while (self.updatingProgressDialog):
-                        time.sleep(0.1)
-                    if self.shouldAbort:
-                        if (launcherMainFrame.progressDialog != None):
-                            wx.CallAfter(launcherMainFrame.progressDialog.Show, False)
-                            wx.CallAfter(launcherMainFrame.progressDialog.Destroy)
-                            launcherMainFrame.progressDialog = None
-                        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
-                        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
-                        die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
-                        return
-
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair*", ignore_errors=True)
-                    run_ssh_command(self.sshClient, "/usr/bin/ssh-keygen -C \"MASSIVE Launcher\" -N \"\" -t rsa -f ~/MassiveLauncherKeyPair")
-                    run_ssh_command(self.sshClient, "/bin/mkdir -p ~/.ssh")
-                    run_ssh_command(self.sshClient, "/bin/chmod 700 ~/.ssh")
-                    run_ssh_command(self.sshClient, "/bin/touch ~/.ssh/authorized_keys")
-                    run_ssh_command(self.sshClient, "/bin/chmod 600 ~/.ssh/authorized_keys")
-                    run_ssh_command(self.sshClient, "/bin/sed -i -e \"/MASSIVE Launcher/d\" ~/.ssh/authorized_keys")
-                    run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair.pub >> ~/.ssh/authorized_keys", log_output=False)
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair.pub", ignore_errors=True)
-                    privateKeyString, _ = run_ssh_command(self.sshClient, "/bin/cat MassiveLauncherKeyPair", log_output=False)
-
-                    run_ssh_command(self.sshClient, "/bin/rm -f ~/MassiveLauncherKeyPair", ignore_errors=True)
-
-                    import tempfile
-                    self.privateKeyFile = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
-                    self.privateKeyFile.write(privateKeyString)
-                    self.privateKeyFile.flush()
-                    self.privateKeyFile.close()
 
                     if launcherMainFrame.progressDialog is not None:
                         self.shouldAbort = launcherMainFrame.progressDialog.shouldAbort()
@@ -1990,7 +1959,7 @@ class LauncherMainFrame(wx.Frame):
                     # We won't actually create the VNC over SSH tunnel to MASSIVE/CVL yet,
                     # but we will test the Launcher's ability to create a simple tunnel.
 
-                    def createTunnel(localPortNumber,remoteHost,remotePortNumber,tunnelServer,tunnelUsername,tunnelPrivateKeyFileName,testRun):
+                    def createTunnel(localPortNumber,remoteHost,remotePortNumber,tunnelServer,tunnelUsername,testRun):
                         logger_debug("Starting tunnelled SSH session.")
 
                         try:
@@ -2017,33 +1986,6 @@ class LauncherMainFrame(wx.Frame):
                                 chownBinary = "/bin/chown"
                                 chmodBinary = "/bin/chmod"
 
-                            if sys.platform.startswith("win"):
-                                # On Windows Vista/7, the private key file,
-                                # will initially be created without any owner.
-                                # We must set the file's owner before we
-                                # can change the permissions to -rw------.
-                                import getpass
-                                chown_cmd = chownBinary + " \"" + getpass.getuser() + "\" " + tunnelPrivateKeyFileName
-                                logger_debug('chown_cmd: ' + chown_cmd)
-                                chownProcess = subprocess.Popen(chown_cmd,
-                                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                                    universal_newlines=True)
-                                chownStdout, chownStderr = chownProcess.communicate(input="\r\n")
-                                if chownStderr != None and chownStderr.strip()!="":
-                                    logger_debug('stderr from chown_cmd: ' + chownStderr)
-                                if chownStdout != None and chownStdout.strip()!="":
-                                    logger_debug('stdout from chown_cmd: ' + chownStdout)
-
-                            chmod_cmd = chmodBinary + " 600 " + tunnelPrivateKeyFileName
-                            logger_debug('chmod_cmd: ' + chmod_cmd)
-                            chmodProcess = subprocess.Popen(chmod_cmd,
-                                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                                universal_newlines=True)
-                            chmodStdout, chmodStderr = chmodProcess.communicate(input="\r\n")
-                            if chmodStderr != None and chmodStderr.strip()!="":
-                                logger_debug('chmod_cmd stderr: ' + chmodStderr)
-                            if chmodStdout != None and chmodStdout.strip()!="":
-                                logger_debug('chmod_cmd stdout: ' + chmodStdout)
 
                             localPortNumber = str(localPortNumber)
 
@@ -2072,7 +2014,7 @@ class LauncherMainFrame(wx.Frame):
 
                             remotePortNumber = str(remotePortNumber)
 
-                            tunnel_cmd = sshBinary + " -i " + tunnelPrivateKeyFileName + " -c " + self.cipher + " " \
+                            tunnel_cmd = sshBinary + " -c " + self.cipher + " " \
                                 "-t -t " \
                                 "-oStrictHostKeyChecking=no " \
                                 "-L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer + ' "echo tunnel_hello; bash "'
@@ -2123,7 +2065,6 @@ class LauncherMainFrame(wx.Frame):
                     testLocalPortNumber = "0" # Request ephemeral port.
                     testTunnelServer = self.host
                     testTunnelUsername = self.username
-                    testTunnelPrivateKeyFileName = self.privateKeyFile.name
                     if launcherMainFrame.massiveTabSelected:
                         #testRemoteHost = self.massiveVisNodes[0] + "-ib"
                         testRemoteHost = "localhost"
@@ -2134,7 +2075,7 @@ class LauncherMainFrame(wx.Frame):
                         testRemotePortNumber = "5901"
 
                     testRun = True
-                    testTunnelThread = threading.Thread(target=createTunnel, args=(testLocalPortNumber,testRemoteHost,testRemotePortNumber,testTunnelServer,testTunnelUsername,testTunnelPrivateKeyFileName,testRun))
+                    testTunnelThread = threading.Thread(target=createTunnel, args=(testLocalPortNumber,testRemoteHost,testRemotePortNumber,testTunnelServer,testTunnelUsername,testRun))
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Testing SSH tunnelling...")
                     wx.CallAfter(self.updateProgressDialog, 3, "Testing SSH tunnelling...")
@@ -2560,7 +2501,7 @@ class LauncherMainFrame(wx.Frame):
 
                         self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
-                            cvlVncServerCommand = "vncsession --vnc turbovnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
+			    cvlVncServerCommand = "vncsession --otp --vnc turbovnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
                             if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                                 cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
                             logger_debug('cvlVncServerCommand: ' + cvlVncServerCommand)
@@ -2572,6 +2513,10 @@ class LauncherMainFrame(wx.Frame):
                                     lineComponents = line.split(":")
                                     self.cvlVncDisplayNumber = int(lineComponents[-1])
                                     foundDisplayNumber = True
+                                if "Full control one-time password:" in line:
+                                    lineComponents = line.split(":")
+                                    self.password = (lineComponents[-1])
+                                    self.password = self.password.lstrip()
 
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                             logger_debug("CVL VNC Display Number is " + str(self.cvlVncDisplayNumber))
@@ -2589,7 +2534,6 @@ class LauncherMainFrame(wx.Frame):
                     localPortNumber = "0" # Request ephemeral port.
                     tunnelServer = self.host
                     tunnelUsername = self.username
-                    tunnelPrivateKeyFileName = self.privateKeyFile.name
                     if launcherMainFrame.massiveTabSelected:
                         remoteHost = self.massiveVisNodes[0] + "-ib"
                         remotePortNumber = "5901"
@@ -2597,7 +2541,7 @@ class LauncherMainFrame(wx.Frame):
                         remoteHost = "localhost"
                         remotePortNumber = str(5900+self.cvlVncDisplayNumber)
                     testRun = False
-                    tunnelThread = threading.Thread(target=createTunnel, args=(localPortNumber,remoteHost,remotePortNumber,tunnelServer,tunnelUsername,tunnelPrivateKeyFileName,testRun))
+                    tunnelThread = threading.Thread(target=createTunnel, args=(localPortNumber,remoteHost,remotePortNumber,tunnelServer,tunnelUsername,testRun))
 
                     wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Creating secure tunnel...")
 
