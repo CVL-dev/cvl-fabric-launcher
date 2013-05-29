@@ -75,23 +75,22 @@ class KeyDist():
 
         def run(self):
             agentenv = None
+            try:
+                agentenv = os.environ['SSH_AUTH_SOCK']
+            except:
                 try:
-                    agentenv = os.environ['SSH_AUTH_SOCK']
-                except:
-                    try:
-                        agent = subprocess.Popen(sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
-                        stdout = agent.stdout.readlines()
-                        for line in stdout:
-                            match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*); export SSH_AUTH_SOCK;$",line)
-                            if match:
-                                agentenv = match.group('socket')
-                                os.environ['SSH_AUTH_SOCK']=agentenv
-                    except Exception as e:
-                        string = "%s"%e
-                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self,string)
-                newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
-                wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
-
+                    agent = subprocess.Popen(sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+                    stdout = agent.stdout.readlines()
+                    for line in stdout:
+                        match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*); export SSH_AUTH_SOCK;$",line)
+                        if match:
+                            agentenv = match.group('socket')
+                            os.environ['SSH_AUTH_SOCK']=agentenv
+                except Exception as e:
+                    string = "%s"%e
+                    newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self,string)
+            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
+            wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
 
         class genkeyThread(Thread):
             def __init__(self,keydistObject):
