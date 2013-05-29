@@ -1,6 +1,5 @@
 import os
 import subprocess
-import pexpect
 import ssh
 import wx
 import wx.lib.newevent
@@ -9,13 +8,62 @@ from StringIO import StringIO
 import logging
 from threading import *
 import time
+import sys
+from os.path import expanduser
 
-sshKeyGenBinary = "/usr/bin/ssh-keygen"
-sshBinary = "/usr/bin/ssh"
-sshAgentBinary = "/usr/bin/ssh-agent"
-sshAddBinary = "/usr/bin/ssh-add"
-sshKeyPath = "%s/.ssh/MassiveLauncherKey" % os.environ['HOME']
+if sys.platform.startswith('win'):
+    import wexpect
+else:
+    import pexpect
 
+def ssh_binaries():
+    """
+    Locate the ssh binaries on various systems. On Windows we bundle a
+    stripped-down OpenSSH build that uses Cygwin.
+    """
+
+    if sys.platform.startswith('win'):
+        if hasattr(sys, 'frozen'):
+            f = lambda x: '"' + os.path.join(os.path.dirname(sys.executable), x) + '"'
+        else:
+            f = lambda x: '"' + os.path.join(os.getcwd(), "openssh-mls-software-6.2-p1-2", x) + '"'
+
+        sshBinary       = f('ssh.exe')
+        sshKeyGenBinary = f('ssh-keygen.exe')
+        sshAgentBinary  = f('ssh-agent.exe')
+        sshAddBinary    = f('ssh-add.exe')
+        chownBinary     = f('chown.exe')
+        chmodBinary     = f('chmod.exe')
+    elif sys.platform.startswith('darwin'):
+        sshBinary       = '/usr/bin/ssh'
+        sshKeyGenBinary = '/usr/bin/ssh-keygen'
+        sshAgentBinary  = '/usr/bin/ssh-agent'
+        sshAddBinary    = '/usr/bin/ssh-add'
+        chownBinary     = '/usr/sbin/chown'
+        chmodBinary     = '/bin/chmod'
+    else:
+        sshBinary       = '/usr/bin/ssh'
+        sshKeyGenBinary = '/usr/bin/ssh-keygen'
+        sshAgentBinary  = '/usr/bin/ssh-agent'
+        sshAddBinary    = '/usr/bin/ssh-add'
+        chownBinary     = '/bin/chown'
+        chmodBinary     = '/bin/chmod'
+
+    return (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, chownBinary, chmodBinary,)
+
+if sys.platform.startswith('win'):
+    f = lambda x: '"' + os.path.join(os.getcwd(), 'openssh-mls-software-6.2-p1-2', x) + '"'
+    sshKeyGenBinary = f('ssh-keygen.exe')
+    sshBinary       = f('ssh.exe')
+    sshAgentBinary  = f('ssh-agent.exe')
+    sshAddBinary    = f('ssh-add.exe')
+else:
+    sshKeyGenBinary = '/usr/bin/ssh-keygen'
+    sshBinary       = '/usr/bin/ssh'
+    sshAgentBinary  = '/usr/bin/ssh-agent'
+    sshAddBinary    = '/usr/bin/ssh-add'
+
+sshKeyPath = '%s/.ssh/MassiveLauncherKey' % expanduser('~')
 
 class KeyDist():
 

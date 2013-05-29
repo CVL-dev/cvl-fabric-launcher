@@ -1285,9 +1285,9 @@ class LauncherMainFrame(wx.Frame):
     def onTabbedViewChanging(self, event):
         if launcherMainFrame.tabbedView.GetSelection() == 1:
             if self.cvlAdvancedLoginCheckBox.GetValue():
-                launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
+                wx.CallAfter(launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show)
             else:
-                launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
+                wx.CallAfter(launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide)
 
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()
@@ -1309,9 +1309,9 @@ class LauncherMainFrame(wx.Frame):
 
     def onCvlAdvancedLoginCheckBox(self, event):
         if self.cvlAdvancedLoginCheckBox.GetValue():
-            launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
+            wx.CallAfter(launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show)
         else:
-            launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
+            wx.CallAfter(launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide)
 
     def onCloseMassiveDebugWindow(self, event):
         if launcherMainFrame.massiveTabSelected:
@@ -1963,29 +1963,7 @@ class LauncherMainFrame(wx.Frame):
                         logger_debug("Starting tunnelled SSH session.")
 
                         try:
-                            if sys.platform.startswith("win"):
-                                sshBinary = "ssh.exe"
-                                chownBinary = "chown.exe"
-                                chmodBinary = "chmod.exe"
-                                if hasattr(sys, 'frozen'):
-                                    massiveLauncherBinary = sys.executable
-                                    massiveLauncherPath = os.path.dirname(massiveLauncherBinary)
-                                    sshBinary = "\"" + os.path.join(massiveLauncherPath, sshBinary) + "\""
-                                    chownBinary = "\"" + os.path.join(massiveLauncherPath, chownBinary) + "\""
-                                    chmodBinary = "\"" + os.path.join(massiveLauncherPath, chmodBinary) + "\""
-                                else:
-                                    sshBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", sshBinary) + "\""
-                                    chownBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", chownBinary) + "\""
-                                    chmodBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", chmodBinary) + "\""
-                            elif sys.platform.startswith("darwin"):
-                                sshBinary = "/usr/bin/ssh"
-                                chownBinary = "/usr/sbin/chown"
-                                chmodBinary = "/bin/chmod"
-                            else:
-                                sshBinary = "/usr/bin/ssh"
-                                chownBinary = "/bin/chown"
-                                chmodBinary = "/bin/chmod"
-
+                            (sshBinary, _, _, _, chownBinary, chmodBinary,) = sshKeyDist.ssh_binaries()
 
                             localPortNumber = str(localPortNumber)
 
