@@ -491,7 +491,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.tabbedView = wx.Notebook(self.loginDialogPanel, wx.ID_ANY, style=(wx.NB_TOP))
 
-        self.tabbedView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onTabbedViewChanging)
+        self.tabbedView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,  self.onTabbedViewChanged)
 
         # MASSIVE tab
 
@@ -1282,12 +1282,13 @@ class LauncherMainFrame(wx.Frame):
             dump_log(submit_log=False)
             sys.exit(1)
 
-    def onTabbedViewChanging(self, event):
-        if launcherMainFrame.tabbedView.GetSelection() == 1:
+    def onTabbedViewChanged(self, event):
+        event.Skip()
+        if hasattr(self, 'cvlAdvancedLoginCheckBox'):
             if self.cvlAdvancedLoginCheckBox.GetValue():
-                wx.CallAfter(launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show)
+                launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
             else:
-                wx.CallAfter(launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide)
+                launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
 
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()
@@ -1309,9 +1310,9 @@ class LauncherMainFrame(wx.Frame):
 
     def onCvlAdvancedLoginCheckBox(self, event):
         if self.cvlAdvancedLoginCheckBox.GetValue():
-            wx.CallAfter(launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show)
+            launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
         else:
-            wx.CallAfter(launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide)
+            launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
 
     def onCloseMassiveDebugWindow(self, event):
         if launcherMainFrame.massiveTabSelected:
