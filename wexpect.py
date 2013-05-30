@@ -1695,9 +1695,23 @@ class spawn_windows (spawn_unix, object):
             self.args = args[:] # work with a copy
             self.args.insert (0, command)
             self.command = command    
-            
-        command_with_path = which(self.command)
-        if command_with_path is None:
+
+        print self.command, self.args
+        return
+
+        # HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK 
+        #
+        # For some strange reason the cygwin OpenSSH binaries fail the os.access() test
+        # in the `which` function, so here we'll just assume that the full path is supplied
+        # for any command.
+        #
+        # HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK 
+        #
+        # command_with_path = which(self.command)
+        # if command_with_path is None:
+        #    raise ExceptionPexpect ('The command was not found or was not executable: %s.' % self.command)
+        command_with_path = self.command
+        if not os.path.exists(command_with_path):
            raise ExceptionPexpect ('The command was not found or was not executable: %s.' % self.command)
         self.command = command_with_path
         self.args[0] = self.command
