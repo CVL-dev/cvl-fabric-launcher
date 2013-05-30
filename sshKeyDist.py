@@ -16,6 +16,9 @@ if sys.platform.startswith('win'):
 else:
     import pexpect as expect
 
+def double_quote(x):
+    return '"' + x + '"'
+
 def ssh_binaries():
     """
     Locate the ssh binaries on various systems. On Windows we bundle a
@@ -63,7 +66,7 @@ else:
     sshAgentBinary  = '/usr/bin/ssh-agent'
     sshAddBinary    = '/usr/bin/ssh-add'
 
-sshKeyPath = '%s/.ssh/MassiveLauncherKey' % expanduser('~')
+sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey') # FIXME why is this defined up here and replicated in distributeKey() ?
 
 class KeyDist():
 
@@ -147,7 +150,7 @@ class KeyDist():
 
         def run(self):
             print "generating keys"
-            keygencmd = sshKeyGenBinary + " -f " + self.keydistObject.sshKeyPath + " -C \"MASSIVE Launcher\""
+            keygencmd = sshKeyGenBinary + " -f " + double_quote(self.keydistObject.sshKeyPath) + ' -C "MASSIVE Launcher"'
             kg = expect.spawn(keygencmd,env={})
             kg.expect(".*pass.*")
             kg.send(self.keydistObject.password+"\n")
@@ -220,7 +223,7 @@ class KeyDist():
             self.keydistObject = keydistObject
 
         def fingerprint(self):
-            sshKeyGenCmd = sshKeyGenBinary + " -l -f " + self.keydistObject.sshKeyPath + ".pub"
+            sshKeyGenCmd = sshKeyGenBinary + " -l -f " + double_quote(self.keydistObject.sshKeyPath) + ".pub"
             fp = subprocess.Popen(sshKeyGenCmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             stdout = fp.stdout.readlines()
             fp.wait()
@@ -553,6 +556,6 @@ class KeyDist():
 
 
     def distributeKey(self):
-        self.sshKeyPath = '%s/.ssh/MassiveLauncherKey' % expanduser('~')
+        self.sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey')
         event = KeyDist.sshKeyDistEvent(self.EVT_KEYDIST_START, self)
         wx.PostEvent(self.notifywindow.GetEventHandler(), event)
