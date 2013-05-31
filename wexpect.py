@@ -1696,9 +1696,6 @@ class spawn_windows (spawn_unix, object):
             self.args.insert (0, command)
             self.command = command    
 
-        print self.command, self.args
-        return
-
         # HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK 
         #
         # For some strange reason the cygwin OpenSSH binaries fail the os.access() test

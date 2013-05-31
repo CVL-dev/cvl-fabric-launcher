@@ -13,8 +13,10 @@ from os.path import expanduser
 
 if sys.platform.startswith('win'):
     import wexpect as expect
+    newline = '\r\n'
 else:
     import pexpect as expect
+    newline = '\n'
 
 def double_quote(x):
     return '"' + x + '"'
@@ -27,9 +29,9 @@ def ssh_binaries():
 
     if sys.platform.startswith('win'):
         if hasattr(sys, 'frozen'):
-            f = lambda x: '"' + os.path.join(os.path.dirname(sys.executable), x) + '"'
+            f = lambda x: os.path.join(os.path.dirname(sys.executable), x)
         else:
-            f = lambda x: '"' + os.path.join(os.getcwd(), "openssh-mls-software-6.2-p1-2", x) + '"'
+            f = lambda x: os.path.join(os.getcwd(), "openssh-mls-software-6.2-p1-2", x)
 
         sshBinary       = f('ssh.exe')
         sshKeyGenBinary = f('ssh-keygen.exe')
@@ -54,17 +56,8 @@ def ssh_binaries():
 
     return (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, chownBinary, chmodBinary,)
 
-if sys.platform.startswith('win'):
-    f = lambda x: '"' + os.path.join(os.getcwd(), 'openssh-mls-software-6.2-p1-2', x) + '"'
-    sshKeyGenBinary = f('ssh-keygen.exe')
-    sshBinary       = f('ssh.exe')
-    sshAgentBinary  = f('ssh-agent.exe')
-    sshAddBinary    = f('ssh-add.exe')
-else:
-    sshKeyGenBinary = '/usr/bin/ssh-keygen'
-    sshBinary       = '/usr/bin/ssh'
-    sshAgentBinary  = '/usr/bin/ssh-agent'
-    sshAddBinary    = '/usr/bin/ssh-add'
+
+(sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, chownBinary, chmodBinary,) = ssh_binaries()
 
 sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey') # FIXME why is this defined up here and replicated in distributeKey() ?
 
@@ -150,14 +143,23 @@ class KeyDist():
 
         def run(self):
             print "generating keys"
-            keygencmd = sshKeyGenBinary + " -f " + double_quote(self.keydistObject.sshKeyPath) + ' -C "MASSIVE Launcher"'
-            kg = expect.spawn(keygencmd,env={})
+            keygen_args = ['-f', self.keydistObject.sshKeyPath, '-C', 'MASSIVE Launcher']
+            if sys.platform.startswith('win'):
+                kg = expect.spawn(sshKeyGenBinary, args=keygen_args, maxread=1)
+            else:
+                kg = expect.spawn(sshKeyGenBinary, args=keygen_args, env={})
             kg.expect(".*pass.*")
-            kg.send(self.keydistObject.password+"\n")
+            kg.send(self.keydistObject.password + newline)
             kg.expect(".*pass.*")
-            kg.send(self.keydistObject.password+"\n")
-            kg.expect(expect.EOF)
-            kg.close()
+            kg.send(self.keydistObject.password + newline)
+            try:
+                kg.expect([expect.EOF])
+            except:
+                pass
+            finally:
+                time.sleep(1)
+                kg.close()
+
             try:
                 with open(self.keydistObject.sshKeyPath+".pub",'r'): pass
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHFAIL,self.keydistObject) # Auth hasn't really failed but this event will trigger loading the key
@@ -166,6 +168,7 @@ class KeyDist():
             wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
             print "generating exit"
 
+            assert False
 
 
     class listFingerprintsThread(Thread):
@@ -200,8 +203,7 @@ class KeyDist():
 
 
         def run(self):
-            sshCmd = sshBinary + " -o PasswordAuthentication=no -o PubkeyAuthentication=yes -l %s "%self.keydistObject.username + self.keydistObject.host
-            ssh = expect.spawn(sshCmd)
+            ssh = expect.spawn(sshBinary, args=['-o', 'PasswordAuthentication=no', '-o', 'PubkeyAuthentication=yes -l %s ' % self.keydistObject.username + self.keydistObject.host])
             idx = ssh.expect(["Are you sure you want to continue","Permission denied",expect.EOF,".*"])
             if (idx == 0):
                 ssh.send("yes\n")
@@ -235,15 +237,14 @@ class KeyDist():
             return fp,comment
 
         def loadKey(self):
-            sshAddcmd = sshAddBinary + " " + self.keydistObject.sshKeyPath
-            lp = expect.spawn(sshAddcmd)
+            lp = expect.spawn(sshAddBinary, args=[self.keydistObject.sshKeyPath])
             if (self.keydistObject.password != None and len(self.keydistObject.password) > 0):
                 passphrase = self.keydistObject.password
             else:
                 passphrase = ""
             idx = lp.expect(["Identity added",".*pass.*"])
             if (idx != 0):
-                lp.send(passphrase+"\n")
+                lp.send(passphrase + newline)
                 idx = lp.expect(["Identity added","Bad pass",expect.EOF])
                 if (idx == 0):
                     newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
