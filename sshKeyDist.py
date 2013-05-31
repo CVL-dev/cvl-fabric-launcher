@@ -118,6 +118,7 @@ class KeyDist():
             self.keydistObject = keydistObject
 
         def run(self):
+            print 'agent1'
             agentenv = None
             try:
                 agentenv = os.environ['SSH_AUTH_SOCK']
@@ -135,6 +136,7 @@ class KeyDist():
                     newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self,string)
             newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
             wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+            print 'agent9999'
 
     class genkeyThread(Thread):
         def __init__(self,keydistObject):
@@ -168,18 +170,17 @@ class KeyDist():
             wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
             print "generating exit"
 
-            assert False
-
-
     class listFingerprintsThread(Thread):
         def __init__(self,keydistObject):
             Thread.__init__(self)
             self.keydistObject = keydistObject
 
         def run(self):
+            print 'aaa1'
             sshKeyListCmd = sshAddBinary + " -l "
             keylist = subprocess.Popen(sshKeyListCmd, stdout = subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             keylist.wait()
+            print 'aaa2'
             stdout = keylist.stdout.readlines()
             self.keydistObject.fplock.acquire()
             self.keydistObject.fingerprints = []
@@ -195,6 +196,7 @@ class KeyDist():
             else:
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHFAIL,self.keydistObject)
             wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+            print 'aaa99999'
 
     class testAuthThread(Thread):
         def __init__(self,keydistObject):
@@ -203,8 +205,11 @@ class KeyDist():
 
 
         def run(self):
+            print 'zzz1'
             ssh = expect.spawn(sshBinary, args=['-o', 'PasswordAuthentication=no', '-o', 'PubkeyAuthentication=yes -l %s ' % self.keydistObject.username + self.keydistObject.host])
+            print 'zzz2'
             idx = ssh.expect(["Are you sure you want to continue","Permission denied",expect.EOF,".*"])
+            print 'zzz3'
             if (idx == 0):
                 ssh.send("yes\n")
                 idx = ssh.expect(["Are you sure you want to continue","Permission denied",expect.EOF,".*"])
@@ -237,12 +242,20 @@ class KeyDist():
             return fp,comment
 
         def loadKey(self):
-            lp = expect.spawn(sshAddBinary, args=[self.keydistObject.sshKeyPath])
+            print 'loadKey1'
+            if sys.platform.startswith('win'):
+                lp = expect.spawn(sshAddBinary, args=[self.keydistObject.sshKeyPath], maxread=1)
+            else:
+                lp = expect.spawn(sshAddBinary, args=[self.keydistObject.sshKeyPath])
+
+            print 'loadKey2'
             if (self.keydistObject.password != None and len(self.keydistObject.password) > 0):
                 passphrase = self.keydistObject.password
             else:
                 passphrase = ""
             idx = lp.expect(["Identity added",".*pass.*"])
+
+            print 'loadKey3', idx
             if (idx != 0):
                 lp.send(passphrase + newline)
                 idx = lp.expect(["Identity added","Bad pass",expect.EOF])
@@ -259,6 +272,7 @@ class KeyDist():
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED,self.keydistObject)
             wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
             lp.close()
+            print 'loadKey9999'
 
 
         def run(self):

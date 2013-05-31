@@ -1,0 +1,83 @@
+OpenSSH for Windows: Quick Start Guide
+Michael Johnson
+youngmug@users.sourceforge.net
+
+Updated 9 July 2004
+
+
+
+For detailed instructions, please see readme.txt. If you have questions, please check the readme and the online FAQ before contacting me.
+
+In the descriptions of what to type, I use standard command notation. Items enclosed in [] are optional. Text you need to replace with entries is enclosed in <>.
+
+This document is based in large part on the Quick Start Guide for Network Simplicity OpenSSH on Windows by Mark Bradshaw.
+
+
+PLEASE READ THROUGH THE FULL README BEFORE YOU ASK FOR HELP. MANY THINGS ARE EXPLAINED IN MORE DETAIL THERE.
+
+
+
+Install
+-------
+
+Run the setup program and accept the defaults (all categories).
+This will install the OpenSSH server and client in an appropiate place.
+
+
+
+Configuration
+-------------
+1.  Open a command prompt and change to the installation directory (Program Files\OpenSSH is the default).
+
+2.  CD into the bin directory.
+
+3.  Use mkgroup to create a group permissions file. For local groups, use the "-l" switch. For domain groups, use the "-d" switch.
+    For both domain and local, it is best to run the command twice (remember to use >>, not >). If you use both, make sure to edit the file to remove any duplicate entires.
+
+      mkgroup -l >> ..\etc\group      (local groups)
+      mkgroup -d >> ..\etc\group      (domain groups)
+
+4.  Use mkpasswd to add authorized users into the passwd file. For local users, use the "-l" switch. For domain users, use the "-d" switch.
+    For both domain and local, it is best to run the command twice (remember to use >>, not >). If you use both, make sure to edit the file to remove any duplicate entires.
+
+      mkpasswd -l [-u <username>] >> ..\etc\passwd      (local users)
+      mkpasswd -d [-u <username>] >> ..\etc\passwd      (domain users)
+
+    NOTE: To add users from a domain that is not the primary domain of the machine, add the domain name after the user name.
+    NOTE: Ommitting the username switch adds ALL users from the machine or domain, including service accounts and the Guest account.
+
+5.  Start the OpenSSH server.
+
+      net start opensshd
+
+6.  Test the server. Using a seperate machine as the client is best. If you connect but the connection immediately gets dropped, reboot the machine with the server and try connecting again.
+
+
+
+Usage and Important Notes
+-------------------------
+Remember that the CYGWIN OpenSSH utilities are not graphical and are command-line based. Look at PuTTY, SSH Secure Shell, etc for graphical configuration. For more advanced ways to use the programs, look at the manual pages in the documentation directory.
+
+SSH (client program):
+    ssh <user@servername>
+
+SCP (file copy):
+    scp <localfilename> <user@servername>:<destinationdirectory>
+      or
+    scp <user@servername>:<remotefilename> <localfilename>
+      or
+    scp <user@servername>:<remotefilename> <user@otherservername>:<destinationdirectory>
+
+SFTP (ftp):
+    sftp <user@servername>
+
+
+NOTE: While regular SSH provides a familiar Windows commandline, SCP and SFTP as well as the passwd file use Unix-style paths. This is due partly to the Unix history of SSH, and to the Cygwin source of the tools.
+
+Paths in SCP and SFTP as well as the home directory listing in passwd use Unix notation. To access directories outside of the OpenSSH directory structure, use the Cygdrive notation described in readme.txt. Further explanation is in readme.txt.
+
+
+
+Troubleshooting
+---------------
+Troubleshooting tips can be found in the full readme.
