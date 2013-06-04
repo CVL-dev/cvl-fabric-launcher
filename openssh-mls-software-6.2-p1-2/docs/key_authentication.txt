@@ -1,0 +1,72 @@
+OpenSSH for Windows v3.8.1p1-1: Key Authentication
+Michael Johnson
+youngmug@users.sourceforge.net
+
+Updated 9 July 2004
+
+
+NOTE: This document is outdated. You can use this as a reference, but please don't expect it to be accurate. I will update this soon.
+
+
+
+Notes:
+------
+This document does not cover all posibilities of using key authentication, and only covers OpenSSH to OpenSSH key authentication. For setups using commercial SSH or other products, please check the official OpenSSH site at http://www.openssh.com/.
+
+This document assumes that a passwd file has been correctly configured for the user and that the user has been able to successfully log on interactively using a password. Please ensure that these things have been checked before proceeding.
+
+Do not try these steps using the same computer for both the server and client, It will not work. You will need to use seperate computers as client and server.
+
+Please also read the readme file. It will hep you understand the use of Unix-style notation in the examples.
+
+
+Step 1: Generating a Pair of Keys
+---------------------------------
+Key Authentication with SSH uses a unique public/private key pair that you will need to create for the user logging onto the server. The ssh-keygen program is used for creating this key pair. To use the program, simply open a command prompt and type ssh-keygen -t keytype, replacing keytype with dsa, rsa, or rsa1 depending on the type of key pair you want to create. If you receive an error that the command is not recognized, then your path is not set up. In this case, change into the bin subdirectory and run the command from there.
+
+Once you get ssh-keygen to run, it will guide you in the process of creating the key pair. If your passwd is correctly configured, ssh-keygen will want to save the keys in your profile directory.
+
+When the program asks for a passphrase, you can simply press the enter key to leave it blank. IF you enter a passphrase, you will need to enter a passphrase everytime you try to connect, probably the reason you want to use keys. This problem is fixed by using ssh-agent, but it has not been tested under the Windows command prompt. (SECURITY NOTE: Not using a passphrase is dangerous. Anyone who can get the private key that was generated can impersonate that user and log on without having to enter a password. Keep the private key secure.)
+
+When this process is complete, ssh-keygen will attempt to create a key. If you are asked if you want to overwrite existing keys, it is best to cancel. If a key pair already exists, you can use the existing keys.
+
+Either way, the result of this process will be two files in a directory called .ssh in your Windows profile directory. If you chose to create rsa1 keys, you will see files called identity and identity.pub. For dsa keys, you will find id_dsa and id_dsa.pub. For rsa, you will find id_rsa and id_rsa.pub. The files ending in .pub are the public key. The files without an extension are the private key.
+
+
+Step 2: Putting your Public Key on the Server
+---------------------------------------------
+The next step is to put your public key on the server. If you will be connecting to the server in this package, you will need to store the public key in a .ssh subdirectory under your user profile directory. For Unix hosts, connect to the server with ssh as the user. You will need to copy the key to a .ssh directory under the directory you are placed in. If the .ssh directory does not exist on either form of server, you will need to create the directory while you are logged in.
+
+If you are using SCP to copy to a Windows server running this package, copy the public key to /home/username/.ssh/ where username is your logon username. If you are using Windows file sharing or disk, copy the public key to a .ssh directory under your profile directory (usually c:\Documents and Settings\username\).
+
+With either Unix or Windows server, remember the directory path that the key needs to go into. Depending on how much access you have to the server and the OS, you can transfer the .pub key on disk, use NFS or Windows File Sharing, or use SCP. With any method, remember the following points:
+  1.  Only copy the public key (it ends in .pub), the private key should never leave the client computer.
+  2.  Do not remove the public key from the client computer. You can use it for other servers or as backup if it is removed from the server.
+
+
+Step 3: Place Key in the Authorized Keys File
+---------------------------------------------
+The public key you copied to the server will not work without marking it as an authorized key. You will need to append the key you copied to a file called authorized_keys or authorized_keys2.
+
+If you generated dsa or rsa keys and the server is running a version of OpenSSH older than 3.4, you will need to use authorized_keys2. If you are not sure of the version, you can still use authorized_keys2. If you generated rsa1 keys, use authorized_keys.
+
+For a Unix-style server (Linux, etc). change into the .ssh directory for the user and type cat publickeyname >> authorized_keys, replacing publickeyname with the correct name of the public key.
+
+For Windows, use copy /b authorized_keys + publickeyname authorized_keys, replacing publickeyname with the proper key name if authorized_keys exists. If that file does not exist, use copy /b publickeyname authorized_keys.
+
+
+Step 4: Fix StrictModes (Windows Only)
+--------------------------------------
+There have been reports of the server not reading the public key on some Windows servers (particularly the OpenSSH server on Windows XP). If you cannot authenticate correctly using keys, try turning StrictModes off in the sshd.conf file under the etc directory and restarting the service. This usually fixes the problem.
+
+The correct settings to keep StrictModes enabled are being investigated.
+
+
+Step 5:  Using the Keys on Multiple Servers
+-------------------------------------------
+You can use the key pair you generated on other servers for key-based authentication. You don't need to recreate keys for each server, and you should not as it will break any current authentication that might be set up.
+
+
+Final Notes:
+------------
+These instructions are based on steps I have used with Windows to Windows and Linux to Windows configurations. I do not believe that anything has been left out. If there are any problems with the steps in this document, or there are unclear points please contact me at the e-mail address above so that I can improve on this documentation.

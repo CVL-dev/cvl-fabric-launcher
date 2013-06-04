@@ -1,6 +1,5 @@
 import os
 import subprocess
-import pexpect
 import ssh
 import wx
 import wx.lib.newevent
@@ -9,12 +8,58 @@ from StringIO import StringIO
 import logging
 from threading import *
 import time
+import sys
+from os.path import expanduser
 
-sshKeyGenBinary="/usr/bin/ssh-keygen"
-sshBinary="/usr/bin/ssh"
-sshAgentBinary="/usr/bin/ssh-agent"
-sshAddBinary="/usr/bin/ssh-add"
-sshKeyPath="%s/.ssh/MassiveLauncherKey"%os.environ['HOME']
+if sys.platform.startswith('win'):
+    import wexpect as expect
+    newline = '\r\n'
+else:
+    import pexpect as expect
+    newline = '\n'
+
+def double_quote(x):
+    return '"' + x + '"'
+
+def ssh_binaries():
+    """
+    Locate the ssh binaries on various systems. On Windows we bundle a
+    stripped-down OpenSSH build that uses Cygwin.
+    """
+
+    if sys.platform.startswith('win'):
+        if hasattr(sys, 'frozen'):
+            f = lambda x: os.path.join(os.path.dirname(sys.executable), x)
+        else:
+            f = lambda x: os.path.join(os.getcwd(), "openssh-mls-software-6.2-p1-2", x)
+
+        sshBinary       = f('ssh.exe')
+        sshKeyGenBinary = f('ssh-keygen.exe')
+        sshAgentBinary  = f('ssh-agent.exe')
+        sshAddBinary    = f('ssh-add.exe')
+        chownBinary     = f('chown.exe')
+        chmodBinary     = f('chmod.exe')
+    elif sys.platform.startswith('darwin'):
+        sshBinary       = '/usr/bin/ssh'
+        sshKeyGenBinary = '/usr/bin/ssh-keygen'
+        sshAgentBinary  = '/usr/bin/ssh-agent'
+        sshAddBinary    = '/usr/bin/ssh-add'
+        chownBinary     = '/usr/sbin/chown'
+        chmodBinary     = '/bin/chmod'
+    else:
+        sshBinary       = '/usr/bin/ssh'
+        sshKeyGenBinary = '/usr/bin/ssh-keygen'
+        sshAgentBinary  = '/usr/bin/ssh-agent'
+        sshAddBinary    = '/usr/bin/ssh-add'
+        chownBinary     = '/bin/chown'
+        chmodBinary     = '/bin/chmod'
+
+    return (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, chownBinary, chmodBinary,)
+
+
+(sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, chownBinary, chmodBinary,) = ssh_binaries()
+
+sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey') # FIXME why is this defined up here and replicated in distributeKey() ?
 
 class KeyDist():
 
@@ -24,29 +69,28 @@ class KeyDist():
         self.completedLock.release()
         return returnval
 
-
     class passphraseDialog(wx.Dialog):
-        def __init__(self,parent,id,title,text,okString,cancelString):
+
+        def __init__(self, parent, id, title, text, okString, cancelString):
             wx.Dialog.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
             self.SetTitle(title)
-            self.panel = wx.Panel(self,-1)    
+            self.panel = wx.Panel(self,-1)
             self.label = wx.StaticText(self.panel, -1, text)
             self.PassphraseField = wx.TextCtrl(self.panel, wx.ID_ANY, style=wx.TE_PASSWORD ^ wx.TE_PROCESS_ENTER)
             self.PassphraseField.SetFocus()
             self.Cancel = wx.Button(self.panel,-1,label=cancelString)
             self.OK = wx.Button(self.panel,-1,label=okString)
-        
-        
+
             self.sizer = wx.FlexGridSizer(2, 2, 5, 5)
             self.sizer.Add(self.label)
             self.sizer.Add(self.PassphraseField)
             self.sizer.Add(self.Cancel)
             self.sizer.Add(self.OK)
-        
+
             self.PassphraseField.Bind(wx.EVT_TEXT_ENTER,self.onEnter)
             self.OK.Bind(wx.EVT_BUTTON,self.onEnter)
             self.Cancel.Bind(wx.EVT_BUTTON,self.onEnter)
-      
+
             self.border = wx.BoxSizer()
             self.border.Add(self.sizer, 0, wx.ALL, 15)
             self.panel.SetSizerAndFit(self.border)
@@ -67,21 +111,17 @@ class KeyDist():
         def getPassword(self):
             val = self.ShowModal()
             return self.password
-     
-     
-    
-     
+
     class startAgentThread(Thread):
         def __init__(self,keydistObject):
             Thread.__init__(self)
             self.keydistObject = keydistObject
 
         def run(self):
+            print 'agent1'
             agentenv = None
             try:
                 agentenv = os.environ['SSH_AUTH_SOCK']
-                newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
-                wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
             except:
                 try:
                     agent = subprocess.Popen(sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
@@ -91,13 +131,12 @@ class KeyDist():
                         if match:
                             agentenv = match.group('socket')
                             os.environ['SSH_AUTH_SOCK']=agentenv
-                    newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
-                    wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
                 except Exception as e:
                     string = "%s"%e
                     newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self,string)
-                    wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
-
+            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
+            wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+            print 'agent9999'
 
     class genkeyThread(Thread):
         def __init__(self,keydistObject):
@@ -105,33 +144,43 @@ class KeyDist():
             self.keydistObject = keydistObject
 
         def run(self):
-            keygencmd = sshKeyGenBinary + " -f " + self.keydistObject.sshKeyPath + " -C \"MASSIVE Launcher\""
-            kg = pexpect.spawn(keygencmd,env={})
+            print "generating keys"
+            keygen_args = ['-f', self.keydistObject.sshKeyPath, '-C', 'MASSIVE Launcher']
+            if sys.platform.startswith('win'):
+                kg = expect.spawn(sshKeyGenBinary, args=keygen_args, maxread=1)
+            else:
+                kg = expect.spawn(sshKeyGenBinary, args=keygen_args, env={})
             kg.expect(".*pass.*")
-            kg.send(self.keydistObject.password+"\n")
+            kg.send(self.keydistObject.password + newline)
             kg.expect(".*pass.*")
-            kg.send(self.keydistObject.password+"\n")
-            kg.expect(pexpect.EOF)
-            kg.close()
-            try:    
+            kg.send(self.keydistObject.password + newline)
+            try:
+                kg.expect([expect.EOF])
+            except:
+                pass
+            finally:
+                time.sleep(1)
+                kg.close()
+
+            try:
                 with open(self.keydistObject.sshKeyPath+".pub",'r'): pass
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHFAIL,self.keydistObject) # Auth hasn't really failed but this event will trigger loading the key
-                wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
             except:
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self.keydistObject,"error generating key")
-                wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
+            wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
+            print "generating exit"
 
-
-    
     class listFingerprintsThread(Thread):
         def __init__(self,keydistObject):
             Thread.__init__(self)
             self.keydistObject = keydistObject
 
         def run(self):
+            print 'aaa1'
             sshKeyListCmd = sshAddBinary + " -l "
             keylist = subprocess.Popen(sshKeyListCmd, stdout = subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             keylist.wait()
+            print 'aaa2'
             stdout = keylist.stdout.readlines()
             self.keydistObject.fplock.acquire()
             self.keydistObject.fingerprints = []
@@ -147,6 +196,7 @@ class KeyDist():
             else:
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHFAIL,self.keydistObject)
             wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+            print 'aaa99999'
 
     class testAuthThread(Thread):
         def __init__(self,keydistObject):
@@ -155,12 +205,14 @@ class KeyDist():
 
 
         def run(self):
-            sshCmd = sshBinary + " -o PasswordAuthentication=no -o PubkeyAuthentication=yes -l %s "%self.keydistObject.username + self.keydistObject.host
-            ssh = pexpect.spawn(sshCmd)
-            idx = ssh.expect(["Are you sure you want to continue","Permission denied",pexpect.EOF,".*"])
+            print 'zzz1'
+            ssh = expect.spawn(sshBinary, args=['-o', 'PasswordAuthentication=no', '-o', 'PubkeyAuthentication=yes -l %s ' % self.keydistObject.username + self.keydistObject.host])
+            print 'zzz2'
+            idx = ssh.expect(["Are you sure you want to continue","Permission denied",expect.EOF,".*"])
+            print 'zzz3'
             if (idx == 0):
                 ssh.send("yes\n")
-                idx = ssh.expect(["Are you sure you want to continue","Permission denied",pexpect.EOF,".*"])
+                idx = ssh.expect(["Are you sure you want to continue","Permission denied",expect.EOF,".*"])
             if (idx in [1, 2]):
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHFAIL,self.keydistObject)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
@@ -168,9 +220,9 @@ class KeyDist():
                 ssh.send("exit\n")
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHSUCCESS,self.keydistObject)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
-                idx = ssh.expect([pexpect.EOF])
+                idx = ssh.expect([expect.EOF])
             ssh.close()
-                
+
 
     class getPubkeyThread(Thread):
         def __init__(self,keydistObject):
@@ -178,7 +230,7 @@ class KeyDist():
             self.keydistObject = keydistObject
 
         def fingerprint(self):
-            sshKeyGenCmd = sshKeyGenBinary + " -l -f " + self.keydistObject.sshKeyPath + ".pub"
+            sshKeyGenCmd = sshKeyGenBinary + " -l -f " + double_quote(self.keydistObject.sshKeyPath) + ".pub"
             fp = subprocess.Popen(sshKeyGenCmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             stdout = fp.stdout.readlines()
             fp.wait()
@@ -190,16 +242,23 @@ class KeyDist():
             return fp,comment
 
         def loadKey(self):
-            sshAddcmd = sshAddBinary + " " + self.keydistObject.sshKeyPath 
-            lp = pexpect.spawn(sshAddcmd)
+            print 'loadKey1'
+            if sys.platform.startswith('win'):
+                lp = expect.spawn(sshAddBinary, args=[self.keydistObject.sshKeyPath], maxread=1)
+            else:
+                lp = expect.spawn(sshAddBinary, args=[self.keydistObject.sshKeyPath])
+
+            print 'loadKey2'
             if (self.keydistObject.password != None and len(self.keydistObject.password) > 0):
                 passphrase = self.keydistObject.password
             else:
                 passphrase = ""
             idx = lp.expect(["Identity added",".*pass.*"])
+
+            print 'loadKey3', idx
             if (idx != 0):
-                lp.send(passphrase+"\n")
-                idx = lp.expect(["Identity added","Bad pass",pexpect.EOF])
+                lp.send(passphrase + newline)
+                idx = lp.expect(["Identity added","Bad pass",expect.EOF])
                 if (idx == 0):
                     newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
                 if (idx == 1):
@@ -213,10 +272,11 @@ class KeyDist():
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED,self.keydistObject)
             wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
             lp.close()
+            print 'loadKey9999'
 
 
         def run(self):
-            try:    
+            try:
                 f = open(sshKeyPath+".pub",'r')
                 f.close()
                 self.keydistObject.sshKeyPath = sshKeyPath
@@ -230,10 +290,11 @@ class KeyDist():
                     newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
                     wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
                 self.keydistObject.fplock.release()
-                    
+
             except IOError:
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_REQ,self.keydistObject)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+
 
     class CopyIDThread(Thread):
         def __init__(self,keydist):
@@ -253,6 +314,7 @@ class KeyDist():
                 sftp = sshClient.open_sftp()
                 sftp.put(self.keydistObject.sshKeyPath+".pub",tmpfile)
                 sftp.close()
+
                 sshClient.exec_command("module load massive")
                 sshClient.exec_command("/bin/mkdir -p ~/.ssh")
                 sshClient.exec_command("/bin/chmod 700 ~/.ssh")
@@ -285,23 +347,23 @@ class KeyDist():
                 event.keydist.completed = True
                 event.keydist.completedLock.release()
             event.Skip()
-        
+
         def copyid_fail(event):
             if (event.GetId() == KeyDist.EVT_COPYID_FAIL):
                 event.keydist.copyid(event.string)
             event.Skip()
-        
+
         def test_authorised(event):
             if (event.GetId() == KeyDist.EVT_NOTAUTHORISED):
                 event.keydist.copyid()
             event.Skip()
-        
+
         def loadkey(event):
             if (event.GetId() == KeyDist.EVT_LOADKEY_REQ):
                 event.keydist.loadKey()
             else:
                 event.Skip()
-        
+
 
         def newkey(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_NEWPASS_REQ):
@@ -331,7 +393,7 @@ class KeyDist():
                 event.keydist.workThread.start()
             event.Skip()
 
-    
+
         def cancel(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_CANCEL):
                 if (len(event.string)>0):
@@ -392,7 +454,7 @@ class KeyDist():
             if (event.GetId() == KeyDist.EVT_KEYDIST_KEY_WRONGPASS):
                 wx.CallAfter(event.keydist.GetKeyPassword,"Sorry that password was incorrect. ")
             event.Skip()
-            
+
 
         def authfail(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_AUTHFAIL):
@@ -404,16 +466,16 @@ class KeyDist():
                         pass
                     event.keydist.workThread = KeyDist.getPubkeyThread(event.keydist)
                     event.keydist.workThread.start()
-                else:  
-                    #if they key is loaded into the ssh agent, then authentication failed because the public key isn't on the server.
+                else:
+                    # if they key is loaded into the ssh agent, then authentication failed because the public key isn't on the server.
                     # *****TODO*****
-                    #actually this might not be strictly true. gnome keychain (and possibly others) will report a key loaded even if its still locked
-                    #we probably need a button that says "I can't remember my old keys password, please generate a new keypair"
+                    # actually this might not be strictly true. gnome keychain (and possibly others) will report a key loaded even if its still locked
+                    # we probably need a button that says "I can't remember my old keys password, please generate a new keypair"
                     newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,event.keydist)
                     wx.PostEvent(event.keydist.notifywindow.GetEventHandler(),newevent)
             else:
                 event.Skip()
-                
+
 
         def startevent(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_START):
@@ -421,8 +483,7 @@ class KeyDist():
                 wx.PostEvent(event.keydist.notifywindow.GetEventHandler(),newevent)
             else:
                 event.Skip()
-        
-    
+
     myEVT_CUSTOM_SSHKEYDIST=None
     EVT_CUSTOM_SSHKEYDIST=None
     def __init__(self,username,host,notifywindow):
@@ -469,7 +530,7 @@ class KeyDist():
         self.fplock = Lock()
         self.completedLock = Lock()
 
-            
+
     def GetKeyPassword(self,prepend=""):
         ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'Unlock Key',prepend+"Please enter the passphrase for the key","OK","Cancel")
         password = ppd.getPassword()
@@ -507,9 +568,9 @@ class KeyDist():
         else:
             event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_REQ,self,"The passwords didn't match. ")
         wx.PostEvent(self.notifywindow.GetEventHandler(),event)
-        
+
 
     def distributeKey(self):
-        self.sshKeyPath="%s/.ssh/MassiveLauncherKey"%os.environ['HOME']
-        event = KeyDist.sshKeyDistEvent(self.EVT_KEYDIST_START,self)
-        wx.PostEvent(self.notifywindow.GetEventHandler(),event)
+        self.sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey')
+        event = KeyDist.sshKeyDistEvent(self.EVT_KEYDIST_START, self)
+        wx.PostEvent(self.notifywindow.GetEventHandler(), event)

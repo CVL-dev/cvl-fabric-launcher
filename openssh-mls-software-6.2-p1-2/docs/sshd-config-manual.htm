@@ -1,0 +1,483 @@
+<html><head><title>Manual Pages: sshd_config(5)</title>
+
+<link rev="made" href="mailto:wosch@FreeBSD.ORG">
+<meta name="robots" content="nofollow"></head>
+<body bgcolor="#ffffff" text="#000000">
+<pre>
+SSHD_CONFIG(5)            OpenBSD Programmer's Manual           SSHD_CONFIG(5)
+
+<a name="NAME" href="#end"><b>NAME</b></a>
+     <b>sshd</b><i>_</i><b>config</b> - OpenSSH SSH daemon configuration file
+
+<a name="SYNOPSIS" href="#end"><b>SYNOPSIS</b></a>
+     <i>/etc/ssh/sshd_config</i>
+
+<a name="DESCRIPTION" href="#end"><b>DESCRIPTION</b></a>
+     <b>sshd</b> reads configuration data from <i>/etc/ssh/sshd_config</i> (or the file
+     specified with <b>-f</b> on the command line).  The file contains keyword-argu-
+     ment pairs, one per line.  Lines starting with `#' and empty lines are
+     interpreted as comments.
+
+     The possible keywords and their meanings are as follows (note that key-
+     words are case-insensitive and arguments are case-sensitive):
+
+     <b>AFSTokenPassing</b>
+             Specifies whether an AFS token may be forwarded to the server.
+             Default is ``no''.
+
+     <b>AllowGroups</b>
+             This keyword can be followed by a list of group name patterns,
+             separated by spaces.  If specified, login is allowed only for
+             users whose primary group or supplementary group list matches one
+             of the patterns.  `*' and `?' can be used as wildcards in the
+             patterns.  Only group names are valid; a numerical group ID is
+             not recognized.  By default, login is allowed for all groups.
+
+     <b>AllowTcpForwarding</b>
+             Specifies whether TCP forwarding is permitted.  The default is
+             ``yes''. Note that disabling TCP forwarding does not improve se-
+             curity unless users are also denied shell access, as they can al-
+             ways install their own forwarders.
+
+     <b>AllowUsers</b>
+             This keyword can be followed by a list of user name patterns,
+             separated by spaces.  If specified, login is allowed only for us-
+             er names that match one of the patterns.  `*' and `?' can be used
+             as wildcards in the patterns.  Only user names are valid; a nu-
+             merical user ID is not recognized.  By default, login is allowed
+             for all users.  If the pattern takes the form USER@HOST then USER
+             and HOST are separately checked, restricting logins to particular
+             users from particular hosts.
+
+     <b>AuthorizedKeysFile</b>
+             Specifies the file that contains the public keys that can be used
+             for user authentication.  <b>AuthorizedKeysFile</b> may contain tokens
+             of the form %T which are substituted during connection set-up.
+             The following tokens are defined: %% is replaced by a literal
+             '%', %h is replaced by the home directory of the user being au-
+             thenticated and %u is replaced by the username of that user.  Af-
+             ter expansion, <b>AuthorizedKeysFile</b> is taken to be an absolute path
+             or one relative to the user's home directory.  The default is
+             ``.ssh/authorized_keys''.
+
+     <b>Banner</b>  In some jurisdictions, sending a warning message before authenti-
+             cation may be relevant for getting legal protection.  The con-
+             tents of the specified file are sent to the remote user before
+             authentication is allowed.  This option is only available for
+             protocol version 2.  By default, no banner is displayed.
+
+     <b>ChallengeResponseAuthentication</b>
+             Specifies whether challenge response authentication is allowed.
+             All authentication styles from <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=login.conf&amp;sektion=5&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">login.conf(5)</a> are supported.  The
+
+             default is ``yes''.
+
+     <b>Ciphers</b>
+             Specifies the ciphers allowed for protocol version 2.  Multiple
+             ciphers must be comma-separated.  The default is
+
+               ``aes128-cbc,3des-cbc,blowfish-cbc,cast128-cbc,arcfour,
+                 aes192-cbc,aes256-cbc''
+
+     <b>ClientAliveInterval</b>
+             Sets a timeout interval in seconds after which if no data has
+             been received from the client, <b>sshd</b> will send a message through
+             the encrypted channel to request a response from the client.  The
+             default is 0, indicating that these messages will not be sent to
+             the client.  This option applies to protocol version 2 only.
+
+     <b>ClientAliveCountMax</b>
+             Sets the number of client alive messages (see above) which may be
+             sent without <b>sshd</b> receiving any messages back from the client. If
+             this threshold is reached while client alive messages are being
+             sent, <b>sshd</b> will disconnect the client, terminating the session.
+             It is important to note that the use of client alive messages is
+             very different from <b>KeepAlive</b> (below). The client alive messages
+             are sent through the encrypted channel and therefore will not be
+             spoofable. The TCP keepalive option enabled by <b>KeepAlive</b> is
+             spoofable. The client alive mechanism is valuable when the client
+             or server depend on knowing when a connection has become inac-
+             tive.
+
+             The default value is 3. If <b>ClientAliveInterval</b> (above) is set to
+             15, and <b>ClientAliveCountMax</b> is left at the default, unresponsive
+             ssh clients will be disconnected after approximately 45 seconds.
+
+     <b>Compression</b>
+             Specifies whether compression is allowed.  The argument must be
+             ``yes'' or ``no''. The default is ``yes''.
+
+     <b>DenyGroups</b>
+             This keyword can be followed by a list of group name patterns,
+             separated by spaces.  Login is disallowed for users whose primary
+             group or supplementary group list matches one of the patterns.
+             `*' and `?' can be used as wildcards in the patterns.  Only group
+             names are valid; a numerical group ID is not recognized.  By de-
+             fault, login is allowed for all groups.
+
+     <b>DenyUsers</b>
+             This keyword can be followed by a list of user name patterns,
+             separated by spaces.  Login is disallowed for user names that
+             match one of the patterns.  `*' and `?' can be used as wildcards
+             in the patterns.  Only user names are valid; a numerical user ID
+             is not recognized.  By default, login is allowed for all users.
+             If the pattern takes the form USER@HOST then USER and HOST are
+             separately checked, restricting logins to particular users from
+             particular hosts.
+
+     <b>GatewayPorts</b>
+             Specifies whether remote hosts are allowed to connect to ports
+             forwarded for the client.  By default, <b>sshd</b> binds remote port
+             forwardings to the loopback address.  This prevents other remote
+             hosts from connecting to forwarded ports.  <b>GatewayPorts</b> can be
+             used to specify that <b>sshd</b> should bind remote port forwardings to
+             the wildcard address, thus allowing remote hosts to connect to
+             forwarded ports.  The argument must be ``yes'' or ``no''. The de-
+
+             fault is ``no''.
+
+     <b>HostbasedAuthentication</b>
+             Specifies whether rhosts or /etc/hosts.equiv authentication to-
+             gether with successful public key client host authentication is
+             allowed (hostbased authentication).  This option is similar to
+             <b>RhostsRSAAuthentication</b> and applies to protocol version 2 only.
+             The default is ``no''.
+
+     <b>HostKey</b>
+             Specifies a file containing a private host key used by SSH.  The
+             default is <i>/etc/ssh/ssh_host_key</i> for protocol version 1, and
+             <i>/etc/ssh/ssh_host_rsa_key</i> and <i>/etc/ssh/ssh_host_dsa_key</i> for pro-
+             tocol version 2.  Note that <b>sshd</b> will refuse to use a file if it
+             is group/world-accessible.  It is possible to have multiple host
+             key files.  ``rsa1'' keys are used for version 1 and ``dsa'' or
+             ``rsa'' are used for version 2 of the SSH protocol.
+
+     <b>IgnoreRhosts</b>
+             Specifies that <i>.rhosts</i> and <i>.shosts</i> files will not be used in
+             <b>RhostsAuthentication</b>, <b>RhostsRSAAuthentication</b> or
+             <b>HostbasedAuthentication</b>.
+
+             <i>/etc/hosts.equiv</i> and <i>/etc/shosts.equiv</i> are still used.  The de-
+             fault is ``yes''.
+
+     <b>IgnoreUserKnownHosts</b>
+             Specifies whether <b>sshd</b> should ignore the user's
+             <i>$HOME/.ssh/known_hosts</i> during <b>RhostsRSAAuthentication</b> or
+             <b>HostbasedAuthentication</b>. The default is ``no''.
+
+     <b>KeepAlive</b>
+             Specifies whether the system should send TCP keepalive messages
+             to the other side.  If they are sent, death of the connection or
+             crash of one of the machines will be properly noticed.  However,
+             this means that connections will die if the route is down tem-
+             porarily, and some people find it annoying.  On the other hand,
+             if keepalives are not sent, sessions may hang indefinitely on the
+             server, leaving ``ghost'' users and consuming server resources.
+
+             The default is ``yes'' (to send keepalives), and the server will
+             notice if the network goes down or the client host crashes.  This
+             avoids infinitely hanging sessions.
+
+             To disable keepalives, the value should be set to ``no''.
+
+     <b>KerberosAuthentication</b>
+             Specifies whether Kerberos authentication is allowed.  This can
+             be in the form of a Kerberos ticket, or if <b>PasswordAuthentication</b>
+             is yes, the password provided by the user will be validated
+             through the Kerberos KDC.  To use this option, the server needs a
+             Kerberos servtab which allows the verification of the KDC's iden-
+             tity.  Default is ``no''.
+
+     <b>KerberosOrLocalPasswd</b>
+             If set then if password authentication through Kerberos fails
+             then the password will be validated via any additional local
+             mechanism such as <i>/etc/passwd</i>. Default is ``yes''.
+
+     <b>KerberosTgtPassing</b>
+             Specifies whether a Kerberos TGT may be forwarded to the server.
+             Default is ``no'', as this only works when the Kerberos KDC is
+             actually an AFS kaserver.
+
+     <b>KerberosTicketCleanup</b>
+             Specifies whether to automatically destroy the user's ticket
+
+             cache file on logout.  Default is ``yes''.
+
+     <b>KeyRegenerationInterval</b>
+             In protocol version 1, the ephemeral server key is automatically
+             regenerated after this many seconds (if it has been used).  The
+             purpose of regeneration is to prevent decrypting captured ses-
+             sions by later breaking into the machine and stealing the keys.
+             The key is never stored anywhere.  If the value is 0, the key is
+             never regenerated.  The default is 3600 (seconds).
+
+     <b>ListenAddress</b>
+             Specifies the local addresses <b>sshd</b> should listen on.  The follow-
+             ing forms may be used:
+
+                   <b>ListenAddress</b> <i>host</i>|<i>IPv4_addr</i>|<i>IPv6_addr</i>
+                   <b>ListenAddress</b> <i>host</i>|<i>IPv4_addr</i>:<i>port</i>
+                   <b>ListenAddress</b> [<i>host</i>|<i>IPv6_addr</i>]:<i>port</i>
+
+             If <i>port</i> is not specified, <b>sshd</b> will listen on the address and all
+             prior <b>Port</b> options specified. The default is to listen on all lo-
+             cal addresses.  Multiple <b>ListenAddress</b> options are permitted. Ad-
+             ditionally, any <b>Port</b> options must precede this option for non
+             port qualified addresses.
+
+     <b>LoginGraceTime</b>
+             The server disconnects after this time if the user has not suc-
+             cessfully logged in.  If the value is 0, there is no time limit.
+             The default is 120 seconds.
+
+     <b>LogLevel</b>
+             Gives the verbosity level that is used when logging messages from
+             <b>sshd</b>. The possible values are: QUIET, FATAL, ERROR, INFO, VER-
+             BOSE, DEBUG, DEBUG1, DEBUG2 and DEBUG3.  The default is INFO.
+             DEBUG and DEBUG1 are equivalent.  DEBUG2 and DEBUG3 each specify
+             higher levels of debugging output.  Logging with a DEBUG level
+             violates the privacy of users and is not recommended.
+
+     <b>MACs</b>    Specifies the available MAC (message authentication code) algo-
+             rithms.  The MAC algorithm is used in protocol version 2 for data
+             integrity protection.  Multiple algorithms must be comma-separat-
+             ed.  The default is ``hmac-md5,hmac-sha1,hmac-ripemd160,hmac-
+             sha1-96,hmac-md5-96''.
+
+     <b>MaxStartups</b>
+             Specifies the maximum number of concurrent unauthenticated con-
+             nections to the <b>sshd</b> daemon.  Additional connections will be
+             dropped until authentication succeeds or the <b>LoginGraceTime</b> ex-
+             pires for a connection.  The default is 10.
+
+             Alternatively, random early drop can be enabled by specifying the
+             three colon separated values ``start:rate:full'' (e.g.,
+             "10:30:60").  <b>sshd</b> will refuse connection attempts with a proba-
+             bility of ``rate/100'' (30%) if there are currently ``start''
+             (10) unauthenticated connections.  The probability increases lin-
+             early and all connection attempts are refused if the number of
+             unauthenticated connections reaches ``full'' (60).
+
+     <b>PasswordAuthentication</b>
+             Specifies whether password authentication is allowed.  The de-
+             fault is ``yes''.
+
+     <b>PermitEmptyPasswords</b>
+             When password authentication is allowed, it specifies whether the
+             server allows login to accounts with empty password strings.  The
+
+             default is ``no''.
+
+     <b>PermitRootLogin</b>
+             Specifies whether root can login using <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=ssh&amp;sektion=1&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">ssh(1)</a>. The argument must
+             be ``yes'', ``without-password'', ``forced-commands-only'' or
+             ``no''. The default is ``yes''.
+
+             If this option is set to ``without-password'' password authenti-
+             cation is disabled for root.
+
+             If this option is set to ``forced-commands-only'' root login with
+             public key authentication will be allowed, but only if the
+             <i>command</i> option has been specified (which may be useful for taking
+             remote backups even if root login is normally not allowed). All
+             other authentication methods are disabled for root.
+
+             If this option is set to ``no'' root is not allowed to login.
+
+     <b>PermitUserEnvironment</b>
+             Specifies whether <i>~/.ssh/environment</i> and <b>environment=</b> options in
+             <i>~/.ssh/authorized_keys</i> are processed by <b>sshd</b>. The default is
+             ``no''. Enabling environment processing may enable users to by-
+             pass access restrictions in some configurations using mechanisms
+             such as LD_PRELOAD.
+
+     <b>PidFile</b>
+             Specifies the file that contains the process ID of the <b>sshd</b> dae-
+             mon.  The default is <i>/var/run/sshd.pid</i>.
+
+     <b>Port</b>    Specifies the port number that <b>sshd</b> listens on.  The default is
+             22.  Multiple options of this type are permitted.  See also
+             <b>ListenAddress</b>.
+
+     <b>PrintLastLog</b>
+             Specifies whether <b>sshd</b> should print the date and time when the
+             user last logged in.  The default is ``yes''.
+
+     <b>PrintMotd</b>
+             Specifies whether <b>sshd</b> should print <i>/etc/motd</i> when a user logs in
+             interactively.  (On some systems it is also printed by the shell,
+             <i>/etc/profile</i>, or equivalent.)  The default is ``yes''.
+
+     <b>Protocol</b>
+             Specifies the protocol versions <b>sshd</b> supports.  The possible val-
+             ues are ``1'' and ``2''. Multiple versions must be comma-separat-
+             ed.  The default is ``2,1''. Note that the order of the protocol
+             list does not indicate preference, because the client selects
+             among multiple protocol versions offered by the server.  Specify-
+             ing ``2,1'' is identical to ``1,2''.
+
+     <b>PubkeyAuthentication</b>
+             Specifies whether public key authentication is allowed.  The de-
+             fault is ``yes''. Note that this option applies to protocol ver-
+             sion 2 only.
+
+     <b>RhostsAuthentication</b>
+             Specifies whether authentication using rhosts or /etc/hosts.equiv
+             files is sufficient.  Normally, this method should not be permit-
+             ted because it is insecure.  <b>RhostsRSAAuthentication</b> should be
+             used instead, because it performs RSA-based host authentication
+             in addition to normal rhosts or /etc/hosts.equiv authentication.
+             The default is ``no''. This option applies to protocol version 1
+             only.
+
+     <b>RhostsRSAAuthentication</b>
+             Specifies whether rhosts or /etc/hosts.equiv authentication to-
+             gether with successful RSA host authentication is allowed.  The
+             default is ``no''. This option applies to protocol version 1 on-
+             ly.
+
+     <b>RSAAuthentication</b>
+             Specifies whether pure RSA authentication is allowed.  The de-
+             fault is ``yes''. This option applies to protocol version 1 only.
+
+     <b>ServerKeyBits</b>
+             Defines the number of bits in the ephemeral protocol version 1
+             server key.  The minimum value is 512, and the default is 768.
+
+     <b>StrictModes</b>
+             Specifies whether <b>sshd</b> should check file modes and ownership of
+             the user's files and home directory before accepting login.  This
+             is normally desirable because novices sometimes accidentally
+             leave their directory or files world-writable.  The default is
+             ``yes''.
+
+     <b>Subsystem</b>
+             Configures an external subsystem (e.g., file transfer daemon).
+             Arguments should be a subsystem name and a command to execute up-
+             on subsystem request.  The command <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=sftp-server&amp;sektion=8&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">sftp-server(8)</a> implements the
+             ``sftp'' file transfer subsystem.  By default no subsystems are
+             defined.  Note that this option applies to protocol version 2 on-
+             ly.
+
+     <b>SyslogFacility</b>
+             Gives the facility code that is used when logging messages from
+             <b>sshd</b>. The possible values are: DAEMON, USER, AUTH, LOCAL0, LO-
+             CAL1, LOCAL2, LOCAL3, LOCAL4, LOCAL5, LOCAL6, LOCAL7.  The de-
+             fault is AUTH.
+
+     <b>UseLogin</b>
+             Specifies whether <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=login&amp;sektion=1&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">login(1)</a> is used for interactive login ses-
+             sions.  The default is ``no''. Note that <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=login&amp;sektion=1&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">login(1)</a> is never used
+             for remote command execution.  Note also, that if this is en-
+             abled, <b>X11Forwarding</b> will be disabled because <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=login&amp;sektion=1&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">login(1)</a> does not
+             know how to handle <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=xauth&amp;sektion=1&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">xauth(1)</a> cookies.  If <b>UsePrivilegeSeparation</b>
+             is specified, it will be disabled after authentication.
+
+     <b>UsePrivilegeSeparation</b>
+             Specifies whether <b>sshd</b> separates privileges by creating an un-
+             privileged child process to deal with incoming network traffic.
+             After successful authentication, another process will be created
+             that has the privilege of the authenticated user.  The goal of
+             privilege separation is to prevent privilege escalation by con-
+             taining any corruption within the unprivileged processes.  The
+             default is ``yes''.
+
+     <b>VerifyReverseMapping</b>
+             Specifies whether <b>sshd</b> should try to verify the remote host name
+             and check that the resolved host name for the remote IP address
+             maps back to the very same IP address.  The default is ``no''.
+
+     <b>X11DisplayOffset</b>
+             Specifies the first display number available for <b>sshd</b>'s X11 for-
+             warding.  This prevents <b>sshd</b> from interfering with real X11
+             servers.  The default is 10.
+
+     <b>X11Forwarding</b>
+             Specifies whether X11 forwarding is permitted.  The argument must
+             be ``yes'' or ``no''. The default is ``no''.
+
+             When X11 forwarding is enabled, there may be additional exposure
+             to the server and to client displays if the <b>sshd</b> proxy display is
+             configured to listen on the wildcard address (see <b>X11UseLocalhost</b>
+             below), however this is not the default.  Additionally, the au-
+             thentication spoofing and authentication data verification and
+             substitution occur on the client side.  The security risk of us-
+             ing X11 forwarding is that the client's X11 display server may be
+             exposed to attack when the ssh client requests forwarding (see
+             the warnings for <b>ForwardX11</b> in <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=ssh_config&amp;sektion=5&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">ssh_config(5)</a>). A system adminis-
+             trator may have a stance in which they want to protect clients
+             that may expose themselves to attack by unwittingly requesting
+             X11 forwarding, which can warrant a ``no'' setting.
+
+             Note that disabling X11 forwarding does not prevent users from
+             forwarding X11 traffic, as users can always install their own
+             forwarders.  X11 forwarding is automatically disabled if <b>UseLogin</b>
+             is enabled.
+
+     <b>X11UseLocalhost</b>
+             Specifies whether <b>sshd</b> should bind the X11 forwarding server to
+             the loopback address or to the wildcard address.  By default,
+             <b>sshd</b> binds the forwarding server to the loopback address and sets
+             the hostname part of the DISPLAY environment variable to
+             ``localhost''. This prevents remote hosts from connecting to the
+             proxy display.  However, some older X11 clients may not function
+             with this configuration.  <b>X11UseLocalhost</b> may be set to ``no'' to
+             specify that the forwarding server should be bound to the wild-
+             card address.  The argument must be ``yes'' or ``no''. The de-
+             fault is ``yes''.
+
+     <b>XAuthLocation</b>
+             Specifies the full pathname of the <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=xauth&amp;sektion=1&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">xauth(1)</a> program.  The default
+             is <i>/usr/X11R6/bin/xauth</i>.
+
+   <b>Time Formats</b>
+
+     <b>sshd</b> command-line arguments and configuration file options that specify
+     time may be expressed using a sequence of the form: <i>time</i>[<i>qualifier</i>],
+     where <i>time</i> is a positive integer value and <i>qualifier</i> is one of the fol-
+     lowing:
+
+           &lt;<b>none</b>&gt;  seconds
+           <b>s</b> | <b>S</b>   seconds
+           <b>m</b> | <b>M</b>   minutes
+           <b>h</b> | <b>H</b>   hours
+           <b>d</b> | <b>D</b>   days
+           <b>w</b> | <b>W</b>   weeks
+
+     Each member of the sequence is added together to calculate the total time
+     value.
+
+     Time format examples:
+
+           600     600 seconds (10 minutes)
+           10m     10 minutes
+           1h30m   1 hour 30 minutes (90 minutes)
+
+<a name="FILES" href="#end"><b>FILES</b></a>
+     /etc/ssh/sshd_config
+             Contains configuration data for <b>sshd</b>. This file should be
+             writable by root only, but it is recommended (though not neces-
+             sary) that it be world-readable.
+
+<a name="AUTHORS" href="#end"><b>AUTHORS</b></a>
+     OpenSSH is a derivative of the original and free ssh 1.2.12 release by
+     Tatu Ylonen.  Aaron Campbell, Bob Beck, Markus Friedl, Niels Provos, Theo
+     de Raadt and Dug Song removed many bugs, re-added newer features and cre-
+     ated OpenSSH.  Markus Friedl contributed the support for SSH protocol
+     versions 1.5 and 2.0.  Niels Provos and Markus Friedl contributed support
+     for privilege separation.
+
+<a name="SEE+ALSO" href="#end"><b>SEE ALSO</b></a>
+     <a href="http://www.openbsd.org/cgi-bin/man.cgi?query=sshd&amp;sektion=8&amp;arch=&amp;apropos=0&amp;manpath=OpenBSD+Current">sshd(8)</a>
+
+OpenBSD 3.3                   September 25, 1999                             8
+</pre>
+<a name="end">
+</a><hr noshade="noshade">
+<a href="#NAME">NAME</a> |
+<a href="#SYNOPSIS">SYNOPSIS</a> |
+<a href="#DESCRIPTION">DESCRIPTION</a> |
+<a href="#FILES">FILES</a> |
+<a href="#AUTHORS">AUTHORS</a> |
+<a href="#SEE+ALSO">SEE ALSO</a>
+</body></html>

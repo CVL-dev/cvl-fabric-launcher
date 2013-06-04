@@ -2,26 +2,26 @@
 #
 # Copyright (c) 2012-2013, Monash e-Research Centre (Monash University, Australia)
 # All rights reserved.
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # any later version.
-# 
+#
 # In addition, redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # -  Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
-# 
+#
 # -  Redistributions in binary form must reproduce the above copyright
 # notice, this list of conditions and the following disclaimer in the
 # documentation and/or other materials provided with the distribution.
-# 
+#
 # -  Neither the name of the Monash University nor the names of its
 # contributors may be used to endorse or promote products derived from
 # this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -33,7 +33,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. SEE THE
 # GNU GENERAL PUBLIC LICENSE FOR MORE DETAILS.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -140,43 +140,43 @@ LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massiv
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
 
 class MyHtmlParser(HTMLParser.HTMLParser):
-  def __init__(self, valueString):
-    HTMLParser.HTMLParser.__init__(self)
-    self.recording = 0
-    self.data = []
-    self.recordingLatestVersionNumber = 0
-    self.latestVersionNumber = "0.0.0"
-    self.htmlComments = ""
-    self.valueString = valueString
+    def __init__(self, valueString):
+        HTMLParser.HTMLParser.__init__(self)
+        self.recording = 0
+        self.data = []
+        self.recordingLatestVersionNumber = 0
+        self.latestVersionNumber = "0.0.0"
+        self.htmlComments = ""
+        self.valueString = valueString
 
-  def handle_starttag(self, tag, attributes):
-    if tag != 'span':
-      return
-    if tag == "span":
+    def handle_starttag(self, tag, attributes):
+        if tag != 'span':
+            return
+        if tag == "span":
+            if self.recordingLatestVersionNumber:
+                self.recordingLatestVersionNumber += 1
+                return
+        foundLatestVersionNumberTag = False
+        for name, value in attributes:
+            if name == 'id' and value == self.valueString:
+                foundLatestVersionNumberTag = True
+                break
+        else:
+            return
+        if foundLatestVersionNumberTag:
+            self.recordingLatestVersionNumber = 1
+
+    def handle_endtag(self, tag):
+        if tag == 'span' and self.recordingLatestVersionNumber:
+            self.recordingLatestVersionNumber -= 1
+
+    def handle_data(self, data):
         if self.recordingLatestVersionNumber:
-          self.recordingLatestVersionNumber += 1
-          return
-    foundLatestVersionNumberTag = False
-    for name, value in attributes:
-      if name == 'id' and value == self.valueString:
-        foundLatestVersionNumberTag = True
-        break
-    else:
-      return
-    if foundLatestVersionNumberTag:
-        self.recordingLatestVersionNumber = 1
+            #self.data.append(data)
+            self.latestVersionNumber = data.strip()
 
-  def handle_endtag(self, tag):
-    if tag == 'span' and self.recordingLatestVersionNumber:
-      self.recordingLatestVersionNumber -= 1
-
-  def handle_data(self, data):
-    if self.recordingLatestVersionNumber:
-      #self.data.append(data)
-      self.latestVersionNumber = data.strip()
-
-  def handle_comment(self,data):
-      self.htmlComments += data.strip()
+    def handle_comment(self,data):
+        self.htmlComments += data.strip()
 
 def destroy_dialog(dialog):
     wx.CallAfter(dialog.Hide)
@@ -272,7 +272,7 @@ def remaining_visnode_walltime():
 
         if job_has_been_canceled(ssh_client, job_id):
             return
-        else: 
+        else:
             return seconds_to_hours_minutes(float(run_ssh_command(ssh_client, 'qstat -f %d | grep Remaining' % (job_id,), ignore_errors=True)[0].split()[-1]))
     except:
         return
@@ -491,7 +491,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.tabbedView = wx.Notebook(self.loginDialogPanel, wx.ID_ANY, style=(wx.NB_TOP))
 
-        self.tabbedView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onTabbedViewChanging)
+        self.tabbedView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,  self.onTabbedViewChanged)
 
         # MASSIVE tab
 
@@ -1282,8 +1282,9 @@ class LauncherMainFrame(wx.Frame):
             dump_log(submit_log=False)
             sys.exit(1)
 
-    def onTabbedViewChanging(self, event):
-        if launcherMainFrame.tabbedView.GetSelection() == 1:
+    def onTabbedViewChanged(self, event):
+        event.Skip()
+        if hasattr(self, 'cvlAdvancedLoginCheckBox'):
             if self.cvlAdvancedLoginCheckBox.GetValue():
                 launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
             else:
@@ -1917,10 +1918,10 @@ class LauncherMainFrame(wx.Frame):
                     logger_debug("Attempting to log in to " + self.host)
 
 
-		    skd = sshKeyDist.KeyDist(self.username,self.host,launcherMainFrame)
-		    skd.distributeKey()
-		    while (not skd.complete()):
-			wx.Yield()
+                    skd = sshKeyDist.KeyDist(self.username,self.host,launcherMainFrame)
+                    skd.distributeKey()
+                    while (not skd.complete()):
+                        wx.Yield()
                         time.sleep(0.1)
 
                     self.sshClient = ssh.SSHClient()
@@ -1963,29 +1964,7 @@ class LauncherMainFrame(wx.Frame):
                         logger_debug("Starting tunnelled SSH session.")
 
                         try:
-                            if sys.platform.startswith("win"):
-                                sshBinary = "ssh.exe"
-                                chownBinary = "chown.exe"
-                                chmodBinary = "chmod.exe"
-                                if hasattr(sys, 'frozen'):
-                                    massiveLauncherBinary = sys.executable
-                                    massiveLauncherPath = os.path.dirname(massiveLauncherBinary)
-                                    sshBinary = "\"" + os.path.join(massiveLauncherPath, sshBinary) + "\""
-                                    chownBinary = "\"" + os.path.join(massiveLauncherPath, chownBinary) + "\""
-                                    chmodBinary = "\"" + os.path.join(massiveLauncherPath, chmodBinary) + "\""
-                                else:
-                                    sshBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", sshBinary) + "\""
-                                    chownBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", chownBinary) + "\""
-                                    chmodBinary = "\"" + os.path.join(os.getcwd(), "sshwindows", chmodBinary) + "\""
-                            elif sys.platform.startswith("darwin"):
-                                sshBinary = "/usr/bin/ssh"
-                                chownBinary = "/usr/sbin/chown"
-                                chmodBinary = "/bin/chmod"
-                            else:
-                                sshBinary = "/usr/bin/ssh"
-                                chownBinary = "/bin/chown"
-                                chmodBinary = "/bin/chmod"
-
+                            (sshBinary, _, _, _, chownBinary, chmodBinary,) = sshKeyDist.ssh_binaries()
 
                             localPortNumber = str(localPortNumber)
 
@@ -2303,7 +2282,7 @@ class LauncherMainFrame(wx.Frame):
                             die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
                             return
 
-                        # There are two new options added to the request_visnode.sh script, 
+                        # There are two new options added to the request_visnode.sh script,
                         # which can be used to disable the server-side qstat and qpeek,
                         # both of which require running sleep on the server side.
                         # However neither option is used in this version of the wxPython
@@ -2501,7 +2480,7 @@ class LauncherMainFrame(wx.Frame):
 
                         self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
-			    cvlVncServerCommand = "vncsession --otp --vnc turbovnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
+                            cvlVncServerCommand = "vncsession --otp --vnc turbovnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
                             if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                                 cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
                             logger_debug('cvlVncServerCommand: ' + cvlVncServerCommand)
@@ -3093,4 +3072,3 @@ class MyApp(wx.App):
 if __name__ == '__main__':
     app = MyApp(False) # Don't automatically redirect sys.stdout and sys.stderr to a Window.
     app.MainLoop()
-

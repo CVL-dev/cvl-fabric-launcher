@@ -1,0 +1,61 @@
+Changelog for OpenSSH for Windows
+
+9 July 2004
+ - Updated to OpenSSH 3.8.1p1 and latest cygwin builds of other packages.
+
+  KNOWN ISSUES (Anyone want to help pin these bugs down?):
+  - Installing on Windows Server 2003 might or might not work
+  - Windows Server 2003 is not currently supported, fixed installation procedures will be in a future release
+  - Sometimes, the service doesn't want to start on Windows 2000 SP4. I have not been able to replicate.
+
+
+15 October 2003
+ - Removed chmod in installer - permissions were not working correctly
+ - Moved back to cacls - see above
+
+30 September 2003
+ - Fixed bugs in installer
+ - Added chmod for install support
+
+
+22 September 2003
+ - Updated to Cygwin1.dll v1.5.4
+ - Moved to OpenSSH 3.7.1p1-1 because of security issues found in older versions
+
+ KNOWN ISSUES:
+ - Due to the quick need for this, and changes in NSIS, the installer has cosmetic issues
+ - Some users have reported issues with Windows XP. I have tested this release
+   with a default install with SP1 and have not had issues. I have not been able
+   to test all configurations.
+ - Using the included server with key-based authentication may not work unless
+   you set StrictModes to off. It seems to be an issue with Windows file permissions.
+   I am not considering this problem as a bug, but a solution is being investigated.
+
+
+17 July 2003
+ - Updated to Cygwin1.dll v1.5, which should fix the output problems
+ - Cleaned the log files that were distributed.
+
+
+12 May 2003
+ - Updated documentation, clarifying many points
+
+
+28 April 2003
+ - Updated OpenSSH to Cygwin 3.6.1p1-1
+
+
+24 March 2003
+ - Moved mkpasswd and mkgroup to common tools
+ - Moved scp.exe to common tools (needed for both server and client)
+ - Fixed typo in item descriptions
+ - Added option for quickstart to display after install
+ - Added instructions to create /tmp directory for use by the processes
+ - Added check that install directory was not already in path (for upgrades and reinstall)
+ - Created /home mount for mkpasswd to create proper priv seperation with NT
+ - StrictModes is now set to ON by default for better security
+ - Added document on key-based authentication
+
+
+3 February 2003
+ - Initial Release
