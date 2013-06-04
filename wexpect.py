@@ -427,9 +427,9 @@ class spawn_unix (object):
         self.buffer = '' # This is the read buffer. See maxread.
         self.searchwindowsize = searchwindowsize # Anything before searchwindowsize point is preserved, but not searched.
         # Most Linux machines don't like delaybeforesend to be below 0.03 (30 ms).
-        self.delaybeforesend = 0.05 # Sets sleep time used just before sending data to child. Time in seconds.
-        self.delayafterclose = 0.1 # Sets delay in close() method to allow kernel time to update process status. Time in seconds.
-        self.delayafterterminate = 0.1 # Sets delay in terminate() method to allow kernel time to update process status. Time in seconds.
+        self.delaybeforesend = 0.1 # 0.05 # Sets sleep time used just before sending data to child. Time in seconds.
+        self.delayafterclose = 0.2 # 0.1 # Sets delay in close() method to allow kernel time to update process status. Time in seconds.
+        self.delayafterterminate = 0.3 # 0.1 # Sets delay in terminate() method to allow kernel time to update process status. Time in seconds.
         self.softspace = False # File-like object.
         self.name = '<' + repr(self) + '>' # File-like object.
         self.encoding = None # File-like object.
