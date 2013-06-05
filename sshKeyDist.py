@@ -10,6 +10,7 @@ from threading import *
 import time
 import sys
 from os.path import expanduser
+import subprocess
 import traceback
 
 if sys.platform.startswith('win'):
@@ -60,7 +61,7 @@ def ssh_binaries():
 
 (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, chownBinary, chmodBinary,) = ssh_binaries()
 
-sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey') # FIXME why is this defined up here and replicated in distributeKey() ?
+sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey')
 
 class KeyDist():
 
@@ -73,7 +74,7 @@ class KeyDist():
     class passphraseDialog(wx.Dialog):
 
         def __init__(self, parent, id, title, text, okString, cancelString):
-            wx.Dialog.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+            wx.Dialog.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER | wx.STAY_ON_TOP)
             self.SetTitle(title)
             self.panel = wx.Panel(self,-1)
             self.label = wx.StaticText(self.panel, -1, text)
@@ -210,7 +211,6 @@ class KeyDist():
             Thread.__init__(self)
             self.keydistObject = keydistObject
 
-
         def run(self):
             print 'testAuthThread: run()'
 
@@ -303,7 +303,6 @@ class KeyDist():
                     print 'loadKey(): exception: ' + str(e)
                     nr_attempts += 1
 
-
         def run(self):
             try:
                 f = open(sshKeyPath+".pub",'r')
@@ -352,10 +351,15 @@ class KeyDist():
                 sshClient.exec_command("/bin/cat %s >> ~/.ssh/authorized_keys"%tmpfile)
                 sshClient.exec_command("/bin/rm -f %s"%tmpfile)
                 sshClient.close()
+                print "copy id generating test auth afer success"
+                self.keydistObject.keycopiedLock.acquire()
+                self.keydistObject.keycopied=True
+                self.keydistObject.keycopiedLock.release()
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self.keydistObject)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
             except ssh.AuthenticationException as e:
                 string = "%s"%e
+                print "copy id thread, NEEDPASS"
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,self.keydistObject,string)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
             except ssh.SSHException as e:
@@ -398,6 +402,7 @@ class KeyDist():
             if (event.GetId() == KeyDist.EVT_KEYDIST_NEWPASS_REQ):
                 wx.CallAfter(event.keydist.getNewPassphrase_stage1,event.string)
             if (event.GetId() == KeyDist.EVT_KEYDIST_NEWPASS_RPT):
+                print "received NEWPASS_RPT"
                 wx.CallAfter(event.keydist.getNewPassphrase_stage2)
             if (event.GetId() == KeyDist.EVT_KEYDIST_NEWPASS_COMPLETE):
                 try:
@@ -418,6 +423,7 @@ class KeyDist():
                         event.keydist.workThread.join()
                 except RuntimeError:
                     pass
+                print "creating CopyID Thread"
                 event.keydist.workThread = KeyDist.CopyIDThread(event.keydist)
                 event.keydist.workThread.start()
             event.Skip()
@@ -469,6 +475,7 @@ class KeyDist():
             if (event.GetId() == KeyDist.EVT_KEYDIST_TESTAUTH):
                 try:
                     if (event.keydist.workThread != None):
+                        print "waiting for previous thread to join"
                         event.keydist.workThread.join()
                 except RuntimeError:
                     pass
@@ -500,8 +507,17 @@ class KeyDist():
                     # *****TODO*****
                     # actually this might not be strictly true. gnome keychain (and possibly others) will report a key loaded even if its still locked
                     # we probably need a button that says "I can't remember my old keys password, please generate a new keypair"
-                    newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,event.keydist)
-                    wx.PostEvent(event.keydist.notifywindow.GetEventHandler(),newevent)
+                    event.keydist.keycopiedLock.acquire()
+                    keycopied=event.keydist.keycopied
+                    event.keydist.keycopiedLock.release()
+                    if (keycopied):
+                        print "auth failed but key copied, retry auth"
+                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,event.keydist)
+                        wx.PostEvent(event.keydist.notifywindow.GetEventHandler(),newevent)
+                    else:
+                        print "autfail event, key is loaded, but we can't log copy the id"
+                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,event.keydist)
+                        wx.PostEvent(event.keydist.notifywindow.GetEventHandler(),newevent)
             else:
                 event.Skip()
 
@@ -558,6 +574,8 @@ class KeyDist():
         self.password = None
         self.fplock = Lock()
         self.completedLock = Lock()
+        self.keycopiedLock=Lock()
+        self.keycopied=False
 
 
     def GetKeyPassword(self,prepend=""):
@@ -567,10 +585,12 @@ class KeyDist():
             event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self)
         else:
             self.password = password
+            print "Get Key Password, generating AUTHFAIL"
             event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHFAIL,self)
         wx.PostEvent(self.notifywindow.GetEventHandler(),event)
 
     def getLoginPassword(self,prepend=""):
+        print "get login password"
         ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'Login Passphrase',prepend+"Please enter your login password for username %s at %s"%(self.username,self.host),"OK","Cancel")
         password = ppd.getPassword()
         self.password = password
@@ -600,6 +620,6 @@ class KeyDist():
 
 
     def distributeKey(self):
-        self.sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey')
+        self.sshKeyPath = sshKeyPath
         event = KeyDist.sshKeyDistEvent(self.EVT_KEYDIST_START, self)
         wx.PostEvent(self.notifywindow.GetEventHandler(), event)

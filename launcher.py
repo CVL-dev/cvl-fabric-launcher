@@ -1121,13 +1121,6 @@ class LauncherMainFrame(wx.Frame):
         if self.cvlUsername.strip()!="":
             self.cvlUsernameTextField.SelectAll()
 
-        self.cvlPasswordLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Password')
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlPasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.cvlPassword = ""
-        self.cvlPasswordField = wx.TextCtrl(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, self.cvlPassword, size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlPasswordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
-
         self.cvlShowAdvancedLoginLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Show advanced options')
         self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlShowAdvancedLoginLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.cvlAdvancedLoginCheckBox = wx.CheckBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, "")
@@ -1440,7 +1433,6 @@ class LauncherMainFrame(wx.Frame):
 
         self.cvlLoginHostComboBox.SetCursor(cursor)
         self.cvlUsernameTextField.SetCursor(cursor)
-        self.cvlPasswordField.SetCursor(cursor)
         self.cvlVncDisplayResolutionComboBox.SetCursor(cursor)
         self.cvlSshTunnelCipherComboBox.SetCursor(cursor)
 
@@ -1515,7 +1507,6 @@ class LauncherMainFrame(wx.Frame):
                         self.resolution = launcherMainFrame.cvlVncDisplayResolution
                         self.cipher     = launcherMainFrame.cvlSshTunnelCipher
                         self.username   = launcherMainFrame.cvlUsername
-                        self.password   = launcherMainFrame.cvlPassword
 
                     self.host       = self.host.lstrip().rstrip()
                     self.resolution = self.resolution.lstrip().rstrip()
@@ -1928,7 +1919,7 @@ class LauncherMainFrame(wx.Frame):
                     self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
                     try:
-                        self.sshClient.connect(self.host, username=self.username, password=self.password, look_for_keys=False)
+                        self.sshClient.connect(self.host, username=self.username)
                     except ssh.AuthenticationException, e:
                         logger_error("Failed to authenticate with user's username/password credentials: " + str(e))
                         die_from_login_thread('Authentication error with user %s on server %s' % (self.username, self.host), submit_log=False)
@@ -1993,7 +1984,7 @@ class LauncherMainFrame(wx.Frame):
 
                             remotePortNumber = str(remotePortNumber)
 
-                            tunnel_cmd = sshBinary + " -c " + self.cipher + " " \
+                            tunnel_cmd = sshBinary + " -A -c " + self.cipher + " " \
                                 "-t -t " \
                                 "-oStrictHostKeyChecking=no " \
                                 "-L " + localPortNumber + ":" + remoteHost + ":" + remotePortNumber + " -l " + tunnelUsername + " " + tunnelServer + ' "echo tunnel_hello; bash "'
@@ -2321,7 +2312,11 @@ class LauncherMainFrame(wx.Frame):
                         self.deletedMassiveJob = False
                         self.warnedUserAboutNotDeletingJob = False
 
+                        foundDisplayNumber = False
+                        foundOTP = False
+
                         while True:
+                            logger_debug("entering while true loop")
                             tCheck = 0
 
                             if launcherMainFrame.progressDialog is not None:
@@ -2339,10 +2334,16 @@ class LauncherMainFrame(wx.Frame):
                                 die_from_login_thread("User aborted from progress dialog.", display_error_dialog=False)
                                 return
 
+                            logger_debug("checking if any data is available")
+                            print "checking if any data is available"
                             while not channel.recv_ready() and not channel.recv_stderr_ready():
+                                print "no data yet"
+                                logger_debug("no data yet")
                                 #Use asterisks to simulate progress bar:
                                 #wx.CallAfter(sys.stdout.write, "*")
                                 time.sleep(1)
+                                print "slept %i"%tCheck
+                                logger_debug("slept %i"%tCheck)
                                 tCheck+=1
                                 if tCheck >= 5:
                                     # After 5 seconds, we still haven't obtained a visnode...
@@ -2367,9 +2368,11 @@ class LauncherMainFrame(wx.Frame):
                                                             wx.CallAfter(self.updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
                                             sshClient2.close()
 
+                                        logger_debug("starting thread to show the estiamted start time")
                                         showStartThread = threading.Thread(target=showStart)
                                         showStartThread.start()
                                     break
+                            print "data is ready"
                             if (channel.recv_stderr_ready()):
                                 out = channel.recv_stderr(1024)
                                 buff = StringIO(out)
@@ -2417,6 +2420,11 @@ class LauncherMainFrame(wx.Frame):
                                         self.massiveVisNodes.append(visnode)
                                         if lineNumber==startingXServerLineNumber+int(launcherMainFrame.massiveVisNodesRequested):
                                             breakOutOfMainLoop = True
+                                    if "Full control one-time password:" in line:
+                                        lineComponents = line.split(":")
+                                        self.password = (lineComponents[-1])
+                                        self.password = self.password.lstrip()
+                                        foundOTP = True
                                     line = buff.readline()
                             if breakOutOfMainLoop:
                                 break
@@ -2480,13 +2488,14 @@ class LauncherMainFrame(wx.Frame):
 
                         self.cvlVncDisplayNumber = launcherMainFrame.cvlVncDisplayNumber
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==True:
-                            cvlVncServerCommand = "vncsession --otp --vnc turbovnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
+                            cvlVncServerCommand = "vncsession --vnc turbovnc --geometry \"" + launcherMainFrame.cvlVncDisplayResolution + "\""
                             if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                                 cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
                             logger_debug('cvlVncServerCommand: ' + cvlVncServerCommand)
                             stdoutRead, stderrRead = run_ssh_command(self.sshClient, cvlVncServerCommand, ignore_errors=True) # vncsession sends output to stderr? Really?
                             lines = stderrRead.split("\n")
                             foundDisplayNumber = False
+                            foundOTP = False
                             for line in lines:
                                 if "desktop is" in line or "started on display" in line:
                                     lineComponents = line.split(":")
@@ -2496,6 +2505,7 @@ class LauncherMainFrame(wx.Frame):
                                     lineComponents = line.split(":")
                                     self.password = (lineComponents[-1])
                                     self.password = self.password.lstrip()
+                                    foundOTP = True
 
                         if launcherMainFrame.cvlVncDisplayNumberAutomatic==False:
                             logger_debug("CVL VNC Display Number is " + str(self.cvlVncDisplayNumber))
@@ -2507,6 +2517,11 @@ class LauncherMainFrame(wx.Frame):
                                 logger_error("Failed to parse vncserver output for display number.")
                                 die_from_login_thread('Failed to parse vncserver output for display number.', submit_log=True)
                                 return
+                    if foundOTP:
+                        logger_debug("CVL VNC Password is " + str(self.password))
+                    else:
+                        logger_error("Failed to find the one time password for the vnc server")
+                        die_from_login_thread('Failed to parse the vncserver output for the one time password.', submit_log=True)
 
                     self.sshTunnelReady = False
                     self.sshTunnelExceptionOccurred = False
@@ -2561,6 +2576,11 @@ class LauncherMainFrame(wx.Frame):
 
                     if count < 5:
                         time.sleep(5-count)
+
+                    logger_debug("generating sshfs mount script")
+                    sshfs_script = gen_sshfs_script()
+                    logger_debug("executing sshfs mount script")
+                    exec_script(self.host,self.username,sshfs_script)
 
                     self.turboVncStartTime = datetime.datetime.now()
 
@@ -2681,13 +2701,15 @@ class LauncherMainFrame(wx.Frame):
                             if sys.platform.startswith("win"):
                                 vncCommandString = "\""+vnc+"\" /user "+self.username+" /autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
                                 logger_debug('vncCommandString windows: ' +  vncCommandString)
+                                logger_debug('vnc one time password' + self.password)
                                 self.turboVncProcess = subprocess.Popen(vncCommandString,
                                     stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                     universal_newlines=True)
                                 self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.password + "\r\n")
                             else:
-                                vncCommandString = vnc + " -user " + self.username + " -autopass " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
+                                vncCommandString = vnc + " -user " + self.username + " -autopass " + " -nounixlogin " + vncOptionsString + " localhost::" + launcherMainFrame.loginThread.localPortNumber
                                 logger_debug('vncCommandString linux/darwin: ' + vncCommandString)
+                                logger_debug('vnc one time password' + self.password)
                                 self.turboVncProcess = subprocess.Popen(vncCommandString,
                                     stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                                     universal_newlines=True)
@@ -2911,7 +2933,6 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.cvlLoginHost = self.cvlLoginHostComboBox.GetValue()
             self.cvlUsername = self.cvlUsernameTextField.GetValue()
-            self.cvlPassword = self.cvlPasswordField.GetValue()
             self.cvlVncDisplayResolution = self.cvlVncDisplayResolutionComboBox.GetValue()
             self.cvlSshTunnelCipher = self.cvlSshTunnelCipherComboBox.GetValue()
 
@@ -3023,6 +3044,31 @@ class LauncherStatusBar(wx.StatusBar):
         self.SetFieldsCount(2)
         #self.SetStatusText('Welcome to MASSIVE', 0)
         self.SetStatusWidths([-5, -2])
+
+
+def gen_sshfs_script():
+    return "echo \"this is where I would mount my filesystems\""
+
+def exec_script(host,username,script):
+    sshClient = ssh.SSHClient()
+    sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
+    try:
+        logger_debug("connecting to %s with username %s"%(host,username))
+        sshClient.connect(hostname=host,username=username,look_for_keys=False,allow_agent=True)
+        stdin,stdout,stderr = sshClient.exec_command("mktemp")
+        tmpfile = stdout.read()
+        tmpfile = tmpfile.rstrip()
+        stdin,stdout,stderr = sshClient.exec_command("cat > %s << EOF"%tmpfile)
+        stdin.write(script+"\nEOF\n")
+        logger_debug("wrote a script to %s"%tmpfile)
+        sshClient.exec_command("bash %s"%tmpfile)
+        #sshClient.exec_command("rm %s"%tmpfile)
+    finally:
+        sshClient.close()
+        
+
+    
+    
 
 class MyApp(wx.App):
     def OnInit(self):
