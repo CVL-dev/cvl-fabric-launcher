@@ -276,7 +276,8 @@ class KeyDist():
                     foundKey=True
             if (not foundKey):
                 #TODO check the key against a list of trusted keys from a web server/CVL VM managment
-                self.appendKey(hostKeys[0])
+                for k in hostKeys: self.appendKey(k)
+
             newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEEDAGENT,self.keydistObject)
             wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
                         
