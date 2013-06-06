@@ -736,6 +736,6 @@ class KeyDist():
 
 
     def distributeKey(self):
-        self.sshKeyPath = sshKeyPath
+        self.sshKeyPath, _ = sshpaths().ssh_files()
         event = KeyDist.sshKeyDistEvent(self.EVT_KEYDIST_START, self)
         wx.PostEvent(self.notifywindow.GetEventHandler(), event)
