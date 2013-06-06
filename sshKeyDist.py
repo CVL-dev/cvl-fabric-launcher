@@ -31,9 +31,9 @@ def ssh_binaries():
 
     if sys.platform.startswith('win'):
         if hasattr(sys, 'frozen'):
-            f = lambda x: os.path.join(os.path.dirname(sys.executable), 'openssh-mls-software-6.2-p1-2', 'bin', x)
+            f = lambda x: os.path.join(os.path.dirname(sys.executable), 'openssh-cygwin-stdin-build', 'bin', x)
         else:
-            f = lambda x: os.path.join(os.getcwd(), 'openssh-mls-software-6.2-p1-2', 'bin', x)
+            f = lambda x: os.path.join(os.getcwd(), 'openssh-cygwin-stdin-build', 'bin', x)
 
         sshBinary       = f('ssh.exe')
         sshKeyGenBinary = f('ssh-keygen.exe')
