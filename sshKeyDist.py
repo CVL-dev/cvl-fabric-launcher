@@ -81,10 +81,6 @@ class sshpaths():
         self.sshKeyPath = sshKeyPath
         self.sshKnownHosts = sshKnownHosts
 
-
-
-sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey')
-
 class KeyDist():
 
     def complete(self):
