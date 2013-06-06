@@ -28,9 +28,9 @@ class sshpaths():
  
         if sys.platform.startswith('win'):
             if hasattr(sys, 'frozen'):
-                f = lambda x: os.path.join(os.path.dirname(sys.executable), 'openssh-mls-software-6.2-p1-2', 'bin', x)
+                f = lambda x: os.path.join(os.path.dirname(sys.executable), 'openssh-cygwin-stdin-build', 'bin', x)
             else:
-                f = lambda x: os.path.join(os.getcwd(), 'openssh-mls-software-6.2-p1-2', 'bin', x)
+                f = lambda x: os.path.join(os.getcwd(), 'openssh-cygwin-stdin-build', 'bin', x)
  
             sshBinary        = f('ssh.exe')
             sshKeyGenBinary  = f('ssh-keygen.exe')
@@ -112,7 +112,6 @@ class KeyDist():
             self.panel.SetSizerAndFit(self.border)
             self.Fit()
             self.password = None
-            self.authentication_success = False
 
         def onEnter(self,e):
             if (e.GetId() == self.Cancel.GetId()):
@@ -345,7 +344,7 @@ class KeyDist():
                 print 'boo'
                 # The patched OpenSSH binary on Windows/cygwin allows us
                 # to send the password via stdin.
-                stdout, stderr = subprocess.Popen(sshAddBinary + ' ' + double_quote(self.keydistObject.sshKeyPath), 
+                stdout, stderr = subprocess.Popen(self.keydistObject.sshpaths.sshAddBinary + ' ' + double_quote(self.keydistObject.sshKeyPath), 
                                                   stdin=subprocess.PIPE,
                                                   stdout=subprocess.PIPE,
                                                   stderr=subprocess.STDOUT,
@@ -694,7 +693,7 @@ class KeyDist():
         self.keycopiedLock=Lock()
         self.keycopied=False
         self.sshpaths=sshPaths
-
+        self.authentication_success = False
 
     def GetKeyPassword(self,prepend=""):
         ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'Unlock Key',prepend+"Please enter the passphrase for the key","OK","Cancel")
