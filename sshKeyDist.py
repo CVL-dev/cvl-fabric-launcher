@@ -13,12 +13,8 @@ from os.path import expanduser
 import subprocess
 import traceback
 
-if sys.platform.startswith('win'):
-    import wexpect as expect
-    newline = '\r\n'
-else:
-    import pexpect as expect
-    newline = '\n'
+if not sys.platform.startswith('win'):
+    import pexpect
 
 def double_quote(x):
     return '"' + x + '"'
@@ -130,12 +126,16 @@ class KeyDist():
                 try:
                     agent = subprocess.Popen(sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
                     stdout = agent.stdout.readlines()
+                    print 'startagent stdout:', str(stdout)
                     for line in stdout:
                         match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*); export SSH_AUTH_SOCK;$",line)
                         if match:
                             agentenv = match.group('socket')
-                            os.environ['SSH_AUTH_SOCK']=agentenv
+                            os.environ['SSH_AUTH_SOCK'] = agentenv
                             print 'startAgentThread: started ssh-agent; SSH_AUTH_SOCK = ' + agentenv
+                    if agent is None:
+                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL, self, str(stdout))
+                        print 'startAgentThread: failed to start ssh-agent: ' + str(str(stdout))
                 except Exception as e:
                     string = "%s"%e
                     newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self,string)
@@ -254,54 +254,75 @@ class KeyDist():
         def loadKey(self):
             print 'getPubkeyThread: loadKey():'
 
-            nr_attempts = 1
-            while True:
-                print 'loadKey(): nr_attempts:', nr_attempts
+            if (self.keydistObject.password != None and len(self.keydistObject.password) > 0):
+                print 'getPubkeyThread: loadKey(): got passphrase from keydistObject'
+                passphrase = self.keydistObject.password
+            else:
+                print 'getPubkeyThread: loadKey(): using empty passphrase'
+                passphrase = ''
 
-                try:
-                    args = [self.keydistObject.sshKeyPath]
-                    print 'getPubkeyThread: loadKey(): running %s with args %s' % (str(sshAddBinary), str(args),)
-                    lp = expect.spawn(sshAddBinary, args=args)
+            if sys.platform.startswith('win'):
+                print 'boo'
+                # The patched OpenSSH binary on Windows/cygwin allows us
+                # to send the password via stdin.
+                stdout, stderr = subprocess.Popen(sshAddBinary + ' ' + double_quote(self.keydistObject.sshKeyPath), 
+                                                  stdout=subprocess.PIPE,
+                                                  stderr=subprocess.STDOUT,
+                                                  shell=True,
+                                                  universal_newlines=True).communicate(input=passphrase + '\r\n')
+                print 'boo2'
+                print 'stdout from ssh-add:', str(stdout)
+                print 'stderr from ssh-add:', str(stderr)
 
-                    if (self.keydistObject.password != None and len(self.keydistObject.password) > 0):
-                        print 'getPubkeyThread: loadKey(): got passphrase from keydistObject'
-                        passphrase = self.keydistObject.password
+                if stdout is None or str(stdout).strip() == '':
+                    # Got EOF from ssh-add binary
+                    newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
+                elif 'Identity added' in stdout:
+                    newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS, self.keydistObject)
+                elif 'Bad pass' in stdout:
+                    if passphrase == '':
+                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
                     else:
-                        print 'getPubkeyThread: loadKey(): using empty passphrase'
-                        passphrase = ''
-                    idx = lp.expect(["Identity added",".*pass.*"])
+                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_WRONGPASS, self.keydistObject)
+                else:
+                    # unknown error
+                    newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED,self.keydistObject)
+            else:
+                # On Linux or BSD/OSX we can use pexpect to talk to ssh-add.
 
-                    if (idx == 1):
-                        print 'getPubkeyThread: loadKey(): sending passphrase to ssh-agent'
-                        lp.send(passphrase + newline)
+                args = [self.keydistObject.sshKeyPath]
+                print 'getPubkeyThread: loadKey(): running %s with args %s' % (str(sshAddBinary), str(args),)
+                lp = pexpect.spawn(sshAddBinary, args=args)
 
-                        idx = lp.expect(["Identity added","Bad pass",expect.EOF])
+                idx = lp.pexpect(["Identity added", ".*pass.*"])
 
-                        if (idx == 0):
-                            print 'getPubkeyThread: loadKey(): got "Identity added"; posting the EVT_KEYDIST_LISTFINGERPRINTS event'
-                            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS,self.keydistObject)
-                        elif (idx == 1):
-                            print 'getPubkeyThread: loadKey(): got "Bad pass"'
-                            if (passphrase == ""):
-                                print 'getPubkeyThread: loadKey(): empty passphrase, so posting the EVT_KEYDIST_KEY_LOCKED event'
-                                newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED,self.keydistObject)
-                            else:
-                                print 'getPubkeyThread: loadKey(): non-empty passphrase, so posting the EVT_KEYDIST_KEY_WRONGPASS event'
-                                newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_WRONGPASS,self.keydistObject)
+                if idx == 1:
+                    print 'getPubkeyThread: loadKey(): sending passphrase to ssh-agent'
+                    lp.sendline(passphrase)
+
+                    idx = lp.pexpect(["Identity added", "Bad pass", pexpect.EOF])
+
+                    if idx == 0:
+                        print 'getPubkeyThread: loadKey(): got "Identity added"; posting the EVT_KEYDIST_LISTFINGERPRINTS event'
+                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LISTFINGERPRINTS, self.keydistObject)
+                    elif idx == 1:
+                        print 'getPubkeyThread: loadKey(): got "Bad pass"'
+                        if passphrase == '':
+                            print 'getPubkeyThread: loadKey(): empty passphrase,  so posting the EVT_KEYDIST_KEY_LOCKED event'
+                            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
                         else:
-                            print 'getPubkeyThread: loadKey(): got EOF (?) from ssh-add, so posting the EVT_KEYDIST_KEY_LOCKED event'
-                            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED,self.keydistObject)
+                            print 'getPubkeyThread: loadKey(): non-empty passphrase,  so posting the EVT_KEYDIST_KEY_WRONGPASS event'
+                            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_WRONGPASS, self.keydistObject)
                     else:
-                        print 'getPubkeyThread: loadKey(): got "Identity added" from ssh-add, so sending the EVT_KEYDIST_KEY_LOCKED event'
-                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED,self.keydistObject)
+                        print 'getPubkeyThread: loadKey(): got EOF (?) from ssh-add,  so posting the EVT_KEYDIST_KEY_LOCKED event'
+                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
+                else:
+                    print 'getPubkeyThread: loadKey(): got "Identity added" from ssh-add, so sending the EVT_KEYDIST_KEY_LOCKED event'
+                    newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
+                lp.close()
 
-                    wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
-                    lp.close()
-                    print 'getPubkeyThread: loadKey(): exiting'
-                    break
-                except Exception as e:
-                    print 'loadKey(): exception: ' + str(e)
-                    nr_attempts += 1
+            wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(), newevent)
+            print 'getPubkeyThread: loadKey(): exiting'
 
         def run(self):
             try:
