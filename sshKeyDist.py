@@ -337,17 +337,17 @@ class KeyDist():
             else:
                 # On Linux or BSD/OSX we can use pexpect to talk to ssh-add.
 
-                args = [self.keydistObject.sshKeyPath]
+                args = [self.keydistObject.sshpaths.sshKeyPath]
                 print 'getPubkeyThread: loadKey(): running %s with args %s' % (str(self.keydistObject.sshpaths.sshAddBinary), str(args),)
-                lp = pexpect.spawn(sshAddBinary, args=args)
+                lp = pexpect.spawn(self.keydistObject.sshpaths.sshAddBinary, args=args)
 
-                idx = lp.pexpect(["Identity added", ".*pass.*"])
+                idx = lp.expect(["Identity added", ".*pass.*"])
 
                 if idx == 1:
                     print 'getPubkeyThread: loadKey(): sending passphrase to ssh-agent'
                     lp.sendline(passphrase)
 
-                    idx = lp.pexpect(["Identity added", "Bad pass", pexpect.EOF])
+                    idx = lp.expect(["Identity added", "Bad pass", pexpect.EOF])
 
                     if idx == 0:
                         print 'getPubkeyThread: loadKey(): got "Identity added"; posting the EVT_KEYDIST_GETPUBKEY event'
