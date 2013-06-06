@@ -408,6 +408,7 @@ class KeyDist():
 
         def run(self):
             try:
+                sshKeyPath, _ = sshpaths().ssh_files()
                 f = open(sshKeyPath+".pub",'r')
                 f.close()
                 self.keydistObject.sshKeyPath = sshKeyPath
