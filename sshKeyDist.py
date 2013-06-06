@@ -65,7 +65,7 @@ class sshpaths():
 
     def __init__(self):
         (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, sshKeyScanBinary,chownBinary, chmodBinary,) = self.ssh_binaries()
-        (sskKeyPath,sshKnownHosts,) = self.ssh_files()
+        (sshKeyPath,sshKnownHosts,) = self.ssh_files()
         self.sshBinary = sshBinary
         self.sshKeyGenBinary = sshKeyGenBinary
         self.sshAgentBinary = sshAgentBinary
@@ -112,6 +112,7 @@ class KeyDist():
             self.panel.SetSizerAndFit(self.border)
             self.Fit()
             self.password = None
+            self.authentication_success = False
 
         def onEnter(self,e):
             if (e.GetId() == self.Cancel.GetId()):
@@ -303,6 +304,7 @@ class KeyDist():
 
             if 'success_testauth' in stdout:
                 print 'testAuthThread: run(): got success_testauth in stdout :)'
+                self.authentication_success = True
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHSUCCESS,self.keydistObject)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
             else:
