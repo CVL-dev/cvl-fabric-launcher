@@ -1909,7 +1909,8 @@ class LauncherMainFrame(wx.Frame):
                     logger_debug("Attempting to log in to " + self.host)
 
 
-                    skd = sshKeyDist.KeyDist(self.username,self.host,launcherMainFrame)
+                    sshPaths = sshKeyDist.sshpaths()
+                    skd = sshKeyDist.KeyDist(self.username,self.host,launcherMainFrame,sshPaths)
                     skd.distributeKey()
                     while (not skd.complete()):
                         wx.Yield()
@@ -1955,7 +1956,7 @@ class LauncherMainFrame(wx.Frame):
                         logger_debug("Starting tunnelled SSH session.")
 
                         try:
-                            (sshBinary, _, _, _, chownBinary, chmodBinary,) = sshKeyDist.ssh_binaries()
+                            (sshBinary, _, _, _, _, chownBinary, chmodBinary,) = sshPaths.ssh_binaries()
 
                             localPortNumber = str(localPortNumber)
 
