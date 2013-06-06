@@ -341,13 +341,13 @@ class KeyDist():
                 print 'getPubkeyThread: loadKey(): running %s with args %s' % (str(self.keydistObject.sshpaths.sshAddBinary), str(args),)
                 lp = pexpect.spawn(self.keydistObject.sshpaths.sshAddBinary, args=args)
 
-                idx = lp.expect(["Identity added", ".*pass.*"])
+                idx = lp.pexpect(["Identity added", ".*pass.*"])
 
                 if idx == 1:
                     print 'getPubkeyThread: loadKey(): sending passphrase to ssh-agent'
                     lp.sendline(passphrase)
 
-                    idx = lp.expect(["Identity added", "Bad pass", pexpect.EOF])
+                    idx = lp.pexpect(["Identity added", "Bad pass", pexpect.EOF])
 
                     if idx == 0:
                         print 'getPubkeyThread: loadKey(): got "Identity added"; posting the EVT_KEYDIST_GETPUBKEY event'
