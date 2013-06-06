@@ -23,43 +23,65 @@ else:
 def double_quote(x):
     return '"' + x + '"'
 
-def ssh_binaries():
-    """
-    Locate the ssh binaries on various systems. On Windows we bundle a
-    stripped-down OpenSSH build that uses Cygwin.
-    """
-
-    if sys.platform.startswith('win'):
-        if hasattr(sys, 'frozen'):
-            f = lambda x: os.path.join(os.path.dirname(sys.executable), 'openssh-mls-software-6.2-p1-2', 'bin', x)
+class sshpaths():
+    def ssh_binaries(self):
+        """
+        Locate the ssh binaries on various systems. On Windows we bundle a
+        stripped-down OpenSSH build that uses Cygwin.
+        """
+ 
+        if sys.platform.startswith('win'):
+            if hasattr(sys, 'frozen'):
+                f = lambda x: os.path.join(os.path.dirname(sys.executable), 'openssh-mls-software-6.2-p1-2', 'bin', x)
+            else:
+                f = lambda x: os.path.join(os.getcwd(), 'openssh-mls-software-6.2-p1-2', 'bin', x)
+ 
+            sshBinary        = f('ssh.exe')
+            sshKeyGenBinary  = f('ssh-keygen.exe')
+            sshKeyScanBinary = f('ssh-keyscan.exe')
+            sshAgentBinary   = f('ssh-agent.exe')
+            sshAddBinary     = f('ssh-add.exe')
+            chownBinary      = f('chown.exe')
+            chmodBinary      = f('chmod.exe')
+        elif sys.platform.startswith('darwin'):
+            sshBinary        = '/usr/bin/ssh'
+            sshKeyGenBinary  = '/usr/bin/ssh-keygen'
+            sshKeyScanBinary = '/usr/bin/ssh-keyscan'
+            sshAgentBinary   = '/usr/bin/ssh-agent'
+            sshAddBinary     = '/usr/bin/ssh-add'
+            chownBinary      = '/usr/sbin/chown'
+            chmodBinary      = '/bin/chmod'
         else:
-            f = lambda x: os.path.join(os.getcwd(), 'openssh-mls-software-6.2-p1-2', 'bin', x)
+            sshBinary        = '/usr/bin/ssh'
+            sshKeyGenBinary  = '/usr/bin/ssh-keygen'
+            sshKeyScanBinary = '/usr/bin/ssh-keyscan'
+            sshAgentBinary   = '/usr/bin/ssh-agent'
+            sshAddBinary     = '/usr/bin/ssh-add'
+            chownBinary      = '/bin/chown'
+            chmodBinary      = '/bin/chmod'
+ 
+        return (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, sshKeyScanBinary, chownBinary, chmodBinary,)
+    
+    def ssh_files(self):
+        known_hosts_file = os.path.join(expanduser('~'), '.ssh', 'known_hosts')
+        sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey')
+        return (sshKeyPath,known_hosts_file,)
 
-        sshBinary       = f('ssh.exe')
-        sshKeyGenBinary = f('ssh-keygen.exe')
-        sshAgentBinary  = f('ssh-agent.exe')
-        sshAddBinary    = f('ssh-add.exe')
-        chownBinary     = f('chown.exe')
-        chmodBinary     = f('chmod.exe')
-    elif sys.platform.startswith('darwin'):
-        sshBinary       = '/usr/bin/ssh'
-        sshKeyGenBinary = '/usr/bin/ssh-keygen'
-        sshAgentBinary  = '/usr/bin/ssh-agent'
-        sshAddBinary    = '/usr/bin/ssh-add'
-        chownBinary     = '/usr/sbin/chown'
-        chmodBinary     = '/bin/chmod'
-    else:
-        sshBinary       = '/usr/bin/ssh'
-        sshKeyGenBinary = '/usr/bin/ssh-keygen'
-        sshAgentBinary  = '/usr/bin/ssh-agent'
-        sshAddBinary    = '/usr/bin/ssh-add'
-        chownBinary     = '/bin/chown'
-        chmodBinary     = '/bin/chmod'
+    def __init__(self):
+        (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, sshKeyScanBinary,chownBinary, chmodBinary,) = self.ssh_binaries()
+        (sskKeyPath,sshKnownHosts,) = self.ssh_files()
+        self.sshBinary = sshBinary
+        self.sshKeyGenBinary = sshKeyGenBinary
+        self.sshAgentBinary = sshAgentBinary
+        self.sshAddBinary = sshAddBinary
+        self.sshKeyScanBinary = sshKeyScanBinary
+        self.chownBinary = chownBinary
+        self.chmodBinary = chmodBinary
 
-    return (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, chownBinary, chmodBinary,)
+        self.sshKeyPath = sshKeyPath
+        self.sshKnownHosts = sshKnownHosts
 
 
-(sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, chownBinary, chmodBinary,) = ssh_binaries()
 
 sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey')
 
@@ -128,7 +150,7 @@ class KeyDist():
             except:
                 print 'startAgentThread: did not find SSH_AUTH_SOCK environment variable; trying to start ssh-agent'
                 try:
-                    agent = subprocess.Popen(sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+                    agent = subprocess.Popen(self.keydistObject.sshpaths.sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
                     stdout = agent.stdout.readlines()
                     for line in stdout:
                         match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*); export SSH_AUTH_SOCK;$",line)
@@ -152,8 +174,8 @@ class KeyDist():
 
         def run(self):
             print 'genkeyThread: run()'
-            cmd = '{sshkeygen} -q -f "{keyfilename}" -C "MASSIVE Launcher" -N {password}'.format(sshkeygen=sshKeyGenBinary,
-                                                                                                 keyfilename=self.keydistObject.sshKeyPath,
+            cmd = '{sshkeygen} -q -f "{keyfilename}" -C "MASSIVE Launcher" -N {password}'.format(sshkeygen=self.keydistObject.sshpaths.sshKeyGenBinary,
+                                                                                                 keyfilename=self.keydistObject.sshpaths.sshKeyPath,
                                                                                                  password=self.keydistObject.password)
 
             print 'genkeyThread: running command: ' + cmd
@@ -180,7 +202,7 @@ class KeyDist():
 
         def run(self):
             print 'listFingerprintsThread: run()'
-            sshKeyListCmd = sshAddBinary + " -l "
+            sshKeyListCmd = self.keydistObject.sshpaths.sshAddBinary + " -l "
             print 'listFingerprintsThread: running command: ' + sshKeyListCmd
             keylist = subprocess.Popen(sshKeyListCmd, stdout = subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             keylist.wait()
@@ -206,6 +228,63 @@ class KeyDist():
             wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
             print 'listFingerprintsThread: leaving run()'
 
+    class scanHostKeysThread(Thread):
+        def __init__(self,keydistObject):
+            Thread.__init__(self)
+            self.keydistObject = keydistObject
+            self.ssh_keygen_cmd = '{sshkeygen} -F {host} -f {known_hosts_file}'.format(sshkeygen=self.keydistObject.sshpaths.sshKeyGenBinary,host=self.keydistObject.host,known_hosts_file=self.keydistObject.sshpaths.sshKnownHosts)
+            self.ssh_keyscan_cmd = '{sshscan} {host}'.format(sshscan=self.keydistObject.sshpaths.sshKeyScanBinary,host=self.keydistObject.host)
+
+        def getKnownHostKeys(self):
+            keygen = subprocess.Popen(self.ssh_keygen_cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
+            stdout,stderr = keygen.communicate()
+            keygen.wait()
+            hostkeys=[]
+            for line in stdout.split('\n'):
+                print "in getKnownHostKeys line"
+                print line
+                if (not (line.find('#')==0 or line == '')):
+                    hostkeys.append(line)
+            return hostkeys
+                    
+        def appendKey(self,key):
+            with open(self.keydistObject.sshpaths.sshKnownHosts,'a+') as known_hosts:
+                known_hosts.write(key)
+            
+
+        def scanHost(self):
+            scan = subprocess.Popen(self.ssh_keyscan_cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
+            stdout,stderr = scan.communicate()
+            scan.wait()
+            hostkeys=[]
+            for line in stdout.split('\n'):
+                if (not (line.find('#')==0 or line == '')):
+                    hostkeys.append(line)
+            return hostkeys
+
+        def run(self):
+            knownKeys = self.getKnownHostKeys()
+            hostKeys = self.scanHost()
+            newevent=None
+            foundKey=False
+            if len(hostKeys)>1:
+                print "That was unexpected, a scan of the host returned more than one host key"
+            print "hostKeys"
+            print hostKeys
+            print "knownKeys"
+            print knownKeys
+            
+            for key in hostKeys:
+                if key in knownKeys:
+                    foundKey=True
+            if (not foundKey):
+                #TODO check the key against a list of trusted keys from a web server/CVL VM managment
+                self.appendKey(hostKeys[0])
+            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEEDAGENT,self.keydistObject)
+            wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+                        
+            
+
     class testAuthThread(Thread):
         def __init__(self,keydistObject):
             Thread.__init__(self)
@@ -214,7 +293,7 @@ class KeyDist():
         def run(self):
             print 'testAuthThread: run()'
 
-            ssh_cmd = '{sshbinary} -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=no -l {login} {host} echo "success_testauth"'.format(sshbinary=sshBinary,
+            ssh_cmd = '{sshbinary} -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=no -l {login} {host} echo "success_testauth"'.format(sshbinary=self.keydistObject.sshpaths.sshBinary,
                                                                                                                                                                           login=self.keydistObject.username,
                                                                                                                                                                           host=self.keydistObject.host)
 
@@ -240,7 +319,7 @@ class KeyDist():
             self.keydistObject = keydistObject
 
         def fingerprint(self):
-            sshKeyGenCmd = sshKeyGenBinary + " -l -f " + double_quote(self.keydistObject.sshKeyPath) + ".pub"
+            sshKeyGenCmd = self.keydistObject.sshpaths.sshKeyGenBinary + " -l -f " + double_quote(self.keydistObject.sshpaths.sshKeyPath) + ".pub"
             fp = subprocess.Popen(sshKeyGenCmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             stdout = fp.stdout.readlines()
             fp.wait()
@@ -260,8 +339,8 @@ class KeyDist():
 
                 try:
                     args = [self.keydistObject.sshKeyPath]
-                    print 'getPubkeyThread: loadKey(): running %s with args %s' % (str(sshAddBinary), str(args),)
-                    lp = expect.spawn(sshAddBinary, args=args)
+                    print 'getPubkeyThread: loadKey(): running %s with args %s' % (str(self.keydistObject.sshpaths.sshAddBinary), str(args),)
+                    lp = expect.spawn(self.keydistObject.sshpaths.sshAddBinary, args=args)
 
                     if (self.keydistObject.password != None and len(self.keydistObject.password) > 0):
                         print 'getPubkeyThread: loadKey(): got passphrase from keydistObject'
@@ -428,6 +507,17 @@ class KeyDist():
                 event.keydist.workThread.start()
             event.Skip()
 
+        def scanhostkeys(event):
+            if (event.GetId() == KeyDist.EVT_KEYDIST_SCANHOSTKEYS):
+                try:
+                    if (event.keydist.workThread != None):
+                        event.keydist.workThread.join()
+                except RuntimeError:
+                    pass
+                print "creating scanHostKeys Thread"
+                event.keydist.workThread = KeyDist.scanHostKeysThread(event.keydist)
+                event.keydist.workThread.start()
+            event.Skip()
 
         def cancel(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_CANCEL):
@@ -524,14 +614,14 @@ class KeyDist():
 
         def startevent(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_START):
-                newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEEDAGENT,event.keydist)
+                newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_SCANHOSTKEYS,event.keydist)
                 wx.PostEvent(event.keydist.notifywindow.GetEventHandler(),newevent)
             else:
                 event.Skip()
 
     myEVT_CUSTOM_SSHKEYDIST=None
     EVT_CUSTOM_SSHKEYDIST=None
-    def __init__(self,username,host,notifywindow):
+    def __init__(self,username,host,notifywindow,sshPaths):
         KeyDist.myEVT_CUSTOM_SSHKEYDIST=wx.NewEventType()
         KeyDist.EVT_CUSTOM_SSHKEYDIST=wx.PyEventBinder(self.myEVT_CUSTOM_SSHKEYDIST,1)
         KeyDist.EVT_KEYDIST_START = wx.NewId()
@@ -550,6 +640,7 @@ class KeyDist():
         KeyDist.EVT_KEYDIST_COPYID_NEEDPASS = wx.NewId()
         KeyDist.EVT_KEYDIST_KEY_LOCKED = wx.NewId()
         KeyDist.EVT_KEYDIST_KEY_WRONGPASS = wx.NewId()
+        KeyDist.EVT_KEYDIST_SCANHOSTKEYS = wx.NewId()
 
         notifywindow.Bind(self.EVT_CUSTOM_SSHKEYDIST, KeyDist.sshKeyDistEvent.cancel)
         notifywindow.Bind(self.EVT_CUSTOM_SSHKEYDIST, KeyDist.sshKeyDistEvent.success)
@@ -561,6 +652,7 @@ class KeyDist():
         notifywindow.Bind(self.EVT_CUSTOM_SSHKEYDIST, KeyDist.sshKeyDistEvent.newkey)
         notifywindow.Bind(self.EVT_CUSTOM_SSHKEYDIST, KeyDist.sshKeyDistEvent.copyid)
         notifywindow.Bind(self.EVT_CUSTOM_SSHKEYDIST, KeyDist.sshKeyDistEvent.keylocked)
+        notifywindow.Bind(self.EVT_CUSTOM_SSHKEYDIST, KeyDist.sshKeyDistEvent.scanhostkeys)
 
         self.completed=False
         self.username = username
@@ -576,6 +668,7 @@ class KeyDist():
         self.completedLock = Lock()
         self.keycopiedLock=Lock()
         self.keycopied=False
+        self.sshpaths=sshPaths
 
 
     def GetKeyPassword(self,prepend=""):
