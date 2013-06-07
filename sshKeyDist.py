@@ -274,7 +274,7 @@ class KeyDist():
             ssh.wait()
             if 'success_testauth' in stdout:
                 print 'testAuthThread: run(): got success_testauth in stdout :)'
-                self.authentication_success = True
+                self.keydistObject.authentication_success = True
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHSUCCESS,self.keydistObject)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
             else:
@@ -310,7 +310,9 @@ class KeyDist():
                 print 'boo'
                 # The patched OpenSSH binary on Windows/cygwin allows us
                 # to send the password via stdin.
-                stdout, stderr = subprocess.Popen(self.keydistObject.sshpaths.sshAddBinary + ' ' + double_quote(self.keydistObject.sshKeyPath), 
+                cmd = self.keydistObject.sshpaths.sshAddBinary + ' ' + double_quote(self.keydistObject.sshpaths.sshKeyPath)
+                print 'on Windows, so running: ' + cmd
+                stdout, stderr = subprocess.Popen(cmd,
                                                   stdin=subprocess.PIPE,
                                                   stdout=subprocess.PIPE,
                                                   stderr=subprocess.STDOUT,
