@@ -2350,7 +2350,8 @@ class LauncherMainFrame(wx.Frame):
                         #whetherServerSideScriptShouldRunQpeek = False
                         #qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode) + " " + str(whetherServerSideScriptShouldRunQstat) + " " + str(whetherServerSideScriptShouldRunQpeek)
 
-                        qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
+                        # qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
+                        qsubcmd = "/home/carlo/request_visnode_testing.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
 
                         logger_debug('qsubcmd: ' + qsubcmd)
 
@@ -2447,6 +2448,25 @@ class LauncherMainFrame(wx.Frame):
                                     else:
                                         lineFragment = ""
                                         logger_debug("request_visnode.sh: " + line)
+
+
+                                    if 'REQUEST_VISNODE_INFO' in line:
+                                        # Show this message to the user in a model dialog box.
+                                        pass
+
+                                    if 'REQUEST_VISNODE_ERROR' in line:
+                                        # Fatal error when trying to get a visnode, so die.
+                                        s = 'REQUEST_VISNODE_ERROR'
+                                        if line.find(s) == 0:
+                                            error_string = line[len(s):]
+                                        else:
+                                            error_string = line # fallback
+
+                                        deleteMassiveJobIfNecessary(write_debug_log=True, update_status_bar=False, update_main_progress_bar=False, ignore_errors=True)
+                                        logger_error(error_string)
+                                        die_from_login_thread(error_string)
+                                        return
+
                                     if "ERROR" in line or "Error" in line or "error" in line:
                                         logger_error('error in line: ' + line)
                                         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
