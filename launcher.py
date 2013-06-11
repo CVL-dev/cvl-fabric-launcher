@@ -2350,8 +2350,7 @@ class LauncherMainFrame(wx.Frame):
                         #whetherServerSideScriptShouldRunQpeek = False
                         #qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode) + " " + str(whetherServerSideScriptShouldRunQstat) + " " + str(whetherServerSideScriptShouldRunQpeek)
 
-                        # qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
-                        qsubcmd = "/home/carlo/request_visnode_testing.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
+                        qsubcmd = "/usr/local/desktop/request_visnode.sh " + launcherMainFrame.massiveProject + " " + launcherMainFrame.massiveHoursRequested + " " + launcherMainFrame.massiveVisNodesRequested + " " + str(launcherMainFrame.massivePersistentMode)
 
                         logger_debug('qsubcmd: ' + qsubcmd)
 
@@ -2452,7 +2451,19 @@ class LauncherMainFrame(wx.Frame):
 
                                     if 'REQUEST_VISNODE_INFO' in line:
                                         # Show this message to the user in a model dialog box.
-                                        pass
+                                        s = 'REQUEST_VISNODE_INFO'
+                                        if line.find(s) == 0:
+                                            info_string = line[len(s):].lstrip()
+                                        else:
+                                            info_string = line # fallback
+
+                                        def request_visnode_info_dialog():
+                                            dlg = wx.MessageDialog(launcherMainFrame,
+                                                            'request_visnode.sh script reported:\n' + info_string,
+                                                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                            dlg.ShowModal()
+                                            dlg.Destroy()
+                                        wx.CallAfter(request_visnode_info_dialog)
 
                                     if 'REQUEST_VISNODE_ERROR' in line:
                                         # Fatal error when trying to get a visnode, so die.
@@ -2461,6 +2472,8 @@ class LauncherMainFrame(wx.Frame):
                                             error_string = line[len(s):]
                                         else:
                                             error_string = line # fallback
+
+                                        error_string = 'Error reported by request_visnode.sh script:\n' + error_string.lstrip()
 
                                         deleteMassiveJobIfNecessary(write_debug_log=True, update_status_bar=False, update_main_progress_bar=False, ignore_errors=True)
                                         logger_error(error_string)
