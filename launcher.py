@@ -2458,7 +2458,7 @@ class LauncherMainFrame(wx.Frame):
                                             info_string = line # fallback
 
                                         def request_visnode_info_dialog():
-                                            dlg = wx.MessageDialog(launcherMainFrame,
+                                            dlg = wx.MessageDialog(launcherMainFrame.progressDialog,
                                                             'request_visnode.sh script reported:\n' + info_string,
                                                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                                             dlg.ShowModal()
