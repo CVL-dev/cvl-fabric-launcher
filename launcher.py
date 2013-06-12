@@ -1266,12 +1266,6 @@ class LauncherMainFrame(wx.Frame):
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
 
-            # Tried submit_log=True, but it didn't work.
-            # Maybe the requests stuff hasn't been initialized yet.
-            logger_debug("Failed version number check.")
-            dump_log(submit_log=False)
-            sys.exit(1)
-
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()
         selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
@@ -1498,6 +1492,7 @@ class LauncherMainFrame(wx.Frame):
                     self.cipher     = self.cipher.lstrip().rstrip()
                     self.username   = self.username.lstrip().rstrip()
 
+                    logger_debug('launcher version: ' + str(launcher_version_number.version_number))
                     logger_debug('host: ' + self.host)
                     logger_debug('resolution: ' + self.resolution)
                     logger_debug('cipher: ' + self.cipher)
