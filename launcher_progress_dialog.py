@@ -41,10 +41,11 @@
 import wx
 
 class LauncherProgressDialog(wx.Frame):
-    def __init__(self, parent, id, title, message, maxValue, userCanAbort):
+    def __init__(self, parent, id, title, message, maxValue, userCanAbort,cancelCallback=None):
         wx.Frame.__init__(self, parent, id, title, style=wx.STAY_ON_TOP)
 
         self.user_requested_abort = False
+        self.cancelCallback=cancelCallback
 
         self.panel = wx.Panel(self, wx.ID_ANY) 
         # We'll just set a temporary message while the dialog,
@@ -97,6 +98,11 @@ class LauncherProgressDialog(wx.Frame):
         self.messageStaticText.SetLabel("Aborting login...")
         self.user_requested_abort = True
         self.cancelButton.Enable(False)
+        if (self.cancelCallback != None):
+            self.cancelCallback()
+    
+    def setCancelCallback(self,callback):
+        self.cancelCallback = callback
 
     def Update(self, value, message):
         if self.user_requested_abort:
