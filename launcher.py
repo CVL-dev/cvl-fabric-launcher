@@ -1513,10 +1513,6 @@ class LauncherMainFrame(wx.Frame):
         with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
             cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
-        dlg = wx.MessageDialog(launcherMainFrame, 'Your assigned virtual machine address(es) have been saved.  You can log in without a password from this computer.', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
-        dlg.Destroy()
-
     def onToggleCvlVncDisplayNumberAutomaticCheckBox(self, event):
         if self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
             self.cvlVncDisplayNumberSpinCtrl.Disable()
