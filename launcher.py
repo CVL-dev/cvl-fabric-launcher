@@ -1234,11 +1234,6 @@ class LauncherMainFrame(wx.Frame):
         self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=4, vgap=5, hgap=10)
         self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
 
-        IDENTITY_SETUP_BUTTON_ID = 4
-        self.identityButton = wx.Button(self.buttonsPanel, IDENTITY_SETUP_BUTTON_ID, 'Identity...')
-        self.buttonsPanelSizer.Add(self.identityButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
-        self.Bind(wx.EVT_BUTTON, self.setup_identity, id=IDENTITY_SETUP_BUTTON_ID)
-
         OPTIONS_BUTTON_ID = 1
         self.optionsButton = wx.Button(self.buttonsPanel, OPTIONS_BUTTON_ID, 'Options...')
         self.buttonsPanelSizer.Add(self.optionsButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
@@ -1448,13 +1443,13 @@ class LauncherMainFrame(wx.Frame):
             dlg = wx.MessageDialog(launcherMainFrame, 'Please enter your CVL username.', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
-            return
+            return False
 
         if self.CVL_UM_password == '':
             dlg = wx.MessageDialog(launcherMainFrame, 'Please enter your CVL password.', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
-            return
+            return False
 
         try:
             payload = user_management.get_key(cvlLauncherConfig, self.CVL_UM_username, self.CVL_UM_password)
@@ -1465,7 +1460,7 @@ class LauncherMainFrame(wx.Frame):
             dlg = wx.MessageDialog(launcherMainFrame, 'Error contacting CVL user management system', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
-            return
+            return False
 
         try:
             self.CVL_UM_massive_account  = payload['massive_account']
@@ -1476,7 +1471,9 @@ class LauncherMainFrame(wx.Frame):
             dlg = wx.MessageDialog(launcherMainFrame, 'Error parsing CVL user info', "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
-            return
+            return False
+
+        return True
 
         os.system('mkdir -p ' + join(expanduser("~"), '.MASSIVE_keys'))
         f = open(join(expanduser("~"), '.MASSIVE_keys', self.CVL_UM_private_key_name), 'w')
@@ -1678,6 +1675,15 @@ class LauncherMainFrame(wx.Frame):
 
             def run(self):
                 """Run Worker Thread."""
+
+                # We should only do the identity setup if
+                # we don't already have a CVL private key.
+                # But for now, we want the user to enter
+                # their password every time, because that's
+                # the only way can authenticate against WebDAV.
+                success = launcherMainFrame.setup_identity(None)
+                if not success:
+                    return
 
                 try:
 
