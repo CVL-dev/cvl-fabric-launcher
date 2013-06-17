@@ -1473,8 +1473,6 @@ class LauncherMainFrame(wx.Frame):
             dlg.Destroy()
             return False
 
-        return True
-
         os.system('mkdir -p ' + join(expanduser("~"), '.MASSIVE_keys'))
         f = open(join(expanduser("~"), '.MASSIVE_keys', self.CVL_UM_private_key_name), 'w')
         f.write(self.CVL_UM_private_key)
@@ -1509,6 +1507,8 @@ class LauncherMainFrame(wx.Frame):
         # cvlLauncherConfig.set("CVL Launcher Preferences", 'CVL_UM_vnc_password',        self.CVL_UM_vnc_password)
         with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
             cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+
+        return True
 
     def onToggleCvlVncDisplayNumberAutomaticCheckBox(self, event):
         if self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
@@ -1675,15 +1675,6 @@ class LauncherMainFrame(wx.Frame):
 
             def run(self):
                 """Run Worker Thread."""
-
-                # We should only do the identity setup if
-                # we don't already have a CVL private key.
-                # But for now, we want the user to enter
-                # their password every time, because that's
-                # the only way can authenticate against WebDAV.
-                success = launcherMainFrame.setup_identity(None)
-                if not success:
-                    return
 
                 try:
 
@@ -3175,6 +3166,15 @@ class LauncherMainFrame(wx.Frame):
                         wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, True)
                     if launcherMainFrame.logWindow!=None:
                         wx.CallAfter(launcherMainFrame.logWindow.Show, True)
+
+        # We should only do the identity setup if
+        # we don't already have a CVL private key.
+        # But for now, we want the user to enter
+        # their password every time, because that's the
+        # only way we can authenticate against WebDAV.
+        identitySetupSucceeded = launcherMainFrame.setup_identity(None)
+        if not identitySetupSucceeded:
+            return
 
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
