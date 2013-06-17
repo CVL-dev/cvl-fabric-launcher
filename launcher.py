@@ -1222,10 +1222,10 @@ class LauncherMainFrame(wx.Frame):
 
         self.loginDialogPanelSizer.Add(self.tabbedView, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
 
-        MASSIVE_TAB_INDEX = 0
-        self.tabbedView.ChangeSelection(MASSIVE_TAB_INDEX)
-        self.massiveTabSelected = True
-        self.cvlTabSelected = False
+        CVL_TAB_INDEX = 1
+        self.tabbedView.ChangeSelection(CVL_TAB_INDEX)
+        self.massiveTabSelected = False
+        self.cvlTabSelected = True
 
         # Buttons Panel
 
