@@ -13,8 +13,28 @@ from os.path import expanduser
 import subprocess
 import traceback
 
+OPENSSH_BUILD_DIR = 'openssh-cygwin-stdin-build'
+
 if not sys.platform.startswith('win'):
     import pexpect
+
+def is_pageant_running():
+    username = os.path.split(os.path.expanduser('~'))[-1]
+    return 'PAGEANT.EXE' in os.popen('tasklist /FI "USERNAME eq %s"' % username).read()
+
+def start_pageant():
+    if is_pageant_running():
+        # Pageant pops up a dialog box if we try to run a second
+        # instance, so leave immediately.
+        return
+
+    if hasattr(sys, 'frozen'):
+        pageant = os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR, 'bin', 'PAGEANT.EXE')
+    else:
+        pageant = os.path.join(os.getcwd(), OPENSSH_BUILD_DIR, 'bin', 'PAGEANT.EXE')
+
+    import win32process
+    subprocess.Popen([pageant], creationflags=win32process.DETACHED_PROCESS)
 
 def double_quote(x):
     return '"' + x + '"'
@@ -28,9 +48,9 @@ class sshpaths():
  
         if sys.platform.startswith('win'):
             if hasattr(sys, 'frozen'):
-                f = lambda x: os.path.join(os.path.dirname(sys.executable), 'openssh-cygwin-stdin-build', 'bin', x)
+                f = lambda x: os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR, 'bin', x)
             else:
-                f = lambda x: os.path.join(os.getcwd(), 'openssh-cygwin-stdin-build', 'bin', x)
+                f = lambda x: os.path.join(os.getcwd(), OPENSSH_BUILD_DIR, 'bin', x)
  
             sshBinary        = f('ssh.exe')
             sshKeyGenBinary  = f('ssh-keygen.exe')
