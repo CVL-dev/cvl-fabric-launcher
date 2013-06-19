@@ -55,7 +55,7 @@ class sshpaths():
             sshBinary        = f('ssh.exe')
             sshKeyGenBinary  = f('ssh-keygen.exe')
             sshKeyScanBinary = f('ssh-keyscan.exe')
-            sshAgentBinary   = f('ssh-agent.exe')
+            sshAgentBinary   = f('charade.exe')
             sshAddBinary     = f('ssh-add.exe')
             chownBinary      = f('chown.exe')
             chmodBinary      = f('chmod.exe')
@@ -162,11 +162,15 @@ class KeyDist():
             except:
                 print 'startAgentThread: did not find SSH_AUTH_SOCK environment variable; trying to start ssh-agent'
                 try:
+                    # FIXME make sure that pageant is running?
                     agent = subprocess.Popen(self.keydistObject.sshpaths.sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
                     stdout = agent.stdout.readlines()
                     print 'startagent stdout:', str(stdout)
                     for line in stdout:
-                        match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*); export SSH_AUTH_SOCK;$",line)
+                        if sys.platform.startswith('win'):
+                            match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*);.*$",line) # output from charade.exe doesn't match the regex, even though it looks the same!?
+                        else:
+                            match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*); export SSH_AUTH_SOCK;$",line)
                         if match:
                             agentenv = match.group('socket')
                             os.environ['SSH_AUTH_SOCK'] = agentenv
@@ -219,6 +223,9 @@ class KeyDist():
             keylist.wait()
             stdout = keylist.stdout.readlines()
             self.keydistObject.pubkeylock.acquire()
+
+            print 'getPubKeyThread: output of ssh-add -l:', stdout
+
             for line in stdout:
                 match = re.search("^(?P<keytype>\S+)\ (?P<key>\S+)\ (?P<keycomment>.+)$",line)
                 if match:
@@ -226,6 +233,7 @@ class KeyDist():
                     correctKey = re.search('.*{launchercomment}.*'.format(launchercomment=self.keydistObject.launcherKeyComment),keycomment)
                     if correctKey:
                         self.keydistObject.keyloaded = True
+                        print 'getPubKeyThread: loaded key :)'
                         self.keydistObject.pubkey = line.rstrip()
             if (self.keydistObject.keyloaded):
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self.keydistObject)
@@ -420,11 +428,14 @@ class KeyDist():
                 self.keydistObject.keycopiedLock.release()
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self.keydistObject)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
+                print 'CopyIDThread: successfully copied the key'
             except ssh.AuthenticationException as e:
                 string = "%s"%e
+                print 'CopyIDThread: blerp1: ' + string
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,self.keydistObject,string)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
             except ssh.SSHException as e:
+                print 'CopyIDThread: blerp2: ' + string
                 string = "%s"%e
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self.keydistObject,string)
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)

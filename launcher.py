@@ -1908,6 +1908,7 @@ class LauncherMainFrame(wx.Frame):
 
                     logger_debug("Attempting to log in to " + self.host)
 
+                    sshKeyDist.start_pageant()
                     sshPaths = sshKeyDist.sshpaths()
                     skd = sshKeyDist.KeyDist(self.username,self.host,launcherMainFrame,sshPaths)
                     skd.distributeKey()
@@ -1915,23 +1916,22 @@ class LauncherMainFrame(wx.Frame):
                         wx.Yield()
                         time.sleep(0.1)
 
-                    if not skd.authentication_success: # FIXME do we need to do this at all given that sshKeyDist now does an authentication test?
-                        self.sshClient = ssh.SSHClient()
-                        self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
+                    self.sshClient = ssh.SSHClient()
+                    self.sshClient.set_missing_host_key_policy(ssh.AutoAddPolicy())
 
-                        try:
-                            self.sshClient.connect(self.host, username=self.username)
-                        except ssh.AuthenticationException, e:
-                            logger_error("Failed to authenticate with user's username/password credentials: " + str(e))
-                            die_from_login_thread('Authentication error with user %s on server %s' % (self.username, self.host), submit_log=False)
-                            return
-                        except:
-                            logger_error("Error when connecting to " + self.host)
-                            logger_error(traceback.format_exc())
-                            die_from_login_thread('Network error when connecting to %s' % (self.host,), submit_log=False)
-                            return
+                    try:
+                        self.sshClient.connect(self.host, username=self.username)
+                    except ssh.AuthenticationException, e:
+                        logger_error("Failed to authenticate with user's username/password credentials: " + str(e))
+                        die_from_login_thread('Authentication error with user %s on server %s' % (self.username, self.host), submit_log=False)
+                        return
+                    except:
+                        logger_error("Error when connecting to " + self.host)
+                        logger_error(traceback.format_exc())
+                        die_from_login_thread('Network error when connecting to %s' % (self.host,), submit_log=False)
+                        return
 
-                        logger_debug("First login done.")
+                    logger_debug("First login done.")
 
                     logger_debug('Calling "module load massive"') # FIXME where did this go?
 
