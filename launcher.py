@@ -1473,7 +1473,15 @@ class LauncherMainFrame(wx.Frame):
             dlg.Destroy()
             return False
 
-        os.system('mkdir -p ' + join(expanduser("~"), '.MASSIVE_keys'))
+        # On Win XP, using "mkdir -p" creates a "-p" directory
+        # the first time, and then gives:
+        #   "A subdirectory or file -p already exists"
+        # Also, home directories can contain spaces,
+        # e.g. C:\Documents and Settings\Username,
+        # so we need quotes.
+        massiveKeysPath = join(expanduser("~"), '.MASSIVE_keys')
+        if not os.path.exists(massiveKeysPath):
+            os.system('mkdir "' + massiveKeysPath + '"')
         f = open(join(expanduser("~"), '.MASSIVE_keys', self.CVL_UM_private_key_name), 'w')
         f.write(self.CVL_UM_private_key)
         f.close()
