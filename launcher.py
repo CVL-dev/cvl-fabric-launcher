@@ -3175,15 +3175,6 @@ class LauncherMainFrame(wx.Frame):
                     if launcherMainFrame.logWindow!=None:
                         wx.CallAfter(launcherMainFrame.logWindow.Show, True)
 
-        # We should only do the identity setup if
-        # we don't already have a CVL private key.
-        # But for now, we want the user to enter
-        # their password every time, because that's the
-        # only way we can authenticate against WebDAV.
-        identitySetupSucceeded = launcherMainFrame.setup_identity(None)
-        if not identitySetupSucceeded:
-            return
-
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
 
@@ -3194,6 +3185,16 @@ class LauncherMainFrame(wx.Frame):
         if launcherMainFrame.tabbedView.GetSelection()==CVL_TAB_INDEX:
             launcherMainFrame.massiveTabSelected = False
             launcherMainFrame.cvlTabSelected = True
+
+        if launcherMainFrame.cvlTabSelected:
+            # We should only do the identity setup if
+            # we don't already have a CVL private key.
+            # But for now, we want the user to enter
+            # their password every time, because that's the
+            # only way we can authenticate against WebDAV.
+            identitySetupSucceeded = launcherMainFrame.setup_identity(None)
+            if not identitySetupSucceeded:
+                return
 
         if launcherMainFrame.massiveTabSelected:
             self.massiveLoginHost = self.massiveLoginHostComboBox.GetValue()
