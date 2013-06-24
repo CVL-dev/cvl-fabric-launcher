@@ -12,10 +12,30 @@ import sys
 from os.path import expanduser
 import subprocess
 import traceback
-from utilityFunctions import logger_debug
+from utilityFunctions import logger_debug, logger_error
+
+OPENSSH_BUILD_DIR = 'openssh-cygwin-stdin-build'
 
 if not sys.platform.startswith('win'):
     import pexpect
+
+def is_pageant_running():
+    username = os.path.split(os.path.expanduser('~'))[-1]
+    return 'PAGEANT.EXE' in os.popen('tasklist /FI "USERNAME eq %s"' % username).read()
+
+def start_pageant():
+    if is_pageant_running():
+        # Pageant pops up a dialog box if we try to run a second
+        # instance, so leave immediately.
+        return
+
+    if hasattr(sys, 'frozen'):
+        pageant = os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR, 'bin', 'PAGEANT.EXE')
+    else:
+        pageant = os.path.join(os.getcwd(), OPENSSH_BUILD_DIR, 'bin', 'PAGEANT.EXE')
+
+    import win32process
+    subprocess.Popen([pageant], creationflags=win32process.DETACHED_PROCESS)
 
 def double_quote(x):
     return '"' + x + '"'
@@ -29,14 +49,14 @@ class sshpaths():
  
         if sys.platform.startswith('win'):
             if hasattr(sys, 'frozen'):
-                f = lambda x: os.path.join(os.path.dirname(sys.executable), 'openssh-cygwin-stdin-build', 'bin', x)
+                f = lambda x: os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR, 'bin', x)
             else:
-                f = lambda x: os.path.join(os.getcwd(), 'openssh-cygwin-stdin-build', 'bin', x)
+                f = lambda x: os.path.join(os.getcwd(), OPENSSH_BUILD_DIR, 'bin', x)
  
             sshBinary        = f('ssh.exe')
             sshKeyGenBinary  = f('ssh-keygen.exe')
             sshKeyScanBinary = f('ssh-keyscan.exe')
-            sshAgentBinary   = f('ssh-agent.exe')
+            sshAgentBinary   = f('charade.exe')
             sshAddBinary     = f('ssh-add.exe')
             chownBinary      = f('chown.exe')
             chmodBinary      = f('chmod.exe')
@@ -122,12 +142,14 @@ class KeyDist():
                 self.canceled = False
                 self.password = self.PassphraseField.GetValue()
             self.Close()
-            self.Destroy()
 
 
         def getPassword(self):
             val = self.ShowModal()
-            return self.password
+            passwd = self.password
+            canceled = self.canceled
+            self.Destroy()
+            return (canceled,passwd)
 
     class startAgentThread(Thread):
         def __init__(self,keydistObject):
@@ -148,18 +170,24 @@ class KeyDist():
                 agentenv = os.environ['SSH_AUTH_SOCK']
             except:
                 try:
+                    # FIXME make sure that pageant is running?
                     agent = subprocess.Popen(self.keydistObject.sshpaths.sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
                     stdout = agent.stdout.readlines()
                     for line in stdout:
-                        match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*); export SSH_AUTH_SOCK;$",line)
+                        if sys.platform.startswith('win'):
+                            match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*);.*$",line) # output from charade.exe doesn't match the regex, even though it looks the same!?
+                        else:
+                            match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*); export SSH_AUTH_SOCK;$",line)
                         if match:
                             agentenv = match.group('socket')
                             os.environ['SSH_AUTH_SOCK'] = agentenv
                     if agent is None:
-                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL, self, str(stdout))
+                        self.keydistObject.cancel(message="I tried to start and ssh agent, but failed with the error message %s"%str(stdout))
+                        return
                 except Exception as e:
                     string = "%s"%e
-                    newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self,string)
+                    self.keydistObject.cancel(message="I tried to start and ssh agent, but failed with the error message %s"%e)
+                    return
 
             newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_GETPUBKEY,self.keydistObject)
             if (not self.stopped()):
@@ -178,19 +206,42 @@ class KeyDist():
             return self._stop.isSet()
 
         def run(self):
-            cmd = '{sshkeygen} -q -f "{keyfilename}" -C "{keycomment}" -N {password}'.format(sshkeygen=self.keydistObject.sshpaths.sshKeyGenBinary,
+            logger_debug("executing genkeyThread, run method")
+            cmd = '{sshkeygen} -q -f "{keyfilename}" -C "{keycomment}" -N \"{password}\"'.format(sshkeygen=self.keydistObject.sshpaths.sshKeyGenBinary,
                                                                                                  keyfilename=self.keydistObject.sshpaths.sshKeyPath,
                                                                                                  keycomment=self.keydistObject.launcherKeyComment,
                                                                                                  password=self.keydistObject.password)
-            keygen_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
-            keygen_proc.wait()
+            try:
+                keygen_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+                (stdout,stderr) = keygen_proc.communicate("\n\n")
+                print "sshkeygen completed"
+                if (stderr != None):
+                    logger_debug("key gen proc returned an error %s"%stderr)
+                    print "key gen proc returned an error %s"%stderr
+                    self.keydistObject.cancel("Unable to generate a new ssh key pair %s"%stderr)
+                    return
+                if (stdout != None):
+                    logger_error("key gen proc returned a message %s"%stdout)
+                    print "key gen proc returned a message, none was expected %s"%stdout
+                    #self.keydistObject.cancel("Unable to generate a new ssh key pair %s"%stderr)
+                    #return
+            except Exception as e:
+                print "sshkeygen threw and exception %s"%e
+                self.keydistObject.cancel("Unable to generate a new ssh key pair: %s"%e)
+                return
+
 
             try:
+                print "sshkeygen completed, trying to open the key file"
                 with open(self.keydistObject.sshpaths.sshKeyPath,'r'): pass
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LOADKEY,self.keydistObject) # Auth hasn't really failed but this event will trigger loading the key
             except Exception as e:
-                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self.keydistObject,"error generating key")
+                logger_error("ssh key gen failed %s"%e)
+                self.keydistObject.cancel("Unable to generate a new ssh key pair %s"%e)
+                return
             if (not self.stopped()):
+                print "posting the LOADKEY event"
+                logger_debug("generating LOADKEY event from genkeyThread")
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
 
     class getPubKeyThread(Thread):
@@ -208,23 +259,34 @@ class KeyDist():
         def run(self):
             sshKeyListCmd = self.keydistObject.sshpaths.sshAddBinary + " -L "
             keylist = subprocess.Popen(sshKeyListCmd, stdout = subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
-            keylist.wait()
-            stdout = keylist.stdout.readlines()
+            (stdout,stderr) = keylist.communicate()
             self.keydistObject.pubkeylock.acquire()
-            for line in stdout:
+
+            print 'getPubKeyThread: output of ssh-add -l:', stdout
+
+            lines = stdout.split('\n')
+            print "ssh key list completed"
+            for line in lines:
                 match = re.search("^(?P<keytype>\S+)\ (?P<key>\S+)\ (?P<keycomment>.+)$",line)
                 if match:
                     keycomment = match.group('keycomment')
                     correctKey = re.search('.*{launchercomment}.*'.format(launchercomment=self.keydistObject.launcherKeyComment),keycomment)
                     if correctKey:
                         self.keydistObject.keyloaded = True
+                        print 'getPubKeyThread: loaded key :)'
                         self.keydistObject.pubkey = line.rstrip()
+            print "all lines processed"
             if (self.keydistObject.keyloaded):
+                print "key loaded"
+                logger_debug("getPubKeyThread found a key, posting TESTAUTH")
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self.keydistObject)
             else:
+                print "key not loaded"
+                logger_debug("getPubKeyThread did not find a key, posting LOADKEY")
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LOADKEY,self.keydistObject)
             self.keydistObject.pubkeylock.release()
             if (not self.stopped()):
+                logger_debug("getPubKeyThread is posting the next event")
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
 
     class scanHostKeysThread(Thread):
@@ -300,7 +362,8 @@ class KeyDist():
             stdout, stderr = ssh.communicate()
             ssh.wait()
             if 'success_testauth' in stdout:
-                self.authentication_success = True
+                print 'testAuthThread: run(): got success_testauth in stdout :)'
+                self.keydistObject.authentication_success = True
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHSUCCESS,self.keydistObject)
             else:
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHFAIL,self.keydistObject)
@@ -338,7 +401,9 @@ class KeyDist():
             if sys.platform.startswith('win'):
                 # The patched OpenSSH binary on Windows/cygwin allows us
                 # to send the password via stdin.
-                stdout, stderr = subprocess.Popen(self.keydistObject.sshpaths.sshAddBinary + ' ' + double_quote(self.keydistObject.sshKeyPath), 
+                cmd = self.keydistObject.sshpaths.sshAddBinary + ' ' + double_quote(self.keydistObject.sshpaths.sshKeyPath)
+                print 'on Windows, so running: ' + cmd
+                stdout, stderr = subprocess.Popen(cmd,
                                                   stdin=subprocess.PIPE,
                                                   stdout=subprocess.PIPE,
                                                   stderr=subprocess.STDOUT,
@@ -367,20 +432,21 @@ class KeyDist():
                 idx = lp.expect(["Identity added", ".*pass.*"])
 
                 if idx == 1:
+                    logger_debug("sending passphrase to ssh-add")
                     lp.sendline(passphrase)
 
                     idx = lp.expect(["Identity added", "Bad pass", pexpect.EOF])
 
-                    if idx == 0:
-                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_GETPUBKEY, self.keydistObject)
-                    elif idx == 1:
-                        if passphrase == '':
-                            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
-                        else:
-                            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_WRONGPASS, self.keydistObject)
-                    else:
+                if idx == 0:
+                    newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_GETPUBKEY, self.keydistObject)
+                elif idx == 1:
+                    if passphrase == '':
+                        logger_debug("passphrase is an empty string ssh-add returned Bad pass")
                         newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
+                    else:
+                        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_WRONGPASS, self.keydistObject)
                 else:
+                    logger_debug("1 returning KEY_LOCKED %s %s"%(lp.before,lp.after))
                     newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
                 lp.close()
 
@@ -420,12 +486,18 @@ class KeyDist():
                 self.keydistObject.keycopied=True
                 self.keydistObject.keycopiedLock.release()
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self.keydistObject)
+                wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
+                print 'CopyIDThread: successfully copied the key'
             except ssh.AuthenticationException as e:
                 string = "%s"%e
+                print 'CopyIDThread: blerp1: ' + string
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,self.keydistObject,string)
-            except Exception as e:
+                wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
+            except ssh.SSHException as e:
+                print 'CopyIDThread: blerp2: ' + string
                 string = "%s"%e
-                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self.keydistObject,string)
+                self.keydistObject.cancel(message=string)
+                return
             if (not self.stopped()):
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(), event)
 
@@ -446,40 +518,32 @@ class KeyDist():
                 wx.CallAfter(event.keydist.getNewPassphrase_stage2)
             if (event.GetId() == KeyDist.EVT_KEYDIST_NEWPASS_COMPLETE):
                 logger_debug("recieved NEWPASS_COMPLETE event")
-                try:
-                    if (event.keydist.workThread != None):
-                        event.keydist.workThread.join()
-                except RuntimeError:
-                    pass
-                event.keydist.workThread = KeyDist.genkeyThread(event.keydist)
-                event.keydist.workThread.start()
+                t = KeyDist.genkeyThread(event.keydist)
+                t.setDaemon(True)
+                t.start()
+                event.keydist.threads.append(t)
             event.Skip()
 
         def copyid(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_COPYID_NEEDPASS):
                 logger_debug("recieved COPYID_NEEDPASS event")
                 wx.CallAfter(event.keydist.getLoginPassword,event.string)
-            if (event.GetId() == KeyDist.EVT_KEYDIST_COPYID):
+            elif (event.GetId() == KeyDist.EVT_KEYDIST_COPYID):
                 logger_debug("recieved COPYID event")
-                try:
-                    if (event.keydist.workThread != None):
-                        event.keydist.workThread.join()
-                except RuntimeError:
-                    pass
-                event.keydist.workThread = KeyDist.CopyIDThread(event.keydist)
-                event.keydist.workThread.start()
-            event.Skip()
+                t = KeyDist.CopyIDThread(event.keydist)
+                t.setDaemon(True)
+                t.start()
+                event.keydist.threads.append(t)
+            else:
+                event.Skip()
 
         def scanhostkeys(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_SCANHOSTKEYS):
                 logger_debug("recieved SCANHOSTKEYS event")
-                try:
-                    if (event.keydist.workThread != None):
-                        event.keydist.workThread.join()
-                except RuntimeError:
-                    pass
-                event.keydist.workThread = KeyDist.scanHostKeysThread(event.keydist)
-                event.keydist.workThread.start()
+                t = KeyDist.scanHostKeysThread(event.keydist)
+                t.setDaemon(True)
+                t.start()
+                event.keydist.threads.append(t)
             event.Skip()
 
         def cancel(event):
@@ -487,17 +551,17 @@ class KeyDist():
                 event.keydist._canceled.set()
                 if (len(event.string)>0):
                     pass
-                try:
-                    if (event.keydist.workThread != None):
-                        event.keydist.workThread.stop()
-                        event.keydist.workThread.join()
-                except RuntimeError:
-                    pass
+                for t in event.keydist.threads:
+                    try:
+                        t.stop()
+                        t.join()
+                    except:
+                        pass
                 event.keydist.completed=True
                 if (event.keydist.callback_fail != None):
-                    print "skd is calling callback_fail"
                     event.keydist.callback_fail()
-            event.Skip()
+            else:
+                event.Skip()
 
         def success(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_AUTHSUCCESS):
@@ -511,39 +575,30 @@ class KeyDist():
         def needagent(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_NEEDAGENT):
                 logger_debug("received NEEDAGENT event")
-                try:
-                    if (event.keydist.workThread != None):
-                        event.keydist.workThread.join()
-                except RuntimeError:
-                    pass
-                event.keydist.workThread = KeyDist.startAgentThread(event.keydist)
-                event.keydist.workThread.start()
+                t = KeyDist.startAgentThread(event.keydist)
+                t.setDaemon(True)
+                t.start()
+                event.keydist.threads.append(t)
             else:
                 event.Skip()
 
         def listpubkeys(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_GETPUBKEY):
                 logger_debug("received GETPUBKEY event")
-                try:
-                    if (event.keydist.workThread != None):
-                        event.keydist.workThread.join()
-                except RuntimeError:
-                    pass
-                event.keydist.workThread = KeyDist.getPubKeyThread(event.keydist)
-                event.keydist.workThread.start()
+                t = KeyDist.getPubKeyThread(event.keydist)
+                t.setDaemon(True)
+                t.start()
+                event.keydist.threads.append(t)
             else:
                 event.Skip()
 
         def testauth(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_TESTAUTH):
                 logger_debug("received TESTAUTH event")
-                try:
-                    if (event.keydist.workThread != None):
-                        event.keydist.workThread.join()
-                except RuntimeError:
-                    pass
-                event.keydist.workThread = KeyDist.testAuthThread(event.keydist)
-                event.keydist.workThread.start()
+                t = KeyDist.testAuthThread(event.keydist)
+                t.setDaemon(True)
+                t.start()
+                event.keydist.threads.append(t)
             else:
                 event.Skip()
 
@@ -559,13 +614,10 @@ class KeyDist():
         def loadkey(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_LOADKEY):
                 logger_debug("received LOADKEY event")
-                try:
-                    if (event.keydist.workThread != None):
-                        event.keydist.workThread.join()
-                except RuntimeError:
-                    pass
-                event.keydist.workThread = KeyDist.loadKeyThread(event.keydist)
-                event.keydist.workThread.start()
+                t = KeyDist.loadKeyThread(event.keydist)
+                t.setDaemon(True)
+                t.start()
+                event.keydist.threads.append(t)
             else:
                 event.Skip()
 
@@ -646,7 +698,7 @@ class KeyDist():
         self.host = host
         self.notifywindow = notifywindow
         self.sshKeyPath = ""
-        self.workThread = None
+        self.threads=[]
         self.pubkeyfp = None
         self.keyloaded = False
         self.password = None
@@ -663,35 +715,40 @@ class KeyDist():
 
     def GetKeyPassword(self,prepend=""):
         ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'Unlock Key',prepend+"Please enter the passphrase for the key","OK","Cancel")
-        password = ppd.getPassword()
-        if (password == None):
-            event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL,self)
+        (canceled,password) = ppd.getPassword()
+        if (canceled):
+            self.cancel("Sorry, I can't continue without the password for that key. If you've forgotten the password, you could remove the key and generate a new one. The key probably located in ~/.ssh/MassiveKey*")
+            return
         else:
             self.password = password
-            event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHFAIL,self)
-        wx.PostEvent(self.notifywindow.GetEventHandler(),event)
+            event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self)
+            wx.PostEvent(self.notifywindow.GetEventHandler(),event)
 
     def getLoginPassword(self,prepend=""):
         ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'Login Passphrase',prepend+"Please enter your login password for username %s at %s"%(self.username,self.host),"OK","Cancel")
-        password = ppd.getPassword()
+        (canceled,password) = ppd.getPassword()
+        if canceled:
+            self.cancel()
+            return
         self.password = password
         event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID,self)
         wx.PostEvent(self.notifywindow.GetEventHandler(),event)
 
     def getNewPassphrase_stage1(self,prepend=""):
         ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'New Passphrase',prepend+"Please enter a new passphrase","OK","Cancel")
-        password = ppd.getPassword()
-        if (len(password) < 6 and len(password)>0):
-            event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_REQ,self,"The password was too short. ")
-        else:
-            self.password = password
-            event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_RPT,self)
-        wx.PostEvent(self.notifywindow.GetEventHandler(),event)
+        (canceled,password) = ppd.getPassword()
+        if (not canceled):
+            if (password != None and len(password) < 6 and len(password)>0):
+                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_REQ,self,"The password was too short. ")
+            else:
+                self.password = password
+                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_RPT,self)
+            wx.PostEvent(self.notifywindow.GetEventHandler(),event)
 
     def getNewPassphrase_stage2(self):
         ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'New Passphrase',"Please repeat the new passphrase","OK","Cancel")
-        phrase = ppd.getPassword()
-        if (phrase == None):
+        (canceled,phrase) = ppd.getPassword()
+        if (phrase == None and not canceled):
             phrase = ""
         if (phrase == self.password):
             event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_COMPLETE,self)
@@ -709,8 +766,8 @@ class KeyDist():
     def canceled(self):
         return self._canceled.isSet()
 
-    def cancel(self,callback_fail=None):
-        self._canceled.set()
-        newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL, self)
-        wx.PostEvent(self.notifywindow.GetEventHandler(), newevent)
-        self.callback_fail=callback_fail
+    def cancel(self,message=""):
+        if (not self.canceled()):
+            self._canceled.set()
+            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL, self)
+            wx.PostEvent(self.notifywindow.GetEventHandler(), newevent)
