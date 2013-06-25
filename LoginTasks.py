@@ -113,16 +113,18 @@ class LoginProcess():
                 otpProcess = subprocess.Popen(otp_cmd,
                     universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                 stdout,stderr = otpProcess.communicate()
+                passwdFound=False
                 for line in stdout.split('\n'):
                     passwd = re.search(self.loginprocess.otpRegEx.format(**self.loginprocess.jobParams),line)
                     if (passwd):
                         self.loginprocess.jobParams.update(passwd.groupdict())
+                        passwdFound=True
                         break
 
             except Exception as e:
                 self.loginprocess.cancel("Couldn't execute vncpassword %s"%e)
                 return
-            if (not passwd):
+            if (not passwdFound):
                 self.loginprocess.cancel("Couldn't extract a VNC password")
                 return
             if (not self.stopped()):
@@ -340,7 +342,7 @@ class LoginProcess():
                     if (not jobRunning and tsleep > 15 and self.loginprocess.showStartCmd!=None):
                         stdoutRead, stderrRead = run_ssh_command(sshCmd.format(**jobParams),self.loginprocess.showStartCmd.format(**jobParams),ignore_errors=True)
                         if not "00:00:00" in stdoutRead:
-                            logger_debug("showstart " + self.loginprocess.vncJobID + "...")
+                            logger_debug("showstart " + self.loginprocess.jobParams['jobid'] + "...")
                             logger_debug('showstart stderr: ' + stderrRead)
                             logger_debug('showstart stdout: ' + stdoutRead)
                       
@@ -1020,14 +1022,15 @@ class LoginProcess():
 
         if (self.usePBS):
             self.listAllCmd='qstat -u {username}'
-            self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9])\.\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_{username})\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>[0-9]+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
+            self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9])\.\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_{username})\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
             self.runningCmd='qstat -u {username}'
-            self.runningRegEx='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_{username})\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>[0-9]+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
+            self.runningRegEx='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_{username})\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
             self.stopCmd='qdel {jobid}'
             self.execHostCmd='qpeek {jobidNumber}'
             self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
             self.startServerCmd="/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False"
             self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
+            self.showStartCmd="showstart {jobid}"
         else:
             self.listAllCmd='"module load turbovnc ; vncserver -list"'
             self.listAllRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
@@ -1038,6 +1041,7 @@ class LoginProcess():
             self.execHostRegEx='^\s*execHost: (?P<execHost>\S+)\s*$'
             self.startServerCmd = "vncsession --vnc turbovnc --geometry {resolution}"
             self.startServerRegEx="^.*started on display \S+(?P<vncDisplay>:[0-9]+).*$"
+            self.showStartCmd=None
 
         if (not self.directConnect):
             self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
