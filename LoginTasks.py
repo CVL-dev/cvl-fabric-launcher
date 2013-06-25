@@ -34,32 +34,27 @@ class LoginProcess():
 
         def run(self):
             try:
-                if self.loginprocess.localPortNumber=="0":
+                # Dodgyness ... I can't think of how to determine the remotePortNumber except by adding 5900 to the vnc Display number.
+                # I can't think of an easy way to get the vncDisplay number when executing via qsub, but on MASSIVE it will always ben display :1
+                if (not self.loginprocess.jobParams.has_key('localPortNumber')):
                     import socket
                     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     sock.bind(('localhost', 0))
                     localPortNumber = sock.getsockname()[1]
                     sock.close()
                     self.loginprocess.localPortNumber = str(localPortNumber)
+                    self.loginprocess.jobParams['localPortNumber'] = str(localPortNumber)
+                if (not self.loginprocess.jobParams.has_key('vncDisplay')):
+                    self.loginprocess.jobParams['vncDisplay']=":1"
+                self.loginprocess.jobParams['remotePortNumber'] = str(5900+int(self.loginprocess.jobParams['vncDisplay'].lstrip(':')))
+                try:
+                    tunnel_cmd = self.loginprocess.tunnelCmd.format(**self.loginprocess.jobParams)
+                except KeyError as e:
+                    self.loginprocess.cancel("I couldn't determine the correct command to create a tunnel for the VNC session. I was missing the parameter %s"%e)
+                    return
 
-                if (self.loginprocess.usePBS and self.loginprocess.directConnect):
-                    tunnel_cmd = self.loginprocess.sshpaths.sshBinary + " -A -c " + self.loginprocess.cipher + " " \
-                        "-t -t " \
-                        "-oStrictHostKeyChecking=yes " \
-                        "-L " + self.loginprocess.localPortNumber + ":" + self.loginprocess.remoteHost + ":" + self.loginprocess.remotePortNumber + " -l " + self.loginprocess.username + " " + self.loginprocess.execHost + ' "echo tunnel_hello; bash "'
-                if (self.loginprocess.usePBS and not self.loginprocess.directConnect):
-                    tunnel_cmd = self.loginprocess.sshpaths.sshBinary + " -A -c " + self.loginprocess.cipher + " " \
-                        "-t -t " \
-                        "-oStrictHostKeyChecking=yes " \
-                        "-L " + self.loginprocess.localPortNumber + ":" + self.loginprocess.remoteHost + ":" + self.loginprocess.remotePortNumber + " -l " + self.loginprocess.username + " " + self.loginprocess.host + ' "echo tunnel_hello; bash "'
-                if (not self.loginprocess.usePBS and self.loginprocess.directConnect):
-                    tunnel_cmd = self.loginprocess.sshpaths.sshBinary + " -A -c " + self.loginprocess.cipher + " " \
-                        "-t -t " \
-                        "-oStrictHostKeyChecking=yes " \
-                        "-L " + self.loginprocess.localPortNumber + ":" + self.loginprocess.remoteHost + ":" + self.loginprocess.remotePortNumber + " -l " + self.loginprocess.username + " " + self.loginprocess.host + ' "echo tunnel_hello; bash "'
-                if (not self.loginprocess.usePBS and not self.loginprocess.directConnect):
-                    logger_debug("impossible situation in create tunnel not using PBS and not directConnect")
-                    self.loginprocess.cancel("Impossible situation: You've elected not to use PBS to start a job (as is the norm for a cluster) but also not to direct connect (as is the norm for the cloud) so I don't know what to do")
+
+
                 logger_debug('tunnel_cmd: ' + tunnel_cmd)
 
                 # Not 100% sure if this is necessary on Windows vs Linux. Seems to break the
@@ -73,24 +68,16 @@ class LoginProcess():
                     universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                 while (not self.stopped()):
                     time.sleep(0.1)
-                    print "in create tunnel. calling readline()"
                     line = self.process.stdout.readline()
-                    print "read line %s"%line
-                    if "tunnel_hello" in line:
-                        logger_debug('Received tunnel_hello so ssh tunnel appears to be ok.')
-                        self.success()
-                    if (line.strip()!="" and not self.stopped()):
-                        logger_debug('Spurious stdout from tunnel command: ' + line)
-                    if "No such file" in line:
-                        logger_error('Tunnel command reported "No such file"')
-                        self.failure()
-                        return
-                    if "is not recognized" in line:
-                        logger_error('Tunnel command reported "is not recognized"')
-                        self.failure()
-                        return
+                    if (line != None):
+                        match = re.search(self.loginprocess.tunnelRegEx.format(**self.loginprocess.jobParams),line)
+                        if (match and not self.stopped()):
+                            self.success()
+                            success=True
+                    else:
+                        if (not success):
+                            self.failure()
                     if self.stopped():
-                        print "tunnel thread stopped, exiting"
                         return
             except Exception as e:
                 error_message = "%s"%e
@@ -111,35 +98,32 @@ class LoginProcess():
             return self._stop.isSet()
 
         def run(self):
-            print "in getOTPThread.run"
             try:
-                displayNumber = self.loginprocess.vncDisplay.split(':')[1]
-                if (self.loginprocess.directConnect):
-                    otp_cmd_base = '{binary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {execHost} "module load turbovnc ; vncpasswd -o -display localhost:{displayNumber}"'
-                    otp_cmd = otp_cmd_base.format(binary=self.loginprocess.sshpaths.sshBinary,cipher=self.loginprocess.cipher,username=self.loginprocess.username,execHost=self.loginprocess.execHost,remoteHost=self.loginprocess.remoteHost,displayNumber=displayNumber)
-                else:
-                    otp_cmd_base = '{binary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh {execHost} \\"module load turbovnc ; vncpasswd -o -display localhost:{displayNumber} \\"\"'
-                    otp_cmd = otp_cmd_base.format(binary=self.loginprocess.sshpaths.sshBinary,cipher=self.loginprocess.cipher,username=self.loginprocess.username,loginHost=self.loginprocess.host,execHost=self.loginprocess.remoteHost,remoteHost=self.loginprocess.remoteHost,displayNumber=displayNumber)
+                try:
+                    otp_cmd = self.loginprocess.otpCmd.format(**self.loginprocess.jobParams)
+                except KeyError as e:
+                    self.loginprocess.cancel("Trying to get the One Time password, I was missing a parameter %s"%e)
+                    return
                 logger_debug("otp command %s"%otp_cmd)
                 if sys.platform.startswith("win"):
                     pass
                 else:
                     otp_cmd = shlex.split(otp_cmd)
+
                 otpProcess = subprocess.Popen(otp_cmd,
                     universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                 stdout,stderr = otpProcess.communicate()
                 for line in stdout.split('\n'):
-                    if "Full control one-time password:" in line:
-                        lineComponents = line.split(":")
-                        password = (lineComponents[-1])
-                        self.loginprocess.vncPassword = password.lstrip()
-                    logger_debug("vncpassword stdout: %s"%line)
-                if (self.loginprocess.vncPassword == None):
-                    self.loginprocess.cancel("Couldn't generate a one time password for the vnc server")
-                    return
-        
+                    passwd = re.search(self.loginprocess.otpRegEx.format(**self.loginprocess.jobParams),line)
+                    if (passwd):
+                        self.loginprocess.jobParams.update(passwd.groupdict())
+                        break
+
             except Exception as e:
                 self.loginprocess.cancel("Couldn't execute vncpassword %s"%e)
+                return
+            if (not passwd):
+                self.loginprocess.cancel("Couldn't extract a VNC password")
                 return
             if (not self.stopped()):
                 event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,self.loginprocess)
@@ -164,12 +148,7 @@ class LoginProcess():
         def run(self):
 
             try:
-                if (self.loginprocess.directConnect):
-                    agent_cmd_base = '{binary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {execHost} "echo agent_hello; bash "'
-                    agent_cmd = agent_cmd_base.format(binary=self.loginprocess.sshpaths.sshBinary,cipher=self.loginprocess.cipher,username=self.loginprocess.username,execHost=self.loginprocess.execHost)
-                else:
-                    agent_cmd_base = '{binary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
-                    agent_cmd = agent_cmd_base.format(binary=self.loginprocess.sshpaths.sshBinary,cipher=self.loginprocess.cipher,username=self.loginprocess.username,loginHost=self.loginprocess.host,execHost=self.loginprocess.remoteHost)
+                agent_cmd = self.loginprocess.agentCmd.format(**self.loginprocess.jobParams)
                 logger_debug('agent_cmd: ' + agent_cmd)
 
                 # Not 100% sure if this is necessary on Windows vs Linux. Seems to break the
@@ -181,22 +160,17 @@ class LoginProcess():
 
                 self.process = subprocess.Popen(agent_cmd,
                     universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
-                while True:
+                while (not self.stopped()):
                     time.sleep(0.1)
                     line = self.process.stdout.readline()
-                    if "agent_hello" in line:
-                        logger_debug('Received agent_hello so ssh agent forwarding appears to be ok.')
-                        if (not self.stopped()):
+                    if (line != None):
+                        match = re.search(self.loginprocess.agentRegEx.format(**self.loginprocess.jobParams),line)
+                        if (match and not self.stopped()):
                             self.success()
-                            print "agent_thread started succesfully, continuing to listen"
-                    if line.strip()!="" and not self.stopped():
-                        logger_debug('Spurious stdout from agent command: ' + line)
-                    if "No such file" in line:
-                        logger_error('Agent forwarding command reported "No such file"')
-                        self.failure()
-                    if "is not recognized" in line:
-                        logger_error('Agent forwarding command reported "is not recognized"')
-                        self.failure()
+                            success=True
+                    else:
+                        if (not success):
+                            self.failure()
                     if self.stopped():
                         return
 
@@ -256,32 +230,28 @@ class LoginProcess():
 
         def run(self):
             wx.CallAfter(self.loginprocess.notify_window.progressDialog.Show, False)
-            #wx.CallAfter(self.loginprocess.notify_window.progressDialog.Destroy)
             
-            try:
-                if sys.platform.startswith("win"):
-                    vncCommandString = "\""+self.loginprocess.vnc+"\" /user "+self.loginprocess.username+" /autopass " + self.loginprocess.vncOptionsString + " localhost::" + self.loginprocess.localPortNumber
-                    logger_debug('vncCommandString windows: ' +  vncCommandString)
-                    self.turboVncProcess = subprocess.Popen(vncCommandString,
-                        stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                        universal_newlines=True)
-                    self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.loginprocess.vncPassword + "\r\n")
-                else:
-                    vncCommandString = self.loginprocess.vnc + " -user " + self.loginprocess.username + " -autopass " + " -nounixlogin " + self.loginprocess.vncOptionsString + " localhost::" + self.loginprocess.localPortNumber
-                    logger_debug('vncCommandString linux/darwin: ' + vncCommandString)
-                    logger_debug('vnc one time password' + self.loginprocess.vncPassword)
-                    self.turboVncProcess = subprocess.Popen(vncCommandString,
-                        stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                        universal_newlines=True)
-                    self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.loginprocess.vncPassword + "\n")
-                if (not self.stopped()):
-                    event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,self.loginprocess)
-                    wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
-                    event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER,self.loginprocess)
-                    wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
+            if (self.loginprocess.jobParams.has_key('vncPasswd')):
 
-            except Exception as e:
-                self.loginprocess.cancel("Couldn't start the vnc viewer: %s"%e)
+                try:
+                    if sys.platform.startswith("win"):
+                        vncCommandString = "\"{vnc}\" /user {username} /autopass /nounixlogin {vncOptionsString} localhost::{localPortNumber}".format(**self.loginprocess.jobParams)
+                    else:
+                        vncCommandString = "{vnc} -user {username} -autopass -nounixlogin {vncOptionsString} localhost::{localPortNumber}".format(**self.loginprocess.jobParams)
+                    self.turboVncProcess = subprocess.Popen(vncCommandString,
+                        stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                        universal_newlines=True)
+                    self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.loginprocess.jobParams['vncPasswd'] + "\n")
+                    if (not self.stopped()):
+                        event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,self.loginprocess)
+                        wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
+                        event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER,self.loginprocess)
+                        wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
+
+                except Exception as e:
+                    self.loginprocess.cancel("Couldn't start the vnc viewer: %s"%e)
+            else:
+                    self.loginprocess.cancel("Couldn't start the vnc viewer. There was no password set")
         
     class startServerThread(Thread):
         def __init__(self,loginprocess):
@@ -297,38 +267,21 @@ class LoginProcess():
 
         def run(self):
             sshCmd = self.loginprocess.sshCmd
-            if (self.loginprocess.usePBS):
-                stdoutRead, stderrRead = run_ssh_command(sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host), "/usr/local/desktop/request_visnode.sh %s %s %s True False False"%(self.loginprocess.project,self.loginprocess.hours,self.loginprocess.nodes),ignore_errors=False, callback=self.loginprocess.cancel)
-                lines = stdoutRead.split('\n')
-                for line  in lines:
-                    match=re.search("^\s*(?P<jobid>[0-9]+\.\S+)\s*$",line)
-                    if (match):
-                        print "got the jobid"
-                        self.loginprocess.vncJobID=match.group('jobid')
-                        logger_debug("matched jobid request_visnode %s"%line)
-                    else:
-                        logger_debug("received stdout from request_visnode %s"%line)
-                logger_debug("VNC job id is %s"%self.loginprocess.vncJobID)
-                lines = stderrRead.split('\n')
-                for line in lines:
-                    logger_debug("received stderr from request_visnode %s"%line)
-                if (not self.loginprocess.validateVncJobID()):
-                    if (self.loginprocess.vncJobID != None):
-                        self.loginprocess.cancel("I tried to run a PBS job to get a desktop session, but I wasn't able to determine the Job ID. Instead of a valid Job ID I got \"%s\""%self.loginprocess.vncJobID)
-                    else:
-                        self.loginprocess.cancel("I tried to run a PBS job to get a desktop session, but I wasn't able to determine the Job ID")
-                    return
-            else:
-                cvlVncServerCommand = "vncsession --vnc turbovnc --geometry \"" + self.loginprocess.notify_window.cvlVncDisplayResolution + "\""
-                if self.loginprocess.notify_window.cvlVncDisplayNumberAutomatic==False:
-                    cvlVncServerCommand = cvlVncServerCommand + " --display " + str(self.cvlVncDisplayNumber)
-                logger_debug('cvlVncServerCommand: ' + cvlVncServerCommand)
-                stdoutRead, stderrRead = run_ssh_command(sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host), cvlVncServerCommand, ignore_errors=True)
-                lines = stdoutRead.split('\n')
-                for line in lines:
-                    if "desktop is" in line or "started on display" in line:
-                        lineComponents = line.split(":")
-                        self.loginprocess.vncDisplay = int(lineComponents[-1])
+            (stdout, stderr) = run_ssh_command(sshCmd.format(**self.loginprocess.jobParams), self.loginprocess.startServerCmd.format(**self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
+            started=False
+            import itertools
+            for line  in itertools.chain(stdout.split('\n'),stderr.split('\n')):
+                match=re.search(self.loginprocess.startServerRegEx.format(**self.loginprocess.jobParams),line)
+                if (match):
+                    print "matched the startServerRegEx %s"%line
+                    self.loginprocess.jobParams.update(match.groupdict())
+                    started=True
+                    break
+                else:
+                    print "didn't match the startServerRegEx %s"%line
+            if (not started):
+                self.loginprocess.cancel("I was unable to start the VNC server")
+                return
             if (not self.stopped()):
                 event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CONNECT_SERVER,self.loginprocess)
                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
@@ -347,77 +300,78 @@ class LoginProcess():
 
         def run(self):
             # by the time this tread completes we should have defined loginprocess.nodesAllocated and loginprocess.vncDisplay
-            sshCmd = self.loginprocess.sshCmd
             notStarted=True
             self.loginprocess.nodesAllocated=[]
-            if (self.loginprocess.usePBS):
-                # run qstat till the job starts
-                tsleep=0
-                sleepperiod=1
-                while (notStarted and not self.stopped()):
-                    tsleep+=sleepperiod
-                    if (not self.stopped()):
-                        time.sleep(sleepperiod)
-                    if (not self.loginprocess.validateVncJobID()):
-                        logger_error("Job ID is invalid, unable to connect.")
-                        if (self.loginprocess.vncJobID != None):
-                            logger_error("JobID is set to %s"%self.loginprocess.vncJobID)
-                        else:
-                            logger_error("JobID is set to None")
-                        self.loginprocess.cancel("I was trying to connect to a running desktop, but I wasn't able to determine the Job ID")
+            tsleep=0
+            sleepperiod=1
+            jobRunning=None
+            # Make local copies, just because I tired of typing "self.loginprocess."
+            runningCmd=self.loginprocess.runningCmd
+            runningRegEx=self.loginprocess.runningRegEx
+            execHostCmd=self.loginprocess.execHostCmd
+            execHostRegEx=self.loginprocess.execHostRegEx
+            sshCmd = self.loginprocess.sshCmd
+            jobParams=self.loginprocess.jobParams
+            while (not jobRunning and not self.stopped()):
+                tsleep+=sleepperiod
+                if (not self.stopped()):
+                    time.sleep(sleepperiod)
+                try:
+                    (stdout,stderr) = run_ssh_command(sshCmd.format(**jobParams),runningCmd.format(**jobParams),ignore_errors=True)
+                except KeyError as e:
+                    self.loginprocess.cancel("Trying to check if the job is running yet, I was missing a parameter %s"%e)
+                    return
+                
+                for line in stdout.split('\n'):
+                    try:
+                        regex=runningRegEx.format(**jobParams)
+                        logger_debug("searching the output of %s using regex %s"%(runningCmd.format(**jobParams),regex))
+                    except KeyError as e:
+                        logger_error("Trying to check if the job is running yet, unable to formulate regex, missing parameter %s"%e)
+                        self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
                         return
-                    (stdout,stderr) = run_ssh_command(sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host),"/usr/local/bin/qstat %s"%self.loginprocess.vncJobID,ignore_errors=True)
-                    for line in stdout.split('\n'):
-                        match = re.search("^(?P<jobid_full>\S+)\s+(?P<jobname>\S+)\s+(?P<username>\S+)\s+(?P<time>\S+)\s+(?P<state>\S+)\s+(?P<queue>\S+)\s*$",line)
-                        if match:
-                            if (match.group('state')!='R'):
-                                if (tsleep==5):
-                                    stdoutRead, stderrRead = run_ssh_command(sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host), "showstart " + self.loginprocess.vncJobID, ignore_errors=True)
-                                    if not "00:00:00" in stdoutRead:
-                                        logger_debug("showstart " + self.loginprocess.vncJobID + "...")
-                                        logger_debug('showstart stderr: ' + stderrRead)
-                                        logger_debug('showstart stdout: ' + stdoutRead)
-                          
-                                        showstartLines = stdoutRead.split("\n")
-                                        for showstartLine in showstartLines:
-                                            if showstartLine.startswith("Estimated Rsv based start"):
-                                                showstartLineComponents = showstartLine.split(" on ")
-                                                if not showstartLineComponents[1].startswith("-"):
-                                                    wx.CallAfter(self.loginprocess.updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
-                                                    sleepperiod=30
-                            else:
-                                notStarted=False
-                searching=True
-                startingXServerLineNumber = -1
-                lineFragment = ""
-                # run qpeek until we have extracted the list of nodes
-                while (searching and not self.stopped()):
-                    jobnumber = self.loginprocess.vncJobID.split('.')[0]
-                    stdout,stderr = run_ssh_command(sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host),"qpeek %s"%jobnumber,ignore_errors=True)
-                    lines = stderr.split('\n')
-                    for line in lines:
-                        if line != "":
-                            logger_error('stderr: ' + line)
-                    lineNumber=0
-                    lines = stdout.split('\n')
-                    for line in lines:
-                        if line != "":
-                            lineNumber += 1
-                            if "ERROR" in line or "Error" in line or "error" in line:
-                                logger_error('error in line: ' + line)
-                                wx.CallAfter(self.notify_window.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
-                            if "Starting XServer on the following nodes" in line:
-                                startingXServerLineNumber = lineNumber
-                            if startingXServerLineNumber!=-1 and \
-                                    lineNumber >= (startingXServerLineNumber+1) and \
-                                    lineNumber <= (startingXServerLineNumber+int(self.loginprocess.nodes)): # vis nodes
-                                visnode = line.strip()
-                                self.loginprocess.nodesAllocated.append(visnode)
-                                if lineNumber==startingXServerLineNumber+int(self.loginprocess.nodes):
-                                    searching=False
-                    self.loginprocess.vncDisplay=":1"
-            else:
-                self.loginprocess.nodesAllocated.append("localhost")
+                    jobRunning = re.search(regex,line)
+                    if (jobRunning):
+                        print "job is running"
+                        self.loginprocess.jobParams.update(jobRunning.groupdict())
+                        break
+                    if (not jobRunning and tsleep == 1):
+                        sleepperiod=15
+                    if (not jobRunning and tsleep > 15 and self.loginprocess.showStartCmd!=None):
+                        stdoutRead, stderrRead = run_ssh_command(sshCmd.format(**jobParams),self.loginprocess.showStartCmd.format(**jobParams),ignore_errors=True)
+                        if not "00:00:00" in stdoutRead:
+                            logger_debug("showstart " + self.loginprocess.vncJobID + "...")
+                            logger_debug('showstart stderr: ' + stderrRead)
+                            logger_debug('showstart stdout: ' + stdoutRead)
+                      
+                            showstartLines = stdoutRead.split("\n")
+                            for showstartLine in showstartLines:
+                                if showstartLine.startswith("Estimated Rsv based start"):
+                                    showstartLineComponents = showstartLine.split(" on ")
+                                    if not showstartLineComponents[1].startswith("-"):
+                                        wx.CallAfter(self.loginprocess.updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
+                        sleepperiod=30
+            # Loop until we figure out which host the vnc server was started on.
+            print "job is running, looking for execHost"
+            execHost = None
+            jobParams=self.loginprocess.jobParams
+            while (not execHost and not self.stopped()):
+                try:
+                    (stdout,stderr) = run_ssh_command(sshCmd.format(**jobParams),execHostCmd.format(**jobParams),ignore_errors=True)
+                except KeyError as e:
+                    logger_error("execHostCmd missing parameter %s"%e)
+                    self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
+                lines = stdout.split('\n')
+                for line in lines:
+                    try:
+                        execHost = re.search(execHostRegEx.format(**jobParams),line)
+                    except KeyError as e:
+                        logger_error("execHostRegEx missing parameter %s"%e)
+                        self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
+                        return
+                    if (execHost):
+                        self.loginprocess.jobParams.update(execHost.groupdict())
+                        break
             if (not self.stopped()):
                 logger_debug("in getExecutionHost, posting START_TUNNEL")
                 event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_TUNNEL,self.loginprocess)
@@ -437,13 +391,12 @@ class LoginProcess():
             return self._stop.isSet()
 
         def run(self):
-            sshCmd = self.loginprocess.sshCmd
-            if (self.loginprocess.usePBS):
-                stdoutRead, stderrRead = run_ssh_command(sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host), "qdel " + self.loginprocess.vncJobID, ignore_errors=False,callback=self.loginprocess.cancel)
-                logger_debug("ran qdel")
-            else:
-                stdoutRead, stderrRead = run_ssh_command(sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host), "module load turbovnc ; vncserver -kill " + self.loginprocess.vncDisplay,ignore_errors=False, callback=self.loginprocess.cancel)
-                logger_debug("ran vncserver -kill")
+            try:
+                stdoutRead, stderrRead = run_ssh_command(self.loginprocess.sshCmd.format(**self.loginprocess.jobParams),self.loginprocess.stopCmd.format(**self.loginprocess.jobParams), ignore_errors=True,callback=self.loginprocess.cancel)
+            except KeyError as e:
+                logger_error("stopCmd missing parameter %s"%e)
+                self.loginprocess.cancel("Sorry, an error occured and I was unable to shutdown your VNC session")
+                return
             if (not self.stopped()):
                 if (self.restart):
                     event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,self.loginprocess)
@@ -468,97 +421,36 @@ class LoginProcess():
             return self._stop.isSet()
 
         def run(self):
-            sshCmd=self.loginprocess.sshCmd
-            (stdout,stderrr) = run_ssh_command(self.loginprocess.sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host),self.loginprocess.qstatCmd.format(username=self.loginprocess.username),ignore_errors=True)
+            self.loginprocess.job=None
+            try:
+                (stdout,stderrr) = run_ssh_command(self.loginprocess.sshCmd.format(**self.loginprocess.jobParams),self.loginprocess.listAllCmd.format(**self.loginprocess.jobParams),ignore_errors=True)
+            except KeyError as e:
+                logger_error("listAllCmd missing parameter %s"%e)
+                self.loginprocess.cancel("Sorry, an error occured and I was unable to determine if you already have any running desktops")
+                return
             lines = stdout.split('\n')
             for line in lines:
-                match=re.search(self.loginprocess.qstatRegEx.format(username=self.loginprocess.username,jobname=self.loginprocess.jobname),line)
+                try:
+                    regex = self.loginprocess.listAllRegEx.format(**self.loginprocess.jobParams)
+                except KeyError as e:
+                    logger_error("listAllRegEx missing parameter %s"%e)
+                    self.loginprocess.cancel("Sorry, an error occured and I was unable to determine if you already have any running desktops")
+                    return
+                match=re.search(regex,line)
                 if match:
-                    groups=match.groupdict()
-                    if ((groups.has_key('state') and groups['state'] != 'C') ):
-                        self.loginprocess.joblist.append(match.groupdict())
-                    if (not groups.has_key('state')):
-                        self.loginprocess.joblist.append(match.groupdict())
+                    self.loginprocess.joblist.append(match.groupdict())
 
-            job=None
-            print "joblist %s"%self.loginprocess.joblist
-            for jobid in self.loginprocess.joblist:
-                print "jobid %s"%jobid
-                if (jobid.has_key('state') and jobid['state']=='R'):
-                    job=jobid
-            if (job==None and self.loginprocess.joblist!=[]):
-                job=self.loginprocess.joblist[-1]
-            self.loginprocess.vncJobID=None
-            self.loginprocess.vncDisplay=None
-            self.loginprocess.vncPID=None
-            self.loginprocess.timeRemaining=None
-            if job != None:
-                if (job.has_key('rtime') and job.has_key('etime')):
-                    if (job['state']=='R'):
-                        (rhours,rmin) = job['rtime'].split(':')
-                        (ehours,emin) = job['etime'].split(':')
-                        self.loginprocess.timeRemaining=(int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
-                    else:
-                        (rhours,rmin) = job['rtime'].split(':')
-                        ehours=0
-                        emin=0
-                        self.loginprocess.timeRemaining=(int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
-                if (job.has_key('jobid')):
-                    self.loginprocess.vncJobID=job['jobid']
-                if (job.has_key('display')):
-                    self.loginprocess.vncDisplay=job['display']
-                if (job.has_key('pid')):
-                    self.loginprocess.vncPID=job['pid']
+            # Currently only capabale of dealing with one existing Desktop at a time (as is MASSIVE policy)
+            # TODO make a nice dialog here to select which job you are talking about from a list of jobs.
+            if (self.loginprocess.joblist!=[]):
+                self.loginprocess.job=self.loginprocess.joblist[-1]
+                self.loginprocess.jobParams.update(self.loginprocess.job)
+
             if (not self.stopped()):
-                if (self.loginprocess.joblist !=[]):
+                if (self.loginprocess.job !=None):
                     self.callback_found()
                 else:
                     self.callback_notfound()
-
-                
-#            if (self.loginprocess.usePBS):
-#                stdoutRead,stderrRead = run_ssh_command(sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host),"qstat -u %s"%self.loginprocess.username)
-#                lines = stdoutRead.split('\n')
-#                for line in lines:
-#                    match=re.search("^\s*(?P<jobid>\S+)\s+%s\s+(?P<queue>\S+)\s+(?P<jobname>\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>[0-9]+)\s+(?P<rtime>\S+)\s+(?P<state>\S+)\s+(?P<etime>\S+)\s*$"%self.loginprocess.username,line)
-#                    if (match and "desktop" in match.group('jobname')):
-#                        self.loginprocess.joblist.append(match)
-#                        self.loginprocess.vncDisplay=None
-#                        self.loginprocess.vncPID=None
-#                        self.loginprocess.vncJobID=match.group('jobid')
-#                        if (match.group('state')=='R'):
-#                            (rhours,rmin) = match.group('rtime').split(':')
-#                            (ehours,emin) = match.group('etime').split(':')
-#                            self.loginprocess.timeRemaining=(int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
-#                        else:
-#                            (rhours,rmin) = match.group('rtime').split(':')
-#                            ehours=0
-#                            emin=0
-#                            self.loginprocess.timeRemaining=(int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
-#
-#                for line in lines:
-#                    match=re.search('^\s*(?P<jobid>[0-9]+)\s+.*$',line)
-#                    if match:
-#                        self.loginprocess.vncDisplay=None
-#                        self.loginprocess.vncPID=None
-#                        self.loginprocess.vncJobID=match.group('jobid')
-#                        self.loginprocess.timeremaining=0
-#            else:
-#                stdoutRead, stderrRead = run_ssh_command(sshCmd.format(username=self.loginprocess.username,host=self.loginprocess.host), "\"module load turbovnc ; vncserver -list\"",ignore_errors=True,callback=self.loginprocess.cancel)
-#                lines=stdoutRead.split('\n')
-#                for line in lines:
-#                    match=re.search('^(?P<display>\S+)\s+(?P<pid>[0-9]+)\s*$',line)
-#                    if match:
-#                        self.loginprocess.joblist.append(match)
-#                        self.loginprocess.vncDisplay=match.group('display')
-#                        self.loginprocess.vncPID=match.group('pid')
-#                        self.loginprocess.vncJobID=None
-#            if stdoutRead.strip()!="":
-#                event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RECONNECT_DIALOG,self.loginprocess)
-#            else:
-#                event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,self.loginprocess)
-#            if (not self.stopped()):
-#                wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
 
     class CheckVNCVerThread(Thread):
         def __init__(self,loginprocess):
@@ -816,33 +708,33 @@ class LoginProcess():
             #     _windows_.MessageDialog_swiginit(self,_windows_.new_MessageDialog(*args, **kwargs))
             # TypeError: in method 'new_MessageDialog', expected argument 1 of type 'wxWindow *'
 
-#            if self.loginprocess.notify_window.contacted_massive_website:
-#                try:
-#                    myHtmlParser = MyHtmlParser('TurboVncLatestVersionNumber')
-#                    feed = urllib2.urlopen(LAUNCHER_URL, timeout=10)
-#                    html = feed.read()
-#                    myHtmlParser.feed(html)
-#                    myHtmlParser.close()
-#                except Exception as e:
-#                    print e
-#                    logger_debug("Exception while checking TurboVNC version number.")
-#
-#                    def error_dialog():
-#                        dlg = wx.MessageDialog(self.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
-#                                                "The launcher cannot continue.\n",
-#                                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-#                        dlg.ShowModal()
-#                        dlg.Destroy()
-#                        # If we can't contact the MASSIVE website, it's probably because
-#                        # there's no active network connection, so don't try to submit
-#                        # the log to cvl.massive.org.au
-#                        dump_log(self.notify_window,submit_log=False)
-#                        sys.exit(1)
-#                    wx.CallAfter(error_dialog)
-#
-#                turboVncLatestVersion = myHtmlParser.latestVersionNumber
-#            else:
-#                turboVncLatestVersion = ''
+            if self.loginprocess.notify_window.contacted_massive_website:
+                try:
+                    myHtmlParser = MyHtmlParser('TurboVncLatestVersionNumber')
+                    feed = urllib2.urlopen(LAUNCHER_URL, timeout=10)
+                    html = feed.read()
+                    myHtmlParser.feed(html)
+                    myHtmlParser.close()
+                except Exception as e:
+                    print e
+                    logger_debug("Exception while checking TurboVNC version number.")
+
+                    def error_dialog():
+                        dlg = wx.MessageDialog(self.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
+                                                "The launcher cannot continue.\n",
+                                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                        dlg.ShowModal()
+                        dlg.Destroy()
+                        # If we can't contact the MASSIVE website, it's probably because
+                        # there's no active network connection, so don't try to submit
+                        # the log to cvl.massive.org.au
+                        dump_log(self.notify_window,submit_log=False)
+                        sys.exit(1)
+                    wx.CallAfter(error_dialog)
+
+                turboVncLatestVersion = myHtmlParser.latestVersionNumber
+            else:
+                turboVncLatestVersion = ''
             turboVncLatestVersion = ''
 
             if sys.platform.startswith("win"):
@@ -862,10 +754,10 @@ class LoginProcess():
 
             logger_debug("TurboVNC viewer version number = " + turboVncVersionNumber)
             
-            self.loginprocess.turboVncVersionNumber = turboVncVersionNumber
-            self.loginprocess.vnc = vnc
-            self.loginprocess.turboVncFlavour = turboVncFlavour
-            self.loginprocess.vncOptionsString = self.loginprocess.buildVNCOptionsString()
+            #self.loginprocess.turboVncVersionNumber = turboVncVersionNumber
+            self.loginprocess.jobParams['vnc'] = vnc
+            self.loginprocess.jobParams['turboVncFlavour'] = turboVncFlavour
+            self.loginprocess.jobParams['vncOptionsString'] = self.loginprocess.buildVNCOptionsString()
 
             if turboVncVersionNumber.startswith("0.") or turboVncVersionNumber.startswith("1.0"):
                 def showOldTurboVncWarningMessageDialog():
@@ -893,8 +785,9 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 4,"Do you want to reconnect to an existing desktop?")
                 ReconnectCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CONNECT_SERVER,event.loginprocess))
                 NewDesktopCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER,event.loginprocess))
-                if (event.loginprocess.usePBS):
-                    hours, remainder = divmod(event.loginprocess.timeRemaining, 3600)
+                timeRemaining=event.loginprocess.timeRemaining()
+                if (timeRemaining != None):
+                    hours, remainder = divmod(timeRemaining, 3600)
                     minutes, seconds = divmod(remainder, 60)
                     if (hours > 1):
                         timestring = "%s hours and %s minutes"%(hours,minutes)
@@ -984,7 +877,7 @@ class LoginProcess():
         def distributeKey(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring Authorisation")
-                event.loginprocess.skd = sshKeyDist.KeyDist(event.loginprocess.username,event.loginprocess.host,event.loginprocess.notify_window,event.loginprocess.sshpaths)
+                event.loginprocess.skd = sshKeyDist.KeyDist(event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.notify_window,event.loginprocess.sshpaths)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      event.loginprocess.cancel)
@@ -1025,26 +918,6 @@ class LoginProcess():
                 logger_debug("recieved START_TUNNEL event")
                 print "receieved START_TUNNEL event"
                 event.loginprocess.localPortNumber = "0" # Request ephemeral port.
-                if (event.loginprocess.usePBS and not event.loginprocess.directConnect): # This is the normal process for a cluster
-                    event.loginprocess.remoteHost = event.loginprocess.nodesAllocated[0] + event.loginprocess.fastInterface
-                    event.loginprocess.execHost = event.loginprocess.nodesAllocated[0]
-                    event.loginprocess.remotePortNumber = "5901"
-                if (event.loginprocess.usePBS and event.loginprocess.directConnect): # This is not currently used by the MASSIVE/CVL team. Will probably be used if we use PBS to schedule a job on a cloud node.
-                    event.loginprocess.execHost = event.loginprocess.nodesAllocated[0]
-                    event.loginprocess.remoteHost = "localhost"
-                    if (event.loginprocess.vncDisplay == None):
-                        event.loginprocess.cancel("The vnc display number was invalid")
-                        return
-                    displayNumber=event.loginprocess.vncDisplay.split(':')[1]
-                    event.loginprocess.remotePortNumber = str(5900+int(displayNumber))
-                if (not event.loginprocess.usePBS and event.loginprocess.directConnect): # This is the normal process for a desktop in the cloud
-                    event.loginprocess.execHost = event.loginprocess.host
-                    event.loginprocess.remoteHost = "localhost"
-                    displayNumber=event.loginprocess.vncDisplay.split(':')[1]
-                    event.loginprocess.remotePortNumber = str(5900+int(displayNumber))
-                if (not event.loginprocess.usePBS and not event.loginprocess.directConnect): # This is impossible
-                    logger_debug("impossible situation in startTunnel not using PBS and not directConnect")
-                    event.loginprocess.cancel("Impossible situation requested, we are not using PBS and we can't connect directly to our VNC server, I don't know where to tunnel to")
                 testRun = False
                 successCallback = lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess))
                 failCallback = lambda: event.loginprocess.cancel("Unable to start the tunnel for some reason")
@@ -1121,34 +994,65 @@ class LoginProcess():
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
         self.notify_window = notifywindow
-        self.username=username
-        self.host = host
-        self.resolution=resolution
-        self.cipher=cipher
-        self.jobid_full=None
-        self.jobid=None
+        self.loginParams={}
+        self.jobParams={}
+        self.loginParams['username']=username
+        self.loginParams['loginHost']=host
+        self.loginParams['project']=project
+        self.loginParams['sshBinary']=sshpaths.sshBinary
+        self.jobParams['resolution']=resolution
+        self.jobParams['cipher']=cipher
+        self.jobParams.update(self.loginParams)
         self.sshpaths=sshpaths
         self.threads=[]
-        self.project=project
-        self.hours=hours
-        self.nodes=nodes
+        self.jobParams['project']=project
+        self.jobParams['hours']=hours
+        self.jobParams['nodes']=nodes
         self._canceled=threading.Event()
         self.usePBS=usePBS
         self.directConnect = directConnect
-        self.sshCmd = '%s -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {host} '%self.sshpaths.sshBinary
+        self.sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
         self.sshTunnelProcess=None
         self.sshAgentProcess=None
         self.fastInterface="-ib"
-        self.vncPassword=None
-        self.vncJobID=None
         self.joblist=[]
-        self.jobname='desktop_{username}'.format(username=self.username)
+
+
         if (self.usePBS):
-            self.qstatCmd='qstat -u {username}'
-            self.qstatRegEx='^\s*(?P<jobid>\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>{jobname})\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>[0-9]+)\s+(?P<rtime>\S+)\s+(?P<state>\S+)\s+(?P<etime>\S+)\s*$'
+            self.listAllCmd='qstat -u {username}'
+            self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9])\.\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_{username})\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>[0-9]+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
+            self.runningCmd='qstat -u {username}'
+            self.runningRegEx='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_{username})\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>[0-9]+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
+            self.stopCmd='qdel {jobid}'
+            self.execHostCmd='qpeek {jobidNumber}'
+            self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
+            self.startServerCmd="/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False"
+            self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
         else:
-            self.qstatRegEx='^\s*(?P<jobid>[0-9]+)\s+.*$'
-            self.qstatCmd='"module load turbovnc ; vncserver -list"'
+            self.listAllCmd='"module load turbovnc ; vncserver -list"'
+            self.listAllRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
+            self.runningCmd='"module load turbovnc ; vncserver -list"'
+            self.runningRegEx='^(?P<vncDisplay>{vncDisplay})\s*(?P<vncPID>[0-9]+)\s*$'
+            self.stopCmd='"module load turbovnc ; vncserver -kill {vncDisplay}"'
+            self.execHostCmd='echo execHost: {loginHost}'
+            self.execHostRegEx='^\s*execHost: (?P<execHost>\S+)\s*$'
+            self.startServerCmd = "vncsession --vnc turbovnc --geometry {resolution}"
+            self.startServerRegEx="^.*started on display \S+(?P<vncDisplay>:[0-9]+).*$"
+
+        if (not self.directConnect):
+            self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
+            self.agentRegEx='agent_hello'
+            self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
+            self.tunnelRegEx='tunnel_hello'
+            self.otpCmd = '{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh {execHost} \\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay} \\"\"'
+            self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+        else:
+            self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {execHost} "echo agent_hello; bash "'
+            self.agentRegEx='agent_hello'
+            self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
+            self.tunnelRegEx='tunnel_hello'
+            self.otpCmd = '{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {execHost} "module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}"'
+            self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
 
         LoginProcess.EVT_LOGINPROCESS_CHECK_VNC_VER = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY = wx.NewId()
@@ -1185,6 +1089,21 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showKillServerDialog)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.shutdown)
 
+    def timeRemaining(self):
+        job=self.job
+        if job != None:
+            if (job.has_key('reqTime') and job.has_key('elapTime') and job.has_key['state']):
+                if (job['state']=='R'):
+                    (rhours,rmin) = job['reqTime'].split(':')
+                    (ehours,emin) = job['elapTime'].split(':')
+                    return (int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
+                else:
+                    (rhours,rmin) = job['reqTime'].split(':')
+                    ehours=0
+                    emin=0
+                    return (int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
+        else:
+            return None
         
     def validateVncJobID(self):
         if (self.vncJobID != None and re.search("^[0-9]+\.\S+$",self.vncJobID)):
@@ -1197,9 +1116,7 @@ class LoginProcess():
         wx.PostEvent(self.notify_window.GetEventHandler(),event)
    
     def cancel(self,error=""):
-        print "loginprocess.cancel called"
         if (not self._canceled.isSet()):
-            print "generate CANCEL event"
             self._canceled.set()
             event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CANCEL,self,error)
             wx.PostEvent(self.notify_window.GetEventHandler(),event)
@@ -1222,7 +1139,7 @@ class LoginProcess():
         # In this case, the X11 version of TurboVNC assumes that the client and server are the same computer:
         # "Same machine: preferring raw encoding"
         if not sys.platform.startswith("win"):
-            if self.turboVncFlavour == "X11":
+            if self.jobParams['turboVncFlavour'] == "X11":
                 vncOptionsString = "-encodings \"tight copyrect\""
             else:
                 vncOptionsString = "-encoding \"Tight\""
