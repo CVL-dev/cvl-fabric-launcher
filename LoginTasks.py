@@ -471,6 +471,7 @@ class LoginProcess():
                 key = None
                 queryResult = None
                 foundTurboVncInRegistry = False
+                vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
                 if not foundTurboVncInRegistry:
                     try:
                         # 64-bit Windows installation, 64-bit TurboVNC, HKEY_CURRENT_USER
@@ -549,7 +550,7 @@ class LoginProcess():
                         foundTurboVncInRegistry = False
                         #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                         #wx.CallAfter(sys.stdout.write, traceback.format_exc())
-                return (vnc,turboVncVersionNumber)
+                return (vnc, turboVncVersionNumber)
 
         def getTurboVncVersionNumber(self,vnc):
             self.turboVncVersionNumber = "0.0"
@@ -740,8 +741,7 @@ class LoginProcess():
             turboVncLatestVersion = ''
 
             if sys.platform.startswith("win"):
-                vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
-                (vnc,turboVncVersionNumber) = self.getTurboVncVersionNumber_Windows()
+                (vnc, turboVncVersionNumber) = self.getTurboVncVersionNumber_Windows()
                 turboVncFlavour = None
             else:
                 vnc = "/opt/TurboVNC/bin/vncviewer"
