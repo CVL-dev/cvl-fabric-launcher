@@ -472,6 +472,11 @@ class LoginProcess():
                 queryResult = None
                 foundTurboVncInRegistry = False
                 vnc = r"C:\Program Files\TurboVNC\vncviewer.exe"
+
+                import _winreg
+
+                turboVncVersionNumber = None
+
                 if not foundTurboVncInRegistry:
                     try:
                         # 64-bit Windows installation, 64-bit TurboVNC, HKEY_CURRENT_USER
@@ -492,7 +497,7 @@ class LoginProcess():
                         queryResult = _winreg.QueryValueEx(key, "InstallLocation")
                         vnc = os.path.join(queryResult[0], "vncviewer.exe")
                         queryResult = _winreg.QueryValueEx(key, "DisplayVersion")
-                        self.notify_window.loginThread.turboVncVersionNumber = queryResult[0]
+                        turboVncVersionNumber = queryResult[0]
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
@@ -550,7 +555,8 @@ class LoginProcess():
                         foundTurboVncInRegistry = False
                         #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
                         #wx.CallAfter(sys.stdout.write, traceback.format_exc())
-                return (vnc, turboVncVersionNumber)
+
+            return (vnc, turboVncVersionNumber)
 
         def getTurboVncVersionNumber(self,vnc):
             self.turboVncVersionNumber = "0.0"
@@ -740,6 +746,8 @@ class LoginProcess():
                 turboVncLatestVersion = ''
             turboVncLatestVersion = ''
 
+            turboVncVersionNumber = None
+
             if sys.platform.startswith("win"):
                 (vnc, turboVncVersionNumber) = self.getTurboVncVersionNumber_Windows()
                 turboVncFlavour = None
@@ -747,6 +755,24 @@ class LoginProcess():
                 vnc = "/opt/TurboVNC/bin/vncviewer"
                 (vnc,turboVncVersionNumber,turboVncFlavour) = self.getTurboVncVersionNumber(vnc)
 
+            if turboVncVersionNumber is None:
+                def error_dialog():
+                    dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Could not determine TurboVNC version number.\n\n" +
+                                            "The launcher cannot continue.\n",
+                                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
+                    dlg.Destroy()
+                    dump_log(self.loginprocess.notify_window)
+                    sys.exit(1)
+
+                if (self.loginprocess.notify_window.progressDialog != None):
+                    wx.CallAfter(self.loginprocess.notify_window.progressDialog.Hide)
+                    wx.CallAfter(self.loginprocess.notify_window.progressDialog.Show, False)
+                    wx.CallAfter(self.loginprocess.notify_window.progressDialog.Destroy)
+                    self.loginprocess.notify_window.progressDialog = None
+
+                wx.CallAfter(error_dialog)
+                return
 
             if os.path.exists(vnc):
                 logger_debug("TurboVNC was found in " + vnc)
