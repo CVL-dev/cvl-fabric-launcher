@@ -671,18 +671,6 @@ class LoginProcess():
             contactEmailHyperlink.SetFont(font)
             turboVncNotFoundPanelSizer.Add(contactEmailHyperlink, border=20, flag=wx.LEFT|wx.BORDER)
 
-            contactEmail2Hyperlink = wx.HyperlinkCtrl(turboVncNotFoundPanel,
-                id = wx.ID_ANY,
-                label = "James.Wettenhall@monash.edu",
-                url = "mailto:James.Wettenhall@monash.edu")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(8)
-            contactEmail2Hyperlink.SetFont(font)
-            turboVncNotFoundPanelSizer.Add(contactEmail2Hyperlink, border=20, flag=wx.LEFT|wx.BORDER)
-
 
             okButton = wx.Button(turboVncNotFoundPanel, 1, ' OK ')
             okButton.SetDefault()

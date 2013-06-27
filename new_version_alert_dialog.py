@@ -36,7 +36,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-# Enquires: James.Wettenhall@monash.edu or help@massive.org.au
+# Enquires: help@massive.org.au
 
 import sys
 import wx
@@ -140,18 +140,6 @@ class NewVersionAlertDialog(wx.Dialog):
             font.SetPointSize(8)
         contactEmailHyperlink.SetFont(font)
         newVersionAlertPanelSizer.Add(contactEmailHyperlink, border=20, flag=wx.LEFT|wx.BORDER)
-
-        contactEmail2Hyperlink = wx.HyperlinkCtrl(newVersionAlertPanel,
-            id = wx.ID_ANY,
-            label = "James.Wettenhall@monash.edu",
-            url = "mailto:James.Wettenhall@monash.edu")
-        font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-        if sys.platform.startswith("darwin"):
-            font.SetPointSize(11)
-        else:
-            font.SetPointSize(8)
-        contactEmail2Hyperlink.SetFont(font)
-        newVersionAlertPanelSizer.Add(contactEmail2Hyperlink, border=20, flag=wx.LEFT|wx.BORDER)
 
         def onOK(event):
             self.EndModal(wx.ID_OK)

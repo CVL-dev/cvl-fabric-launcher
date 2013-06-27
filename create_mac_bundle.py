@@ -37,7 +37,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-#  Enquires: James.Wettenhall@monash.edu or help@massive.org.au
+#  Enquires: help@massive.org.au
 
 """
 A distutils script to make a standalone .app of the MASSIVE Launcher for
