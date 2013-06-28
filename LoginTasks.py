@@ -275,12 +275,12 @@ class LoginProcess():
             for line  in itertools.chain(stdout.split('\n'),stderr.split('\n')):
                 match=re.search(self.loginprocess.startServerRegEx.format(**self.loginprocess.jobParams),line)
                 if (match):
-                    print "matched the startServerRegEx %s"%line
+                    logger_debug('matched the startServerRegEx %s' % line)
                     self.loginprocess.jobParams.update(match.groupdict())
                     started=True
                     break
                 else:
-                    print "didn't match the startServerRegEx %s"%line
+                    logger_debug('Did not match the startServerRegEx %s' % line)
             if (not started):
                 self.loginprocess.cancel("I was unable to start the VNC server")
                 return
@@ -334,7 +334,7 @@ class LoginProcess():
                         return
                     jobRunning = re.search(regex,line)
                     if (jobRunning):
-                        print "job is running"
+                        logger_debug("Job is running...")
                         self.loginprocess.jobParams.update(jobRunning.groupdict())
                         break
                     if (not jobRunning and tsleep == 1):
@@ -354,7 +354,7 @@ class LoginProcess():
                                         wx.CallAfter(self.loginprocess.updateProgressDialog, 6, "Estimated start: " + showstartLineComponents[1])
                         sleepperiod=30
             # Loop until we figure out which host the vnc server was started on.
-            print "job is running, looking for execHost"
+            logger_debug('job is running, looking for execHost')
             execHost = None
             jobParams=self.loginprocess.jobParams
             while (not execHost and not self.stopped()):
@@ -713,8 +713,7 @@ class LoginProcess():
                     myHtmlParser.feed(html)
                     myHtmlParser.close()
                 except Exception as e:
-                    print e
-                    logger_debug("Exception while checking TurboVNC version number.")
+                    logger_debug("Exception while checking TurboVNC version number: " + str(e))
 
                     def error_dialog():
                         dlg = wx.MessageDialog(self.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
@@ -932,7 +931,6 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_TUNNEL):
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 7,"Starting the tunnel")
                 logger_debug("recieved START_TUNNEL event")
-                print "receieved START_TUNNEL event"
                 event.loginprocess.localPortNumber = "0" # Request ephemeral port.
                 testRun = False
                 successCallback = lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess))
@@ -968,7 +966,7 @@ class LoginProcess():
 
         def shutdown(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SHUTDOWN):
-                print "caught LOGINPROCESS_SHUTDOWN"
+                logger_debug('caught LOGINPROCESS_SHUTDOWN')
                 for t in event.loginprocess.threads:
                     try:
                         t.stop()
@@ -985,13 +983,13 @@ class LoginProcess():
                     wx.CallAfter(event.loginprocess.notify_window.progressDialog.Show, False)
                     wx.CallAfter(event.loginprocess.notify_window.progressDialog.Destroy)
                     event.loginprocess.notify_window.progressDialog = None
-                print "all threads stoped and joined"
+                logger_debug("all threads stoped and joined")
             else:
                 event.Skip()
 
         def cancel(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CANCEL):
-                print "caught LOGINPROCESS_CANCEL"
+                logger_debug("caught LOGINPROCESS_CANCEL")
                 if (event.loginprocess.skd!=None): 
                         event.loginprocess.skd.cancel()
                 newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)

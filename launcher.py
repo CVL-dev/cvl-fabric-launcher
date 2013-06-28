@@ -912,7 +912,7 @@ class LauncherMainFrame(wx.Frame):
         # before the first call to dump_log()
 
         configureLogger('launcher')
-        print "after configure Logger, logger is"
+        # print "after configure Logger, logger is"
 
 
 
