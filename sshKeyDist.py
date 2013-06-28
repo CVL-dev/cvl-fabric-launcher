@@ -354,16 +354,26 @@ class KeyDist():
             ssh_cmd = '{sshbinary} -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {login} {host} echo "success_testauth"'.format(sshbinary=self.keydistObject.sshpaths.sshBinary,
                                                                                                                                                                           login=self.keydistObject.username,
                                                                                                                                                                           host=self.keydistObject.host)
+
+            logger_debug('testAuthThread: attempting: ' + ssh_cmd)
+
             ssh = subprocess.Popen(ssh_cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             stdout, stderr = ssh.communicate()
             ssh.wait()
+
+            logger_debug('testAuthThread: stdout of ssh command: ' + str(stdout))
+            logger_debug('testAuthThread: stderr of ssh command: ' + str(stderr))
+
             if 'success_testauth' in stdout:
-                logger_debug('testAuthThread: run(): got success_testauth in stdout :)')
+                logger_debug('testAuthThread: got success_testauth in stdout :)')
                 self.keydistObject.authentication_success = True
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHSUCCESS,self.keydistObject)
             else:
+                logger_debug('testAuthThread: did not see success_testauth in stdout, posting EVT_KEYDIST_AUTHFAIL event')
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_AUTHFAIL,self.keydistObject)
+
             if (not self.stopped()):
+                logger_debug('testAuthThread: self.stopped() == False, so posting event: ' + str(newevent))
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
 
 
