@@ -509,7 +509,7 @@ class KeyDist():
                 logger_debug('CopyIDThread: successfully copied the key')
             except ssh.AuthenticationException as e:
                 logger_debug('CopyIDThread: ssh.AuthenticationException: ' + str(e))
-                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,self.keydistObject,string)
+                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,self.keydistObject,str(e))
             except ssh.SSHException as e:
                 logger_debug('CopyIDThread: ssh.SSHException : ' + str(e))
                 self.keydistObject.cancel(message=str(e))
