@@ -362,10 +362,10 @@ class KeyDist():
             os.unlink(path)
             
             ssh_cmd = '{sshbinary} -o IdentityFile={nonexistantpath} -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {login} {host} echo "success_testauth"'.format(sshbinary=self.keydistObject.sshpaths.sshBinary,
-                                                                                                                                                                          login=self.keydistObject.username,
-                                                                                                                                                                          host=self.keydistObject.host,
-                                                                                                                                                                          nonexistantpath=path)
-                                                                                                                                                                          host=self.keydistObject.host)
+                                                                                                                                                                                                             login=self.keydistObject.username,
+                                                                                                                                                                                                             host=self.keydistObject.host,
+                                                                                                                                                                                                             nonexistantpath=path)
+
 
             logger_debug('testAuthThread: attempting: ' + ssh_cmd)
             ssh = subprocess.Popen(ssh_cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
