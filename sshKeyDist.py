@@ -365,7 +365,6 @@ class KeyDist():
                                                                                                                                                                           login=self.keydistObject.username,
                                                                                                                                                                           host=self.keydistObject.host,
                                                                                                                                                                           nonexistantpath=path)
-                                                                                                                                                                          host=self.keydistObject.host)
 
             logger_debug('testAuthThread: attempting: ' + ssh_cmd)
             ssh = subprocess.Popen(ssh_cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)

@@ -250,7 +250,7 @@ class LoginProcess():
                     if (not self.stopped()):
                         event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,self.loginprocess)
                         wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
-                        event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER,self.loginprocess)
+                        event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB,self.loginprocess)
                         wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
 
                 except Exception as e:
@@ -294,10 +294,11 @@ class LoginProcess():
                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
 
     class getExecutionHostThread(Thread):
-        def __init__(self,loginprocess):
+        def __init__(self,loginprocess,nextEvent):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
+            self.nextEvent = nextEvent
     
         def stop(self):
             logger_debug("stopping the thread that determines the execution host")
@@ -339,7 +340,6 @@ class LoginProcess():
                             return
                         jobRunning = re.search(regex,line)
                         if (jobRunning):
-                            print "job is running"
                             self.loginprocess.jobParams.update(jobRunning.groupdict())
                             break
                         if (not jobRunning and tsleep == 1):
@@ -381,9 +381,7 @@ class LoginProcess():
                             self.loginprocess.jobParams.update(execHost.groupdict())
                             break
             if (not self.stopped()):
-                logger_debug("in getExecutionHost, posting START_TUNNEL")
-                event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_TUNNEL,self.loginprocess)
-                wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
+                wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextEvent)
 
     class killServerThread(Thread):
         def __init__(self,loginprocess,restart):
@@ -438,13 +436,13 @@ class LoginProcess():
                 self.loginprocess.cancel("Sorry, an error occured and I was unable to determine if you already have any running desktops")
                 return
             lines = stdout.split('\n')
+            try:
+                regex = self.loginprocess.listAllRegEx.format(**self.loginprocess.jobParams)
+            except KeyError as e:
+                logger_error("listAllRegEx missing parameter %s"%e)
+                self.loginprocess.cancel("Sorry, an error occured and I was unable to determine if you already have any running desktops")
+                return
             for line in lines:
-                try:
-                    regex = self.loginprocess.listAllRegEx.format(**self.loginprocess.jobParams)
-                except KeyError as e:
-                    logger_error("listAllRegEx missing parameter %s"%e)
-                    self.loginprocess.cancel("Sorry, an error occured and I was unable to determine if you already have any running desktops")
-                    return
                 match=re.search(regex,line)
                 if match:
                     self.loginprocess.joblist.append(match.groupdict())
@@ -457,8 +455,10 @@ class LoginProcess():
 
             if (not self.stopped()):
                 if (self.loginprocess.job !=None):
+                    logger_debug("existing desktop found")
                     self.callback_found()
                 else:
+                    logger_debug("existing desktop NOT found")
                     self.callback_notfound()
 
     class CheckVNCVerThread(Thread):
@@ -705,9 +705,6 @@ class LoginProcess():
             turboVncNotFoundDialog.ShowModal()
             turboVncNotFoundDialog.Destroy()
     
-        def onOk(self):
-            print "onOk called"
-
         def run(self):
             # Check for TurboVNC
 
@@ -837,7 +834,6 @@ class LoginProcess():
                         timestring = "%s minute"%minutes
                     else:
                         timestring = "%s minutes"%minutes
-                    timestring = str(datetime.timedelta(seconds=event.loginprocess.timeRemaining))
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found. It has %s remaining. Would you like to reconnect or kill it and start a new desktop"%timestring,"Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
                 else:
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found, would you like to reconnect or kill it and start a new desktop","Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
@@ -852,11 +848,37 @@ class LoginProcess():
             else:
                 event.Skip()
 
+        def statRunningJob(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB):
+                event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER,event.loginprocess)
+                t = LoginProcess.CheckExistingDesktop(event.loginprocess,lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),event),lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),event))
+                t.setDaemon(False)
+                t.start()
+                event.loginprocess.threads.append(t)
+            else:
+                event.Skip()
+
         def showKillServerDialog(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER):
                 KillCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_KILL_SERVER,event.loginprocess))
                 NOOPCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess))
-                dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect latter?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                timeRemaining=event.loginprocess.timeRemaining()
+                if (timeRemaining != None):
+                    hours, remainder = divmod(timeRemaining, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    if (hours > 1):
+                        timestring = "%s hours and %s minutes"%(hours,minutes)
+                    elif (hours) == 1:
+                        timestring = "%s hour and %s minutes"%(hours,minutes)
+                    elif (minutes > 1):
+                        timestring = "%s minutes"%minutes
+                    elif (minutes == 1):
+                        timestring = "%s minute"%minutes
+                    else:
+                        timestring = "%s minutes"%minutes
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect latter? It has %s remaining"%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                else:
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect latter?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
                 wx.CallAfter(dialog.ShowModal)
             else:
                 event.Skip()
@@ -865,7 +887,8 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CONNECT_SERVER):
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting the node name")
                 logger_debug("caught event CONNECT_SERVER")
-                t = LoginProcess.getExecutionHostThread(event.loginprocess)
+                event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_TUNNEL,event.loginprocess)
+                t = LoginProcess.getExecutionHostThread(event.loginprocess,event)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1060,9 +1083,9 @@ class LoginProcess():
 
         if (self.usePBS):
             self.listAllCmd='qstat -u {username}'
-            self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9])\.\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_{username})\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
+            self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
             self.runningCmd='qstat -u {username}'
-            self.runningRegEx='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_{username})\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
+            self.runningRegEx='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
             self.stopCmd='qdel {jobid}'
             self.execHostCmd='qpeek {jobidNumber}'
             self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
@@ -1113,6 +1136,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_START_VIEWER = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_COMPLETE = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHUTDOWN = wx.NewId()
 
@@ -1130,11 +1154,12 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startViewer)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showKillServerDialog)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.shutdown)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.statRunningJob)
 
     def timeRemaining(self):
         job=self.job
         if job != None:
-            if (job.has_key('reqTime') and job.has_key('elapTime') and job.has_key['state']):
+            if (job.has_key('reqTime') and job.has_key('elapTime') and job.has_key('state')):
                 if (job['state']=='R'):
                     (rhours,rmin) = job['reqTime'].split(':')
                     (ehours,emin) = job['elapTime'].split(':')
@@ -1144,6 +1169,8 @@ class LoginProcess():
                     ehours=0
                     emin=0
                     return (int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
+            else:
+                return None
         else:
             return None
         
