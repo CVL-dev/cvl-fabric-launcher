@@ -597,8 +597,15 @@ class LoginProcess():
             
             return (vnc,turboVncVersionNumber,turboVncFlavour)
 
-        def showTurboVncNotFoundMessageDialog(loginprocess):
-            turboVncNotFoundDialog = wx.Dialog(self.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
+        def showTurboVncNotFoundMessageDialog(self,turboVncLatestVersion):
+            
+            class NotFoundDialog(wx.Dialog):
+                def __init__(self, *args, **kw):
+                    super(NotFoundDialog, self).__init__(*args, **kw) 
+                def OnClose(self, e):
+                    self.Destroy()
+
+            turboVncNotFoundDialog = NotFoundDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
 
             if sys.platform.startswith("win"):
                 _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -682,6 +689,7 @@ class LoginProcess():
 
             okButton = wx.Button(turboVncNotFoundPanel, 1, ' OK ')
             okButton.SetDefault()
+            okButton.Bind(wx.EVT_BUTTON, turboVncNotFoundDialog.OnClose)
             turboVncNotFoundPanelSizer.Add(okButton, flag=wx.ALIGN_RIGHT)
             turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
             turboVncNotFoundPanelSizer.Fit(turboVncNotFoundPanel)
@@ -696,6 +704,9 @@ class LoginProcess():
 
             turboVncNotFoundDialog.ShowModal()
             turboVncNotFoundDialog.Destroy()
+    
+        def onOk(self):
+            print "onOk called"
 
         def run(self):
             # Check for TurboVNC
@@ -746,9 +757,19 @@ class LoginProcess():
 
             if sys.platform.startswith("win"):
                 (vnc, turboVncVersionNumber) = self.getTurboVncVersionNumber_Windows()
+                if os.path.exists(vnc):
+                    logger_debug("TurboVNC was found in " + vnc)
+                else:
+                    self.loginprocess.cancel("TurboVNC not found")
                 turboVncFlavour = None
             else:
                 vnc = "/opt/TurboVNC/bin/vncviewer"
+                if os.path.exists(vnc):
+                    logger_debug("TurboVNC was found in " + vnc)
+                else:
+                    self.loginprocess.cancel()
+                    wx.CallAfter(self.showTurboVncNotFoundMessageDialog,turboVncLatestVersion)
+                    return
                 (vnc,turboVncVersionNumber,turboVncFlavour) = self.getTurboVncVersionNumber(vnc)
 
             if turboVncVersionNumber is None:
@@ -770,11 +791,6 @@ class LoginProcess():
                 wx.CallAfter(error_dialog)
                 return
 
-            if os.path.exists(vnc):
-                logger_debug("TurboVNC was found in " + vnc)
-            else:
-                self.loginprocess.cancel("TurboVNC not found")
-                wx.CallAfter(showTurboVncNotFoundMessageDialog)
 
             logger_debug("TurboVNC viewer version number = " + turboVncVersionNumber)
             
