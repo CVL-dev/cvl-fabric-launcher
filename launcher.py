@@ -1269,6 +1269,7 @@ class LauncherMainFrame(wx.Frame):
         self.sshpaths = sshKeyDist.sshpaths()
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         self.loginProcess=LoginTasks.LoginProcess(username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=self.massiveHoursRequested,nodes=self.massiveVisNodesRequested,usePBS=self.massiveTabSelected,directConnect=(not self.massiveTabSelected))
+        sshKeyDist.start_pageant()
         self.loginProcess.doLogin()
 
 
