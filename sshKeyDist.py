@@ -170,7 +170,6 @@ class KeyDist():
                 agentenv = os.environ['SSH_AUTH_SOCK']
             except:
                 try:
-                    # FIXME make sure that pageant is running?
                     agent = subprocess.Popen(self.keydistObject.sshpaths.sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
                     stdout = agent.stdout.readlines()
                     for line in stdout:
@@ -489,6 +488,7 @@ class KeyDist():
                 sshClient.exec_command("/bin/touch ~/.ssh/authorized_keys")
                 sshClient.exec_command("/bin/chmod 600 ~/.ssh/authorized_keys")
                 sshClient.exec_command("/bin/echo \"%s\" >> ~/.ssh/authorized_keys"%self.keydistObject.pubkey)
+                # FIXME The exec_commands above can fail if the user is over quota.
                 sshClient.close()
                 self.keydistObject.keycopiedLock.acquire()
                 self.keydistObject.keycopied=True
@@ -500,7 +500,6 @@ class KeyDist():
                 logger_debug('CopyIDThread: ssh.AuthenticationException: ' + str(e))
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS, self.keydistObject, str(e))
                 wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
-                # FIXME no return in this except clause?
             except ssh.SSHException as e:
                 logger_debug('CopyIDThread: ssh.SSHException : ' + str(e))
                 self.keydistObject.cancel(message=str(e))
