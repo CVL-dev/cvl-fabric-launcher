@@ -318,9 +318,9 @@ def configureLogger(name):
     global logger_output
     global logger_fh
     
-    print "defining global logger"
+    # print "defining global logger"
     logger = logging.getLogger(name)
-    print logger
+    # print logger
     logger.setLevel(logging.DEBUG)
 
     transport_logger = logging.getLogger('ssh.transport')
