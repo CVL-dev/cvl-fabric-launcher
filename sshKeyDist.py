@@ -349,13 +349,25 @@ class KeyDist():
             return self._stop.isSet()
 
         def run(self):
-
-            ssh_cmd = '{sshbinary} -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {login} {host} echo "success_testauth"'.format(sshbinary=self.keydistObject.sshpaths.sshBinary,
+        
+            # I have a problem where I have multiple identity files in my ~/.ssh, and I want to use only identities loaded into the agent
+            # since openssh does not seem to have an option to use only an agent we have a workaround, 
+            # by passing the -o IdentityFile option a path that does not exist, openssh can't use any other identities, and can only use the agent.
+            # This is a little "racy" in that a tempfile with the same path could concievably be created between the unlink and openssh attempting to use it
+            # but since the pub key is extracted from the agent not the identity file I can't see anyway an attacker could use this to trick a user into uploading the attackers key.
+            print "testAuthThread started"
+            import tempfile, os
+            (fd,path)=tempfile.mkstemp()
+            os.close(fd)
+            os.unlink(path)
+            
+            ssh_cmd = '{sshbinary} -o IdentityFile={nonexistantpath} -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {login} {host} echo "success_testauth"'.format(sshbinary=self.keydistObject.sshpaths.sshBinary,
                                                                                                                                                                           login=self.keydistObject.username,
+                                                                                                                                                                          host=self.keydistObject.host,
+                                                                                                                                                                          nonexistantpath=path)
                                                                                                                                                                           host=self.keydistObject.host)
 
             logger_debug('testAuthThread: attempting: ' + ssh_cmd)
-
             ssh = subprocess.Popen(ssh_cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             stdout, stderr = ssh.communicate()
             ssh.wait()
@@ -494,12 +506,10 @@ class KeyDist():
                 self.keydistObject.keycopied=True
                 self.keydistObject.keycopiedLock.release()
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self.keydistObject)
-                wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
                 logger_debug('CopyIDThread: successfully copied the key')
             except ssh.AuthenticationException as e:
                 logger_debug('CopyIDThread: ssh.AuthenticationException: ' + str(e))
-                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS, self.keydistObject, str(e))
-                wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),event)
+                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,self.keydistObject,string)
             except ssh.SSHException as e:
                 logger_debug('CopyIDThread: ssh.SSHException : ' + str(e))
                 self.keydistObject.cancel(message=str(e))
@@ -601,6 +611,7 @@ class KeyDist():
         def testauth(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_TESTAUTH):
                 logger_debug("received TESTAUTH event")
+                print "received TESTAUTH event, starting testAuthThread"
                 t = KeyDist.testAuthThread(event.keydist)
                 t.setDaemon(True)
                 t.start()

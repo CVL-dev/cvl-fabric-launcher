@@ -37,7 +37,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Enquires: help@massive.org.au
+# Enquires: James.Wettenhall@monash.edu or help@massive.org.au
 
 # launcher.py
 """
