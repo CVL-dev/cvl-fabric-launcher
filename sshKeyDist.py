@@ -258,8 +258,8 @@ class KeyDist():
             (stdout,stderr) = keylist.communicate()
             self.keydistObject.pubkeylock.acquire()
 
-            logger_debug('getPubKeyThread: stdout of ssh-add -l: ' + stdout)
-            logger_debug('getPubKeyThread: stderr of ssh-add -l: ' + stderr)
+            logger_debug('getPubKeyThread: stdout of ssh-add -l: ' + str(stdout))
+            logger_debug('getPubKeyThread: stderr of ssh-add -l: ' + str(stderr))
 
             lines = stdout.split('\n')
             logger_debug("ssh key list completed")
