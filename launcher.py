@@ -607,11 +607,46 @@ class LauncherMainFrame(wx.Frame):
 
         self.massiveShowDebugWindowLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.massiveShowDebugWindowCheckBox = wx.CheckBox(self.massiveLoginFieldsPanel, wx.ID_ANY, "")
+
+        self.massiveDebugAndAutoExitPanel = wx.Panel(self.massiveLoginFieldsPanel, wx.ID_ANY)
+        self.massiveDebugAndAutoExitPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=3, hgap=5)
+        self.massiveDebugAndAutoExitPanel.SetSizer(self.massiveDebugAndAutoExitPanelSizer)
+
+        self.massiveShowDebugWindowCheckBox = wx.CheckBox(self.massiveDebugAndAutoExitPanel, wx.ID_ANY, "")
         self.massiveShowDebugWindowCheckBox.SetValue(False)
         self.massiveShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onMassiveDebugWindowCheckBoxStateChanged)
-        self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.massiveDebugAndAutoExitPanelSizer.Add(self.massiveShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
+        self.massiveAutomaticallyExitLabel = wx.StaticText(self.massiveDebugAndAutoExitPanel, wx.ID_ANY, "          Automatically exit")
+        self.massiveDebugAndAutoExitPanelSizer.Add(self.massiveAutomaticallyExitLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, border=5)
+
+        self.massiveAutomaticallyExit = True
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_automatically_exit"):
+                self.massiveAutomaticallyExit = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_automatically_exit")
+                if self.massiveAutomaticallyExit.strip() == "":
+                    self.massiveAutomaticallyExit = True
+                else:
+                    if self.massiveAutomaticallyExit==True or self.massiveAutomaticallyExit=='True':
+                        self.massiveAutomaticallyExit = True
+                    else:
+                        self.massiveAutomaticallyExit = False
+            else:
+                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_automatically_exit","False")
+                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+        else:
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+
+        self.massiveAutomaticallyExitCheckBox = wx.CheckBox(self.massiveDebugAndAutoExitPanel, wx.ID_ANY, "")
+        self.massiveAutomaticallyExitCheckBox.SetValue(self.massiveAutomaticallyExit)
+        self.massiveDebugAndAutoExitPanelSizer.Add(self.massiveAutomaticallyExitCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, border=5)
+
+        self.massiveDebugAndAutoExitPanel.Fit()
+        self.massiveLoginFieldsPanelSizer.Add(self.massiveDebugAndAutoExitPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        
         self.massiveLoginFieldsPanel.SetSizerAndFit(self.massiveLoginFieldsPanelSizer)
 
         self.massiveLoginDialogPanelSizer.Add(self.massiveLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
@@ -1128,6 +1163,7 @@ class LauncherMainFrame(wx.Frame):
                     # Project was not found in combo-box.
                     self.massiveProjectComboBox.SetSelection(-1)
                 self.massiveProjectComboBox.SetValue(self.massiveProject)
+            self.massiveAutomaticallyExit = self.massiveAutomaticallyExitCheckBox.GetValue()
 
         if launcherMainFrame.cvlTabSelected:
             self.cvlVncDisplayNumberAutomatic = self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()
@@ -1151,6 +1187,7 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested", self.massiveVisNodesRequested)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode", self.massivePersistentMode)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_automatically_exit", self.massiveAutomaticallyExit)
 
         if launcherMainFrame.massiveTabSelected:
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -1203,16 +1240,18 @@ class LauncherMainFrame(wx.Frame):
             self.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
 
 
-        if self.massiveTabSelected:
+        if launcherMainFrame.massiveTabSelected:
             host       = self.massiveLoginHost
             resolution = self.massiveVncDisplayResolution
             cipher     = self.massiveSshTunnelCipher
             username   = self.massiveUsername
+            autoExit   = self.massiveAutomaticallyExit
         else:
             host       = self.cvlLoginHost
             resolution = self.cvlVncDisplayResolution
             cipher     = self.cvlSshTunnelCipher
             username   = self.cvlUsername
+            autoExit  = False
 
         host       = host.lstrip().rstrip()
         resolution = resolution.lstrip().rstrip()
@@ -1224,7 +1263,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.sshpaths = sshKeyDist.sshpaths('MassiveLauncherKey')
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
-        self.loginProcess=LoginTasks.LoginProcess(username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=self.massiveHoursRequested,nodes=self.massiveVisNodesRequested,usePBS=self.massiveTabSelected,directConnect=(not self.massiveTabSelected))
+        self.loginProcess=LoginTasks.LoginProcess(username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=self.massiveHoursRequested,nodes=self.massiveVisNodesRequested,usePBS=launcherMainFrame.massiveTabSelected,directConnect=(not launcherMainFrame.massiveTabSelected),autoExit=autoExit)
         if sys.platform.startswith("win"):
             sshKeyDist.start_pageant()
             if 'HOME' not in os.environ:

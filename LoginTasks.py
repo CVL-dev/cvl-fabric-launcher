@@ -9,6 +9,7 @@ import xmlrpclib
 import re
 import urllib2
 import datetime
+import os
 
 
 
@@ -782,7 +783,16 @@ class LoginProcess():
         def normalTermination(event):
             # This event is generated if we shutdown the VNC server upon exit. Its basically a no-op, and moves onto processing the shutdown sequence of events
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_NORMAL_TERMINATION):
+                logger_debug("caught an EVT_LOGINPROCESS_NORMAL_TERMINATION")
                 wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess))
+            else:
+                event.Skip()
+
+        def complete(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_COMPLETE):
+                logger_debug("caught an EVT_LOGINPROCESS_COMPLETE")
+                if event.loginprocess.autoExit:
+                    os._exit(0)
             else:
                 event.Skip()
 
@@ -800,8 +810,8 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER):
                 KillCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_KILL_SERVER,event.loginprocess))
                 NOOPCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess))
-                timeRemaining=event.loginprocess.timeRemaining()
                 dialog = None
+                timeRemaining=event.loginprocess.timeRemaining()
                 if (timeRemaining != None):
                     hours, remainder = divmod(timeRemaining, 3600)
                     minutes, seconds = divmod(remainder, 60)
@@ -994,7 +1004,7 @@ class LoginProcess():
 
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,username,host,resolution,cipher,notifywindow,sshpaths,project=None,hours=None,nodes=1,usePBS=True,directConnect=False,fastInterface="-ib"):
+    def __init__(self,username,host,resolution,cipher,notifywindow,sshpaths,project=None,hours=None,nodes=1,usePBS=True,directConnect=False,autoExit=False,fastInterface="-ib"):
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
         self.notify_window = notifywindow
@@ -1015,6 +1025,7 @@ class LoginProcess():
         self._canceled=threading.Event()
         self.usePBS=usePBS
         self.directConnect = directConnect
+        self.autoExit = autoExit
         self.sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
         self.sshTunnelProcess=None
         self.sshAgentProcess=None
@@ -1111,6 +1122,8 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startViewer)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showKillServerDialog)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.shutdown)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.normalTermination)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.complete)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.statRunningJob)
 
     def timeRemaining(self):
