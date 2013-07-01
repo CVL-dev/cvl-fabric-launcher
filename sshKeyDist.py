@@ -12,6 +12,7 @@ import sys
 from os.path import expanduser
 import subprocess
 import traceback
+import socket
 from utilityFunctions import logger_debug, logger_error, HelpDialog
 
 OPENSSH_BUILD_DIR = 'openssh-cygwin-stdin-build'
@@ -81,22 +82,23 @@ class sshpaths():
     
     def ssh_files(self):
         known_hosts_file = os.path.join(expanduser('~'), '.ssh', 'known_hosts')
-        sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey')
+        sshKeyPath = os.path.join(expanduser('~'), '.ssh', self.keyFileName)
         return (sshKeyPath,known_hosts_file,)
 
-    def __init__(self):
+    def __init__(self, keyFileName):
         (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, sshKeyScanBinary,chownBinary, chmodBinary,) = self.ssh_binaries()
-        (sshKeyPath,sshKnownHosts,) = self.ssh_files()
-        self.sshBinary = sshBinary
-        self.sshKeyGenBinary = sshKeyGenBinary
-        self.sshAgentBinary = sshAgentBinary
-        self.sshAddBinary = sshAddBinary
-        self.sshKeyScanBinary = sshKeyScanBinary
-        self.chownBinary = chownBinary
-        self.chmodBinary = chmodBinary
+        self.keyFileName                = keyFileName
+        (sshKeyPath,sshKnownHosts,)     = self.ssh_files()
+        self.sshBinary                  = sshBinary
+        self.sshKeyGenBinary            = sshKeyGenBinary
+        self.sshAgentBinary             = sshAgentBinary
+        self.sshAddBinary               = sshAddBinary
+        self.sshKeyScanBinary           = sshKeyScanBinary
+        self.chownBinary                = chownBinary
+        self.chmodBinary                = chmodBinary
 
-        self.sshKeyPath = sshKeyPath
-        self.sshKnownHosts = sshKnownHosts
+        self.sshKeyPath                 = sshKeyPath
+        self.sshKnownHosts              = sshKnownHosts
 
 class KeyDist():
 
@@ -386,9 +388,9 @@ class KeyDist():
             os.unlink(path)
             
             ssh_cmd = '{sshbinary} -o IdentityFile={nonexistantpath} -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {login} {host} echo "success_testauth"'.format(sshbinary=self.keydistObject.sshpaths.sshBinary,
-                                                                                                                                                                          login=self.keydistObject.username,
-                                                                                                                                                                          host=self.keydistObject.host,
-                                                                                                                                                                          nonexistantpath=path)
+                                                                                                                                                                                                             login=self.keydistObject.username,
+                                                                                                                                                                                                             host=self.keydistObject.host,
+                                                                                                                                                                                                             nonexistantpath=path)
 
             logger_debug('testAuthThread: attempting: ' + ssh_cmd)
             ssh = subprocess.Popen(ssh_cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
@@ -530,9 +532,17 @@ class KeyDist():
                 self.keydistObject.keycopiedLock.release()
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self.keydistObject)
                 logger_debug('CopyIDThread: successfully copied the key')
+            except socket.gaierror as e:
+                logger_debug('CopyIDThread: socket.gaierror : ' + str(e))
+                self.keydistObject.cancel(message=str(e))
+                return
+            except socket.error as e:
+                logger_debug('CopyIDThread: socket.error : ' + str(e))
+                self.keydistObject.cancel(message=str(e))
+                return
             except ssh.AuthenticationException as e:
                 logger_debug('CopyIDThread: ssh.AuthenticationException: ' + str(e))
-                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,self.keydistObject,string)
+                event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_COPYID_NEEDPASS,self.keydistObject,str(e))
             except ssh.SSHException as e:
                 logger_debug('CopyIDThread: ssh.SSHException : ' + str(e))
                 self.keydistObject.cancel(message=str(e))
