@@ -594,12 +594,6 @@ class LauncherMainFrame(wx.Frame):
         if self.massiveUsername.strip()!="":
             self.massiveUsernameTextField.SelectAll()
 
-        self.massivePasswordLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Password')
-        self.massiveLoginFieldsPanelSizer.Add(self.massivePasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.massivePassword = ""
-        self.massivePasswordField = wx.TextCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, self.massivePassword, size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
-        self.massiveLoginFieldsPanelSizer.Add(self.massivePasswordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
 
         self.massiveUsernameTextField.SetFocus()
 
@@ -610,7 +604,6 @@ class LauncherMainFrame(wx.Frame):
         self.massiveVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursAndVisNodesPanel)
         self.massiveSshTunnelCipherComboBox.MoveAfterInTabOrder(self.massiveVncDisplayResolutionComboBox)
         self.massiveUsernameTextField.MoveAfterInTabOrder(self.massiveSshTunnelCipherComboBox)
-        self.massivePasswordField.MoveAfterInTabOrder(self.massiveUsernameTextField)
 
         self.massiveShowDebugWindowLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -1098,14 +1091,12 @@ class LauncherMainFrame(wx.Frame):
         self.massiveVncDisplayResolutionLabel.SetCursor(cursor)
         self.massiveSshTunnelCipherLabel.SetCursor(cursor)
         self.massiveUsernameLabel.SetCursor(cursor)
-        self.massivePasswordLabel.SetCursor(cursor)
         self.massiveLoginHostComboBox.SetCursor(cursor)
         self.massiveVncDisplayResolutionComboBox.SetCursor(cursor)
         self.massiveSshTunnelCipherComboBox.SetCursor(cursor)
         self.massiveProjectComboBox.SetCursor(cursor)
         self.massiveHoursField.SetCursor(cursor)
         self.massiveUsernameTextField.SetCursor(cursor)
-        self.massivePasswordField.SetCursor(cursor)
 
         self.cvlLoginHostComboBox.SetCursor(cursor)
         self.cvlUsernameTextField.SetCursor(cursor)
@@ -1138,7 +1129,6 @@ class LauncherMainFrame(wx.Frame):
         if launcherMainFrame.massiveTabSelected:
             self.massiveLoginHost = self.massiveLoginHostComboBox.GetValue()
             self.massiveUsername = self.massiveUsernameTextField.GetValue()
-            self.massivePassword = self.massivePasswordField.GetValue()
             self.massiveVncDisplayResolution = self.massiveVncDisplayResolutionComboBox.GetValue()
             self.massiveSshTunnelCipher = self.massiveSshTunnelCipherComboBox.GetValue()
         else:

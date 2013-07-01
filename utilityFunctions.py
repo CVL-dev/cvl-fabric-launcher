@@ -7,6 +7,7 @@ import os
 import time
 import subprocess
 import inspect
+import sys
 
 
 #LAUNCHER_URL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
@@ -16,6 +17,85 @@ LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massiv
 # TURBOVNC_BASE_URL = "http://www.virtualgl.org/DeveloperInfo/PreReleases"
 global TURBOVNC_BASE_URL
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
+
+
+class HelpDialog(wx.Dialog):
+    def __init__(self, *args, **kw):
+        super(HelpDialog, self).__init__(*args, **kw)
+
+        self.callback=None
+         
+        if sys.platform.startswith("win"):
+            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+            self.SetIcon(_icon)
+
+        if sys.platform.startswith("linux"):
+            import MASSIVE_icon
+            self.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+
+        iconPanel = wx.Panel(self)
+
+        import MASSIVE_icon
+        iconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
+        wx.StaticBitmap(iconPanel, wx.ID_ANY,
+            iconAsBitmap,
+            (0, 25),
+            (iconAsBitmap.GetWidth(), iconAsBitmap.GetHeight()))
+
+        sizer = wx.FlexGridSizer(rows=2, cols=2, vgap=5, hgap=5)
+
+
+        contactPanel = wx.Panel(self)
+        contactPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
+        contactPanel.SetSizer(contactPanelSizer)
+        contactQueriesContactLabel = wx.StaticText(contactPanel, label = "For queries, please contact:")
+        font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        if sys.platform.startswith("darwin"):
+            font.SetPointSize(11)
+        else:
+            font.SetPointSize(9)
+        contactQueriesContactLabel.SetFont(font)
+
+        contactEmailHyperlink = wx.HyperlinkCtrl(contactPanel, id = wx.ID_ANY, label = "help@massive.org.au", url = "mailto:help@massive.org.au")
+        font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        if sys.platform.startswith("darwin"):
+            font.SetPointSize(11)
+        else:
+            font.SetPointSize(8)
+        contactEmailHyperlink.SetFont(font)
+
+#        contactPanelSizer.Add(wx.StaticText(contactPanel, wx.ID_ANY, ""))
+        contactPanelSizer.Add(contactQueriesContactLabel, border=10, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BORDER)
+        contactPanelSizer.Add(contactEmailHyperlink, border=20, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.BORDER)
+
+        #contactPanelSizer.Add(wx.StaticText(contactPanel))
+        contactPanelSizer.Fit(contactPanel)
+
+        okButton = wx.Button(self, 1, ' OK ')
+        okButton.SetDefault()
+        okButton.Bind(wx.EVT_BUTTON, self.OnClose)
+
+        sizer.Add(iconPanel, flag=wx.EXPAND|wx.ALIGN_TOP|wx.ALIGN_LEFT)
+        sizer.Add(contactPanel)
+        sizer.Add(okButton, flag=wx.RIGHT|wx.BOTTOM)
+        #sizer.Add(wx.StaticText(self,label="       "))
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+
+    def setCallback(self,callback):
+        self.callback=callback
+
+
+    def addPanel(self,panel):
+        self.GetSizer().Insert(1,panel,flag=wx.EXPAND)
+        self.GetSizer().Fit(self)
+
+
+    def OnClose(self, e):
+        self.Destroy()
+        if self.callback != None:
+            self.callback()
+
 
 class MyHtmlParser(HTMLParser.HTMLParser):
     def __init__(self, valueString):
