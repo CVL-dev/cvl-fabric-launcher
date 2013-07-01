@@ -381,7 +381,7 @@ class KeyDist():
             # by passing the -o IdentityFile option a path that does not exist, openssh can't use any other identities, and can only use the agent.
             # This is a little "racy" in that a tempfile with the same path could concievably be created between the unlink and openssh attempting to use it
             # but since the pub key is extracted from the agent not the identity file I can't see anyway an attacker could use this to trick a user into uploading the attackers key.
-            print "testAuthThread started"
+            logger_debug("testAuthThread started")
             import tempfile, os
             (fd,path)=tempfile.mkstemp()
             os.close(fd)
@@ -644,7 +644,7 @@ class KeyDist():
         def testauth(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_TESTAUTH):
                 logger_debug("received TESTAUTH event")
-                print "received TESTAUTH event, starting testAuthThread"
+                logger_debug("received TESTAUTH event, starting testAuthThread")
                 t = KeyDist.testAuthThread(event.keydist)
                 t.setDaemon(True)
                 t.start()
