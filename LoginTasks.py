@@ -92,7 +92,7 @@ class LoginProcess():
             self._stop = Event()
     
         def stop(self):
-            logger_debug("stoping the thread that generates the one time password")
+            logger_debug("stopping the thread that generates the one time password")
             self._stop.set()
         
         def stopped(self):
@@ -142,7 +142,7 @@ class LoginProcess():
             self.failure=failure
     
         def stop(self):
-            logger_debug("stoping the thread that forwards the SSH Agent") 
+            logger_debug("stopping the thread that forwards the SSH Agent") 
             self.process.stdin.write("exit\n")
             self._stop.set()
         
@@ -811,9 +811,9 @@ class LoginProcess():
                         timestring = "%s minute"%minutes
                     else:
                         timestring = "%s minutes"%minutes
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect latter? It has %s remaining"%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect later? It has %s remaining"%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
                 else:
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect latter?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect later?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
                 wx.CallAfter(dialog.ShowModal)
             else:
                 event.Skip()
@@ -833,7 +833,7 @@ class LoginProcess():
 
         def killServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER or event.GetId() == LoginProcess.EVT_LOGINPROCESS_KILL_SERVER):
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 4,"Stoping the existing desktop session")
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 4,"Stopping the existing desktop session")
                 if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
                     logger_debug("caught an EVT_LOGINPROCESS_RESTART_SERVER")
                     restart=True
@@ -897,7 +897,7 @@ class LoginProcess():
 
         def forwardAgent(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT):
-                logger_debug("recieved FORWARD_AGENT event")
+                logger_debug("received FORWARD_AGENT event")
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 8,"Setting up SSH Agent forwarding")
                 successCallback = lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_OTP,event.loginprocess))
                 failCallback = lambda: event.loginprocess.cancel("Unable to forward the ssh agent")
@@ -911,7 +911,7 @@ class LoginProcess():
         def startTunnel(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_TUNNEL):
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 7,"Starting the tunnel")
-                logger_debug("recieved START_TUNNEL event")
+                logger_debug("received START_TUNNEL event")
                 event.loginprocess.localPortNumber = "0" # Request ephemeral port.
                 testRun = False
                 successCallback = lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess))
@@ -926,7 +926,7 @@ class LoginProcess():
         def getVNCPassword(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_OTP):
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one time password for the VNC server")
-                logger_debug("recieved GET_OTP event")
+                logger_debug("received GET_OTP event")
                 t = LoginProcess.getOTPThread(event.loginprocess)
                 t.setDaemon(False)
                 t.start()
@@ -937,7 +937,7 @@ class LoginProcess():
         def startViewer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_VIEWER):
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Starting the VNC viewer")
-                logger_debug("recieved START_VIEWER event")
+                logger_debug("received START_VIEWER event")
                 t = LoginProcess.startVNCViewer(event.loginprocess)
                 t.setDaemon(False)
                 t.start()
@@ -960,7 +960,7 @@ class LoginProcess():
                     wx.CallAfter(event.loginprocess.notify_window.progressDialog.Show, False)
                     wx.CallAfter(event.loginprocess.notify_window.progressDialog.Destroy)
                     event.loginprocess.notify_window.progressDialog = None
-                logger_debug("all threads stoped and joined")
+                logger_debug("all threads stopped and joined")
             else:
                 event.Skip()
 
