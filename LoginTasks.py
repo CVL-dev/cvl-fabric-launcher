@@ -801,6 +801,7 @@ class LoginProcess():
                 KillCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_KILL_SERVER,event.loginprocess))
                 NOOPCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess))
                 timeRemaining=event.loginprocess.timeRemaining()
+                dialog = None
                 if (timeRemaining != None):
                     hours, remainder = divmod(timeRemaining, 3600)
                     minutes, seconds = divmod(remainder, 60)
@@ -814,10 +815,14 @@ class LoginProcess():
                         timestring = "%s minute"%minutes
                     else:
                         timestring = "%s minutes"%minutes
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect later? It has %s remaining"%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
-                else:
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                elif ("m1" not in event.loginprocess.loginParams['loginHost'] and "m2" not in event.loginprocess.loginParams['loginHost']):
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect later?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
-                wx.CallAfter(dialog.ShowModal)
+                if dialog:
+                    wx.CallAfter(dialog.ShowModal)
+                else:
+                    # Presumably, the user has already ended their MASSIVE session, so there is no need to ask whether they want to stop it.
+                    wx.CallAfter(NOOPCallback)
             else:
                 event.Skip()
 
