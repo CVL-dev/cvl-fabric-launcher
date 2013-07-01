@@ -82,22 +82,23 @@ class sshpaths():
     
     def ssh_files(self):
         known_hosts_file = os.path.join(expanduser('~'), '.ssh', 'known_hosts')
-        sshKeyPath = os.path.join(expanduser('~'), '.ssh', 'MassiveLauncherKey')
+        sshKeyPath = os.path.join(expanduser('~'), '.ssh', self.keyFileName)
         return (sshKeyPath,known_hosts_file,)
 
-    def __init__(self):
+    def __init__(self, keyFileName):
         (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, sshKeyScanBinary,chownBinary, chmodBinary,) = self.ssh_binaries()
-        (sshKeyPath,sshKnownHosts,) = self.ssh_files()
-        self.sshBinary = sshBinary
-        self.sshKeyGenBinary = sshKeyGenBinary
-        self.sshAgentBinary = sshAgentBinary
-        self.sshAddBinary = sshAddBinary
-        self.sshKeyScanBinary = sshKeyScanBinary
-        self.chownBinary = chownBinary
-        self.chmodBinary = chmodBinary
+        self.keyFileName                = keyFileName
+        (sshKeyPath,sshKnownHosts,)     = self.ssh_files()
+        self.sshBinary                  = sshBinary
+        self.sshKeyGenBinary            = sshKeyGenBinary
+        self.sshAgentBinary             = sshAgentBinary
+        self.sshAddBinary               = sshAddBinary
+        self.sshKeyScanBinary           = sshKeyScanBinary
+        self.chownBinary                = chownBinary
+        self.chmodBinary                = chmodBinary
 
-        self.sshKeyPath = sshKeyPath
-        self.sshKnownHosts = sshKnownHosts
+        self.sshKeyPath                 = sshKeyPath
+        self.sshKnownHosts              = sshKnownHosts
 
 class KeyDist():
 
