@@ -599,36 +599,12 @@ class LoginProcess():
 
         def showTurboVncNotFoundMessageDialog(self,turboVncLatestVersion):
             
-            class NotFoundDialog(wx.Dialog):
-                def __init__(self, *args, **kw):
-                    super(NotFoundDialog, self).__init__(*args, **kw) 
-                def OnClose(self, e):
-                    self.Destroy()
 
-            turboVncNotFoundDialog = NotFoundDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
-
-            if sys.platform.startswith("win"):
-                _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
-                turboVncNotFoundDialog.SetIcon(_icon)
-
-            if sys.platform.startswith("linux"):
-                import MASSIVE_icon
-                turboVncNotFoundDialog.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
-
-            massiveIconPanel = wx.Panel(turboVncNotFoundDialog)
-
-            import MASSIVE_icon
-            massiveIconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
-            wx.StaticBitmap(massiveIconPanel, wx.ID_ANY,
-                massiveIconAsBitmap,
-                (0, 50),
-                (massiveIconAsBitmap.GetWidth(), massiveIconAsBitmap.GetHeight()))
+            turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
 
             turboVncNotFoundPanel = wx.Panel(turboVncNotFoundDialog)
-
-            turboVncNotFoundPanelSizer = wx.FlexGridSizer(rows=8, cols=1, vgap=5, hgap=5)
+            turboVncNotFoundPanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5, hgap=5)
             turboVncNotFoundPanel.SetSizer(turboVncNotFoundPanelSizer)
-
             turboVncNotFoundTitleLabel = wx.StaticText(turboVncNotFoundPanel,
                 label = "MASSIVE/CVL Launcher")
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
@@ -638,7 +614,6 @@ class LoginProcess():
             turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
             turboVncNotFoundPanelSizer.Add(turboVncNotFoundTitleLabel, flag=wx.EXPAND)
             turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
-
             turboVncNotFoundTextLabel1 = wx.StaticText(turboVncNotFoundPanel,
                 label = "TurboVNC not found.\n" +
                         "Please download from:\n")
@@ -649,7 +624,6 @@ class LoginProcess():
                 font.SetPointSize(9)
             turboVncNotFoundTextLabel1.SetFont(font)
             turboVncNotFoundPanelSizer.Add(turboVncNotFoundTextLabel1, flag=wx.EXPAND)
-
             turboVncNotFoundHyperlink = wx.HyperlinkCtrl(turboVncNotFoundPanel,
                 id = wx.ID_ANY,
                 label = TURBOVNC_BASE_URL + turboVncLatestVersion,
@@ -660,50 +634,11 @@ class LoginProcess():
             else:
                 font.SetPointSize(8)
             turboVncNotFoundHyperlink.SetFont(font)
-            turboVncNotFoundPanelSizer.Add(turboVncNotFoundHyperlink, border=10, flag=wx.LEFT|wx.BORDER)
+            turboVncNotFoundPanelSizer.Add(turboVncNotFoundHyperlink, border=10, flag=wx.LEFT|wx.RIGHT|wx.BORDER)
             turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
 
-            turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel, wx.ID_ANY, ""))
-            turboVncNotFoundQueriesContactLabel = wx.StaticText(turboVncNotFoundPanel,
-                label = "For queries, please contact:")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(9)
-            turboVncNotFoundQueriesContactLabel.SetFont(font)
-            turboVncNotFoundPanelSizer.Add(turboVncNotFoundQueriesContactLabel, border=10, flag=wx.EXPAND|wx.BORDER)
-
-            contactEmailHyperlink = wx.HyperlinkCtrl(turboVncNotFoundPanel,
-                id = wx.ID_ANY,
-                label = "help@massive.org.au",
-                url = "mailto:help@massive.org.au")
-            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            if sys.platform.startswith("darwin"):
-                font.SetPointSize(11)
-            else:
-                font.SetPointSize(8)
-            contactEmailHyperlink.SetFont(font)
-            turboVncNotFoundPanelSizer.Add(contactEmailHyperlink, border=20, flag=wx.LEFT|wx.BORDER)
-
-
-            okButton = wx.Button(turboVncNotFoundPanel, 1, ' OK ')
-            okButton.SetDefault()
-            okButton.Bind(wx.EVT_BUTTON, turboVncNotFoundDialog.OnClose)
-            turboVncNotFoundPanelSizer.Add(okButton, flag=wx.ALIGN_RIGHT)
-            turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
-            turboVncNotFoundPanelSizer.Fit(turboVncNotFoundPanel)
-
-
-            turboVncNotFoundDialogSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=5)
-            turboVncNotFoundDialogSizer.Add(massiveIconPanel, flag=wx.EXPAND)
-            turboVncNotFoundDialogSizer.Add(turboVncNotFoundPanel, flag=wx.EXPAND)
-            turboVncNotFoundDialogSizer.Add(wx.StaticText(turboVncNotFoundDialog,label="       "))
-            turboVncNotFoundDialog.SetSizer(turboVncNotFoundDialogSizer)
-            turboVncNotFoundDialogSizer.Fit(turboVncNotFoundDialog)
-
+            turboVncNotFoundDialog.addPanel(turboVncNotFoundPanel)
             turboVncNotFoundDialog.ShowModal()
-            turboVncNotFoundDialog.Destroy()
     
         def run(self):
             # Check for TurboVNC
@@ -1081,7 +1016,7 @@ class LoginProcess():
         self.skd=None
 
 
-        if (self.usePBS):
+        if ("m1" in self.loginParams['loginHost'] or "m2" in self.loginParams['loginHost']):
             self.listAllCmd='qstat -u {username}'
             self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
             self.runningCmd='qstat -u {username}'
@@ -1092,6 +1027,20 @@ class LoginProcess():
             self.startServerCmd="/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False"
             self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
             self.showStartCmd="showstart {jobid}"
+        elif ("cvllogin" in self.loginParams['loginHost']):
+            self.loginParms['loginHost'] = "118.138.241.53"
+            self.directConnect=True
+            self.execHostCmd='qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d " " | cut -f 1 -d "/" | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d " "'
+            self.execHostRegEx='^\s*(?P<execHost>\S+)\s*$'
+            self.listAllCmd='module load pbs ; module load maui ; qstat | grep {username}'
+            self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
+            self.runningCmd='module load pbs ; module load maui ; qstat | grep {username}'
+            self.runningRegEx='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
+            self.startServerCmd="/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False"
+            self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
+            self.stopCmd='qdel {jobidNumber}'
+            self.showStartCmd=None
+
         else:
             self.listAllCmd='"module load turbovnc ; vncserver -list"'
             self.listAllRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
@@ -1157,15 +1106,27 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.statRunningJob)
 
     def timeRemaining(self):
+        # The time fields returned by qstat can either contain HH:MM or --. -- occurs if the job has only just started etc
+        # If -- is present, unpacking after split will fail, hence the try: except: combos.
         job=self.job
         if job != None:
             if (job.has_key('reqTime') and job.has_key('elapTime') and job.has_key('state')):
                 if (job['state']=='R'):
-                    (rhours,rmin) = job['reqTime'].split(':')
-                    (ehours,emin) = job['elapTime'].split(':')
+                    try:
+                        (rhours,rmin) = job['reqTime'].split(':')
+                    except:
+                        return None
+                    try:
+                        (ehours,emin) = job['elapTime'].split(':')
+                    except:
+                        ehours=0
+                        emin=0
                     return (int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
                 else:
-                    (rhours,rmin) = job['reqTime'].split(':')
+                    try:
+                        (rhours,rmin) = job['reqTime'].split(':')
+                    except:
+                        return None
                     ehours=0
                     emin=0
                     return (int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60

@@ -12,7 +12,7 @@ import sys
 from os.path import expanduser
 import subprocess
 import traceback
-from utilityFunctions import logger_debug, logger_error
+from utilityFunctions import logger_debug, logger_error, HelpDialog
 
 OPENSSH_BUILD_DIR = 'openssh-cygwin-stdin-build'
 
@@ -108,33 +108,42 @@ class KeyDist():
 
     class passphraseDialog(wx.Dialog):
 
-        def __init__(self, parent, id, title, text, okString, cancelString):
-            wx.Dialog.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER | wx.STAY_ON_TOP)
+        def __init__(self, parent, id, title, text, okString, cancelString,helpString="Help! What is all this?"):
+            wx.Dialog.__init__(self, parent, id, pos=(200,150), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER | wx.STAY_ON_TOP)
             self.SetTitle(title)
-            self.panel = wx.Panel(self,-1)
-            self.label = wx.StaticText(self.panel, -1, text)
-            self.PassphraseField = wx.TextCtrl(self.panel, wx.ID_ANY, style=wx.TE_PASSWORD ^ wx.TE_PROCESS_ENTER)
+            self.label = wx.StaticText(self, -1, text)
+            self.PassphraseField = wx.TextCtrl(self, wx.ID_ANY,style=wx.TE_PASSWORD ^ wx.TE_PROCESS_ENTER)
             self.PassphraseField.SetFocus()
-            self.Cancel = wx.Button(self.panel,-1,label=cancelString)
-            self.OK = wx.Button(self.panel,-1,label=okString)
+            self.canceled=True
+            self.Cancel = wx.Button(self,-1,label=cancelString)
+            self.OK = wx.Button(self,-1,label=okString)
+            self.Help = wx.Button(self,-1,label=helpString)
 
-            self.sizer = wx.FlexGridSizer(2, 2, 5, 5)
-            self.sizer.Add(self.label)
-            self.sizer.Add(self.PassphraseField)
-            self.sizer.Add(self.Cancel)
-            self.sizer.Add(self.OK)
+            self.dataPanelSizer=wx.BoxSizer(wx.HORIZONTAL)
+            self.dataPanelSizer.Add(self.label,flag=wx.ALL,border=5)
+            self.dataPanelSizer.Add(self.PassphraseField,flag=wx.EXPAND|wx.ALL,border=5)
 
+            self.buttonPanelSizer=wx.BoxSizer(wx.HORIZONTAL)
+            self.buttonPanelSizer.Add(self.Cancel,0,wx.ALL,5)
+            self.buttonPanelSizer.Add(self.Help,0,wx.ALL,5)
+            self.buttonPanelSizer.AddStretchSpacer(prop=1)
+            self.buttonPanelSizer.Add(self.OK,0,wx.ALL,5)
+
+            self.sizer = wx.BoxSizer(wx.VERTICAL)
+            self.sizer.Add(self.dataPanelSizer,flag=wx.EXPAND)
+            self.sizer.Add(self.buttonPanelSizer,flag=wx.EXPAND)
             self.PassphraseField.Bind(wx.EVT_TEXT_ENTER,self.onEnter)
             self.OK.Bind(wx.EVT_BUTTON,self.onEnter)
             self.Cancel.Bind(wx.EVT_BUTTON,self.onEnter)
-
-            self.border = wx.BoxSizer()
-            self.border.Add(self.sizer, 0, wx.ALL, 15)
-            self.panel.SetSizerAndFit(self.border)
+            self.Help.Bind(wx.EVT_BUTTON,self.onHelp)
+#
+            self.border = wx.BoxSizer(wx.VERTICAL)
+            self.border.Add(self.sizer, 0, wx.EXPAND|wx.ALL, 15)
+            self.SetSizer(self.border)
             self.Fit()
-            self.password = None
 
         def onEnter(self,e):
+            self.canceled=True
             if (e.GetId() == self.Cancel.GetId()):
                 self.canceled = True
                 self.password = None
@@ -142,6 +151,21 @@ class KeyDist():
                 self.canceled = False
                 self.password = self.PassphraseField.GetValue()
             self.Close()
+    
+        def onHelp(self,e):
+            helpDialog = HelpDialog(self.GetParent(), title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
+            helpPanel = wx.Panel(helpDialog)
+            helpPanelSizer = wx.FlexGridSizer()
+            helpPanel.SetSizer(helpPanelSizer)
+            helpText = wx.TextCtrl(helpPanel,wx.ID_ANY,value="",size=(400,400),style=wx.TE_READONLY|wx.TE_MULTILINE)
+            try:
+                helpText.LoadFile("sshHelpText.txt")
+            except:
+                pass
+            helpPanelSizer.Add(helpText,border=20,flag=wx.BORDER|wx.TOP|wx.RIGHT)
+            helpPanelSizer.Fit(helpPanel)
+            helpDialog.addPanel(helpPanel)
+            helpDialog.ShowModal()
 
 
         def getPassword(self):
