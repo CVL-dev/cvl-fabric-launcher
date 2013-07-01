@@ -42,7 +42,7 @@ import wx
 
 class LauncherProgressDialog(wx.Frame):
     def __init__(self, parent, id, title, message, maxValue, userCanAbort,cancelCallback=None):
-        wx.Frame.__init__(self, parent, id, title, style=wx.STAY_ON_TOP)
+        wx.Frame.__init__(self, parent, id, title, style=wx.FRAME_FLOAT_ON_PARENT)
 
         self.user_requested_abort = False
         self.cancelCallback=cancelCallback
@@ -53,7 +53,7 @@ class LauncherProgressDialog(wx.Frame):
         # likely to appear in the progress dialog.
         # At the end of the __init__ method, we will use
         # SetLabel to set the initial message correctly.
-        temporaryMessage = "Checking installed version of TurboVNC..."
+        temporaryMessage = "Getting the one time password for the VNC server"
         self.messageStaticText = wx.StaticText(self.panel, label = temporaryMessage)
 
         self.progressBar = wx.Gauge(self, -1, maxValue)
