@@ -184,7 +184,7 @@ class LoginProcess():
                 self.failure()
 
     class SimpleOptionDialog(wx.Dialog):
-        def __init__(self, parent, id, title, text, okString, cancelString,OKCallback,CancelCallback):
+        def __init__(self, parent, id, title, text, okString, cancelString, OKCallback, CancelCallback):
             wx.Dialog.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER | wx.STAY_ON_TOP)
             self.SetTitle(title)
             self.panel = wx.Panel(self,-1)
@@ -194,15 +194,18 @@ class LoginProcess():
             self.OKCallback=OKCallback
             self.CancelCallback=CancelCallback
 
-            self.sizer = wx.FlexGridSizer(2, 1)
-            self.buttonRow = wx.FlexGridSizer(1, 2)
+            self.sizer = wx.FlexGridSizer(3, 1)
+            self.buttonRow = wx.FlexGridSizer(1, 2, hgap=10)
             self.sizer.Add(self.label)
-            self.sizer.Add(self.buttonRow)
+            self.sizer.Add(wx.StaticText(self.panel, -1, ""))
+            self.sizer.Add(self.buttonRow, flag=wx.ALIGN_RIGHT)
             self.buttonRow.Add(self.Cancel)
             self.buttonRow.Add(self.OK)
 
             self.OK.Bind(wx.EVT_BUTTON,self.onOK)
             self.Cancel.Bind(wx.EVT_BUTTON,self.onCancel)
+
+            self.CenterOnParent()
 
             self.border = wx.BoxSizer()
             self.border.Add(self.sizer, 0, wx.ALL, 15)
