@@ -971,8 +971,14 @@ class LauncherMainFrame(wx.Frame):
         dlg.Destroy()
 
     def onExit(self, event):
-        dump_log(launcherMainFrame)
-        self.onCancel(event)
+        # Clean-up (including qdel if necessary) is now done in LoginTasks.py
+        # No longer using temporary private key file, 
+        # so there's no need to delete it as part of clean-up.
+
+        try:
+            dump_log(launcherMainFrame)
+        finally:
+            os._exit(0)
 
     def onToggleCvlVncDisplayNumberAutomaticCheckBox(self, event):
         if self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
@@ -1013,27 +1019,13 @@ class LauncherMainFrame(wx.Frame):
                 turboVncConfig.write(turboVncPreferencesFileObject)
 
     def onCancel(self, event):
+        # Clean-up (including qdel if necessary) is now done in LoginTasks.py
+        # No longer using temporary private key file, 
+        # so there's no need to delete it as part of clean-up.
+
         try:
-            try:
-                if os.path.isfile(launcherMainFrame.loginThread.privateKeyFile.name):
-                    os.unlink(launcherMainFrame.loginThread.privateKeyFile.name)
-            except:
-                #logger_debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
-                #logger_debug(traceback.format_exc())
-                pass
-
-            # Now using ignore_errors=True, because of CVLFAB-449
-            deleteMassiveJobIfNecessary(launcherMainFrame,write_debug_log=False,update_status_bar=True,update_main_progress_bar=False,ignore_errors=True)
-
-            launcherMainFrame.loginThread.sshClient.close()
-
-        except:
-            #logger_debug("MASSIVE/CVL Launcher v" + launcher_version_number.version_number)
-            #logger_debug(traceback.format_exc())
-            pass
-
-        finally:
             dump_log(launcherMainFrame)
+        finally:
             os._exit(0)
 
     def onCut(self, event):
