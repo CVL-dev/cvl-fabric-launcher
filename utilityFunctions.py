@@ -8,6 +8,7 @@ import time
 import subprocess
 import inspect
 import sys
+import itertools
 
 
 #LAUNCHER_URL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
@@ -18,6 +19,19 @@ LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massiv
 global TURBOVNC_BASE_URL
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
 
+def parseMessages(regexs,stdout,stderr):
+    # compare each line of output against a list of regular expressions and build up a dictionary of messages to give the user
+    messages={}
+    for line  in itertools.chain(stdout.splitlines(True),stderr.splitlines(True)):
+        for re in regexs:
+            match = re.search(line)
+            if (match):
+                for key in match.groupdict().keys():
+                    if messages.has_key(key):
+                        messages[key]=messages[key]+match.group(key)
+                    else:
+                        messages[key]=match.group(key)
+    return messages
 
 class HelpDialog(wx.Dialog):
     def __init__(self, *args, **kw):

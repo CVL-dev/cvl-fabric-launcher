@@ -116,7 +116,7 @@ class LoginProcess():
                     universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                 stdout,stderr = otpProcess.communicate()
                 passwdFound=False
-                for line in stdout.split('\n'):
+                for line in stdout.splitlines(False):
                     passwd = re.search(self.loginprocess.otpRegEx.format(**self.loginprocess.jobParams),line)
                     if (passwd):
                         self.loginprocess.jobParams.update(passwd.groupdict())
@@ -280,7 +280,24 @@ class LoginProcess():
             (stdout, stderr) = run_ssh_command(sshCmd.format(**self.loginprocess.jobParams), self.loginprocess.startServerCmd.format(**self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
             started=False
             import itertools
-            for line  in itertools.chain(stdout.split('\n'),stderr.split('\n')):
+            messages=parseMessages(self.loginprocess.messageRegexs,stdout,stderr)
+            concat=""
+            for key in messages.keys():
+                concat=concat+messages[key]
+            event=None
+            if (messages.has_key('error')):
+                logger_error("canceling the loginprocess due to errors in the output of the startServer command: %s"%messages)
+                self.loginprocess.cancel(concat)
+            elif (messages.has_key('warn') or messages.has_key('info')):
+                dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
+                panel=wx.Panel(dlg)
+                sizer=wx.BoxSizer()
+                panel.SetSizer(sizer)
+                text=wx.StaticText(panel,wx.ID_ANY,label=concat)
+                sizer.Add(text,0,wx.ALL,15)
+                dlg.addPanel(panel)
+                wx.CallAfter(dlg.ShowModal)
+            for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
                 match=re.search(self.loginprocess.startServerRegEx.format(**self.loginprocess.jobParams),line)
                 if (match):
                     logger_debug('matched the startServerRegEx %s' % line)
@@ -333,7 +350,7 @@ class LoginProcess():
                     self.loginprocess.cancel("Trying to check if the job is running yet, I was missing a parameter %s"%e)
                     return
                 
-                for line in stdout.split('\n'):
+                for line in stdout.splitlines(False):
                     if (not self.stopped()):
                         try:
                             regex=runningRegEx.format(**jobParams)
@@ -355,7 +372,7 @@ class LoginProcess():
                                 logger_debug('showstart stderr: ' + stderrRead)
                                 logger_debug('showstart stdout: ' + stdoutRead)
                           
-                                showstartLines = stdoutRead.split("\n")
+                                showstartLines = stdoutRead.splitlines(False)
                                 for showstartLine in showstartLines:
                                     if showstartLine.startswith("Estimated Rsv based start"):
                                         showstartLineComponents = showstartLine.split(" on ")
@@ -372,7 +389,7 @@ class LoginProcess():
                 except KeyError as e:
                     logger_error("execHostCmd missing parameter %s"%e)
                     self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
-                lines = stdout.split('\n')
+                lines = stdout.splitlines(False)
                 for line in lines:
                     if (not self.stopped()):
                         try:
@@ -439,7 +456,7 @@ class LoginProcess():
                 logger_error("listAllCmd missing parameter %s"%e)
                 self.loginprocess.cancel("Sorry, an error occured and I was unable to determine if you already have any running desktops")
                 return
-            lines = stdout.split('\n')
+            lines = stdout.splitlines(False)
             try:
                 regex = self.loginprocess.listAllRegEx.format(**self.loginprocess.jobParams)
             except KeyError as e:
@@ -602,9 +619,8 @@ class LoginProcess():
             return (vnc,turboVncVersionNumber,turboVncFlavour)
 
         def showTurboVncNotFoundMessageDialog(self,turboVncLatestVersion):
-            
 
-            turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290))
+            turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
 
             turboVncNotFoundPanel = wx.Panel(turboVncNotFoundDialog)
             turboVncNotFoundPanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5, hgap=5)
@@ -995,10 +1011,14 @@ class LoginProcess():
                 newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                 wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
                 if (event.string!=""):
-                    dlg = wx.MessageDialog(event.loginprocess.notify_window, event.string,
-                    "Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
+                    panel=wx.Panel(dlg)
+                    sizer=wx.BoxSizer()
+                    panel.SetSizer(sizer)
+                    text=wx.StaticText(panel,wx.ID_ANY,label=event.string)
+                    sizer.Add(text,0,wx.ALL,15)
+                    dlg.addPanel(panel)
                     wx.CallAfter(dlg.ShowModal)
-
             else:
                 event.Skip()
 
@@ -1035,6 +1055,8 @@ class LoginProcess():
         self.skd=None
 
 
+        # output from startServerCmd that matches and of these regular expressions will pop up in a window for the user
+        self.messageRegexs=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
         if ("m1" in self.loginParams['loginHost'] or "m2" in self.loginParams['loginHost']):
             self.listAllCmd='qstat -u {username}'
             self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
@@ -1043,7 +1065,8 @@ class LoginProcess():
             self.stopCmd='qdel {jobid}'
             self.execHostCmd='qpeek {jobidNumber}'
             self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
-            self.startServerCmd="/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False"
+            #self.startServerCmd="/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False"
+            self.startServerCmd="request_visnode.sh {project} {hours} {nodes} True False False"
             self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
             self.showStartCmd="showstart {jobid}"
         elif ("cvllogin" in self.loginParams['loginHost']):
@@ -1107,6 +1130,9 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_COMPLETE = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHUTDOWN = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_SHOW_MESSAGE = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_SHOW_WARNING = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_SHOW_ERROR = wx.NewId()
 
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.cancel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.distributeKey)
@@ -1125,6 +1151,7 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.normalTermination)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.complete)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.statRunningJob)
+        #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
 
     def timeRemaining(self):
         # The time fields returned by qstat can either contain HH:MM or --. -- occurs if the job has only just started etc
