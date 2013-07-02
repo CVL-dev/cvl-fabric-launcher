@@ -141,6 +141,7 @@ class KeyDist():
 #
             self.border = wx.BoxSizer(wx.VERTICAL)
             self.border.Add(self.sizer, 0, wx.EXPAND|wx.ALL, 15)
+            self.CentreOnParent(wx.BOTH)
             self.SetSizer(self.border)
             self.Fit()
 
