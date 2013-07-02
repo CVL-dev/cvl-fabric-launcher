@@ -467,34 +467,14 @@ class LauncherMainFrame(wx.Frame):
         self.massiveHoursAndVisNodesPanel.SetSizerAndFit(self.massiveHoursAndVisNodesPanelSizer)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursAndVisNodesPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        if self.massiveLoginHost.startswith("m1"):
-            self.massivePersistentMode = True
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
-            self.massivePersistentMode = False
-            if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-                if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_persistent_mode"):
-                    self.massivePersistentMode = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_persistent_mode")
-                    if self.massivePersistentMode.strip() == "":
-                        self.massivePersistentMode = True
-                    else:
-                        if self.massivePersistentMode==True or self.massivePersistentMode=='True':
-                            self.massivePersistentMode = True
-                        else:
-                            self.massivePersistentMode = False
-                else:
-                    massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode","False")
-                    with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                        massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-            else:
-                massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
-                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
 
-        self.massivePersistentModeLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Persistent mode')
-        self.massiveLoginFieldsPanelSizer.Add(self.massivePersistentModeLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.massivePersistentModeCheckBox = wx.CheckBox(self.massiveLoginFieldsPanel, wx.ID_ANY, "")
-        self.massivePersistentModeCheckBox.SetValue(self.massivePersistentMode)
-        self.massiveLoginFieldsPanelSizer.Add(self.massivePersistentModeCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveVncDisplayResolutionLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Resolution')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -702,11 +682,7 @@ class LauncherMainFrame(wx.Frame):
                 self.cvlLoginHostComboBox.SetSelection(-1)
             self.cvlLoginHostComboBox.SetValue(self.cvlLoginHost)
 
-        self.cvlVncDisplayNumberLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Display number')
-        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.cvlVncDisplayNumberAutomatic = True
-        self.cvlVncDisplayNumber = 1
 
         # FIXME: Check how the Launcher dialog's 
         # 1. persistent mode check box (MASSIVE tab),
@@ -717,26 +693,6 @@ class LauncherMainFrame(wx.Frame):
         # But if they are removed, will Paul be happy, given that he has made some requests about
         # the Launcher remembering the last-used state of persistent mode on m1 and on m2?
 
-        self.cvlVncDisplayNumberPanel = wx.Panel(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY)
-        self.cvlVncDisplayNumberPanelSizer = wx.FlexGridSizer(rows=1, cols=2, vgap=5, hgap=20)
-        self.cvlVncDisplayNumberPanel.SetSizer(self.cvlVncDisplayNumberPanelSizer)
-
-        self.cvlVncDisplayNumberAutomaticCheckBox = wx.CheckBox(self.cvlVncDisplayNumberPanel, wx.ID_ANY, "Automatic")
-        self.cvlVncDisplayNumberPanelSizer.Add(self.cvlVncDisplayNumberAutomaticCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_BOTTOM, border=5)
-        self.cvlVncDisplayNumberSpinCtrl = wx.SpinCtrl(self.cvlVncDisplayNumberPanel, wx.ID_ANY, min=0,max=100)
-        if self.cvlVncDisplayNumberAutomatic==True:
-            self.cvlVncDisplayNumberAutomaticCheckBox.SetValue(True)
-            self.cvlVncDisplayNumberSpinCtrl.SetValue(1)
-            self.cvlVncDisplayNumberSpinCtrl.Disable()
-        if self.cvlVncDisplayNumberAutomatic==False:
-            self.cvlVncDisplayNumberAutomaticCheckBox.SetValue(False)
-            self.cvlVncDisplayNumberSpinCtrl.SetValue(self.cvlVncDisplayNumber)
-        self.cvlVncDisplayNumberPanelSizer.Add(self.cvlVncDisplayNumberSpinCtrl, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_BOTTOM, border=5)
-        self.cvlVncDisplayNumberAutomaticCheckBox.Bind(wx.EVT_CHECKBOX, self.onToggleCvlVncDisplayNumberAutomaticCheckBox)
-
-        self.cvlVncDisplayNumberPanel.SetSizerAndFit(self.cvlVncDisplayNumberPanelSizer)
-
-        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayNumberPanel, flag=wx.ALIGN_RIGHT|wx.RIGHT, border=10)
 
 
         self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Resolution')
@@ -776,9 +732,6 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.cvlVncDisplayResolutionComboBox.SetValue(defaultResolution)
 
-        if self.cvlVncDisplayNumberAutomatic==False:
-            self.cvlVncDisplayResolutionComboBox.Disable()
-            self.cvlVncDisplayResolutionLabel.Disable()
 
         self.cvlSshTunnelCipherLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
         self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -964,10 +917,6 @@ class LauncherMainFrame(wx.Frame):
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()
         selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
-        if selectedMassiveLoginHost.startswith("m1"):
-            self.massivePersistentModeCheckBox.SetValue(True)
-        #if selectedMassiveLoginHost.startswith("m2"):
-            #self.massivePersistentModeCheckBox.SetValue(False)
 
     def onMassiveDebugWindowCheckBoxStateChanged(self, event):
         if launcherMainFrame.logWindow!=None:
@@ -1015,15 +964,6 @@ class LauncherMainFrame(wx.Frame):
         finally:
             os._exit(0)
 
-    def onToggleCvlVncDisplayNumberAutomaticCheckBox(self, event):
-        if self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()==True:
-            self.cvlVncDisplayNumberSpinCtrl.Disable()
-            self.cvlVncDisplayResolutionComboBox.Enable()
-            self.cvlVncDisplayResolutionLabel.Enable()
-        else:
-            self.cvlVncDisplayNumberSpinCtrl.Enable()
-            self.cvlVncDisplayResolutionComboBox.Disable()
-            self.cvlVncDisplayResolutionLabel.Disable()
 
     def onOptions(self, event):
 
@@ -1141,7 +1081,6 @@ class LauncherMainFrame(wx.Frame):
         if launcherMainFrame.massiveTabSelected:
             self.massiveHoursRequested = str(self.massiveHoursField.GetValue())
             self.massiveVisNodesRequested = str(self.massiveVisNodesField.GetValue())
-            self.massivePersistentMode = self.massivePersistentModeCheckBox.GetValue()
             self.massiveProject = self.massiveProjectComboBox.GetValue()
             if self.massiveProject == self.defaultProjectPlaceholder:
                 try:
@@ -1165,9 +1104,6 @@ class LauncherMainFrame(wx.Frame):
                 self.massiveProjectComboBox.SetValue(self.massiveProject)
             self.massiveAutomaticallyExit = self.massiveAutomaticallyExitCheckBox.GetValue()
 
-        if launcherMainFrame.cvlTabSelected:
-            self.cvlVncDisplayNumberAutomatic = self.cvlVncDisplayNumberAutomaticCheckBox.GetValue()
-            self.cvlVncDisplayNumber = self.cvlVncDisplayNumberSpinCtrl.GetValue()
 
         if launcherMainFrame.massiveTabSelected:
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_login_host", self.massiveLoginHost)
@@ -1176,8 +1112,6 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher", self.massiveSshTunnelCipher)
         else:
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number_automatic", self.cvlVncDisplayNumberAutomatic)
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_number", self.cvlVncDisplayNumber)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher", self.cvlSshTunnelCipher)
@@ -1186,7 +1120,6 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested", self.massiveVisNodesRequested)
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_persistent_mode", self.massivePersistentMode)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_automatically_exit", self.massiveAutomaticallyExit)
 
         if launcherMainFrame.massiveTabSelected:
@@ -1246,11 +1179,15 @@ class LauncherMainFrame(wx.Frame):
             cipher     = self.massiveSshTunnelCipher
             username   = self.massiveUsername
             autoExit   = self.massiveAutomaticallyExit
+            hours      = self.massiveHoursRequested
+            nodes      = self.massiveVisNodesRequested
         else:
             host       = self.cvlLoginHost
             resolution = self.cvlVncDisplayResolution
             cipher     = self.cvlSshTunnelCipher
             username   = self.cvlUsername
+            hours      = 298261 # maximum number of hours its possible to request without overflowing a signed int32 when converted to seconds.
+            nodes      = 1
             autoExit  = False
 
         host       = host.lstrip().rstrip()
@@ -1263,7 +1200,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.sshpaths = sshKeyDist.sshpaths('MassiveLauncherKey')
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
-        self.loginProcess=LoginTasks.LoginProcess(username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=self.massiveHoursRequested,nodes=self.massiveVisNodesRequested,usePBS=launcherMainFrame.massiveTabSelected,directConnect=(not launcherMainFrame.massiveTabSelected),autoExit=autoExit)
+        self.loginProcess=LoginTasks.LoginProcess(username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=hours,nodes=nodes,usePBS=launcherMainFrame.massiveTabSelected,directConnect=(not launcherMainFrame.massiveTabSelected),autoExit=autoExit)
         if sys.platform.startswith("win"):
             sshKeyDist.start_pageant()
             if 'HOME' not in os.environ:
