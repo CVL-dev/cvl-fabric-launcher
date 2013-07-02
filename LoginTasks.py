@@ -291,7 +291,10 @@ class LoginProcess():
             elif (messages.has_key('warn') or messages.has_key('info')):
                 dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
                 panel=wx.Panel(dlg)
+                sizer=wx.BoxSizer()
+                panel.SetSizer(sizer)
                 text=wx.StaticText(panel,wx.ID_ANY,label=concat)
+                sizer.Add(text,0,wx.ALL,15)
                 dlg.addPanel(panel)
                 wx.CallAfter(dlg.ShowModal)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
@@ -1010,7 +1013,10 @@ class LoginProcess():
                 if (event.string!=""):
                     dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
                     panel=wx.Panel(dlg)
+                    sizer=wx.BoxSizer()
+                    panel.SetSizer(sizer)
                     text=wx.StaticText(panel,wx.ID_ANY,label=event.string)
+                    sizer.Add(text,0,wx.ALL,15)
                     dlg.addPanel(panel)
                     wx.CallAfter(dlg.ShowModal)
             else:
