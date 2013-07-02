@@ -87,7 +87,7 @@ class ModalQuestion(wx.Dialog):
         # Dummy non-comment line to keep Python indenting happy:
         shouldCloseDialog = False
 
-def questionDialog(message, buttons=[wx.ID_OK, wx.ID_CANCEL], caption=''):
+def questionDialog(message, buttons=[wx.ID_OK, wx.ID_CANCEL], caption='', **kwargs):
     """ Ask a question.
 
     Return value will be the button the user clicked, in whatever form it was specified.
@@ -96,7 +96,7 @@ def questionDialog(message, buttons=[wx.ID_OK, wx.ID_CANCEL], caption=''):
     If the user clicks the 'x' close button in the corner, the return value will be None.
     """
 
-    dlg = ModalQuestion(None, message, buttons, title=caption)
+    dlg = ModalQuestion(None, message, buttons, title=caption, **kwargs)
     try:
         return buttons[dlg.ShowModal()]
     except IndexError:

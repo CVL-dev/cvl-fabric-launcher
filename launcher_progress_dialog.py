@@ -42,7 +42,7 @@ import wx
 
 class LauncherProgressDialog(wx.Frame):
     def __init__(self, parent, id, title, message, maxValue, userCanAbort):
-        wx.Frame.__init__(self, parent, id, title, style=wx.STAY_ON_TOP)
+        wx.Frame.__init__(self, parent, id, title, style=wx.FRAME_FLOAT_ON_PARENT)
 
         self.user_requested_abort = False
 

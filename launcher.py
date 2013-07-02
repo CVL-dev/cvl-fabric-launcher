@@ -3023,7 +3023,7 @@ class LauncherMainFrame(wx.Frame):
                                     result = questionDialog.questionDialog("Do you want to keep your VNC session (Display #" + str(self.cvlVncDisplayNumber) + ") running for future use?",
                                         #buttons=["Discard VNC Session", wx.ID_CANCEL, "Save VNC Session"])
                                         buttons=["Discard VNC Session", "Save VNC Session"],
-                                        caption="MASSIVE/CVL Launcher")
+                                        caption="MASSIVE/CVL Launcher", style=wx.STAY_ON_TOP)
                                     if result == "Discard VNC Session":
                                         cvlVncSessionStopCommand = "vncsession stop " + str(self.cvlVncDisplayNumber)
                                         logger_debug('cvlVncSessionStopCommand: ' + cvlVncSessionStopCommand)
