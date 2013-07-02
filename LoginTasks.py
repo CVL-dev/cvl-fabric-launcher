@@ -1066,8 +1066,7 @@ class LoginProcess():
             self.stopCmd='qdel {jobid}'
             self.execHostCmd='qpeek {jobidNumber}'
             self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
-            #self.startServerCmd="/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False"
-            self.startServerCmd="request_visnode.sh {project} {hours} {nodes} True False False"
+            self.startServerCmd="/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False"
             self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
             self.showStartCmd="showstart {jobid}"
         elif ("cvllogin" in self.loginParams['loginHost']):
