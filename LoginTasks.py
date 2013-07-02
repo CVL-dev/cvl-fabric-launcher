@@ -1041,6 +1041,7 @@ class LoginProcess():
         self.threads=[]
         self.jobParams['project']=project
         self.jobParams['hours']=hours
+        self.jobParams['wallseconds']=int(hours)*60*60
         self.jobParams['nodes']=nodes
         self._canceled=threading.Event()
         self.usePBS=usePBS
@@ -1070,17 +1071,20 @@ class LoginProcess():
             self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
             self.showStartCmd="showstart {jobid}"
         elif ("cvllogin" in self.loginParams['loginHost']):
-            self.loginParms['loginHost'] = "118.138.241.53"
+            update={}
+            update['loginHost']="118.138.241.53"
+            self.loginParams.update(update)
+            self.jobParams.update(self.loginParams)
             self.directConnect=True
-            self.execHostCmd='qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d " " | cut -f 1 -d "/" | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d " "'
+            self.execHostCmd='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \'\"'
             self.execHostRegEx='^\s*(?P<execHost>\S+)\s*$'
-            self.listAllCmd='module load pbs ; module load maui ; qstat | grep {username}'
-            self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
-            self.runningCmd='module load pbs ; module load maui ; qstat | grep {username}'
-            self.runningRegEx='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
-            self.startServerCmd="/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False"
+            self.listAllCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
+            self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
+            self.runningCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
+            self.runningRegEx='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
+            self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username}\""
             self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
-            self.stopCmd='qdel {jobidNumber}'
+            self.stopCmd='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
             self.showStartCmd=None
 
         else:
@@ -1103,11 +1107,12 @@ class LoginProcess():
             self.otpCmd = '{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh {execHost} \\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay} \\"\"'
             self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
         else:
-            self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {execHost} "echo agent_hello; bash "'
+        # I've disabled StrickHostKeyChecking here temporarily untill all CVL vms are added a a most known hosts file.
+            self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "'
             self.agentRegEx='agent_hello'
-            self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
+            self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
             self.tunnelRegEx='tunnel_hello'
-            self.otpCmd = '{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {execHost} "module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}"'
+            self.otpCmd = '{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}"'
             self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
 
         LoginProcess.EVT_LOGINPROCESS_CHECK_VNC_VER = wx.NewId()
