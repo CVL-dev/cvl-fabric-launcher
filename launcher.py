@@ -1186,9 +1186,9 @@ class LauncherMainFrame(wx.Frame):
         self.cvlShowAdvancedOptionsLabel = wx.StaticText(self.cvlLoginFieldsPanel, wx.ID_ANY, 'Show advanced options')
         self.cvlLoginFieldsPanelSizer.Add(self.cvlShowAdvancedOptionsLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.cvlShowAdvancedOptions = False
-        if cvlLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if cvlLauncherConfig.has_option("MASSIVE Launcher Preferences", "cvl_show_advanced_options"):
-                self.cvlShowAdvancedOptions = cvlLauncherConfig.get("MASSIVE Launcher Preferences", "cvl_show_advanced_options")
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_show_advanced_options"):
+                self.cvlShowAdvancedOptions = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_show_advanced_options")
                 if self.cvlShowAdvancedOptions.strip() == "":
                     self.cvlShowAdvancedOptions = False
                 else:
@@ -1197,11 +1197,11 @@ class LauncherMainFrame(wx.Frame):
                     else:
                         self.cvlShowAdvancedOptions = False
             else:
-                cvlLauncherConfig.set("MASSIVE Launcher Preferences", "cvl_show_advanced_options","False")
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_show_advanced_options","False")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                     cvlLauncherConfig.write(massiveLauncherPreferencesFileObject)
         else:
-            cvlLauncherConfig.add_section("MASSIVE Launcher Preferences")
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(massiveLauncherPreferencesFileObject)
         self.cvlShowAdvancedOptionsCheckBox = wx.CheckBox(self.cvlLoginFieldsPanel, wx.ID_ANY, "")
