@@ -1,0 +1,14 @@
+<html><title>SSH Keys</title><body>
+<h2>SSH Keys</h2>
+<dl>
+<dt>Private key</dt>
+<dd>A file (usually kept within a ".ssh" subdirectory of your user home directory), which is used instead of a password to grant you access to a remote server.</dd>
+<dt>Public key</dt>
+<dd>A "padlock" whose lock matches your private key.  You can place a copy of the same public key ("padlock") on any server you would like to access with your private key.</dd>
+<dt>Passphrase</dt>
+<dd>If another user has access to your computer, then they could potentially steal your private key file to gain access to
+servers secured with your corresponding public key ("padlock").  You can prevent this by securing the private key with a passphrase.  
+Unlike a password, the private key (including the encoded passphrase) stays on your local computer, so there is less risk of
+a remote server allowing a mailicious person to acquire your credentials.
+</dl>
+</body></html>
