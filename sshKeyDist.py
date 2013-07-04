@@ -148,9 +148,11 @@ class KeyDist():
         def onEnter(self,e):
             self.canceled=True
             if (e.GetId() == self.Cancel.GetId()):
+                logger_debug('onEnter: canceled = True')
                 self.canceled = True
                 self.password = None
             else:
+                logger_debug('onEnter: canceled = False')
                 self.canceled = False
                 self.password = self.PassphraseField.GetValue()
             self.Close()
@@ -795,6 +797,8 @@ class KeyDist():
                 self.password = password
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_RPT,self)
             wx.PostEvent(self.notifywindow.GetEventHandler(),event)
+        else:
+            self.cancel()
 
     def getNewPassphrase_stage2(self):
         ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'New Passphrase',"Please repeat the new passphrase","OK","Cancel")
@@ -821,4 +825,5 @@ class KeyDist():
         if (not self.canceled()):
             self._canceled.set()
             newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL, self)
+            logger_debug('Sending EVT_KEYDIST_CANCEL event.')
             wx.PostEvent(self.notifywindow.GetEventHandler(), newevent)
