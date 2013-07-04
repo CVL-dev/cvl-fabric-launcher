@@ -371,7 +371,7 @@ def die_from_main_frame(launcherMainFrame,error_message):
     os._exit(1)
 
 def run_ssh_command(sshCmd,command,ignore_errors=False,log_output=True,callback=None):
-    logger_debug('run_ssh_command: "%s"' % sshCmd+command)
+    logger_debug('run_ssh_command: %s' % sshCmd+command)
     logger_debug('   called from %s:%d' % inspect.stack()[1][1:3])
     ssh_process=subprocess.Popen(sshCmd+command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
 
