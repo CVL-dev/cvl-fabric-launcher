@@ -256,8 +256,8 @@ class InspectKeyDialog(wx.Dialog):
             print "You said yes, you want to delete your key."
             global massiveLauncherConfig
             massiveLauncherPrivateKeyPath = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
-            import deleteKey
-            success = deleteKey.deleteKeyAndRemoveFromAgent(massiveLauncherPrivateKeyPath)
+            import DeleteKey
+            success = DeleteKey.deleteKeyAndRemoveFromAgent(massiveLauncherPrivateKeyPath)
             dlg = wx.MessageDialog(self, 
                 "Your Launcher key was successfully deleted! :-)",
                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
@@ -274,8 +274,8 @@ class InspectKeyDialog(wx.Dialog):
     def onChangePassphrase(self,event):
         global massiveLauncherConfig
         massiveLauncherPrivateKeyPath = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
-        import changeKeyPassphrase
-        changeKeyPassphraseDialog = changeKeyPassphrase.ChangeKeyPassphraseDialog(self, wx.ID_ANY, 'Change Key Passphrase', massiveLauncherPrivateKeyPath)
+        import ChangeKeyPassphrase
+        changeKeyPassphraseDialog = ChangeKeyPassphrase.ChangeKeyPassphraseDialog(self, wx.ID_ANY, 'Change Key Passphrase', massiveLauncherPrivateKeyPath)
         if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
             dlg = wx.MessageDialog(self, 
                 "Passphrase changed successfully! :-)",
@@ -283,8 +283,8 @@ class InspectKeyDialog(wx.Dialog):
             dlg.ShowModal()
 
     def onResetPassphrase(self, event):
-        import resetKeyPassphrase
-        resetKeyPassphraseDialog = resetKeyPassphrase.ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase')
+        import ResetKeyPassphrase
+        resetKeyPassphraseDialog = ResetKeyPassphrase.ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase')
         resetKeyPassphraseDialog.ShowModal()
 
         # FIXME: Need to reload fields on inspect-key dialog after resetting passphrase,
@@ -349,8 +349,8 @@ class MyApp(wx.App):
                              "Would you like to generate a key now?",
                             "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_INFORMATION)
             if dlg.ShowModal()==wx.ID_YES:
-                import privateKeyDialog
-                privateKeyDlg = privateKeyDialog.PrivateKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
+                import PrivateKeyDialog
+                privateKeyDlg = PrivateKeyDialog.PrivateKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
                 privateKeyDlg.Center()
                 if privateKeyDialog.ShowModal()==wx.ID_OK:
                     if privateKeyDialog.getPrivateKeyLifetimeAndPassphraseChoice()==privateKeyDialog.ID_SAVE_KEY_WITH_PASSPHRASE:
