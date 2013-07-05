@@ -3,19 +3,16 @@
 import wx
 import wx.html
 import os
-import sys
 
 global helpController
 helpController = None
 
 class ChangeKeyPassphraseDialog(wx.Dialog):
-    def __init__(self, parent, id, title):
+    def __init__(self, parent, id, title, privateKeyFilePath):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
         self.changeKeyPassphraseDialogPanel = wx.Panel(self, wx.ID_ANY)
 
-        # I really miss Java Swing's BorderLayout and
-        # BorderFactory.createEmptyBorder(...) sometimes.
-        # All of this border stuff should be encapsulated in a class.
+        self.privateKeyFilePath = privateKeyFilePath
 
         self.changeKeyPassphraseDialogPanelSizer = wx.FlexGridSizer(1,3, hgap=15, vgap=15)
         self.changeKeyPassphraseDialogPanel.SetSizer(self.changeKeyPassphraseDialogPanelSizer)
@@ -41,52 +38,81 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
         self.changeKeyPassphraseDialogCenterPanel.SetSizer(self.changeKeyPassphraseDialogCenterPanelSizer)
 
         self.instructionsLabel = wx.StaticText(self.changeKeyPassphraseDialogCenterPanel, wx.ID_ANY, 
-                        "A new key can be generated, replacing the existing key, allowing you to enter a new passphrase.\n\n" +
-                        "Any servers you had access to without a password, will again require a password on the first\n" +
-                        "login after resetting your key's passphrase.")
+                        "To change your passphrase, you will first need to enter your existing passphrase,\n" +
+                        "then you will need to enter your new passphrase twice.\n\n"+
+                        "You will still be able to access servers without a password if you have connected\n" +
+                        "to them previously with the Launcher.")
         self.changeKeyPassphraseDialogCenterPanelSizer.Add(self.instructionsLabel, flag=wx.EXPAND|wx.BOTTOM, border=15)
 
-        # Passphrase panel
+        # Existing passphrase panel
 
-        self.validPassphrase = False
+        self.existingPassphrasePanel = wx.Panel(self.changeKeyPassphraseDialogCenterPanel, wx.ID_ANY)
 
-        self.passphrasePanel = wx.Panel(self.changeKeyPassphraseDialogCenterPanel, wx.ID_ANY)
+        self.existingPassphraseGroupBox = wx.StaticBox(self.existingPassphrasePanel, wx.ID_ANY, label="Enter your existing passphrase")
+        self.existingPassphraseGroupBoxSizer = wx.StaticBoxSizer(self.existingPassphraseGroupBox, wx.VERTICAL)
+        self.existingPassphrasePanel.SetSizer(self.existingPassphraseGroupBoxSizer)
 
-        self.passphraseGroupBox = wx.StaticBox(self.passphrasePanel, wx.ID_ANY, label="Enter a new passphrase to protect your private key")
-        self.passphraseGroupBoxSizer = wx.StaticBoxSizer(self.passphraseGroupBox, wx.VERTICAL)
-        self.passphrasePanel.SetSizer(self.passphraseGroupBoxSizer)
+        self.innerExistingPassphrasePanel = wx.Panel(self.existingPassphrasePanel, wx.ID_ANY)
+        self.innerExistingPassphrasePanelSizer = wx.FlexGridSizer(2,3, hgap=10)
+        self.innerExistingPassphrasePanel.SetSizer(self.innerExistingPassphrasePanelSizer)
 
-        self.innerPassphrasePanel = wx.Panel(self.passphrasePanel, wx.ID_ANY)
-        self.innerPassphrasePanelSizer = wx.FlexGridSizer(2,3, hgap=10)
-        self.innerPassphrasePanel.SetSizer(self.innerPassphrasePanelSizer)
+        self.passphraseLabel = wx.StaticText(self.innerExistingPassphrasePanel, wx.ID_ANY, "Existing passphrase:")
+        self.innerExistingPassphrasePanelSizer.Add(self.passphraseLabel, flag=wx.EXPAND)
 
-        self.passphraseLabel = wx.StaticText(self.innerPassphrasePanel, wx.ID_ANY, "New passphrase:")
-        self.innerPassphrasePanelSizer.Add(self.passphraseLabel, flag=wx.EXPAND)
+        self.existingPassphraseField = wx.TextCtrl(self.innerExistingPassphrasePanel, wx.ID_ANY,style=wx.TE_PASSWORD)
+        self.innerExistingPassphrasePanelSizer.Add(self.existingPassphraseField, flag=wx.EXPAND)
+        self.existingPassphraseField.SetFocus()
 
-        self.passphraseField = wx.TextCtrl(self.innerPassphrasePanel, wx.ID_ANY,style=wx.TE_PASSWORD)
-        self.innerPassphrasePanelSizer.Add(self.passphraseField, flag=wx.EXPAND)
-        self.passphraseField.SetFocus()
+        self.innerExistingPassphrasePanel.Fit()
+        self.existingPassphraseGroupBoxSizer.Add(self.innerExistingPassphrasePanel, flag=wx.EXPAND)
+        self.existingPassphrasePanel.Fit()
 
-        self.passphraseStatusLabel1 = wx.StaticText(self.innerPassphrasePanel, wx.ID_ANY, "")
-        self.innerPassphrasePanelSizer.Add(self.passphraseStatusLabel1, flag=wx.EXPAND|wx.LEFT, border=50)
+        self.changeKeyPassphraseDialogCenterPanelSizer.Add(self.existingPassphrasePanel, flag=wx.EXPAND)
 
-        self.repeatPassphraseLabel = wx.StaticText(self.innerPassphrasePanel, wx.ID_ANY, "Repeat passphrase:")
-        self.innerPassphrasePanelSizer.Add(self.repeatPassphraseLabel, flag=wx.EXPAND)
+        # Blank space
 
-        self.repeatPassphraseField = wx.TextCtrl(self.innerPassphrasePanel, wx.ID_ANY,style=wx.TE_PASSWORD)
-        self.innerPassphrasePanelSizer.Add(self.repeatPassphraseField, flag=wx.EXPAND)
+        self.changeKeyPassphraseDialogCenterPanelSizer.Add(wx.StaticText(self.changeKeyPassphraseDialogCenterPanel, wx.ID_ANY, ""))
 
-        self.passphraseStatusLabel2 = wx.StaticText(self.innerPassphrasePanel, wx.ID_ANY, "")
-        self.innerPassphrasePanelSizer.Add(self.passphraseStatusLabel2, flag=wx.EXPAND|wx.LEFT, border=50)
+        # New passphrase panel
 
-        self.innerPassphrasePanel.Fit()
-        self.passphraseGroupBoxSizer.Add(self.innerPassphrasePanel, flag=wx.EXPAND)
-        self.passphrasePanel.Fit()
+        self.validNewPassphrase = False
 
-        self.Bind(wx.EVT_TEXT, self.onPassphraseFieldsModified, id=self.passphraseField.GetId())
-        self.Bind(wx.EVT_TEXT, self.onPassphraseFieldsModified, id=self.repeatPassphraseField.GetId())
+        self.newPassphrasePanel = wx.Panel(self.changeKeyPassphraseDialogCenterPanel, wx.ID_ANY)
 
-        self.changeKeyPassphraseDialogCenterPanelSizer.Add(self.passphrasePanel, flag=wx.EXPAND)
+        self.newPassphraseGroupBox = wx.StaticBox(self.newPassphrasePanel, wx.ID_ANY, label="Enter a new passphrase to protect your private key")
+        self.newPassphraseGroupBoxSizer = wx.StaticBoxSizer(self.newPassphraseGroupBox, wx.VERTICAL)
+        self.newPassphrasePanel.SetSizer(self.newPassphraseGroupBoxSizer)
+
+        self.innerNewPassphrasePanel = wx.Panel(self.newPassphrasePanel, wx.ID_ANY)
+        self.innerNewPassphrasePanelSizer = wx.FlexGridSizer(2,3, hgap=10)
+        self.innerNewPassphrasePanel.SetSizer(self.innerNewPassphrasePanelSizer)
+
+        self.passphraseLabel = wx.StaticText(self.innerNewPassphrasePanel, wx.ID_ANY, "New passphrase:")
+        self.innerNewPassphrasePanelSizer.Add(self.passphraseLabel, flag=wx.EXPAND)
+
+        self.newPassphraseField = wx.TextCtrl(self.innerNewPassphrasePanel, wx.ID_ANY,style=wx.TE_PASSWORD)
+        self.innerNewPassphrasePanelSizer.Add(self.newPassphraseField, flag=wx.EXPAND)
+
+        self.newPassphraseStatusLabel1 = wx.StaticText(self.innerNewPassphrasePanel, wx.ID_ANY, "")
+        self.innerNewPassphrasePanelSizer.Add(self.newPassphraseStatusLabel1, flag=wx.EXPAND|wx.LEFT, border=20)
+
+        self.repeatNewPassphraseLabel = wx.StaticText(self.innerNewPassphrasePanel, wx.ID_ANY, "Repeat passphrase:")
+        self.innerNewPassphrasePanelSizer.Add(self.repeatNewPassphraseLabel, flag=wx.EXPAND)
+
+        self.repeatNewPassphraseField = wx.TextCtrl(self.innerNewPassphrasePanel, wx.ID_ANY,style=wx.TE_PASSWORD)
+        self.innerNewPassphrasePanelSizer.Add(self.repeatNewPassphraseField, flag=wx.EXPAND)
+
+        self.newPassphraseStatusLabel2 = wx.StaticText(self.innerNewPassphrasePanel, wx.ID_ANY, "")
+        self.innerNewPassphrasePanelSizer.Add(self.newPassphraseStatusLabel2, flag=wx.EXPAND|wx.LEFT, border=20)
+
+        self.innerNewPassphrasePanel.Fit()
+        self.newPassphraseGroupBoxSizer.Add(self.innerNewPassphrasePanel, flag=wx.EXPAND)
+        self.newPassphrasePanel.Fit()
+
+        self.Bind(wx.EVT_TEXT, self.onPassphraseFieldsModified, id=self.newPassphraseField.GetId())
+        self.Bind(wx.EVT_TEXT, self.onPassphraseFieldsModified, id=self.repeatNewPassphraseField.GetId())
+
+        self.changeKeyPassphraseDialogCenterPanelSizer.Add(self.newPassphrasePanel, flag=wx.EXPAND)
 
         # Blank space
 
@@ -119,62 +145,81 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
         self.Fit()
         self.CenterOnParent()
 
-    def onRadioButtonSelectionChanged(self, event):
-        if self.savePrivateKeyAndSecureWithPassphraseRadioButton.GetValue()==True:
-            self.passphraseLabel.Enable()
-            self.repeatPassphraseLabel.Enable()
-            self.passphraseField.Enable()
-            self.repeatPassphraseField.Enable()
-            self.passphraseGroupBox.Enable()
-            self.passphraseStatusLabel1.SetLabel("")
-            self.passphraseStatusLabel2.SetLabel("")
-        else:
-            self.passphraseLabel.Disable()
-            self.repeatPassphraseLabel.Disable()
-            self.passphraseField.SetValue("")
-            self.passphraseField.Disable()
-            self.repeatPassphraseField.SetValue("")
-            self.repeatPassphraseField.Disable()
-            self.passphraseGroupBox.Disable()
-            self.passphraseStatusLabel1.SetLabel("")
-            self.passphraseStatusLabel2.SetLabel("")
-
     def onPassphraseFieldsModified(self, event):
-        self.validPassphrase = False
-        if len(self.passphraseField.GetValue())>0 and len(self.passphraseField.GetValue())<6:
-            self.passphraseStatusLabel1.SetLabel("Passphrase is too short.  :-(")
-            self.passphraseStatusLabel2.SetLabel("")
-        elif self.passphraseField.GetValue()!=self.repeatPassphraseField.GetValue():
-            if self.repeatPassphraseField.GetValue()=="":
-                self.passphraseStatusLabel1.SetLabel("")
-                self.passphraseStatusLabel2.SetLabel("Please enter your passphrase again.")
+        self.validNewPassphrase = False
+        if len(self.newPassphraseField.GetValue())>0 and len(self.newPassphraseField.GetValue())<6:
+            self.newPassphraseStatusLabel1.SetLabel("Passphrase is too short.  :-(")
+            self.newPassphraseStatusLabel2.SetLabel("")
+        elif self.newPassphraseField.GetValue()!=self.repeatNewPassphraseField.GetValue():
+            if self.repeatNewPassphraseField.GetValue()=="":
+                self.newPassphraseStatusLabel1.SetLabel("")
+                self.newPassphraseStatusLabel2.SetLabel("Enter your new passphrase again.")
             else:
-                self.passphraseStatusLabel1.SetLabel("")
-                self.passphraseStatusLabel2.SetLabel("Passphrases don't match! :-(")
+                self.newPassphraseStatusLabel1.SetLabel("")
+                self.newPassphraseStatusLabel2.SetLabel("Passphrases don't match! :-(")
         else:
-            self.passphraseStatusLabel1.SetLabel("")
-            self.passphraseStatusLabel2.SetLabel("Passphrases match! :-)")
-            self.validPassphrase = True
+            self.newPassphraseStatusLabel1.SetLabel("")
+            self.newPassphraseStatusLabel2.SetLabel("Passphrases match! :-)")
+            self.validNewPassphrase = True
 
     def onOK(self, event):
-        if self.passphraseField.GetValue().strip()=="" or not self.validPassphrase:
-            if self.passphraseField.GetValue().strip()=="":
-                message = "Please enter a passphrase."
-                self.passphraseField.SetFocus()
-            elif self.passphraseStatusLabel1.GetLabelText()!="":
-                message = self.passphraseStatusLabel1.GetLabelText()
-                self.passphraseField.SetFocus()
-            elif self.passphraseStatusLabel2.GetLabelText()!="" and self.passphraseStatusLabel2.GetLabelText()!="Passphrases match! :-)":
-                message = self.passphraseStatusLabel2.GetLabelText()
-                self.repeatPassphraseField.SetFocus()
-            else:
-                message = "Please enter a valid passphrase."
-                self.passphraseField.SetFocus()
 
+        if self.newPassphraseStatusLabel1.GetLabelText()!="":
+            message = self.newPassphraseStatusLabel1.GetLabelText()
             dlg = wx.MessageDialog(self, message,
                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
+            self.newPassphraseField.SetFocus()
             return
+
+        if self.newPassphraseStatusLabel2.GetLabelText()!="" and self.newPassphraseStatusLabel2.GetLabelText()!="Passphrases match! :-)":
+            message = self.newPassphraseStatusLabel2.GetLabelText()
+            dlg = wx.MessageDialog(self, message,
+                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            self.repeatNewPassphraseField.SetFocus()
+            return
+
+        # On Linux or BSD/OSX we can use pexpect to talk to ssh-add.
+
+        import pexpect
+
+        args = ["-f", self.privateKeyFilePath, "-p"]
+        sshKeyGenBinary = "/usr/bin/ssh-keygen"
+        lp = pexpect.spawn(sshKeyGenBinary, args=args)
+
+        idx = lp.expect(["Enter old passphrase", "Key has comment"])
+
+        if idx == 0:
+            #logger_debug("sending passphrase to " + sshKeyGenBinary + " -f " + self.privateKeyFilePath + " -p")
+            lp.sendline(self.existingPassphraseField.GetValue())
+
+        idx = lp.expect(["Enter new passphrase", "Bad passphrase", pexpect.EOF])
+
+        if idx == 0:
+            lp.sendline(self.newPassphraseField.GetValue())
+            idx = lp.expect(["Enter same passphrase again"])
+            lp.sendline(self.repeatNewPassphraseField.GetValue())
+            idx = lp.expect(["Your identification has been saved", "Pass phrases do not match.", "passphrase too short"])
+            if idx == 0:
+                print "Passphrase updated successfully :-)"
+            elif idx == 1:
+                print "Passphrases do not match"
+            elif idx == 2:
+                print "Passphrase is too short"
+        elif idx == 1:
+            message = "Your existing passphrase appears to be incorrect.\nPlease enter it again."
+            dlg = wx.MessageDialog(self, message,
+                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            self.existingPassphraseField.SetSelection(-1,-1)
+            self.existingPassphraseField.SetFocus()
+            return
+        else:
+            #logger_debug("1 returning KEY_LOCKED %s %s"%(lp.before,lp.after))
+            print "Unexpected result from attempt to change passphrase."
+            return
+        lp.close()
 
         self.Show(False)
         self.EndModal(wx.ID_OK)
@@ -194,20 +239,20 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
         #helpController.DisplayContents()
         helpController.Display("SSH Keys")
 
-    def getPassphrase(self):
-        return self.passphraseField.GetValue()
+    def getNewPassphrase(self):
+        return self.newPassphraseField.GetValue()
 
 class MyApp(wx.App):
     def OnInit(self):
-        changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(None, wx.ID_ANY, 'Change Key Passphrase')
+        changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(None, wx.ID_ANY, 'Change Key Passphrase', os.path.join(os.path.expanduser('~'), '.ssh', "MassiveLauncherKey"))
         changeKeyPassphraseDialog.Center()
         if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
-            print "Passphrase = " + changeKeyPassphraseDialog.getPassphrase()
+            print "New passphrase = " + changeKeyPassphraseDialog.getNewPassphrase()
         else:
             print "User canceled."
             return False
 
         return True
 
-app = MyApp(0)
-app.MainLoop()
+#app = MyApp(0)
+#app.MainLoop()

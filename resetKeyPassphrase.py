@@ -13,10 +13,6 @@ class ResetKeyPassphraseDialog(wx.Dialog):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
         self.resetKeyPassphraseDialogPanel = wx.Panel(self, wx.ID_ANY)
 
-        # I really miss Java Swing's BorderLayout and
-        # BorderFactory.createEmptyBorder(...) sometimes.
-        # All of this border stuff should be encapsulated in a class.
-
         self.resetKeyPassphraseDialogPanelSizer = wx.FlexGridSizer(1,3, hgap=15, vgap=15)
         self.resetKeyPassphraseDialogPanel.SetSizer(self.resetKeyPassphraseDialogPanelSizer)
 
@@ -119,26 +115,6 @@ class ResetKeyPassphraseDialog(wx.Dialog):
         self.Fit()
         self.CenterOnParent()
 
-    def onRadioButtonSelectionChanged(self, event):
-        if self.savePrivateKeyAndSecureWithPassphraseRadioButton.GetValue()==True:
-            self.passphraseLabel.Enable()
-            self.repeatPassphraseLabel.Enable()
-            self.passphraseField.Enable()
-            self.repeatPassphraseField.Enable()
-            self.passphraseGroupBox.Enable()
-            self.passphraseStatusLabel1.SetLabel("")
-            self.passphraseStatusLabel2.SetLabel("")
-        else:
-            self.passphraseLabel.Disable()
-            self.repeatPassphraseLabel.Disable()
-            self.passphraseField.SetValue("")
-            self.passphraseField.Disable()
-            self.repeatPassphraseField.SetValue("")
-            self.repeatPassphraseField.Disable()
-            self.passphraseGroupBox.Disable()
-            self.passphraseStatusLabel1.SetLabel("")
-            self.passphraseStatusLabel2.SetLabel("")
-
     def onPassphraseFieldsModified(self, event):
         self.validPassphrase = False
         if len(self.passphraseField.GetValue())>0 and len(self.passphraseField.GetValue())<6:
@@ -209,5 +185,5 @@ class MyApp(wx.App):
 
         return True
 
-app = MyApp(0)
-app.MainLoop()
+#app = MyApp(0)
+#app.MainLoop()

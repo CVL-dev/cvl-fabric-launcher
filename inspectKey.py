@@ -245,33 +245,23 @@ class InspectKeyDialog(wx.Dialog):
         self.CenterOnParent()
 
     def onChangePassphrase(self,event):
-        dlg = wx.MessageDialog(None, 
-                        "Not implemented yet.\n\n" +
-                        "The Change Passphrase Dialog can be used to change your passphrase.\n\n" +
-                        "You will need to enter your existing passphrase, and then\n" + 
-                        "you will need to enter your new passphrase twice.\n\n"+
-                        "You will still be able to access servers without a password\n" +
-                        "if you have connected to them previously with the Launcher.",
-                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
+        global massiveLauncherConfig
+        massiveLauncherPrivateKeyPath = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
+        import changeKeyPassphrase
+        changeKeyPassphraseDialog = changeKeyPassphrase.ChangeKeyPassphraseDialog(self, wx.ID_ANY, 'Change Key Passphrase', massiveLauncherPrivateKeyPath)
+        if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
+            dlg = wx.MessageDialog(None, 
+                "Passphrase changed successfully! :-)",
+                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
 
     def onResetPassphrase(self, event):
         import resetKeyPassphrase
         resetKeyPassphraseDialog = resetKeyPassphrase.ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase')
-        if resetKeyPassphraseDialog.ShowModal()==wx.ID_OK:
-            print "Passphrase = " + resetKeyPassphraseDialog.getPassphrase()
-        else:
-            print "User canceled."
+        resetKeyPassphraseDialog.ShowModal()
 
-        #dlg = wx.MessageDialog(None, 
-                        #"Not implemented yet.\n\n" +
-                        #"The Reset Passphrase Dialog can be used if you forget your passphrase.\n\n" +
-                        #"A new key will be generated, replacing the existing key, and\n" +
-                        #"all servers you had access to without a password, will again\n" +
-                        #"require a password on the first login after resetting your\n" +
-                        #"passphrase.",
-                        #"MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-        #dlg.ShowModal()
+        # FIXME: Need to reload fields on inspect-key dialog after resetting passphrase,
+        # because doing so will generate a new key with a new fingerprint.
 
     def onHelp(self, event):
         global helpController
