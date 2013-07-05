@@ -228,6 +228,7 @@ class InspectKeyDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.onHelp, id=self.helpButton.GetId())
 
         self.closeButton = wx.Button(self.buttonsPanel, wx.NewId(), "Close")
+        self.closeButton.SetDefault()
         self.Bind(wx.EVT_BUTTON, self.onClose, id=self.closeButton.GetId())
         self.buttonsPanelSizer.Add(self.closeButton, flag=wx.BOTTOM, border=5)
 

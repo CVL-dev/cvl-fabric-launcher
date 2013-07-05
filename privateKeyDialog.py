@@ -111,7 +111,7 @@ class PrivateKeyDialog(wx.Dialog):
         self.passphraseLabel = wx.StaticText(self.innerPassphrasePanel, wx.ID_ANY, "Passphrase:")
         self.innerPassphrasePanelSizer.Add(self.passphraseLabel, flag=wx.EXPAND)
 
-        self.passphraseField = wx.TextCtrl(self.innerPassphrasePanel, wx.ID_ANY,style=wx.TE_PASSWORD ^ wx.TE_PROCESS_ENTER)
+        self.passphraseField = wx.TextCtrl(self.innerPassphrasePanel, wx.ID_ANY,style=wx.TE_PASSWORD)
         self.innerPassphrasePanelSizer.Add(self.passphraseField, flag=wx.EXPAND)
         self.passphraseField.SetFocus()
 
@@ -121,7 +121,7 @@ class PrivateKeyDialog(wx.Dialog):
         self.repeatPassphraseLabel = wx.StaticText(self.innerPassphrasePanel, wx.ID_ANY, "Repeat passphrase:")
         self.innerPassphrasePanelSizer.Add(self.repeatPassphraseLabel, flag=wx.EXPAND)
 
-        self.repeatPassphraseField = wx.TextCtrl(self.innerPassphrasePanel, wx.ID_ANY,style=wx.TE_PASSWORD ^ wx.TE_PROCESS_ENTER)
+        self.repeatPassphraseField = wx.TextCtrl(self.innerPassphrasePanel, wx.ID_ANY,style=wx.TE_PASSWORD)
         self.innerPassphrasePanelSizer.Add(self.repeatPassphraseField, flag=wx.EXPAND)
 
         self.passphraseStatusLabel2 = wx.StaticText(self.innerPassphrasePanel, wx.ID_ANY, "")
@@ -193,11 +193,12 @@ class PrivateKeyDialog(wx.Dialog):
         self.helpButton = wx.Button(self.buttonsPanel, wx.NewId(), "Help")
         self.buttonsPanelSizer.Add(self.helpButton, flag=wx.BOTTOM, border=5)
         self.Bind(wx.EVT_BUTTON, self.onHelp, id=self.helpButton.GetId())
-        self.cancelButton = wx.Button(self.buttonsPanel, wx.NewId(), "Cancel")
+        self.cancelButton = wx.Button(self.buttonsPanel, wx.ID_CANCEL, "Cancel")
         self.buttonsPanelSizer.Add(self.cancelButton, flag=wx.BOTTOM, border=5)
-        self.Bind(wx.EVT_BUTTON, self.onCancel, id=self.cancelButton.GetId())
-        self.okButton = wx.Button(self.buttonsPanel, wx.NewId(), "OK")
-        self.Bind(wx.EVT_BUTTON, self.onOK, id=self.okButton.GetId())
+        self.Bind(wx.EVT_BUTTON, self.onCancel, id=wx.ID_CANCEL)
+        self.okButton = wx.Button(self.buttonsPanel, wx.ID_OK, "OK")
+        self.okButton.SetDefault()
+        self.Bind(wx.EVT_BUTTON, self.onOK, id=wx.ID_OK)
         self.buttonsPanelSizer.Add(self.okButton, flag=wx.BOTTOM, border=5)
         self.buttonsPanel.Fit()
 
