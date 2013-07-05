@@ -256,15 +256,22 @@ class InspectKeyDialog(wx.Dialog):
         dlg.ShowModal()
 
     def onResetPassphrase(self, event):
-        dlg = wx.MessageDialog(None, 
-                        "Not implemented yet.\n\n" +
-                        "The Reset Passphrase Dialog can be used if you forget your passphrase.\n\n" +
-                        "A new key will be generated, replacing the existing key, and\n" +
-                        "all servers you had access to without a password, will again\n" +
-                        "require a password on the first login after resetting your\n" +
-                        "passphrase.",
-                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
+        import resetKeyPassphrase
+        resetKeyPassphraseDialog = resetKeyPassphrase.ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase')
+        if resetKeyPassphraseDialog.ShowModal()==wx.ID_OK:
+            print "Passphrase = " + resetKeyPassphraseDialog.getPassphrase()
+        else:
+            print "User canceled."
+
+        #dlg = wx.MessageDialog(None, 
+                        #"Not implemented yet.\n\n" +
+                        #"The Reset Passphrase Dialog can be used if you forget your passphrase.\n\n" +
+                        #"A new key will be generated, replacing the existing key, and\n" +
+                        #"all servers you had access to without a password, will again\n" +
+                        #"require a password on the first login after resetting your\n" +
+                        #"passphrase.",
+                        #"MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+        #dlg.ShowModal()
 
     def onHelp(self, event):
         global helpController
