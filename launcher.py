@@ -132,6 +132,11 @@ turboVncPreferencesFilePath = None
 global turboVncLatestVersion
 turboVncLatestVersion = None
 
+import wx.html
+
+global helpController
+helpController = None
+
 class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
@@ -195,6 +200,9 @@ class LauncherMainFrame(wx.Frame):
             self.menu_bar.Append(self.edit_menu, "&Edit")
 
         self.help_menu = wx.Menu()
+        helpContentsMenuItemID = wx.NewId()
+        self.help_menu.Append(helpContentsMenuItemID, "&MASSIVE/CVL Launcher Help")
+        self.Bind(wx.EVT_MENU, self.onHelpContents, id=helpContentsMenuItemID)
         self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE/CVL Launcher")
         self.Bind(wx.EVT_MENU, self.onAbout, id=wx.ID_ABOUT)
         self.menu_bar.Append(self.help_menu, "&Help")
@@ -649,7 +657,6 @@ class LauncherMainFrame(wx.Frame):
         self.cvlSimpleLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
         self.cvlSimpleLoginFieldsPanel.SetSizer(self.cvlSimpleLoginFieldsPanelSizer)
 
-
         self.cvlAdvancedLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
         self.cvlAdvancedLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
         self.cvlAdvancedLoginFieldsPanel.SetSizer(self.cvlAdvancedLoginFieldsPanelSizer)
@@ -945,6 +952,18 @@ class LauncherMainFrame(wx.Frame):
             self.cvlShowDebugWindowCheckBox.SetValue(False)
         if launcherMainFrame.logWindow!=None:
             launcherMainFrame.logWindow.Show(False)
+
+    def onHelpContents(self, event):
+        global helpController
+        if helpController is None:
+            helpController = wx.html.HtmlHelpController()
+            launcherHelpFile = "helpfiles/launcher.hhp"
+            if not helpController.AddBook(launcherHelpFile):
+                wx.MessageBox("Unable to open: " + launcherHelpFile,
+                              "Error", wx.OK|wx.ICON_EXCLAMATION)
+        helpController.DisplayContents()
+        #helpController.Display("MASSIVE/CVL Launcher")
+        #helpController.Display("SSH Keys")
 
     def onAbout(self, event):
         import commit_def
