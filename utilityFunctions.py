@@ -9,6 +9,7 @@ import subprocess
 import inspect
 import sys
 import itertools
+import wx.lib.mixins.listctrl as listmix
 
 
 #LAUNCHER_URL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
@@ -32,6 +33,157 @@ def parseMessages(regexs,stdout,stderr):
                     else:
                         messages[key]=match.group(key)
     return messages
+
+class ListSelectionDialog(wx.Dialog):
+    class ResizeListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
+        def __init__(self, parent, ID, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0):
+            wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+            listmix.ListCtrlAutoWidthMixin.__init__(self)
+
+
+    def __init__(self, *args, **kw):
+        if kw.has_key('headers'):
+            self.headers=kw.pop('headers')
+        else:
+            self.headers=None
+        if kw.has_key('items'):
+            self.items=kw.pop('items')
+        else:
+            self.items=None
+        if kw.has_key('message'):
+            self.message=kw.pop('message')
+        else:
+            self.message=None
+        if kw.has_key('callback'):
+            self.callback=kw.pop('callback')
+        else:
+            print "callback set to none"
+            self.callback=None
+        super(ListSelectionDialog, self).__init__(*args, **kw)
+        self.itemList=[]
+         
+        if sys.platform.startswith("win"):
+            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+            self.SetIcon(_icon)
+
+        if sys.platform.startswith("linux"):
+            import MASSIVE_icon
+            self.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+
+        iconPanel = wx.Panel(self)
+
+        import MASSIVE_icon
+        iconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
+        wx.StaticBitmap(iconPanel, wx.ID_ANY,
+            iconAsBitmap,
+            (0, 25),
+            (iconAsBitmap.GetWidth(), iconAsBitmap.GetHeight()))
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        lcSizer = wx.BoxSizer(wx.VERTICAL)
+        rcSizer = wx.BoxSizer(wx.VERTICAL)
+
+
+        contactPanel = wx.Panel(self)
+        contactPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
+        contactPanel.SetSizer(contactPanelSizer)
+        contactQueriesContactLabel = wx.StaticText(contactPanel, label = "For queries, please contact:")
+        font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        if sys.platform.startswith("darwin"):
+            font.SetPointSize(11)
+        else:
+            font.SetPointSize(9)
+        contactQueriesContactLabel.SetFont(font)
+
+        contactEmailHyperlink = wx.HyperlinkCtrl(contactPanel, id = wx.ID_ANY, label = "help@massive.org.au", url = "mailto:help@massive.org.au")
+        font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        if sys.platform.startswith("darwin"):
+            font.SetPointSize(11)
+        else:
+            font.SetPointSize(8)
+        contactEmailHyperlink.SetFont(font)
+
+        contactPanelSizer.Add(contactQueriesContactLabel, border=10, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BORDER)
+        contactPanelSizer.Add(contactEmailHyperlink, border=20, flag=wx.LEFT|wx.RIGHT|wx.BOTTOM|wx.BORDER)
+
+        contactPanelSizer.Fit(contactPanel)
+
+        listSelectionPanel=wx.Panel(self)
+        listSelectionPanelSizer = wx.BoxSizer(wx.VERTICAL)
+        listSelectionPanel.SetSizer(listSelectionPanelSizer)
+        if (self.message!=None):
+            messageText = wx.StaticText(parent=listSelectionPanel,id=wx.ID_ANY,label=self.message)
+            listSelectionPanelSizer.Add(messageText,border=5,flag=wx.ALL^wx.EXPAND)
+        if (self.headers!=None):
+            self.listSelectionList=ListSelectionDialog.ResizeListCtrl(listSelectionPanel,-1,style=wx.LC_REPORT|wx.EXPAND)
+        else:
+            self.listSelectionList=ListSelectionDialog.ResizeListCtrl(listSelectionPanel,-1,style=wx.LC_REPORT|wx.EXPAND|wx.LC_NO_HEADER)
+        col=0
+        if (self.headers!=None):
+            for hdr in self.headers:
+                self.listSelectionList.InsertColumn(col,hdr,width=-1)
+                col=col+1
+        elif (self.items!=None):
+            if (len(self.items)>0 and isinstance(self.items[0],list)):
+                for i in self.items[0]:
+                    self.listSelectionList.InsertColumn(col,"",width=-1)
+            else:
+                self.listSelectionList.InsertColumn(col,"",width=-1)
+        if (self.items!=None):
+            for item in self.items:
+                if (isinstance(item,list)):
+                    self.listSelectionList.Append(item)
+                    #self.listSelectionList.InsertStringItem(0,item)
+                else:
+                    self.listSelectionList.Append([item])
+        #self.listSelectionList=wx.ListView(listSelectionPanel,style=wx.LC_REPORT)
+        listSelectionPanelSizer.Add(self.listSelectionList,proportion=1,border=10,flag=wx.EXPAND|wx.ALL)
+
+        self.okButton = wx.Button(self, 1, ' OK ')
+        self.okButton.SetDefault()
+        self.okButton.Bind(wx.EVT_BUTTON, self.onClose)
+        self.okButton.Disable()
+        self.listSelectionList.Bind(wx.EVT_LIST_ITEM_SELECTED,self.onFocus)
+        self.listSelectionList.Bind(wx.EVT_LIST_ITEM_ACTIVATED,self.onClose)
+
+        lcSizer.Add(iconPanel,proportion=1,flag=wx.EXPAND|wx.ALIGN_TOP|wx.ALIGN_LEFT)
+        lcSizer.Add(contactPanel,proportion=0,flag=wx.ALIGN_LEFT|wx.ALIGN_BOTTOM)
+        rcSizer.Add(listSelectionPanel,proportion=1,flag=wx.EXPAND)
+        rcSizer.Add(self.okButton,proportion=0,flag=wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM)
+        #rcSizer.Add(okButton, flag=wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM|wx.RIGHT|wx.BOTTOM^wx.EXPAND)
+#        rcSizer.Add(okButton, flag=wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM|wx.RIGHT|wx.BOTTOM|wx.EXPAND)
+        #sizer.Add(wx.StaticText(self,label="       "))
+        #sizer.Add(okButton,proportion=1,flag=wx.EXPAND)
+        sizer.Add(lcSizer,proportion=0,flag=wx.EXPAND)
+        sizer.Add(rcSizer,proportion=1,flag=wx.EXPAND)
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+
+
+    def setItems(self,items,headers=None):
+        self.itemList=items
+        if headers!=None:
+            col=0
+            for hdr in headers:
+                print hdr
+                self.listSelectionList.InsertColumn(col,hdr,width=-1)
+                col=col+1
+        for item in self.itemList:
+            self.listSelectionList.Append(item)
+
+    def onFocus(self,e):
+        if (self.listSelectionList.GetSelectedItemCount()>0):
+            self.okButton.Enable()
+        else:
+            self.okButton.Disable()
+
+    def onClose(self, e):
+    
+        itemnum=self.listSelectionList.GetFocusedItem()
+        item=self.listSelectionList.GetItem(itemnum,0)
+        if self.callback != None:
+            self.callback(item)
+        self.Destroy()
 
 class HelpDialog(wx.Dialog):
     def __init__(self, *args, **kw):

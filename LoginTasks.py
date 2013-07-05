@@ -56,7 +56,7 @@ class LoginProcess():
                     line = self.process.stdout.readline()
                     if (line != None):
                         match = re.search(self.regex.format(**self.loginprocess.jobParams),line)
-                        if (match and not self.stopped()):
+                        if (match and not self.stopped() and not self.loginprocess.canceled()):
                             wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
                     else:
                         if (not success):
@@ -70,7 +70,7 @@ class LoginProcess():
                 return
 
     class runServerCommandThread(Thread):
-        def __init__(self,loginprocess,cmd,regex,nextevent,errormessage):
+        def __init__(self,loginprocess,cmd,regex,nextevent,errormessage,requireMatch=True):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
@@ -78,6 +78,7 @@ class LoginProcess():
             self.regex=regex
             self.nextevent=nextevent
             self.errormessage=errormessage
+            self.requireMatch=requireMatch
     
         def stop(self):
             logger_debug("stoping the runServerCommandThread cmd %s"%self.cmd)
@@ -118,9 +119,10 @@ class LoginProcess():
                     self.loginprocess.matchlist.append(match.groupdict())
                 else:
                     logger_debug('runServerCommand did not match the regex %s %s' % (self.regex.format(**self.loginprocess.jobParams),line))
-            if (not oneMatchFound):
+            if (not oneMatchFound and self.requireMatch):
                     logger_error("no match found for the regex %s"%self.regex.format(**self.loginprocess.jobParams))
-            if (not self.stopped() and self.nextevent!=None):
+                    self.loginprocess.cancel(self.errormessage)
+            if (not self.stopped() and self.nextevent!=None and not self.loginprocess.canceled()):
                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
 
     class SimpleOptionDialog(wx.Dialog):
@@ -191,7 +193,7 @@ class LoginProcess():
                         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                         universal_newlines=True)
                     self.turboVncStdout, self.turboVncStderr = self.turboVncProcess.communicate(input=self.loginprocess.jobParams['vncPasswd'] + "\n")
-                    if (not self.stopped()):
+                    if (not self.stopped() and not self.loginprocess.canceled()):
                         wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
 
                 except Exception as e:
@@ -252,11 +254,11 @@ class LoginProcess():
                             matched=True
                 if (not matched and tsleep == 1):
                     sleepperiod=15
-                if (not matched and tsleep > 15):
+                if (not matched and tsleep > 15 and not self.loginprocess.canceled()):
                     newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_ESTIMATED_START,self.loginprocess)
                     wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),newevent)
                     sleepperiod=30
-            if (not self.stopped()):
+            if (not self.stopped() and not self.loginprocess.canceled()):
                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextEvent)
         
     class CheckVNCVerThread(Thread):
@@ -537,7 +539,7 @@ class LoginProcess():
                 wx.CallAfter(showOldTurboVncWarningMessageDialog)
             else:
                 logger_debug("vnc viewer found")
-            if (not self.stopped()):
+            if (not self.stopped() and not self.loginprocess.canceled()):
                 event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY,self.loginprocess)
                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
 
@@ -578,7 +580,7 @@ class LoginProcess():
                 event.loginprocess.skd = None # SSH key distritbution is complete at this point.
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 3,"Looking for an existing desktop to connect to")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RECONNECT_DIALOG,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.listAllCmd,event.loginprocess.listAllRegEx,nextevent,"Error determining if you have any existing jobs running")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.listAllCmd,event.loginprocess.listAllRegEx,nextevent,"Error determining if you have any existing jobs running",requireMatch=False)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -589,7 +591,8 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RECONNECT_DIALOG):
                 logger_debug("caught RECONNECT_DIALOG")
                 if (len(event.loginprocess.matchlist)<1):
-                    wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess))
+                    if (not event.loginprocess.canceled()):
+                        wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS,event.loginprocess))
                     return
                 event.loginprocess.job=event.loginprocess.matchlist[0]
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 4,"Do you want to reconnect to an existing desktop?")
@@ -613,6 +616,56 @@ class LoginProcess():
                 else:
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found, would you like to reconnect or kill it and start a new desktop","Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
                 wx.CallAfter(dialog.ShowModal)
+            else:
+                event.Skip()
+
+        def getProjects(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS):
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Getting a list of your valid projects")
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT,event.loginprocess)
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.getProjectsCmd,event.loginprocess.getProjectsRegEx,nextevent,"I couldn't find any projects that you were a member of.")
+                t.setDaemon(False)
+                t.start()
+                event.loginprocess.threads.append(t)
+            else:
+                event.Skip()
+
+        def selectProject(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT):
+                logger_debug("caught SELECT_PROJECT")
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Getting a list of your valid projects")
+                grouplist=[]
+                groups=[]
+                showDialog=False
+                msg=""
+                for match in event.loginprocess.matchlist:
+                    grouplist = grouplist + match.values()
+                    groups.append(match.values())
+                try:
+                    event.loginprocess.startServerCmd.format(**event.loginprocess.jobParams)
+                    if (event.loginprocess.jobParams.has_key('project') and not (event.loginprocess.jobParams['project'] in grouplist)):
+                        logger_debug("we have a value for project, but the user is not a member of that project")
+                        msg='You don\'t appear to be a member of the project {project}. Please select from one of the following:'.format(**event.loginprocess.jobParams)
+                        showDialog=True
+                    elif (event.loginprocess.jobParams.has_key('project') and (event.loginprocess.jobParams['project'] in grouplist)):
+                        logger_debug("we have a value for project, and the user is a member of that project")
+                    else:
+                        logger_debug("we don't have a value for project, but it isn't needed to start the VNC server")
+                except KeyError as e:
+                    if e.args == 'project':
+                        logger_debug("we need a value for project but it isn't set yet")
+                        msg="Please select your project"
+                        showDialog=True
+                if (not showDialog):
+                    logger_debug("don't need to show the dialog, either the project was set correclty, or it was not set, but also not required")
+                else:
+                    logger_debug("creating a list dialog for the user to select their project from")
+                    callback=lambda x: event.loginprocess.jobParams.update([('project',"%s"%x.GetText())])
+                    dlg=ListSelectionDialog(event.loginprocess.notify_window, headers=None,message=msg, items=grouplist, callback=callback, style=wx.RESIZE_BORDER)
+                    dlg.ShowModal()
+                if (not event.loginprocess.canceled()):
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
+                    wx.PostEvent(event.loginprocess.notify_window,nextevent)
             else:
                 event.Skip()
 
@@ -768,6 +821,7 @@ class LoginProcess():
                     event.loginprocess.threads.append(t)
                 logger_debug("caught LOGINPROCESS_CANCEL")
                 if (event.loginprocess.skd!=None): 
+                        logger_debug("calling SKD cancel")
                         event.loginprocess.skd.cancel()
                 newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                 wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
@@ -855,11 +909,11 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 4,"Stopping the existing desktop session")
                 if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
                     logger_debug("caught an EVT_LOGINPROCESS_RESTART_SERVER")
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS,event.loginprocess)
                 else:
                     logger_debug("caught an EVT_LOGINPROCESS_KILL_SERVER")
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".",nextevent,"")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".*",nextevent,"",requireMatch=False)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -944,6 +998,8 @@ class LoginProcess():
                 self.execHostCmd='qpeek {jobidNumber}'
                 self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
                 self.startServerCmd="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
+                self.getProjectsCmd='\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
+                self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
                 self.showStartCmd="showstart {jobid}"
                 self.showStartRegEx="Estimated Rsv based start .*?on (?P<estimatedStart>.*)"
@@ -960,6 +1016,8 @@ class LoginProcess():
                 self.directConnect=True
                 self.execHostCmd='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \'\"'
                 self.execHostRegEx='^\s*(?P<execHost>\S+)\s*$'
+                self.getProjectsCmd='\'groups | sed \'s/\\ /\\n\/g\'\''
+                self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
                 self.listAllCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
                 self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
                 self.runningCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
@@ -1030,6 +1088,8 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_SHOW_ERROR = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_GET_ESTIMATED_START = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHOW_ESTIMATED_START = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT = wx.NewId()
 
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.cancel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.distributeKey)
@@ -1052,6 +1112,8 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.statRunningJob)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getEstimatedStart)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showEstimatedStart)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getProjects)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.selectProject)
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
 
     def timeRemaining(self):
@@ -1100,6 +1162,9 @@ class LoginProcess():
             event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CANCEL,self,error)
             wx.PostEvent(self.notify_window.GetEventHandler(),event)
             #logger_error("LoginTasks.cancel error message %s"%error)
+
+    def canceled(self):
+        return self._canceled.isSet()
 
 
     def updateProgressDialog(self, value, message):
