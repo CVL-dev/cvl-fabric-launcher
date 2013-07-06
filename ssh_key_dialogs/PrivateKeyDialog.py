@@ -400,5 +400,5 @@ class MyApp(wx.App):
 
         return True
 
-app = MyApp(0)
-app.MainLoop()
+#app = MyApp(0)
+#app.MainLoop()

@@ -279,7 +279,6 @@ class InspectKeyDialog(wx.Dialog):
             if success:
                 self.Show(False)
                 self.EndModal(wx.ID_OK)
-            return
 
     def onChangePassphrase(self,event):
         global massiveLauncherConfig
@@ -360,15 +359,36 @@ class MyApp(wx.App):
                             "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_INFORMATION)
             if dlg.ShowModal()==wx.ID_YES:
                 import PrivateKeyDialog
-                privateKeyDlg = PrivateKeyDialog.PrivateKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
-                privateKeyDlg.Center()
+                privateKeyDialog = PrivateKeyDialog.PrivateKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
+                privateKeyDialog.Center()
                 if privateKeyDialog.ShowModal()==wx.ID_OK:
                     if privateKeyDialog.getPrivateKeyLifetimeAndPassphraseChoice()==privateKeyDialog.ID_SAVE_KEY_WITH_PASSPHRASE:
-                        print "Passphrase = " + privateKeyDialog.getPassphrase()
-                else:
-                    print "User canceled."
-            return False
+                        #print "Passphrase = " + privateKeyDialog.getPassphrase()
 
+                        from PrivateKeyModel import PrivateKeyModel
+                        privateKeyModelObject = PrivateKeyModel(massiveLauncherPrivateKeyPath)
+                        keyComment = os.path.basename(massiveLauncherPrivateKeyPath)
+                        def keyCreatedSuccessfullyCallback():
+                            print "InspectKey callback: Key created successfully! :-)"
+                        def keyFileAlreadyExistsCallback():
+                            print "InspectKey callback: Key file already exists! :-("
+                        def passphraseTooShortCallback():
+                            print "InspectKey callback: Passphrase was too short! :-("
+                        success = privateKeyModelObject.generateNewKey(privateKeyDialog.getPassphrase(),keyComment,keyCreatedSuccessfullyCallback,keyFileAlreadyExistsCallback,passphraseTooShortCallback)
+                        if success:
+                            message = "Your Launcher key was created successfully! :-)"
+                        else:
+                            message = "An error occured while attempting to create your key. :-("
+                        dlg = wx.MessageDialog(None, 
+                            message,
+                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                        dlg.ShowModal()
+                else:
+                    print "User canceled from PrivateKeyDialog."
+                    return False
+            else:
+                print "User said they didn't want to create a key now."
+                return False
 
         inspectKeyDialog = InspectKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Key Properties', massiveLauncherPrivateKeyPath)
         inspectKeyDialog.Center()
