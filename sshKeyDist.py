@@ -563,13 +563,13 @@ class KeyDist():
 
         def newkey(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_NEWPASS_REQ):
-                logger_debug("recieved NEWPASS_REQ event")
+                logger_debug("received NEWPASS_REQ event")
                 wx.CallAfter(event.keydist.getNewPassphrase_stage1,event.string)
             if (event.GetId() == KeyDist.EVT_KEYDIST_NEWPASS_RPT):
-                logger_debug("recieved NEWPASS_RPT event")
+                logger_debug("received NEWPASS_RPT event")
                 wx.CallAfter(event.keydist.getNewPassphrase_stage2)
             if (event.GetId() == KeyDist.EVT_KEYDIST_NEWPASS_COMPLETE):
-                logger_debug("recieved NEWPASS_COMPLETE event")
+                logger_debug("received NEWPASS_COMPLETE event")
                 t = KeyDist.genkeyThread(event.keydist)
                 t.setDaemon(True)
                 t.start()
@@ -578,10 +578,10 @@ class KeyDist():
 
         def copyid(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_COPYID_NEEDPASS):
-                logger_debug("recieved COPYID_NEEDPASS event")
+                logger_debug("received COPYID_NEEDPASS event")
                 wx.CallAfter(event.keydist.getLoginPassword,event.string)
             elif (event.GetId() == KeyDist.EVT_KEYDIST_COPYID):
-                logger_debug("recieved COPYID event")
+                logger_debug("received COPYID event")
                 t = KeyDist.CopyIDThread(event.keydist)
                 t.setDaemon(True)
                 t.start()
@@ -591,7 +591,7 @@ class KeyDist():
 
         def scanhostkeys(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_SCANHOSTKEYS):
-                logger_debug("recieved SCANHOSTKEYS event")
+                logger_debug("received SCANHOSTKEYS event")
                 t = KeyDist.scanHostKeysThread(event.keydist)
                 t.setDaemon(True)
                 t.start()
