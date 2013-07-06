@@ -24,6 +24,9 @@ class DeleteKey():
 
             os.unlink(privateKeyPath)
 
+            if os.path.exists(privateKeyPath + ".pub"):
+                os.unlink(privateKeyPath + ".pub")
+
             # Remove key(s) from SSH agent:
 
             print "Removing Launcher public key(s) from agent."
