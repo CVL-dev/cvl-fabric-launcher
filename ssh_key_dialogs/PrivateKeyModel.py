@@ -22,9 +22,6 @@ class PrivateKeyModel():
         self.sshPathsObject = sshpaths(self.privateKeyFileName)
 
     def generateNewKey(self, passphrase, keyComment, keyCreatedSuccessfullyCallback, keyFileAlreadyExistsCallback, passphraseTooShortCallback):
-        print "generateNewKey"
-
-        #ssh-keygen -f foo can give:
 
         success = False
 
@@ -32,7 +29,6 @@ class PrivateKeyModel():
             # The patched OpenSSH binary on Windows/cygwin allows us
             # to send the passphrase via STDIN.
             cmdList = [self.sshPathsObject.sshKeyGenBinary, "-f", double_quote(self.privateKeyFilePath), "-C", keyComment]
-            #cmd = self.keydistObject.sshpaths.sshAddBinary + ' ' + double_quote(self.keydistObject.sshpaths.sshKeyPath)
             #logger_debug('on Windows, so running: ' + cmd)
             proc = subprocess.Popen(cmdList,
                                     stdin=subprocess.PIPE,
@@ -239,10 +235,69 @@ class PrivateKeyModel():
 
         return True
 
-    def addKeyToAgent(self, passphrase):
+    def addKeyToAgent(self, passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback):
 
-        addKeyToAgentProc = subprocess.Popen([self.sshPathsObject.sshAddBinary, double_quote(self.privateKeyFilePath)],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        stdout, stderr = addKeyToAgentProc.communicate("\r\n")
+        success = False
+
+        if sys.platform.startswith('win'):
+            # The patched OpenSSH binary on Windows/cygwin allows us
+            # to send the passphrase via STDIN.
+            cmdList = [self.sshPathsObject.sshAddBinary, double_quote(self.privateKeyFilePath)]
+            #logger_debug('on Windows, so running: ' + cmd)
+            proc = subprocess.Popen(cmdList,
+                                    stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    universal_newlines=True)
+            stdout, stderr = proc.communicate(input=passphrase + '\r\n')
+
+            if "No such file or directory" in stderr:
+                privateKeyFileNotFoundCallback()
+                return False
+
+            if stdout is None or str(stdout).strip() == '':
+                #logger_debug('Got EOF from ssh-add binary')
+                print '(1) Got EOF from ssh-add binary'
+            elif "No such file or directory" in stdout:
+                privateKeyFileNotFoundCallback()
+                return False
+            elif "Identity added" in stdout:
+                success = True
+                keyAddedSuccessfullyCallback()
+            elif 'Bad pass' in stdout:
+                #logger_debug('Got "Bad pass" from ssh-add binary')
+                print 'Got "Bad pass" from ssh-add binary'
+                proc.kill()
+                passphraseIncorrectCallback()
+            else:
+                #logger_debug('Got unknown error from ssh-add binary')
+                print 'Got unknown error from ssh-add binary'
+        else:
+            # On Linux or BSD/OSX we can use pexpect to talk to ssh-add.
+
+            import pexpect
+
+            args = [self.privateKeyFilePath]
+            lp = pexpect.spawn(self.sshPathsObject.sshAddBinary, args=args)
+
+            idx = lp.expect(["Enter passphrase"])
+
+            if idx == 0:
+                lp.sendline(passphrase)
+
+                idx = lp.expect(["Identity added", "Bad pass"])
+                if idx == 0:
+                    success = True
+                    keyAddedSuccessfullyCallback()
+                elif idx == 1:
+                    lp.kill(0)
+                    passphraseIncorrectCallback()
+                    return success
+            else:
+                print "Unexpected result from attempt to add key."
+            lp.close()
+        return success
+
 
     def removeKeyFromAgent(self):
 
@@ -252,12 +307,6 @@ class PrivateKeyModel():
         # specifically identifying this key. :-(
 
         try:
-
-            os.unlink(self.privateKeyFilePath)
-
-            if os.path.exists(self.privateKeyFilePath + ".pub"):
-                os.unlink(self.privateKeyFilePath + ".pub")
-
             # Remove key(s) from SSH agent:
 
             print "Removing Launcher public key(s) from agent."

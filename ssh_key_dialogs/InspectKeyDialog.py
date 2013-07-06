@@ -283,14 +283,21 @@ class InspectKeyDialog(wx.Dialog):
             ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'Unlock Key',"Please enter the passphrase for the key","OK","Cancel")
             (canceled,passphrase) = ppd.getPassword()
             if (canceled):
-                print "User canceled"
                 return
             else:
-                print "User pressed OK from Unlock Key dialog."
-                success = privateKeyModelObject.addKeyToAgent(passphrase)
+                def keyAddedSuccessfullyCallback():
+                    print "InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Key added successfully! :-)"
+                def passphraseIncorrectCallback():
+                    print "InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Passphrase incorrect. :-("
+                def privateKeyFileNotFoundCallback():
+                    print "InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Private key file not found. :-("
+                success = privateKeyModelObject.addKeyToAgent(passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback)
                 if success:
+                    print "Adding key to agent succeeded."
                     self.populateFingerprintInAgentField()
                     self.addKeyToOrRemoveKeyFromAgentButton.SetLabel("Remove MASSIVE Launcher key from agent")
+                else:
+                    print "Adding key to agent failed."
         elif self.addKeyToOrRemoveKeyFromAgentButton.GetLabel()=="Remove MASSIVE Launcher key from agent":
             privateKeyModelObject = PrivateKeyModel(self.privateKeyFilePath)
             success = privateKeyModelObject.removeKeyFromAgent()
