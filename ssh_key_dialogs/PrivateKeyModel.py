@@ -239,4 +239,46 @@ class PrivateKeyModel():
 
         return True
 
+    def addKeyToAgent(self, passphrase):
 
+        addKeyToAgentProc = subprocess.Popen([self.sshPathsObject.sshAddBinary, double_quote(self.privateKeyFilePath)],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        stdout, stderr = addKeyToAgentProc.communicate("\r\n")
+
+    def removeKeyFromAgent(self):
+
+        # FIXME
+        # We use a method which doesn't require entering the key's passphrase :-)
+        # but it just greps for Launcher in the agent's keys, rather than 
+        # specifically identifying this key. :-(
+
+        try:
+
+            os.unlink(self.privateKeyFilePath)
+
+            if os.path.exists(self.privateKeyFilePath + ".pub"):
+                os.unlink(self.privateKeyFilePath + ".pub")
+
+            # Remove key(s) from SSH agent:
+
+            print "Removing Launcher public key(s) from agent."
+
+            publicKeysInAgentProc = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-L"],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            publicKeysInAgent = publicKeysInAgentProc.stdout.readlines()
+            for publicKey in publicKeysInAgent:
+                if "Launcher" in publicKey:
+                    tempPublicKeyFile = tempfile.NamedTemporaryFile(delete=False)
+                    tempPublicKeyFile.write(publicKey)
+                    tempPublicKeyFile.close()
+                    try:
+                        removePublicKeyFromAgent = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-d",tempPublicKeyFile.name],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                        stdout, stderr = removePublicKeyFromAgent.communicate()
+                        if stderr is not None and len(stderr) > 0:
+                            print stderr
+                        success = ("Identity removed" in stdout)
+                    finally:
+                        os.unlink(tempPublicKeyFile.name)
+        except:
+            print traceback.format_exc()
+            return False
+
+        return True
