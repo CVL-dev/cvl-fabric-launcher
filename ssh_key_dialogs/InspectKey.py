@@ -4,6 +4,11 @@ import wx
 import wx.html
 import os
 import sys
+import subprocess
+
+if os.path.abspath("..") not in sys.path:
+    sys.path.append(os.path.abspath(".."))
+from sshKeyDist import sshpaths
 
 global helpController
 helpController = None
@@ -12,6 +17,10 @@ class InspectKeyDialog(wx.Dialog):
     def __init__(self, parent, id, title, massiveLauncherPrivateKeyPath):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
         self.inspectKeyDialogPanel = wx.Panel(self, wx.ID_ANY)
+
+        (self.privateKeyDirectory, self.privateKeyFileName) = os.path.split(massiveLauncherPrivateKeyPath)
+        # sshKeyDist.sshpaths currently assumes that private key is in ~/.ssh
+        self.sshPathsObject = sshpaths(self.privateKeyFileName)
 
         # I really miss Java Swing's BorderLayout and
         # BorderFactory.createEmptyBorder(...) sometimes.
@@ -94,9 +103,7 @@ class InspectKeyDialog(wx.Dialog):
 
         # ssh-keygen can give us public key fingerprint, key type and size from private key
 
-        import subprocess
-        sshKeyGenBinary = "/usr/bin/ssh-keygen"
-        proc = subprocess.Popen([sshKeyGenBinary,"-yl","-f",massiveLauncherPrivateKeyPath], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        proc = subprocess.Popen([self.sshPathsObject.sshKeyGenBinary,"-yl","-f",massiveLauncherPrivateKeyPath], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         stdout,stderr = proc.communicate()
         sshKeyGenOutComponents = stdout.split(" ")
         if len(sshKeyGenOutComponents)>1:
@@ -171,25 +178,25 @@ class InspectKeyDialog(wx.Dialog):
 
         self.innerAgentPropertiesPanelSizer.Add(self.sshAuthSockField, flag=wx.EXPAND)
 
-        #self.innerAgentPropertiesPanelSizer.Add(wx.StaticText(self.innerAgentPropertiesPanel, wx.ID_ANY, sshAuthSockQueryResult))
-        #sshAgentQueryResult = "ssh agent query result"
-
-        sshAddBinary = "/usr/bin/ssh-add"
-        proc = subprocess.Popen([sshAddBinary,"-l","|","grep","Launcher"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-
-        stdout,stderr = proc.communicate()
-        sshAddOutComponents = stdout.split(" ")
-        if len(sshAddOutComponents)>1:
-            publicKeyFingerprintInAgent = sshAddOutComponents[1]
-        else:
-            publicKeyFingerprintInAgent = ""
-
         # Blank space
 
         self.innerAgentPropertiesPanelSizer.Add(wx.StaticText(self.innerAgentPropertiesPanel, wx.ID_ANY, ""))
         self.innerAgentPropertiesPanelSizer.Add(wx.StaticText(self.innerAgentPropertiesPanel, wx.ID_ANY, ""))
 
         # ssh-add -l | grep Launcher
+
+        publicKeyFingerprintInAgent = ""
+        proc = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        fingerprintLinesInAgent = proc.stdout.readlines()
+        for fingerprintLine in fingerprintLinesInAgent:
+            if "Launcher" in fingerprintLine:
+                sshAddOutComponents = fingerprintLine.split(" ")
+                if len(sshAddOutComponents)>1:
+                    publicKeyFingerprintInAgent = sshAddOutComponents[1]
+                if len(sshAddOutComponents)>3:
+                    keyType = sshAddOutComponents[-1].strip().strip("(").strip(")")
+                else:
+                    keyType = ""
 
         self.sshAgentQueryLabel = wx.StaticText(self.innerAgentPropertiesPanel, wx.ID_ANY, "Launcher key fingerprint in agent:")
         self.innerAgentPropertiesPanelSizer.Add(self.sshAgentQueryLabel)
@@ -256,8 +263,9 @@ class InspectKeyDialog(wx.Dialog):
             print "You said yes, you want to delete your key."
             global massiveLauncherConfig
             massiveLauncherPrivateKeyPath = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
-            import DeleteKey
-            success = DeleteKey.deleteKeyAndRemoveFromAgent(massiveLauncherPrivateKeyPath)
+            from DeleteKey import DeleteKey
+            deleteKeyObject = DeleteKey()
+            success = deleteKeyObject.deleteKeyAndRemoveFromAgent(massiveLauncherPrivateKeyPath)
             dlg = wx.MessageDialog(self, 
                 "Your Launcher key was successfully deleted! :-)",
                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)

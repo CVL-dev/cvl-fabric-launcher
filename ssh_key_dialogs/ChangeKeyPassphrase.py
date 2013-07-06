@@ -3,6 +3,11 @@
 import wx
 import wx.html
 import os
+import sys
+
+if os.path.abspath("..") not in sys.path:
+    sys.path.append(os.path.abspath(".."))
+from sshKeyDist import sshpaths
 
 global helpController
 helpController = None
@@ -13,6 +18,10 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
         self.changeKeyPassphraseDialogPanel = wx.Panel(self, wx.ID_ANY)
 
         self.privateKeyFilePath = privateKeyFilePath
+
+        (self.privateKeyDirectory, self.privateKeyFileName) = os.path.split(self.privateKeyFilePath)
+        # sshKeyDist.sshpaths currently assumes that private key is in ~/.ssh
+        self.sshPathsObject = sshpaths(self.privateKeyFileName)
 
         self.changeKeyPassphraseDialogPanelSizer = wx.FlexGridSizer(1,3, hgap=15, vgap=15)
         self.changeKeyPassphraseDialogPanel.SetSizer(self.changeKeyPassphraseDialogPanelSizer)
@@ -187,8 +196,7 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
         import pexpect
 
         args = ["-f", self.privateKeyFilePath, "-p"]
-        sshKeyGenBinary = "/usr/bin/ssh-keygen"
-        lp = pexpect.spawn(sshKeyGenBinary, args=args)
+        lp = pexpect.spawn(self.sshPathsObject.sshKeyGenBinary, args=args)
 
         idx = lp.expect(["Enter old passphrase", "Key has comment"])
 

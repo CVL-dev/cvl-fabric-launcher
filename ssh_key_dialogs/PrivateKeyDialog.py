@@ -68,7 +68,7 @@ class PrivateKeyDialog(wx.Dialog):
         self.ID_SAVE_KEY_WITH_BLANK_PASSPHRASE = wx.NewId()
         self.savePrivateKeyWithBlankPassphraseRadioButton = wx.RadioButton(self.innerRadioButtonsPanel, 
             self.ID_SAVE_KEY_WITH_BLANK_PASSPHRASE,
-            "Save the private key for use in future Launcher sessions, using a blank passphrase (less secure)")
+            "Save the private key for use in future Launcher sessions, using a blank passphrase (less secure).")
         self.innerRadioButtonsPanelSizer.Add(self.savePrivateKeyWithBlankPassphraseRadioButton, flag=wx.EXPAND)
 
         self.DISCARD_KEY_UPON_EXIT = wx.NewId()
