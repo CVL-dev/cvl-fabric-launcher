@@ -88,11 +88,7 @@ class PrivateKeyDialog(wx.Dialog):
         self.radioButtonsGroupBoxSizer.Add(self.innerRadioButtonsPanel, flag=wx.EXPAND)
         self.radioButtonsPanel.Fit()
 
-        self.privateKeyDialogCenterPanelSizer.Add(self.radioButtonsPanel, flag=wx.EXPAND)
-
-        # Blank space
-
-        self.privateKeyDialogCenterPanelSizer.Add(wx.StaticText(self.privateKeyDialogCenterPanel, wx.ID_ANY, ""))
+        self.privateKeyDialogCenterPanelSizer.Add(self.radioButtonsPanel, flag=wx.EXPAND|wx.BOTTOM, border=15)
 
         # Passphrase panel
 
@@ -134,11 +130,7 @@ class PrivateKeyDialog(wx.Dialog):
         self.Bind(wx.EVT_TEXT, self.onPassphraseFieldsModified, id=self.passphraseField.GetId())
         self.Bind(wx.EVT_TEXT, self.onPassphraseFieldsModified, id=self.repeatPassphraseField.GetId())
 
-        self.privateKeyDialogCenterPanelSizer.Add(self.passphrasePanel, flag=wx.EXPAND)
-
-        # Blank space
-
-        self.privateKeyDialogCenterPanelSizer.Add(wx.StaticText(self.privateKeyDialogCenterPanel, wx.ID_ANY, ""))
+        self.privateKeyDialogCenterPanelSizer.Add(self.passphrasePanel, flag=wx.EXPAND|wx.BOTTOM, border=15)
 
         # Private key location
 
@@ -183,7 +175,7 @@ class PrivateKeyDialog(wx.Dialog):
 
         # Blank space
 
-        self.privateKeyDialogCenterPanelSizer.Add(wx.StaticText(self.privateKeyDialogCenterPanel, wx.ID_ANY, ""))
+        #self.privateKeyDialogCenterPanelSizer.Add(wx.StaticText(self.privateKeyDialogCenterPanel, wx.ID_ANY, ""))
 
         # Buttons panel
 
@@ -214,21 +206,36 @@ class PrivateKeyDialog(wx.Dialog):
 
     def onRadioButtonSelectionChanged(self, event):
         if self.savePrivateKeyAndSecureWithPassphraseRadioButton.GetValue()==True:
-            self.passphraseLabel.Enable()
-            self.repeatPassphraseLabel.Enable()
-            self.passphraseField.Enable()
-            self.repeatPassphraseField.Enable()
-            self.passphraseGroupBox.Enable()
-            self.passphraseStatusLabel1.SetLabel("")
-            self.passphraseStatusLabel2.SetLabel("")
+
+            self.passphrasePanel.Show(True)
+            self.privateKeyLocationPanel.Show(True)
+            self.leaveKeyInAgentAfterExitCheckBox.SetValue(True)
+            self.leaveKeyInAgentAfterExitCheckBox.Show(True)
+
+            self.privateKeyDialogCenterPanel.Fit()
+            self.privateKeyDialogMiddlePanel.Fit()
+            self.privateKeyDialogPanel.Fit()
+            self.Fit()
+
         else:
-            self.passphraseLabel.Disable()
-            self.repeatPassphraseLabel.Disable()
+            self.passphrasePanel.Show(False)
+
+            if self.discardPrivateKeyUponExitRadioButton.GetValue()==True:
+                self.privateKeyLocationPanel.Show(False)
+                self.leaveKeyInAgentAfterExitCheckBox.SetValue(False)
+                self.leaveKeyInAgentAfterExitCheckBox.Show(False)
+            else:
+                self.privateKeyLocationPanel.Show(True)
+                self.leaveKeyInAgentAfterExitCheckBox.SetValue(True)
+                self.leaveKeyInAgentAfterExitCheckBox.Show(True)
+
+            self.privateKeyDialogCenterPanel.Fit()
+            self.privateKeyDialogMiddlePanel.Fit()
+            self.privateKeyDialogPanel.Fit()
+            self.Fit()
+
             self.passphraseField.SetValue("")
-            self.passphraseField.Disable()
             self.repeatPassphraseField.SetValue("")
-            self.repeatPassphraseField.Disable()
-            self.passphraseGroupBox.Disable()
             self.passphraseStatusLabel1.SetLabel("")
             self.passphraseStatusLabel2.SetLabel("")
 
