@@ -9,21 +9,20 @@ from PrivateKeyModel import PrivateKeyModel
 
 if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
-from sshKeyDist import sshpaths
 from sshKeyDist import KeyDist
+from sshKeyDist import sshpaths
 
 global helpController
 helpController = None
 
-from utilityFunctions import logger_debug, logger_error
-import logging
-global logger
-logger = logging.getLogger(__name__)
+from utilityFunctions import configureLogger
 
 class InspectKeyDialog(wx.Dialog):
     def __init__(self, parent, id, title, privateKeyFilePath):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
         self.inspectKeyDialogPanel = wx.Panel(self, wx.ID_ANY)
+
+        configureLogger('launcher')
 
         self.privateKeyFilePath = privateKeyFilePath
 
@@ -284,8 +283,10 @@ class InspectKeyDialog(wx.Dialog):
             ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'Unlock Key',"Please enter the passphrase for the key","OK","Cancel")
             (canceled,passphrase) = ppd.getPassword()
             if (canceled):
+                print "User canceled"
                 return
             else:
+                print "User pressed OK from Unlock Key dialog."
                 success = privateKeyModelObject.addKeyToAgent(passphrase)
                 if success:
                     self.populateFingerprintInAgentField()
