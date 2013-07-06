@@ -263,21 +263,23 @@ class InspectKeyDialog(wx.Dialog):
             print "You said yes, you want to delete your key."
             global massiveLauncherConfig
             massiveLauncherPrivateKeyPath = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
-            from DeleteKey import DeleteKey
-            deleteKeyObject = DeleteKey()
-            success = deleteKeyObject.deleteKeyAndRemoveFromAgent(massiveLauncherPrivateKeyPath)
+
+            from PrivateKeyModel import PrivateKeyModel
+            privateKeyModelObject = PrivateKeyModel(massiveLauncherPrivateKeyPath)
+            success = privateKeyModelObject.deleteKeyAndRemoveFromAgent()
+            if success:
+                message = "Your Launcher key was successfully deleted! :-)"
+            else:
+                message = "An error occured while attempting to delete your key. :-("
             dlg = wx.MessageDialog(self, 
-                "Your Launcher key was successfully deleted! :-)",
+                message,
                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
-            self.Show(False)
-            self.EndModal(wx.ID_OK)
-            return
-        else:
-            print "You said no, you don't want to delete your key."
 
-        # FIXME: Need to reload fields on inspect-key dialog after deleting key,
-        # Or, maybe we could just close the dialog.
+            if success:
+                self.Show(False)
+                self.EndModal(wx.ID_OK)
+            return
 
     def onChangePassphrase(self,event):
         global massiveLauncherConfig
