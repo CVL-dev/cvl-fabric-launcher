@@ -210,10 +210,10 @@ class KeyDist():
                             agentenv = match.group('socket')
                             os.environ['SSH_AUTH_SOCK'] = agentenv
                     if agent is None:
-                        self.keydistObject.cancel(message="I tried to start and ssh agent, but failed with the error message %s"%str(stdout))
+                        self.keydistObject.cancel(message="I tried to start an ssh agent, but failed with the error message %s"%str(stdout))
                         return
                 except Exception as e:
-                    self.keydistObject.cancel(message="I tried to start and ssh agent, but failed with the error message %s" % str(e))
+                    self.keydistObject.cancel(message="I tried to start an ssh agent, but failed with the error message %s" % str(e))
                     return
 
             newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_GETPUBKEY,self.keydistObject)
@@ -251,7 +251,7 @@ class KeyDist():
                     #self.keydistObject.cancel("Unable to generate a new ssh key pair %s"%stderr)
                     #return
             except Exception as e:
-                logger_debug("sshkeygen threw and exception %s" % str(e))
+                logger_debug("sshkeygen threw an exception %s" % str(e))
                 self.keydistObject.cancel("Unable to generate a new ssh key pair: %s" % str(e))
                 return
 
