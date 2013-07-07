@@ -1220,7 +1220,7 @@ class LauncherMainFrame(wx.Frame):
         userCanAbort=True
         maximumProgressBarValue = 10
 
-        self.sshpaths = sshKeyDist.sshpaths('MassiveLauncherKey')
+        self.sshpaths = sshKeyDist.sshpaths('MassiveLauncherKey',massiveLauncherConfig,massiveLauncherPreferencesFilePath)
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         self.loginProcess=LoginTasks.LoginProcess(username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=hours,nodes=nodes,usePBS=launcherMainFrame.massiveTabSelected,directConnect=(not launcherMainFrame.massiveTabSelected),autoExit=autoExit)
         if sys.platform.startswith("win"):
@@ -1295,6 +1295,37 @@ class MyApp(wx.App):
         global launcherMainFrame
         launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
         launcherMainFrame.Show(True)
+
+        def usingPrivateKeyForTheFirstTime():
+            dlg = wx.MessageDialog(launcherMainFrame,
+                    "It looks like this is the first time you've used " +
+                    "this version of the Launcher, which requires you to " +
+                    "use a private key, instead of a password.\n\n" +
+                    "Would you like to view the Launcher's help on this topic?",
+                    "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
+            if dlg.ShowModal()==wx.ID_YES:
+                global helpController
+                if helpController is None:
+                    helpController = wx.html.HtmlHelpController()
+                    launcherHelpFile = "helpfiles/launcher.hhp"
+                    if not helpController.AddBook(launcherHelpFile):
+                        wx.MessageBox("Unable to open: " + launcherHelpFile,
+                                      "Error", wx.OK|wx.ICON_EXCLAMATION)
+                helpController.Display("SSH Keys")
+            else:
+                dlg = wx.MessageDialog(launcherMainFrame,
+                    "You can access the help later from the Help menu or from the Identity menu.",
+                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+
+        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path"):
+                logger_debug("Found massive_launcher_private_key_path in local settings.")
+            else:
+                usingPrivateKeyForTheFirstTime()
+        else:
+            usingPrivateKeyForTheFirstTime()
+
         return True
 
 if __name__ == '__main__':

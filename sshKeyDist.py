@@ -88,11 +88,17 @@ class sshpaths():
     def ssh_files(self):
         known_hosts_file = os.path.join(expanduser('~'), '.ssh', 'known_hosts')
         sshKeyPath = os.path.join(expanduser('~'), '.ssh', self.keyFileName)
+        self.massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", sshKeyPath)
+        with open(self.massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+            self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+
         return (sshKeyPath,known_hosts_file,)
 
-    def __init__(self, keyFileName):
+    def __init__(self, keyFileName, massiveLauncherConfig, massiveLauncherPreferencesFilePath):
         (sshBinary, sshKeyGenBinary, sshAgentBinary, sshAddBinary, sshKeyScanBinary,chownBinary, chmodBinary,) = self.ssh_binaries()
         self.keyFileName                = keyFileName
+        self.massiveLauncherConfig      = massiveLauncherConfig
+        self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
         (sshKeyPath,sshKnownHosts,)     = self.ssh_files()
         self.sshBinary                  = sshBinary
         self.sshKeyGenBinary            = sshKeyGenBinary
