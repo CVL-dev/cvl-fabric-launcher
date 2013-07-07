@@ -14,6 +14,7 @@ import subprocess
 import traceback
 import socket
 from utilityFunctions import logger_debug, logger_error, HelpDialog
+import pkgutil
 
 OPENSSH_BUILD_DIR = 'openssh-cygwin-stdin-build'
 
@@ -33,7 +34,9 @@ def start_pageant():
     if hasattr(sys, 'frozen'):
         pageant = os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR, 'bin', 'PAGEANT.EXE')
     else:
-        pageant = os.path.join(os.getcwd(), OPENSSH_BUILD_DIR, 'bin', 'PAGEANT.EXE')
+        #pageant = os.path.join(os.getcwd(), OPENSSH_BUILD_DIR, 'bin', 'PAGEANT.EXE')
+        launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
+        pageant = os.path.join(launcherModulePath, OPENSSH_BUILD_DIR, 'bin', 'PAGEANT.EXE')
 
     import win32process
     subprocess.Popen([pageant], creationflags=win32process.DETACHED_PROCESS)
@@ -47,12 +50,14 @@ class sshpaths():
         Locate the ssh binaries on various systems. On Windows we bundle a
         stripped-down OpenSSH build that uses Cygwin.
         """
- 
+
         if sys.platform.startswith('win'):
             if hasattr(sys, 'frozen'):
                 f = lambda x: os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR, 'bin', x)
             else:
-                f = lambda x: os.path.join(os.getcwd(), OPENSSH_BUILD_DIR, 'bin', x)
+                #f = lambda x: os.path.join(os.getcwd(), OPENSSH_BUILD_DIR, 'bin', x)
+                launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
+                f = lambda x: os.path.join(launcherModulePath, OPENSSH_BUILD_DIR, 'bin', x)
  
             sshBinary        = f('ssh.exe')
             sshKeyGenBinary  = f('ssh-keygen.exe')
