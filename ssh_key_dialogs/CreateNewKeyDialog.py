@@ -5,7 +5,7 @@ import wx.html
 import os
 import sys
 
-from PrivateKeyModel import PrivateKeyModel
+from KeyModel import KeyModel
 
 global helpController
 helpController = None
@@ -282,7 +282,7 @@ class CreateNewKeyDialog(wx.Dialog):
                 return
 
         if self.getPrivateKeyLifetimeAndPassphraseChoice()==self.ID_SAVE_KEY_WITH_PASSPHRASE:
-            privateKeyModelObject = PrivateKeyModel(self.getPrivateKeyFileLocation())
+            keyModelObject = KeyModel(self.getPrivateKeyFileLocation())
             keyComment = os.path.basename(self.getPrivateKeyFileLocation())
             def keyCreatedSuccessfullyCallback():
                 print "CreateNewKeyDialog callback: Key created successfully! :-)"
@@ -290,7 +290,7 @@ class CreateNewKeyDialog(wx.Dialog):
                 print "CreateNewKeyDialog callback: Key file already exists! :-("
             def passphraseTooShortCallback():
                 print "CreateNewKeyDialog callback: Passphrase was too short! :-("
-            success = privateKeyModelObject.generateNewKey(self.getPassphrase(),keyComment,keyCreatedSuccessfullyCallback,keyFileAlreadyExistsCallback,passphraseTooShortCallback)
+            success = keyModelObject.generateNewKey(self.getPassphrase(),keyComment,keyCreatedSuccessfullyCallback,keyFileAlreadyExistsCallback,passphraseTooShortCallback)
             if success:
                 message = "Your Launcher key was created successfully! :-)"
             else:

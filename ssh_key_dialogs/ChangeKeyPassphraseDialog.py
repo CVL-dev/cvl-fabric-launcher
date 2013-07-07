@@ -190,8 +190,8 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
             self.repeatNewPassphraseField.SetFocus()
             return
 
-        from PrivateKeyModel import PrivateKeyModel
-        privateKeyModelObject = PrivateKeyModel(self.privateKeyFilePath)
+        from KeyModel import KeyModel
+        keyModelObject = KeyModel(self.privateKeyFilePath)
 
         def existingPassphraseIncorrect():
             dlg = wx.MessageDialog(self, "Your existing passphrase appears to be incorrect.\nPlease enter it again.",
@@ -215,7 +215,7 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
             self.existingPassphraseField.SetSelection(-1,-1)
             self.existingPassphraseField.SetFocus()
 
-        success = privateKeyModelObject.changePassphrase(self.existingPassphraseField.GetValue(), self.newPassphraseField.GetValue(),
+        success = keyModelObject.changePassphrase(self.existingPassphraseField.GetValue(), self.newPassphraseField.GetValue(),
             passphraseUpdatedSuccessfullyCallback,
             existingPassphraseIncorrect,
             newPassphraseTooShortCallback,

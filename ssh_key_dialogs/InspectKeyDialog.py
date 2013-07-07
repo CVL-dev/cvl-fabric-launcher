@@ -5,7 +5,7 @@ import wx.html
 import os
 import sys
 import subprocess
-from PrivateKeyModel import PrivateKeyModel
+from KeyModel import KeyModel
 
 if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
@@ -278,7 +278,7 @@ class InspectKeyDialog(wx.Dialog):
 
     def onAddKeyToOrRemoveFromAgent(self, event):
         if self.addKeyToOrRemoveKeyFromAgentButton.GetLabel()=="Add MASSIVE Launcher key to agent":
-            privateKeyModelObject = PrivateKeyModel(self.privateKeyFilePath)
+            keyModelObject = KeyModel(self.privateKeyFilePath)
 
             ppd = KeyDist.passphraseDialog(None,wx.ID_ANY,'Unlock Key',"Please enter the passphrase for the key","OK","Cancel")
             (canceled,passphrase) = ppd.getPassword()
@@ -291,7 +291,7 @@ class InspectKeyDialog(wx.Dialog):
                     print "InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Passphrase incorrect. :-("
                 def privateKeyFileNotFoundCallback():
                     print "InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Private key file not found. :-("
-                success = privateKeyModelObject.addKeyToAgent(passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback)
+                success = keyModelObject.addKeyToAgent(passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback)
                 if success:
                     print "Adding key to agent succeeded."
                     self.populateFingerprintInAgentField()
@@ -299,8 +299,8 @@ class InspectKeyDialog(wx.Dialog):
                 else:
                     print "Adding key to agent failed."
         elif self.addKeyToOrRemoveKeyFromAgentButton.GetLabel()=="Remove MASSIVE Launcher key from agent":
-            privateKeyModelObject = PrivateKeyModel(self.privateKeyFilePath)
-            success = privateKeyModelObject.removeKeyFromAgent()
+            keyModelObject = KeyModel(self.privateKeyFilePath)
+            success = keyModelObject.removeKeyFromAgent()
             if success:
                 self.populateFingerprintInAgentField()
                 self.addKeyToOrRemoveKeyFromAgentButton.SetLabel("Add MASSIVE Launcher key to agent")
@@ -311,8 +311,8 @@ class InspectKeyDialog(wx.Dialog):
             "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
         if dlg.ShowModal()==wx.ID_YES:
 
-            privateKeyModelObject = PrivateKeyModel(self.privateKeyFilePath)
-            success = privateKeyModelObject.deleteKeyAndRemoveFromAgent()
+            keyModelObject = KeyModel(self.privateKeyFilePath)
+            success = keyModelObject.deleteKeyAndRemoveFromAgent()
             if success:
                 message = "Your Launcher key was successfully deleted! :-)"
             else:
