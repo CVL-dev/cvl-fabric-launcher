@@ -327,8 +327,8 @@ class InspectKeyDialog(wx.Dialog):
                 self.EndModal(wx.ID_OK)
 
     def onChangePassphrase(self,event):
-        import ChangeKeyPassphrase
-        changeKeyPassphraseDialog = ChangeKeyPassphrase.ChangeKeyPassphraseDialog(self, wx.ID_ANY, 'Change Key Passphrase', self.privateKeyFilePath)
+        from ChangeKeyPassphraseDialog import ChangeKeyPassphraseDialog
+        changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self, wx.ID_ANY, 'Change Key Passphrase', self.privateKeyFilePath)
         if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
             dlg = wx.MessageDialog(self, 
                 "Passphrase changed successfully! :-)",
@@ -336,8 +336,8 @@ class InspectKeyDialog(wx.Dialog):
             dlg.ShowModal()
 
     def onResetPassphrase(self, event):
-        import ResetKeyPassphrase
-        resetKeyPassphraseDialog = ResetKeyPassphrase.ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase')
+        from ResetKeyPassphraseDialog import ResetKeyPassphraseDialog
+        resetKeyPassphraseDialog = ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase')
         resetKeyPassphraseDialog.ShowModal()
 
         # FIXME: Need to reload fields on inspect-key dialog after resetting passphrase,
@@ -402,33 +402,13 @@ class MyApp(wx.App):
                              "Would you like to generate a key now?",
                             "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_INFORMATION)
             if dlg.ShowModal()==wx.ID_YES:
-                import PrivateKeyDialog
-                privateKeyDialog = PrivateKeyDialog.PrivateKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
-                privateKeyDialog.Center()
-                if privateKeyDialog.ShowModal()==wx.ID_OK:
-                    if privateKeyDialog.getPrivateKeyLifetimeAndPassphraseChoice()==privateKeyDialog.ID_SAVE_KEY_WITH_PASSPHRASE:
-                        #print "Passphrase = " + privateKeyDialog.getPassphrase()
-
-                        privateKeyModelObject = PrivateKeyModel(massiveLauncherPrivateKeyPath)
-                        keyComment = os.path.basename(massiveLauncherPrivateKeyPath)
-                        def keyCreatedSuccessfullyCallback():
-                            print "InspectKey callback: Key created successfully! :-)"
-                        def keyFileAlreadyExistsCallback():
-                            print "InspectKey callback: Key file already exists! :-("
-                        def passphraseTooShortCallback():
-                            print "InspectKey callback: Passphrase was too short! :-("
-                        success = privateKeyModelObject.generateNewKey(privateKeyDialog.getPassphrase(),keyComment,keyCreatedSuccessfullyCallback,keyFileAlreadyExistsCallback,passphraseTooShortCallback)
-                        massiveLauncherPrivateKeyPath = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
-                        if success:
-                            message = "Your Launcher key was created successfully! :-)"
-                        else:
-                            message = "An error occured while attempting to create your key. :-("
-                        dlg = wx.MessageDialog(None, 
-                            message,
-                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                        dlg.ShowModal()
+                from CreateNewKeyDialog import CreateNewKeyDialog
+                createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
+                createNewKeyDialog.Center()
+                if createNewKeyDialog.ShowModal()==wx.ID_OK:
+                    print "User pressed OK from CreateNewKeyDialog."
                 else:
-                    print "User canceled from PrivateKeyDialog."
+                    print "User canceled from CreateNewKeyDialog."
                     return False
             else:
                 print "User said they didn't want to create a key now."
