@@ -11,6 +11,8 @@ if os.path.abspath("..") not in sys.path:
 from sshKeyDist import sshpaths
 from sshKeyDist import double_quote
 
+from utilityFunctions import logger_debug
+
 class KeyModel():
 
     def __init__(self, privateKeyFilePath):
@@ -29,7 +31,7 @@ class KeyModel():
             # The patched OpenSSH binary on Windows/cygwin allows us
             # to send the passphrase via STDIN.
             cmdList = [self.sshPathsObject.sshKeyGenBinary, "-f", double_quote(self.privateKeyFilePath), "-C", keyComment]
-            #logger_debug('on Windows, so running: ' + cmd)
+            logger_debug('on Windows, so running: ' + str(cmdList))
             proc = subprocess.Popen(cmdList,
                                     stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE,
@@ -38,31 +40,27 @@ class KeyModel():
             stdout, stderr = proc.communicate(input=passphrase + '\r\n')
 
             if stdout is None or str(stdout).strip() == '':
-                #logger_debug('Got EOF from ssh-keygen binary')
-                print '(1) Got EOF from ssh-keygen binary'
+                logger_debug('(1) Got EOF from ssh-keygen binary')
             elif 'Enter passphrase' in stdout:
                 stdout, stderr = proc.communicate(input=passphrase + '\r\n')
                 if stdout is None or str(stdout).strip() == '':
-                    #logger_debug('Got EOF from ssh-keygen binary')
-                    print '(2) Got EOF from ssh-keygen binary'
+                    logger_debug('(2) Got EOF from ssh-keygen binary')
                 elif "Enter same passphrase" in stdout:
                     stdout, stderr = proc.communicate(input=passphrase + '\r\n')
                     if stdout is None or str(stdout).strip() == '':
-                        #logger_debug('Got EOF from ssh-keygen binary')
-                        print '(3) Got EOF from ssh-keygen binary'
+                        logger_debug('(3) Got EOF from ssh-keygen binary')
                     elif "Your identification has been saved" in stdout:
                         success = True
                         keyCreatedSuccessfullyCallback()
                     elif "do not match" in stdout:
-                        print "Passphrases do not match."
+                        logger_debug("Passphrases do not match.")
                     elif "passphrase too short" in stdout:
                         passphraseTooShortCallback()
             elif 'already exists' in stdout:
                 keyFileAlreadyExistsCallback()
             else:
-                #logger_debug('Got unknown error from ssh-keygen binary')
-                print 'Got unknown error from ssh-keygen binary'
-                print stderr
+                logger_debug('Got unknown error from ssh-keygen binary')
+                logger_debug(stderr)
         else:
             # On Linux or BSD/OSX we can use pexpect to talk to ssh-keygen.
 
@@ -83,14 +81,14 @@ class KeyModel():
                     keyCreatedSuccessfullyCallback()
                 elif idx == 1:
                     # This shouldn't happen.
-                    print "Passphrases do not match"
+                    logger_debug("Passphrases do not match")
                 elif idx == 2:
                     passphraseTooShortCallback()
             elif idx == 1:
                 keyFileAlreadyExistsCallback()
             else:
                 #logger_debug("1 returning KEY_LOCKED %s %s"%(lp.before,lp.after))
-                print "Unexpected result from attempt to create new key."
+                logger_debug("Unexpected result from attempt to create new key.")
             lp.close()
         return success
 
@@ -106,8 +104,7 @@ class KeyModel():
             # The patched OpenSSH binary on Windows/cygwin allows us
             # to send the passphrase via STDIN.
             cmdList = [self.sshPathsObject.sshKeyGenBinary, "-f", double_quote(self.privateKeyFilePath), "-p"]
-            #cmd = self.keydistObject.sshpaths.sshAddBinary + ' ' + double_quote(self.keydistObject.sshpaths.sshKeyPath)
-            #logger_debug('on Windows, so running: ' + cmd)
+            logger_debug('on Windows, so running: ' + str(cmdList))
             proc = subprocess.Popen(cmdList,
                                     stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE,
@@ -116,19 +113,16 @@ class KeyModel():
             stdout, stderr = proc.communicate(input=existingPassphrase + '\r\n')
 
             if stdout is None or str(stdout).strip() == '':
-                #logger_debug('Got EOF from ssh-keygen binary')
-                print '(1) Got EOF from ssh-keygen binary'
+                logger_debug('(1) Got EOF from ssh-keygen binary')
                 keyLockedCallback()
             elif 'Enter new passphrase' in stdout:
                 stdout, stderr = proc.communicate(input=newPassphrase + '\r\n')
                 if stdout is None or str(stdout).strip() == '':
-                    #logger_debug('Got EOF from ssh-keygen binary')
-                    print '(2) Got EOF from ssh-keygen binary'
+                    logger_debug('(2) Got EOF from ssh-keygen binary')
                 elif "Enter same passphrase" in stdout:
                     stdout, stderr = proc.communicate(input=newPassphrase + '\r\n')
                     if stdout is None or str(stdout).strip() == '':
-                        #logger_debug('Got EOF from ssh-keygen binary')
-                        print '(3) Got EOF from ssh-keygen binary'
+                        logger_debug('(3) Got EOF from ssh-keygen binary')
                     elif "Your identification has been saved" in stdout:
                         success = True
                         passphraseUpdatedSuccessfullyCallback()
@@ -138,20 +132,18 @@ class KeyModel():
                         # so repeated newPassphrase should have 
                         # already been checked before changePassphrase
                         # is called.
-                        print "Passphrases do not match."
+                        logger_debug("Passphrases do not match.")
                     elif "passphrase too short" in stdout:
                         newPassphraseTooShortCallback()
 
             elif 'Bad pass' in stdout or 'load failed' in stdout:
-                #logger_debug('Got "Bad pass" or "load failed" from ssh-keygen binary')
-                print 'Got "Bad pass" from ssh-keygen binary'
+                logger_debug('Got "Bad pass" from ssh-keygen binary')
                 if existingPassphrase == '':
                     keyLockedCallback()
                 else:
                     existingPassphraseIncorrectCallback()
             else:
-                #logger_debug('Got unknown error from ssh-keygen binary')
-                print 'Got unknown error from ssh-keygen binary'
+                logger_debug('Got unknown error from ssh-keygen binary')
                 keyLockedCallback()
         else:
             # On Linux or BSD/OSX we can use pexpect to talk to ssh-keygen.
@@ -164,7 +156,7 @@ class KeyModel():
             idx = lp.expect(["Enter old passphrase", "Key has comment"])
 
             if idx == 0:
-                #logger_debug("sending passphrase to " + sshKeyGenBinary + " -f " + self.privateKeyFilePath + " -p")
+                logger_debug("sending passphrase to " + self.sshPathsObject.sshKeyGenBinary + " -f " + self.privateKeyFilePath + " -p")
                 lp.sendline(existingPassphrase)
 
             idx = lp.expect(["Enter new passphrase", "Bad pass", "load failed", pexpect.EOF])
@@ -183,14 +175,14 @@ class KeyModel():
                     # so repeated newPassphrase should have 
                     # already been checked before changePassphrase
                     # is called.
-                    print "Passphrases do not match"
+                    logger_debug("Passphrases do not match")
                 elif idx == 2:
                     newPassphraseTooShortCallback()
             elif idx == 1 or idx == 2:
                 existingPassphraseIncorrectCallback()
             else:
                 #logger_debug("1 returning KEY_LOCKED %s %s"%(lp.before,lp.after))
-                print "Unexpected result from attempt to change passphrase."
+                logger_debug("Unexpected result from attempt to change passphrase.")
             lp.close()
         return success
 
@@ -212,7 +204,7 @@ class KeyModel():
 
             # Remove key(s) from SSH agent:
 
-            print "Removing Launcher public key(s) from agent."
+            logger_debug("Removing Launcher public key(s) from agent.")
 
             publicKeysInAgentProc = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-L"],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
             publicKeysInAgent = publicKeysInAgentProc.stdout.readlines()
@@ -225,12 +217,12 @@ class KeyModel():
                         removePublicKeyFromAgent = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-d",tempPublicKeyFile.name],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                         stdout, stderr = removePublicKeyFromAgent.communicate()
                         if stderr is not None and len(stderr) > 0:
-                            print stderr
+                            logger_debug(stderr)
                         success = ("Identity removed" in stdout)
                     finally:
                         os.unlink(tempPublicKeyFile.name)
         except:
-            print traceback.format_exc()
+            logger_debug(traceback.format_exc())
             return False
 
         return True
@@ -243,7 +235,7 @@ class KeyModel():
             # The patched OpenSSH binary on Windows/cygwin allows us
             # to send the passphrase via STDIN.
             cmdList = [self.sshPathsObject.sshAddBinary, double_quote(self.privateKeyFilePath)]
-            #logger_debug('on Windows, so running: ' + cmd)
+            logger_debug('on Windows, so running: ' + str(cmdList))
             proc = subprocess.Popen(cmdList,
                                     stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE,
@@ -256,8 +248,7 @@ class KeyModel():
                 return False
 
             if stdout is None or str(stdout).strip() == '':
-                #logger_debug('Got EOF from ssh-add binary')
-                print '(1) Got EOF from ssh-add binary'
+                logger_debug('(1) Got EOF from ssh-add binary')
             elif "No such file or directory" in stdout:
                 privateKeyFileNotFoundCallback()
                 return False
@@ -265,13 +256,11 @@ class KeyModel():
                 success = True
                 keyAddedSuccessfullyCallback()
             elif 'Bad pass' in stdout:
-                #logger_debug('Got "Bad pass" from ssh-add binary')
-                print 'Got "Bad pass" from ssh-add binary'
+                logger_debug('Got "Bad pass" from ssh-add binary')
                 proc.kill()
                 passphraseIncorrectCallback()
             else:
-                #logger_debug('Got unknown error from ssh-add binary')
-                print 'Got unknown error from ssh-add binary'
+                logger_debug('Got unknown error from ssh-add binary')
         else:
             # On Linux or BSD/OSX we can use pexpect to talk to ssh-add.
 
@@ -294,7 +283,7 @@ class KeyModel():
                     passphraseIncorrectCallback()
                     return success
             else:
-                print "Unexpected result from attempt to add key."
+                logger_debug("Unexpected result from attempt to add key.")
             lp.close()
         return success
 
@@ -309,7 +298,7 @@ class KeyModel():
         try:
             # Remove key(s) from SSH agent:
 
-            print "Removing Launcher public key(s) from agent."
+            logger_debug("Removing Launcher public key(s) from agent.")
 
             publicKeysInAgentProc = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-L"],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
             publicKeysInAgent = publicKeysInAgentProc.stdout.readlines()
@@ -322,12 +311,12 @@ class KeyModel():
                         removePublicKeyFromAgent = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-d",tempPublicKeyFile.name],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                         stdout, stderr = removePublicKeyFromAgent.communicate()
                         if stderr is not None and len(stderr) > 0:
-                            print stderr
+                            logger_debug(stderr)
                         success = ("Identity removed" in stdout)
                     finally:
                         os.unlink(tempPublicKeyFile.name)
         except:
-            print traceback.format_exc()
+            logger_debug(traceback.format_exc())
             return False
 
         return True

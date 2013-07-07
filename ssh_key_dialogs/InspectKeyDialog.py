@@ -15,14 +15,12 @@ from sshKeyDist import sshpaths
 global helpController
 helpController = None
 
-from utilityFunctions import configureLogger
+from utilityFunctions import logger_debug, configureLogger
 
 class InspectKeyDialog(wx.Dialog):
     def __init__(self, parent, id, title, privateKeyFilePath):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
         self.inspectKeyDialogPanel = wx.Panel(self, wx.ID_ANY)
-
-        configureLogger('launcher')
 
         self.privateKeyFilePath = privateKeyFilePath
 
@@ -98,10 +96,7 @@ class InspectKeyDialog(wx.Dialog):
         self.innerKeyPropertiesPanelSizer.Add(self.publicKeyLocationLabel)
 
         self.publicKeyLocationField = wx.TextCtrl(self.innerKeyPropertiesPanel, wx.ID_ANY, style=wx.TE_READONLY)
-        self.publicKeyFilePath = ""
-        if os.path.exists(self.privateKeyFilePath + ".pub"):
-            self.publicKeyFilePath = self.privateKeyFilePath + ".pub"
-        self.publicKeyLocationField.SetValue(self.publicKeyFilePath)
+        self.populatePublicKeyLocationField()
         self.innerKeyPropertiesPanelSizer.Add(self.publicKeyLocationField, flag=wx.EXPAND)
 
         # Blank space
@@ -109,27 +104,12 @@ class InspectKeyDialog(wx.Dialog):
         self.innerKeyPropertiesPanelSizer.Add(wx.StaticText(self.innerKeyPropertiesPanel, wx.ID_ANY, ""))
         self.innerKeyPropertiesPanelSizer.Add(wx.StaticText(self.innerKeyPropertiesPanel, wx.ID_ANY, ""))
 
-        # ssh-keygen can give us public key fingerprint, key type and size from private key
-
-        proc = subprocess.Popen([self.sshPathsObject.sshKeyGenBinary,"-yl","-f",self.privateKeyFilePath], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        stdout,stderr = proc.communicate()
-        sshKeyGenOutComponents = stdout.split(" ")
-        if len(sshKeyGenOutComponents)>1:
-            publicKeyFingerprint = sshKeyGenOutComponents[1]
-        else:
-            publicKeyFingerprint = ""
-        if len(sshKeyGenOutComponents)>3:
-            keyType = sshKeyGenOutComponents[-1].strip().strip("(").strip(")")
-        else:
-            keyType = ""
-
         # Public key fingerprint
 
         self.publicKeyFingerprintLabel = wx.StaticText(self.innerKeyPropertiesPanel, wx.ID_ANY, "Public key fingerprint:")
         self.innerKeyPropertiesPanelSizer.Add(self.publicKeyFingerprintLabel)
 
         self.publicKeyFingerprintField = wx.TextCtrl(self.innerKeyPropertiesPanel, wx.ID_ANY, style=wx.TE_READONLY)
-        self.publicKeyFingerprintField.SetValue(publicKeyFingerprint)
 
         self.innerKeyPropertiesPanelSizer.Add(self.publicKeyFingerprintField, flag=wx.EXPAND)
 
@@ -145,7 +125,9 @@ class InspectKeyDialog(wx.Dialog):
 
         #self.keyTypeField = wx.TextCtrl(self.innerKeyPropertiesPanel, wx.ID_ANY, style=wx.TE_READONLY)
         #self.keyTypeField.SetValue(keyType)
-        self.keyTypeField = wx.StaticText(self.innerKeyPropertiesPanel, wx.ID_ANY, keyType)
+        self.keyTypeField = wx.StaticText(self.innerKeyPropertiesPanel, wx.ID_ANY, "")
+
+        self.populateFingerprintAndKeyTypeFields()
 
         self.innerKeyPropertiesPanelSizer.Add(self.keyTypeField, flag=wx.EXPAND)
 
@@ -263,7 +245,43 @@ class InspectKeyDialog(wx.Dialog):
         self.Fit()
         self.CenterOnParent()
 
+    def reloadAllFields(self):
+        self.privateKeyLocationField.SetValue(self.privateKeyFilePath)
+        self.populatePublicKeyLocationField()
+        self.populateFingerprintAndKeyTypeFields()
+        self.sshAuthSockField.SetValue(os.environ["SSH_AUTH_SOCK"])
+        self.populateFingerprintInAgentField()
+        if self.fingerprintInAgentField.GetValue()=="":
+            self.addKeyToOrRemoveKeyFromAgentButton.SetLabel("Add MASSIVE Launcher key to agent")
+        else:
+            self.addKeyToOrRemoveKeyFromAgentButton.SetLabel("Remove MASSIVE Launcher key from agent")
+
+    def populatePublicKeyLocationField(self):
+        self.publicKeyFilePath = ""
+        if os.path.exists(self.privateKeyFilePath + ".pub"):
+            self.publicKeyFilePath = self.privateKeyFilePath + ".pub"
+        self.publicKeyLocationField.SetValue(self.publicKeyFilePath)
+
+    def populateFingerprintAndKeyTypeFields(self):
+
+        # ssh-keygen can give us public key fingerprint, key type and size from private key
+
+        proc = subprocess.Popen([self.sshPathsObject.sshKeyGenBinary,"-yl","-f",self.privateKeyFilePath], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        stdout,stderr = proc.communicate()
+        sshKeyGenOutComponents = stdout.split(" ")
+        if len(sshKeyGenOutComponents)>1:
+            publicKeyFingerprint = sshKeyGenOutComponents[1]
+        else:
+            publicKeyFingerprint = ""
+        self.publicKeyFingerprintField.SetValue(publicKeyFingerprint)
+        if len(sshKeyGenOutComponents)>3:
+            keyType = sshKeyGenOutComponents[-1].strip().strip("(").strip(")")
+        else:
+            keyType = ""
+        self.keyTypeField.SetLabel(keyType)
+
     def populateFingerprintInAgentField(self):
+
         # ssh-add -l | grep Launcher
 
         publicKeyFingerprintInAgent = ""
@@ -286,18 +304,18 @@ class InspectKeyDialog(wx.Dialog):
                 return
             else:
                 def keyAddedSuccessfullyCallback():
-                    print "InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Key added successfully! :-)"
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Key added successfully! :-)")
                 def passphraseIncorrectCallback():
-                    print "InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Passphrase incorrect. :-("
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Passphrase incorrect. :-(")
                 def privateKeyFileNotFoundCallback():
-                    print "InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Private key file not found. :-("
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Private key file not found. :-(")
                 success = keyModelObject.addKeyToAgent(passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback)
                 if success:
-                    print "Adding key to agent succeeded."
+                    logger_debug("Adding key to agent succeeded.")
                     self.populateFingerprintInAgentField()
                     self.addKeyToOrRemoveKeyFromAgentButton.SetLabel("Remove MASSIVE Launcher key from agent")
                 else:
-                    print "Adding key to agent failed."
+                    logger_debug("Adding key to agent failed.")
         elif self.addKeyToOrRemoveKeyFromAgentButton.GetLabel()=="Remove MASSIVE Launcher key from agent":
             keyModelObject = KeyModel(self.privateKeyFilePath)
             success = keyModelObject.removeKeyFromAgent()
@@ -337,11 +355,10 @@ class InspectKeyDialog(wx.Dialog):
 
     def onResetPassphrase(self, event):
         from ResetKeyPassphraseDialog import ResetKeyPassphraseDialog
-        resetKeyPassphraseDialog = ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase')
+        resetKeyPassphraseDialog = ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase', self.privateKeyFilePath)
         resetKeyPassphraseDialog.ShowModal()
 
-        # FIXME: Need to reload fields on inspect-key dialog after resetting passphrase,
-        # because doing so will generate a new key with a new fingerprint.
+        self.reloadAllFields()
 
     def onHelp(self, event):
         global helpController
@@ -360,6 +377,8 @@ class InspectKeyDialog(wx.Dialog):
 
 class MyApp(wx.App):
     def OnInit(self):
+
+        configureLogger('launcher')
 
         import appdirs
         import ConfigParser
@@ -406,12 +425,12 @@ class MyApp(wx.App):
                 createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
                 createNewKeyDialog.Center()
                 if createNewKeyDialog.ShowModal()==wx.ID_OK:
-                    print "User pressed OK from CreateNewKeyDialog."
+                    logger_debug("User pressed OK from CreateNewKeyDialog.")
                 else:
-                    print "User canceled from CreateNewKeyDialog."
+                    logger_debug("User canceled from CreateNewKeyDialog.")
                     return False
             else:
-                print "User said they didn't want to create a key now."
+                logger_debug("User said they didn't want to create a key now.")
                 return False
 
         inspectKeyDialog = InspectKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Key Properties', massiveLauncherPrivateKeyPath)

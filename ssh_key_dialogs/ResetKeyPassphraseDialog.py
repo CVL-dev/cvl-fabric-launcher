@@ -8,10 +8,16 @@ import sys
 global helpController
 helpController = None
 
+from utilityFunctions import logger_debug
+
+from KeyModel import KeyModel
+
 class ResetKeyPassphraseDialog(wx.Dialog):
-    def __init__(self, parent, id, title):
+    def __init__(self, parent, id, title, privateKeyFilePath):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
         self.resetKeyPassphraseDialogPanel = wx.Panel(self, wx.ID_ANY)
+
+        self.privateKeyFilePath = privateKeyFilePath
 
         self.resetKeyPassphraseDialogPanelSizer = wx.FlexGridSizer(1,3, hgap=15, vgap=15)
         self.resetKeyPassphraseDialogPanel.SetSizer(self.resetKeyPassphraseDialogPanelSizer)
@@ -152,8 +158,35 @@ class ResetKeyPassphraseDialog(wx.Dialog):
             dlg.ShowModal()
             return
 
-        self.Show(False)
-        self.EndModal(wx.ID_OK)
+        keyModelObject = KeyModel(self.privateKeyFilePath)
+        success = keyModelObject.deleteKeyAndRemoveFromAgent()
+        if success:
+            logger_debug("Existing Launcher key was successfully deleted! :-)")
+
+            # Now create a new key to replace it.
+
+            keyComment = os.path.basename(self.privateKeyFilePath)
+            def keyCreatedSuccessfullyCallback():
+                logger_debug("ResetPassphraseDialog callback: Key created successfully! :-)")
+            def keyFileAlreadyExistsCallback():
+                logger_debug("ResetPassphraseDialog callback: Key file already exists! :-(")
+            def passphraseTooShortCallback():
+                logger_debug("ResetPassphraseDialog callback: Passphrase was too short! :-(")
+            success = keyModelObject.generateNewKey(self.getPassphrase(),keyComment,keyCreatedSuccessfullyCallback,keyFileAlreadyExistsCallback,passphraseTooShortCallback)
+            if success:
+                message = "Your passphrase was reset successfully! :-)"
+            else:
+                message = "An error occured while attempting to reset your passphrase. :-("
+            dlg = wx.MessageDialog(None,
+                message,
+                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+        else:
+            logger_debug("An error occured while attempting to delete your existing key. :-(")
+
+        if success:
+            self.Show(False)
+            self.EndModal(wx.ID_OK)
 
     def onCancel(self, event):
         self.Show(False)
@@ -178,9 +211,9 @@ class MyApp(wx.App):
         resetKeyPassphraseDialog = ResetKeyPassphraseDialog(None, wx.ID_ANY, 'Reset Key Passphrase')
         resetKeyPassphraseDialog.Center()
         if resetKeyPassphraseDialog.ShowModal()==wx.ID_OK:
-            print "Passphrase = " + resetKeyPassphraseDialog.getPassphrase()
+            logger_debug("Passphrase = " + resetKeyPassphraseDialog.getPassphrase())
         else:
-            print "User canceled."
+            logger_debug("User canceled.")
             return False
 
         return True
