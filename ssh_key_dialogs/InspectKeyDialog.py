@@ -355,7 +355,8 @@ class InspectKeyDialog(wx.Dialog):
 
     def onResetPassphrase(self, event):
         from ResetKeyPassphraseDialog import ResetKeyPassphraseDialog
-        resetKeyPassphraseDialog = ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase', self.privateKeyFilePath)
+        keyInAgent = self.fingerprintInAgentField.GetValue()!=""
+        resetKeyPassphraseDialog = ResetKeyPassphraseDialog(self, wx.ID_ANY, 'Reset Key Passphrase', self.privateKeyFilePath, keyInAgent)
         resetKeyPassphraseDialog.ShowModal()
 
         self.reloadAllFields()

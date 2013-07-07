@@ -13,11 +13,12 @@ from utilityFunctions import logger_debug
 from KeyModel import KeyModel
 
 class ResetKeyPassphraseDialog(wx.Dialog):
-    def __init__(self, parent, id, title, privateKeyFilePath):
+    def __init__(self, parent, id, title, privateKeyFilePath, keyInAgent):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
         self.resetKeyPassphraseDialogPanel = wx.Panel(self, wx.ID_ANY)
 
         self.privateKeyFilePath = privateKeyFilePath
+        self.keyInAgent = keyInAgent
 
         self.resetKeyPassphraseDialogPanelSizer = wx.FlexGridSizer(1,3, hgap=15, vgap=15)
         self.resetKeyPassphraseDialogPanel.SetSizer(self.resetKeyPassphraseDialogPanelSizer)
@@ -173,16 +174,34 @@ class ResetKeyPassphraseDialog(wx.Dialog):
             def passphraseTooShortCallback():
                 logger_debug("ResetPassphraseDialog callback: Passphrase was too short! :-(")
             success = keyModelObject.generateNewKey(self.getPassphrase(),keyComment,keyCreatedSuccessfullyCallback,keyFileAlreadyExistsCallback,passphraseTooShortCallback)
+            if success and self.keyInAgent:
+                def keyAddedSuccessfullyCallback():
+                    logger_debug("ResetPassphraseDialog.onAddKeyToOrRemoveFromAgent callback: Key added successfully! :-)")
+                def passphraseIncorrectCallback():
+                    logger_debug("ResetPassphraseDialog.onAddKeyToOrRemoveFromAgent callback: Passphrase incorrect. :-(")
+                def privateKeyFileNotFoundCallback():
+                    logger_debug("ResetPassphraseDialog.onAddKeyToOrRemoveFromAgent callback: Private key file not found. :-(")
+                success = keyModelObject.addKeyToAgent(self.passphraseField.GetValue(), keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback)
+                if success:
+                    message = "Adding key to agent succeeded."
+                    logger_debug(message)
+                else:
+                    message = "Adding key to agent failed."
+                    logger_debug(message)
             if success:
                 message = "Your passphrase was reset successfully! :-)"
+                logger_debug(message)
             else:
                 message = "An error occured while attempting to reset your passphrase. :-("
-            dlg = wx.MessageDialog(None,
-                message,
-                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-            dlg.ShowModal()
+                logger_debug(message)
         else:
-            logger_debug("An error occured while attempting to delete your existing key. :-(")
+            message = "An error occured while attempting to delete your existing key. :-("
+            logger_debug(message)
+
+        dlg = wx.MessageDialog(self,
+            message,
+            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
 
         if success:
             self.Show(False)

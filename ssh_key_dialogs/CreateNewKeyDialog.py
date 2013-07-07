@@ -297,7 +297,7 @@ class CreateNewKeyDialog(wx.Dialog):
                 message = "Your Launcher key was created successfully! :-)"
             else:
                 message = "An error occured while attempting to create your key. :-("
-            dlg = wx.MessageDialog(None,
+            dlg = wx.MessageDialog(self,
                 message,
                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
