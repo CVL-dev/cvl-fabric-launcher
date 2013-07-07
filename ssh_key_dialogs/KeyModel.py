@@ -60,7 +60,7 @@ class KeyModel():
                 keyFileAlreadyExistsCallback()
             else:
                 logger_debug('Got unknown error from ssh-keygen binary')
-                logger_debug(stderr)
+                logger_debug(stdout)
         else:
             # On Linux or BSD/OSX we can use pexpect to talk to ssh-keygen.
 
@@ -144,6 +144,7 @@ class KeyModel():
                     existingPassphraseIncorrectCallback()
             else:
                 logger_debug('Got unknown error from ssh-keygen binary')
+                logger_debug(stdout)
                 keyLockedCallback()
         else:
             # On Linux or BSD/OSX we can use pexpect to talk to ssh-keygen.
@@ -243,13 +244,9 @@ class KeyModel():
                                     universal_newlines=True)
             stdout, stderr = proc.communicate(input=passphrase + '\r\n')
 
-            if "No such file or directory" in stderr:
-                privateKeyFileNotFoundCallback()
-                return False
-
             if stdout is None or str(stdout).strip() == '':
                 logger_debug('(1) Got EOF from ssh-add binary')
-            elif "No such file or directory" in stdout:
+            elif stdout is not None and "No such file or directory" in stdout:
                 privateKeyFileNotFoundCallback()
                 return False
             elif "Identity added" in stdout:
@@ -261,6 +258,7 @@ class KeyModel():
                 passphraseIncorrectCallback()
             else:
                 logger_debug('Got unknown error from ssh-add binary')
+                logger_debug(stdout)
         else:
             # On Linux or BSD/OSX we can use pexpect to talk to ssh-add.
 

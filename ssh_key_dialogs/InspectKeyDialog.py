@@ -5,6 +5,8 @@ import wx.html
 import os
 import sys
 import subprocess
+import re
+
 from KeyModel import KeyModel
 
 if os.path.abspath("..") not in sys.path:
@@ -165,7 +167,8 @@ class InspectKeyDialog(wx.Dialog):
         self.innerAgentPropertiesPanelSizer.Add(self.sshAuthSockLabel)
 
         self.sshAuthSockField = wx.TextCtrl(self.innerAgentPropertiesPanel, wx.ID_ANY, style=wx.TE_READONLY)
-        self.sshAuthSockField.SetValue(os.environ["SSH_AUTH_SOCK"])
+
+        self.populateSshAuthSockField()
 
         self.innerAgentPropertiesPanelSizer.Add(self.sshAuthSockField, flag=wx.EXPAND)
 
@@ -249,12 +252,19 @@ class InspectKeyDialog(wx.Dialog):
         self.privateKeyLocationField.SetValue(self.privateKeyFilePath)
         self.populatePublicKeyLocationField()
         self.populateFingerprintAndKeyTypeFields()
-        self.sshAuthSockField.SetValue(os.environ["SSH_AUTH_SOCK"])
         self.populateFingerprintInAgentField()
         if self.fingerprintInAgentField.GetValue()=="":
             self.addKeyToOrRemoveKeyFromAgentButton.SetLabel("Add MASSIVE Launcher key to agent")
         else:
             self.addKeyToOrRemoveKeyFromAgentButton.SetLabel("Remove MASSIVE Launcher key from agent")
+
+    def populateSshAuthSockField(self):
+        if "SSH_AUTH_SOCK" not in os.environ:
+            self.startAgent()
+        if "SSH_AUTH_SOCK" in os.environ:
+            self.sshAuthSockField.SetValue(os.environ["SSH_AUTH_SOCK"])
+        else:
+            self.sshAuthSockField.SetValue("")
 
     def populatePublicKeyLocationField(self):
         self.publicKeyFilePath = ""
@@ -375,6 +385,30 @@ class InspectKeyDialog(wx.Dialog):
     def onClose(self, event):
         self.Show(False)
         self.EndModal(wx.ID_OK)
+
+    def startAgent(self):
+        agentenv = None
+        try:
+            agentenv = os.environ['SSH_AUTH_SOCK']
+        except:
+            try:
+                agent = subprocess.Popen(self.sshPathsObject.sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+                stdout = agent.stdout.readlines()
+                for line in stdout:
+                    if sys.platform.startswith('win'):
+                        match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*);.*$",line) # output from charade.exe doesn't match the regex, even though it looks the same!?
+                    else:
+                        match = re.search("^SSH_AUTH_SOCK=(?P<socket>.*); export SSH_AUTH_SOCK;$",line)
+                    if match:
+                        agentenv = match.group('socket')
+                        os.environ['SSH_AUTH_SOCK'] = agentenv
+                if agent is None:
+                    logger_debug("I tried to start an ssh agent, but failed with the error message %s"%str(stdout))
+                    return
+            except Exception as e:
+                logger_debug(message="I tried to start an ssh agent, but failed with the error message %s" % str(e))
+                return
+
 
 class MyApp(wx.App):
     def OnInit(self):
