@@ -473,5 +473,5 @@ class MyApp(wx.App):
         inspectKeyDialog.ShowModal()
         return True
 
-app = MyApp(0)
-app.MainLoop()
+#app = MyApp(0)
+#app.MainLoop()

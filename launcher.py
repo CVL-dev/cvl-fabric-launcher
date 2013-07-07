@@ -102,7 +102,6 @@ import xmlrpclib
 import appdirs
 import ConfigParser
 import datetime
-#import logging
 import shlex
 import inspect
 import requests
@@ -113,7 +112,7 @@ import LoginTasks
 from utilityFunctions import *
 import sshKeyDist
 import launcher_progress_dialog
-
+from menus.IdentityMenu import IdentityMenu
 
 global launcherMainFrame
 launcherMainFrame = None
@@ -198,6 +197,10 @@ class LauncherMainFrame(wx.Frame):
             self.edit_menu.Append(wx.ID_SELECTALL, "Select All")
             self.Bind(wx.EVT_MENU, self.onSelectAll, id=wx.ID_SELECTALL)
             self.menu_bar.Append(self.edit_menu, "&Edit")
+
+        self.identity_menu = IdentityMenu()
+        self.identity_menu.initialize(launcherMainFrame, massiveLauncherConfig, massiveLauncherPreferencesFilePath, helpController)
+        self.menu_bar.Append(self.identity_menu, "&Identity")
 
         self.help_menu = wx.Menu()
         helpContentsMenuItemID = wx.NewId()
