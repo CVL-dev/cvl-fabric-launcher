@@ -58,6 +58,9 @@ class KeyModel():
                         passphraseTooShortCallback()
             elif 'already exists' in stdout:
                 keyFileAlreadyExistsCallback()
+            elif 'Could not open a connection to your authentication agent' in stdout:
+                logger_debug("Could not open a connection to your authentication agent.")
+                failedToConnectToAgentCallback()
             else:
                 logger_debug('Got unknown error from ssh-keygen binary')
                 logger_debug(stdout)
@@ -228,7 +231,7 @@ class KeyModel():
 
         return True
 
-    def addKeyToAgent(self, passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback):
+    def addKeyToAgent(self, passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback, failedToConnectToAgentCallback):
 
         success = False
 
@@ -256,6 +259,9 @@ class KeyModel():
                 logger_debug('Got "Bad pass" from ssh-add binary')
                 proc.kill()
                 passphraseIncorrectCallback()
+            elif 'Could not open a connection to your authentication agent' in stdout:
+                logger_debug("Could not open a connection to your authentication agent.")
+                failedToConnectToAgentCallback()
             else:
                 logger_debug('Got unknown error from ssh-add binary')
                 logger_debug(stdout)

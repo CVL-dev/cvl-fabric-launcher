@@ -319,7 +319,12 @@ class InspectKeyDialog(wx.Dialog):
                     logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Passphrase incorrect. :-(")
                 def privateKeyFileNotFoundCallback():
                     logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Private key file not found. :-(")
-                success = keyModelObject.addKeyToAgent(passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback)
+                def failedToConnectToAgentCallback():
+                    dlg = wx.MessageDialog(self, 
+                        "Could not open a connection to your authentication agent.",
+                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
+                success = keyModelObject.addKeyToAgent(passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback, failedToConnectToAgentCallback)
                 if success:
                     logger_debug("Adding key to agent succeeded.")
                     self.populateFingerprintInAgentField()
