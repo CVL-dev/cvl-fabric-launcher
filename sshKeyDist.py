@@ -51,37 +51,48 @@ class sshpaths():
         stripped-down OpenSSH build that uses Cygwin.
         """
 
+        useDirtyHack = False
         if sys.platform.startswith('win'):
-            # Dirty hack: a non-administrator user on Windows XP can't run charade.exe
-            # because it tries to create a temporary file in the Cygwin OpenSSH tree. So
-            # we'll quietly copy it to the user's home directory and run it from there instead.
+            if useDirtyHack:
+                # Dirty hack: a non-administrator user on Windows XP can't run charade.exe
+                # because it tries to create a temporary file in the Cygwin OpenSSH tree. So
+                # we'll quietly copy it to the user's home directory and run it from there instead.
 
-            if hasattr(sys, 'frozen'):
-                ssh_base_directory = os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR)
+                if hasattr(sys, 'frozen'):
+                    ssh_base_directory = os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR)
+                else:
+                    launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
+                    ssh_base_directory = os.path.join(launcherModulePath, OPENSSH_BUILD_DIR)
+
+                import tempfile
+                import distutils.dir_util
+
+                for d in os.listdir(os.path.expanduser('~')):
+                    if d.find('.' + OPENSSH_BUILD_DIR) != 0: continue
+
+                    full_path = os.path.join(os.path.expanduser('~'), d)
+                    try:
+                        logger_debug('Attempting to remove openssh temp directory: ' + str(d))
+                        distutils.dir_util.remove_tree(full_path)
+                    except:
+                        logger_debug('Could not remove temp directory, exception: ' + str(traceback.format_exc()))
+                        pass
+
+                user_ssh_directory = tempfile.mkdtemp(prefix='.' + OPENSSH_BUILD_DIR, dir=os.path.expanduser('~'))
+
+                logger_debug('copying system OpenSSH binaries from <%s> to <%s>' % (ssh_base_directory, user_ssh_directory,))
+                distutils.dir_util.copy_tree(ssh_base_directory, user_ssh_directory)
+
+                f = lambda x: os.path.join(user_ssh_directory, 'bin', x)
             else:
-                launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
-                ssh_base_directory = os.path.join(launcherModulePath, OPENSSH_BUILD_DIR)
+                # Don't use dirty hack.
+                # Assume that our InnoSetup script will set appropriate permissions on the "tmp" directory.
 
-            import tempfile
-            import distutils.dir_util
-
-            for d in os.listdir(os.path.expanduser('~')):
-                if d.find('.' + OPENSSH_BUILD_DIR) != 0: continue
-
-                full_path = os.path.join(os.path.expanduser('~'), d)
-                try:
-                    logger_debug('Attempting to remove openssh temp directory: ' + str(d))
-                    distutils.dir_util.remove_tree(full_path)
-                except:
-                    logger_debug('Could not remove temp directory, exception: ' + str(traceback.format_exc()))
-                    pass
-
-            user_ssh_directory = tempfile.mkdtemp(prefix='.' + OPENSSH_BUILD_DIR, dir=os.path.expanduser('~'))
-
-            logger_debug('copying system OpenSSH binaries from <%s> to <%s>' % (ssh_base_directory, user_ssh_directory,))
-            distutils.dir_util.copy_tree(ssh_base_directory, user_ssh_directory)
-
-            f = lambda x: os.path.join(user_ssh_directory, 'bin', x)
+                 if hasattr(sys, 'frozen'):
+                    f = lambda x: os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR, 'bin', x)
+                 else:
+                    launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
+                    f = lambda x: os.path.join(launcherModulePath, OPENSSH_BUILD_DIR, 'bin', x)
 
             sshBinary        = f('ssh.exe')
             sshKeyGenBinary  = f('ssh-keygen.exe')
