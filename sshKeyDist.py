@@ -83,13 +83,13 @@ class sshpaths():
 
             f = lambda x: os.path.join(user_ssh_directory, 'bin', x)
 
-            sshBinary        = double_quote(f('ssh.exe'))
-            sshKeyGenBinary  = double_quote(f('ssh-keygen.exe'))
-            sshKeyScanBinary = double_quote(f('ssh-keyscan.exe'))
-            sshAgentBinary   = double_quote(f('charade.exe'))
-            sshAddBinary     = double_quote(f('ssh-add.exe'))
-            chownBinary      = double_quote(f('chown.exe'))
-            chmodBinary      = double_quote(f('chmod.exe'))
+            sshBinary        = f('ssh.exe')
+            sshKeyGenBinary  = f('ssh-keygen.exe')
+            sshKeyScanBinary = f('ssh-keyscan.exe')
+            sshAgentBinary   = f('charade.exe')
+            sshAddBinary     = f('ssh-add.exe')
+            chownBinary      = f('chown.exe')
+            chmodBinary      = f('chmod.exe')
         elif sys.platform.startswith('darwin'):
             sshBinary        = '/usr/bin/ssh'
             sshKeyGenBinary  = '/usr/bin/ssh-keygen'
