@@ -203,7 +203,11 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
             self.existingPassphraseField.SetFocus()
 
         def passphraseUpdatedSuccessfullyCallback():
-            logger_debug("Callback: Passphrase updated successfully! :-)")
+            message = "Passphrase updated successfully! :-)"
+            logger_debug(message)
+            dlg = wx.MessageDialog(self, message,
+                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
 
         def newPassphraseTooShortCallback():
             # This should have been caught earlier:

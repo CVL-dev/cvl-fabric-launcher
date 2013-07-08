@@ -362,10 +362,7 @@ class InspectKeyDialog(wx.Dialog):
         from ChangeKeyPassphraseDialog import ChangeKeyPassphraseDialog
         changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self, wx.ID_ANY, 'Change Key Passphrase', self.privateKeyFilePath)
         if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
-            dlg = wx.MessageDialog(self, 
-                "Passphrase changed successfully! :-)",
-                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-            dlg.ShowModal()
+            logger_debug("Passphrase changed successfully! :-)")
 
     def onResetPassphrase(self, event):
         from ResetKeyPassphraseDialog import ResetKeyPassphraseDialog
