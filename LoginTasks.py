@@ -1016,7 +1016,7 @@ class LoginProcess():
                 self.directConnect=True
                 self.execHostCmd='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \'\"'
                 self.execHostRegEx='^\s*(?P<execHost>\S+)\s*$'
-                self.getProjectsCmd='\'groups | sed \'s/\\ /\\n\/g\'\''
+                self.getProjectsCmd='\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
                 self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
                 self.listAllCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
                 self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
