@@ -81,7 +81,7 @@ class LoginProcess():
             self.requireMatch=requireMatch
     
         def stop(self):
-            logger_debug("stoping the runServerCommandThread cmd %s"%self.cmd)
+            logger_debug("stoping the runServerCommandThread cmd %s"%self.cmd.format(**self.loginprocess.jobParams))
             self._stop.set()
         
         def stopped(self):
@@ -642,11 +642,19 @@ class LoginProcess():
                     grouplist = grouplist + match.values()
                     groups.append(match.values())
                 try:
-                    event.loginprocess.startServerCmd.format(**event.loginprocess.jobParams)
+                    event.loginprocess.startServerCmd.format(**event.loginprocess.jobParams) # check if we actually need the project to format the startServerCmd
                     if (event.loginprocess.jobParams.has_key('project') and not (event.loginprocess.jobParams['project'] in grouplist)):
                         logger_debug("we have a value for project, but the user is not a member of that project")
                         msg='You don\'t appear to be a member of the project {project}. Please select from one of the following:'.format(**event.loginprocess.jobParams)
-                        showDialog=True
+                        event.loginprocess.jobParams.pop('project',None)
+                        try: # check again if we really need the project field.
+                            logger_debug("trying to format the startServerCmd")
+                            event.loginprocess.startServerCmd.format(**event.loginprocess.jobParams)
+                            logger_debug("trying to format the startServerCmd, project is not necessary")
+                            showDialog=False
+                        except:
+                            logger_debug("trying to format the startServerCmd, project is necessary")
+                            showDialog=True
                     elif (event.loginprocess.jobParams.has_key('project') and (event.loginprocess.jobParams['project'] in grouplist)):
                         logger_debug("we have a value for project, and the user is a member of that project")
                     else:

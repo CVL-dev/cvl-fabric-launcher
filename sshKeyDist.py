@@ -115,9 +115,7 @@ class sshpaths():
 class KeyDist():
 
     def complete(self):
-        self.completedLock.acquire()
-        returnval = self.completed
-        self.completedLock.release()
+        returnval = self.completed.isSet()
         return returnval
 
     class passphraseDialog(wx.Dialog):
@@ -309,11 +307,11 @@ class KeyDist():
                     keycomment = match.group('keycomment')
                     correctKey = re.search('.*{launchercomment}.*'.format(launchercomment=self.keydistObject.launcherKeyComment),keycomment)
                     if correctKey:
-                        self.keydistObject.keyloaded = True
+                        self.keydistObject.keyloaded.set()
                         logger_debug('getPubKeyThread: loaded key successfully')
                         self.keydistObject.pubkey = line.rstrip()
             logger_debug("all lines processed")
-            if (self.keydistObject.keyloaded):
+            if (self.keydistObject.keyloaded.isSet()):
                 logger_debug("key loaded")
                 logger_debug("getPubKeyThread found a key, posting TESTAUTH")
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self.keydistObject)
@@ -514,6 +512,20 @@ class KeyDist():
 
 
         def run(self):
+            from ssh_key_dialogs import KeyModel
+            km = KeyModel(self.keydistObject.sshPaths.sshKeyPath)
+            if (self.keydistObject.password!=None):
+                password=self.keydistObject.password
+                newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_WRONGPASS, self.keydistObject)
+            else:
+                password=""
+                newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
+            incorrectCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_GETPUBKEY, self.keydistObject)
+            loadedCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_REQ,self.keydistObject)
+            notFoundCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+            km.addKeyToAgent(self.keydistObject.password,loadedCallback,incorrectCallback,notFoundCallback)
             self.loadKey()
 
 
@@ -542,9 +554,7 @@ class KeyDist():
                 sshClient.exec_command("/bin/echo \"%s\" >> ~/.ssh/authorized_keys"%self.keydistObject.pubkey)
                 # FIXME The exec_commands above can fail if the user is over quota.
                 sshClient.close()
-                self.keydistObject.keycopiedLock.acquire()
-                self.keydistObject.keycopied=True
-                self.keydistObject.keycopiedLock.release()
+                self.keydistObject.keycopied.set()
                 event = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,self.keydistObject)
                 logger_debug('CopyIDThread: successfully copied the key')
             except socket.gaierror as e:
@@ -610,18 +620,38 @@ class KeyDist():
                 event.keydist.threads.append(t)
             event.Skip()
 
+
+        def shutdown():
+            if (event.keydist.removeKey.isSet()):
+                pass
+                #t=KeyDist.removeKeyFromAgentThread(event.keydist)
+                #t.setDaemon(False)
+                #t.start()
+                #event.keydist.threads.append(t)
+            for t in event.keydist.threads:
+                try:
+                    t.stop()
+                    t.join()
+                except:
+                    pass
+                try:
+                    removeKeyFromAgent()
+                except:
+                    pass
+            event.keydist.completed.set()
+
+        def shutdownEvent(event):
+            if (event.GetId() == KeyDist.EVT_KEYDIST_SHUTDOWN):
+                shutdown()
+            else:
+                skip()
+
         def cancel(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_CANCEL):
                 event.keydist._canceled.set()
+                shutdown()
                 if (len(event.string)>0):
                     pass
-                for t in event.keydist.threads:
-                    try:
-                        t.stop()
-                        t.join()
-                    except:
-                        pass
-                event.keydist.completed=True
                 if (event.keydist.callback_fail != None):
                     event.keydist.callback_fail()
             else:
@@ -630,7 +660,7 @@ class KeyDist():
         def success(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_AUTHSUCCESS):
                 logger_debug("received AUTHSUCCESS event")
-                event.keydist.completed=True
+                event.keydist.completed.set()
                 if (event.keydist.callback_success != None):
                     event.keydist.callback_success()
             event.Skip()
@@ -689,10 +719,7 @@ class KeyDist():
         def authfail(event):
             if (event.GetId() == KeyDist.EVT_KEYDIST_AUTHFAIL):
                 logger_debug("received AUTHFAIL event")
-                event.keydist.pubkeylock.acquire()
-                keyloaded = event.keydist.keyloaded
-                event.keydist.pubkeylock.release()
-                if(not keyloaded):
+                if(not event.keydist.keyloaded.isSet()):
                     newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_LOADKEY,event.keydist)
                     wx.PostEvent(event.keydist.notifywindow.GetEventHandler(),newevent)
                 else:
@@ -700,10 +727,7 @@ class KeyDist():
                     # *****TODO*****
                     # actually this might not be strictly true. gnome keychain (and possibly others) will report a key loaded even if its still locked
                     # we probably need a button that says "I can't remember my old keys password, please generate a new keypair"
-                    event.keydist.keycopiedLock.acquire()
-                    keycopied=event.keydist.keycopied
-                    event.keydist.keycopiedLock.release()
-                    if (keycopied):
+                    if (event.keydist.keycopied.isSet()):
                         newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_TESTAUTH,event.keydist)
                         wx.PostEvent(event.keydist.notifywindow.GetEventHandler(),newevent)
                     else:
@@ -728,6 +752,7 @@ class KeyDist():
         KeyDist.EVT_CUSTOM_SSHKEYDIST=wx.PyEventBinder(self.myEVT_CUSTOM_SSHKEYDIST,1)
         KeyDist.EVT_KEYDIST_START = wx.NewId()
         KeyDist.EVT_KEYDIST_CANCEL = wx.NewId()
+        KeyDist.EVT_KEYDIST_SHUTDOWN = wx.NewId()
         KeyDist.EVT_KEYDIST_SUCCESS = wx.NewId()
         KeyDist.EVT_KEYDIST_NEEDAGENT = wx.NewId()
         KeyDist.EVT_KEYDIST_NEEDKEYS = wx.NewId()
@@ -758,19 +783,17 @@ class KeyDist():
         notifywindow.Bind(self.EVT_CUSTOM_SSHKEYDIST, KeyDist.sshKeyDistEvent.scanhostkeys)
         notifywindow.Bind(self.EVT_CUSTOM_SSHKEYDIST, KeyDist.sshKeyDistEvent.loadkey)
 
-        self.completed=False
+        self.completed=Event()
         self.username = username
         self.host = host
         self.notifywindow = notifywindow
         self.sshKeyPath = ""
         self.threads=[]
         self.pubkeyfp = None
-        self.keyloaded = False
+        self.keyloaded=Event()
         self.password = None
         self.pubkeylock = Lock()
-        self.completedLock = Lock()
-        self.keycopiedLock=Lock()
-        self.keycopied=False
+        self.keycopied=Event()
         self.sshpaths=sshPaths
         self.launcherKeyComment=os.path.basename(self.sshpaths.sshKeyPath)
         self.authentication_success = False
@@ -838,4 +861,10 @@ class KeyDist():
             self._canceled.set()
             newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_CANCEL, self)
             logger_debug('Sending EVT_KEYDIST_CANCEL event.')
+            wx.PostEvent(self.notifywindow.GetEventHandler(), newevent)
+
+    def shutdown(self):
+        if (not self.canceled()):
+            newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_SHUTDOWN, self)
+            logger_debug('Sending EVT_KEYDIST_SHUTDOWN event.')
             wx.PostEvent(self.notifywindow.GetEventHandler(), newevent)
