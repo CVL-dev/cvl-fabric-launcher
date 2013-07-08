@@ -83,13 +83,13 @@ class sshpaths():
 
             f = lambda x: os.path.join(user_ssh_directory, 'bin', x)
 
-            sshBinary        = f('ssh.exe')
-            sshKeyGenBinary  = f('ssh-keygen.exe')
-            sshKeyScanBinary = f('ssh-keyscan.exe')
-            sshAgentBinary   = f('charade.exe')
-            sshAddBinary     = f('ssh-add.exe')
-            chownBinary      = f('chown.exe')
-            chmodBinary      = f('chmod.exe')
+            sshBinary        = double_quote(f('ssh.exe'))
+            sshKeyGenBinary  = double_quote(f('ssh-keygen.exe'))
+            sshKeyScanBinary = double_quote(f('ssh-keyscan.exe'))
+            sshAgentBinary   = double_quote(f('charade.exe'))
+            sshAddBinary     = double_quote(f('ssh-add.exe'))
+            chownBinary      = double_quote(f('chown.exe'))
+            chmodBinary      = double_quote(f('chmod.exe'))
         elif sys.platform.startswith('darwin'):
             sshBinary        = '/usr/bin/ssh'
             sshKeyGenBinary  = '/usr/bin/ssh-keygen'
@@ -318,6 +318,7 @@ class KeyDist():
 
         def run(self):
             sshKeyListCmd = self.keydistObject.sshpaths.sshAddBinary + " -L "
+            logger_debug('getPubKeyThread: running command: ' + sshKeyListCmd)
             keylist = subprocess.Popen(sshKeyListCmd, stdout = subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             (stdout,stderr) = keylist.communicate()
             self.keydistObject.pubkeylock.acquire()
