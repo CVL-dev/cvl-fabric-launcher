@@ -34,7 +34,9 @@ os.system('copy /Y MASSIVE.ico dist\\launcher\\')
 #os.system('copy /Y C:\\Python27\\Lib\\site-packages\\wx-2.8-msw-unicode\\wx\\gdiplus.dll dist\\')
 os.system('copy /Y C:\\Python27\\Lib\\site-packages\\wx-2.8-msw-unicode\\wx\\gdiplus.dll dist\\launcher\\')
 #os.system('copy /Y sshwindows\\*.* dist\\')
-os.system('copy /Y openssh-mls-software-6.2-p1-2\\*.* dist\\launcher\\')
+#os.system('copy /Y openssh-cygwin-stdin-build\\*.* dist\\launcher\\')
+import shutil
+shutil.copytree(r'openssh-cygwin-stdin-build', r'dist\launcher\openssh-cygwin-stdin-build')
 #os.system('copy /Y GPL.txt dist\\')
 os.system('copy /Y GPL.txt dist\\launcher\\')
 
