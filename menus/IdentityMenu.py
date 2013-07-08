@@ -148,7 +148,7 @@ class IdentityMenu(wx.Menu):
 
         publicKeyFingerprintInAgent = ""
         # This will give an error if no agent is running:
-        proc = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        proc = subprocess.Popen([self.sshPathsObject.sshAddBinary.strip('"'),"-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         fingerprintLinesInAgent = proc.stdout.readlines()
         for fingerprintLine in fingerprintLinesInAgent:
             if "Launcher" in fingerprintLine:

@@ -9,7 +9,7 @@ import traceback
 if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
 from sshKeyDist import sshpaths
-from sshKeyDist import double_quote
+#from sshKeyDist import double_quote
 
 from utilityFunctions import logger_debug
 
@@ -30,7 +30,7 @@ class KeyModel():
         if sys.platform.startswith('win'):
             # The patched OpenSSH binary on Windows/cygwin allows us
             # to send the passphrase via STDIN.
-            cmdList = [self.sshPathsObject.sshKeyGenBinary, "-f", double_quote(self.privateKeyFilePath), "-C", keyComment]
+            cmdList = [self.sshPathsObject.sshKeyGenBinary.strip('"'), "-f", self.privateKeyFilePath, "-C", keyComment]
             logger_debug('on Windows, so running: ' + str(cmdList))
             proc = subprocess.Popen(cmdList,
                                     stdin=subprocess.PIPE,
@@ -106,7 +106,7 @@ class KeyModel():
         if sys.platform.startswith('win'):
             # The patched OpenSSH binary on Windows/cygwin allows us
             # to send the passphrase via STDIN.
-            cmdList = [self.sshPathsObject.sshKeyGenBinary, "-f", double_quote(self.privateKeyFilePath), "-p"]
+            cmdList = [self.sshPathsObject.sshKeyGenBinary.strip('"'), "-f", self.privateKeyFilePath, "-p"]
             logger_debug('on Windows, so running: ' + str(cmdList))
             proc = subprocess.Popen(cmdList,
                                     stdin=subprocess.PIPE,
@@ -210,7 +210,7 @@ class KeyModel():
 
             logger_debug("Removing Launcher public key(s) from agent.")
 
-            publicKeysInAgentProc = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-L"],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            publicKeysInAgentProc = subprocess.Popen([self.sshPathsObject.sshAddBinary.strip('"'),"-L"],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
             publicKeysInAgent = publicKeysInAgentProc.stdout.readlines()
             for publicKey in publicKeysInAgent:
                 if "Launcher" in publicKey:
@@ -218,7 +218,7 @@ class KeyModel():
                     tempPublicKeyFile.write(publicKey)
                     tempPublicKeyFile.close()
                     try:
-                        removePublicKeyFromAgent = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-d",tempPublicKeyFile.name],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                        removePublicKeyFromAgent = subprocess.Popen([self.sshPathsObject.sshAddBinary.strip('"'),"-d",tempPublicKeyFile.name],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                         stdout, stderr = removePublicKeyFromAgent.communicate()
                         if stderr is not None and len(stderr) > 0:
                             logger_debug(stderr)
@@ -238,7 +238,7 @@ class KeyModel():
         if sys.platform.startswith('win'):
             # The patched OpenSSH binary on Windows/cygwin allows us
             # to send the passphrase via STDIN.
-            cmdList = [self.sshPathsObject.sshAddBinary, double_quote(self.privateKeyFilePath)]
+            cmdList = [self.sshPathsObject.sshAddBinary.strip('"'), self.privateKeyFilePath]
             logger_debug('on Windows, so running: ' + str(cmdList))
             proc = subprocess.Popen(cmdList,
                                     stdin=subprocess.PIPE,
@@ -304,7 +304,7 @@ class KeyModel():
 
             logger_debug("Removing Launcher public key(s) from agent.")
 
-            publicKeysInAgentProc = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-L"],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            publicKeysInAgentProc = subprocess.Popen([self.sshPathsObject.sshAddBinary.strip('"'),"-L"],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
             publicKeysInAgent = publicKeysInAgentProc.stdout.readlines()
             for publicKey in publicKeysInAgent:
                 if "Launcher" in publicKey:
@@ -312,7 +312,7 @@ class KeyModel():
                     tempPublicKeyFile.write(publicKey)
                     tempPublicKeyFile.close()
                     try:
-                        removePublicKeyFromAgent = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-d",tempPublicKeyFile.name],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                        removePublicKeyFromAgent = subprocess.Popen([self.sshPathsObject.sshAddBinary.strip('"'),"-d",tempPublicKeyFile.name],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                         stdout, stderr = removePublicKeyFromAgent.communicate()
                         if stderr is not None and len(stderr) > 0:
                             logger_debug(stderr)

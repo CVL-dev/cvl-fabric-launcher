@@ -94,13 +94,13 @@ class sshpaths():
                     launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
                     f = lambda x: os.path.join(launcherModulePath, OPENSSH_BUILD_DIR, 'bin', x)
 
-            sshBinary        = f('ssh.exe')
-            sshKeyGenBinary  = f('ssh-keygen.exe')
-            sshKeyScanBinary = f('ssh-keyscan.exe')
-            sshAgentBinary   = f('charade.exe')
-            sshAddBinary     = f('ssh-add.exe')
-            chownBinary      = f('chown.exe')
-            chmodBinary      = f('chmod.exe')
+            sshBinary        = double_quote(f('ssh.exe'))
+            sshKeyGenBinary  = double_quote(f('ssh-keygen.exe'))
+            sshKeyScanBinary = double_quote(f('ssh-keyscan.exe'))
+            sshAgentBinary   = double_quote(f('charade.exe'))
+            sshAddBinary     = double_quote(f('ssh-add.exe'))
+            chownBinary      = double_quote(f('chown.exe'))
+            chmodBinary      = double_quote(f('chmod.exe'))
         elif sys.platform.startswith('darwin'):
             sshBinary        = '/usr/bin/ssh'
             sshKeyGenBinary  = '/usr/bin/ssh-keygen'
@@ -548,8 +548,8 @@ class KeyDist():
 
 
         def run(self):
-            from ssh_key_dialogs import KeyModel
-            km = KeyModel(self.keydistObject.sshPaths.sshKeyPath)
+            from ssh_key_dialogs.KeyModel import KeyModel
+            km = KeyModel(self.keydistObject.sshpaths.sshKeyPath)
             if (self.keydistObject.password!=None):
                 password=self.keydistObject.password
                 newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_WRONGPASS, self.keydistObject)
@@ -561,7 +561,8 @@ class KeyDist():
             loadedCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
             newevent = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_REQ,self.keydistObject)
             notFoundCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
-            km.addKeyToAgent(self.keydistObject.password,loadedCallback,incorrectCallback,notFoundCallback)
+            failedToConnectToAgentCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent)
+            km.addKeyToAgent(password,loadedCallback,incorrectCallback,notFoundCallback,failedToConnectToAgentCallback)
             self.loadKey()
 
 

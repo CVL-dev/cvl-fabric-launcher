@@ -276,7 +276,7 @@ class InspectKeyDialog(wx.Dialog):
 
         # ssh-keygen can give us public key fingerprint, key type and size from private key
 
-        proc = subprocess.Popen([self.sshPathsObject.sshKeyGenBinary,"-yl","-f",self.privateKeyFilePath], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        proc = subprocess.Popen([self.sshPathsObject.sshKeyGenBinary.strip('"'),"-yl","-f",self.privateKeyFilePath], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         stdout,stderr = proc.communicate()
         sshKeyGenOutComponents = stdout.split(" ")
         if len(sshKeyGenOutComponents)>1:
@@ -295,7 +295,7 @@ class InspectKeyDialog(wx.Dialog):
         # ssh-add -l | grep Launcher
 
         publicKeyFingerprintInAgent = ""
-        proc = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        proc = subprocess.Popen([self.sshPathsObject.sshAddBinary.strip('"'),"-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         fingerprintLinesInAgent = proc.stdout.readlines()
         for fingerprintLine in fingerprintLinesInAgent:
             if "Launcher" in fingerprintLine:
@@ -395,7 +395,7 @@ class InspectKeyDialog(wx.Dialog):
             agentenv = os.environ['SSH_AUTH_SOCK']
         except:
             try:
-                agent = subprocess.Popen(self.sshPathsObject.sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+                agent = subprocess.Popen(self.sshPathsObject.sshAgentBinary.strip('"'),stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
                 stdout = agent.stdout.readlines()
                 for line in stdout:
                     if sys.platform.startswith('win'):
