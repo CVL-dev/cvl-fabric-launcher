@@ -9,7 +9,6 @@ import traceback
 if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
 from sshKeyDist import sshpaths
-#from sshKeyDist import double_quote
 
 from utilityFunctions import logger_debug
 
@@ -28,34 +27,21 @@ class KeyModel():
         success = False
 
         if sys.platform.startswith('win'):
-            # The patched OpenSSH binary on Windows/cygwin allows us
-            # to send the passphrase via STDIN.
-            cmdList = [self.sshPathsObject.sshKeyGenBinary.strip('"'), "-f", self.privateKeyFilePath, "-C", keyComment]
-            logger_debug('on Windows, so running: ' + str(cmdList))
+            cmdList = [self.sshPathsObject.sshKeyGenBinary.strip('"'), "-f", self.privateKeyFilePath, "-C", keyComment, "-N", passphrase]
             proc = subprocess.Popen(cmdList,
                                     stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT,
                                     universal_newlines=True)
-            stdout, stderr = proc.communicate(input=passphrase + '\r\n')
+            stdout, stderr = proc.communicate('\r\n')
 
             if stdout is None or str(stdout).strip() == '':
                 logger_debug('(1) Got EOF from ssh-keygen binary')
-            elif 'Enter passphrase' in stdout:
-                stdout, stderr = proc.communicate(input=passphrase + '\r\n')
-                if stdout is None or str(stdout).strip() == '':
-                    logger_debug('(2) Got EOF from ssh-keygen binary')
-                elif "Enter same passphrase" in stdout:
-                    stdout, stderr = proc.communicate(input=passphrase + '\r\n')
-                    if stdout is None or str(stdout).strip() == '':
-                        logger_debug('(3) Got EOF from ssh-keygen binary')
-                    elif "Your identification has been saved" in stdout:
-                        success = True
-                        keyCreatedSuccessfullyCallback()
-                    elif "do not match" in stdout:
-                        logger_debug("Passphrases do not match.")
-                    elif "passphrase too short" in stdout:
-                        passphraseTooShortCallback()
+            elif "Your identification has been saved" in stdout:
+                success = True
+                keyCreatedSuccessfullyCallback()
+            elif "passphrase too short" in stdout:
+                passphraseTooShortCallback()
             elif 'already exists' in stdout:
                 keyFileAlreadyExistsCallback()
             elif 'Could not open a connection to your authentication agent' in stdout:
@@ -104,10 +90,8 @@ class KeyModel():
         success = False
 
         if sys.platform.startswith('win'):
-            # The patched OpenSSH binary on Windows/cygwin allows us
-            # to send the passphrase via STDIN.
-            cmdList = [self.sshPathsObject.sshKeyGenBinary.strip('"'), "-f", self.privateKeyFilePath, "-p"]
-            logger_debug('on Windows, so running: ' + str(cmdList))
+            cmdList = [self.sshPathsObject.sshKeyGenBinary.strip('"'), "-f", self.privateKeyFilePath, 
+                        "-p", "-P", existingPassphrase, "-N", newPassphrase]
             proc = subprocess.Popen(cmdList,
                                     stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE,
@@ -118,27 +102,11 @@ class KeyModel():
             if stdout is None or str(stdout).strip() == '':
                 logger_debug('(1) Got EOF from ssh-keygen binary')
                 keyLockedCallback()
-            elif 'Enter new passphrase' in stdout:
-                stdout, stderr = proc.communicate(input=newPassphrase + '\r\n')
-                if stdout is None or str(stdout).strip() == '':
-                    logger_debug('(2) Got EOF from ssh-keygen binary')
-                elif "Enter same passphrase" in stdout:
-                    stdout, stderr = proc.communicate(input=newPassphrase + '\r\n')
-                    if stdout is None or str(stdout).strip() == '':
-                        logger_debug('(3) Got EOF from ssh-keygen binary')
-                    elif "Your identification has been saved" in stdout:
-                        success = True
-                        passphraseUpdatedSuccessfullyCallback()
-                    elif "do not match" in stdout:
-                        # This shouldn't happen because changePassphrase 
-                        # only takes one argument for newPassphrase,
-                        # so repeated newPassphrase should have 
-                        # already been checked before changePassphrase
-                        # is called.
-                        logger_debug("Passphrases do not match.")
-                    elif "passphrase too short" in stdout:
-                        newPassphraseTooShortCallback()
-
+            if "Your identification has been saved" in stdout:
+                success = True
+                passphraseUpdatedSuccessfullyCallback()
+            elif "passphrase too short" in stdout:
+                newPassphraseTooShortCallback()
             elif 'Bad pass' in stdout or 'load failed' in stdout:
                 logger_debug('Got "Bad pass" from ssh-keygen binary')
                 if existingPassphrase == '':
