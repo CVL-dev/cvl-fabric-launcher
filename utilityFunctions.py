@@ -10,6 +10,7 @@ import inspect
 import sys
 import itertools
 import wx.lib.mixins.listctrl as listmix
+import zipfile
 
 
 #LAUNCHER_URL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
@@ -606,3 +607,19 @@ def logger_warning(message):
         logger.warning(message)
     else:
         wx.CallAfter(logger.warning, message)
+
+def unzip(zipFilePath, destDir):
+    zfile = zipfile.ZipFile(zipFilePath)
+    for name in zfile.namelist():
+        (dirName, fileName) = os.path.split(name)
+        if fileName == '':
+            # directory
+            newDir = destDir + '/' + dirName
+            if not os.path.exists(newDir):
+                os.mkdir(newDir)
+        else:
+            # file
+            fd = open(destDir + '/' + name, 'wb')
+            fd.write(zfile.read(name))
+            fd.close()
+    zfile.close()

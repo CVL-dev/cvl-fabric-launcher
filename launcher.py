@@ -113,6 +113,7 @@ from utilityFunctions import *
 import sshKeyDist
 import launcher_progress_dialog
 from menus.IdentityMenu import IdentityMenu
+import tempfile
 
 global launcherMainFrame
 launcherMainFrame = None
@@ -960,13 +961,44 @@ class LauncherMainFrame(wx.Frame):
         global helpController
         if helpController is None:
             helpController = wx.html.HtmlHelpController()
-            launcherHelpFile = "helpfiles/launcher.hhp"
-            if not helpController.AddBook(launcherHelpFile):
-                wx.MessageBox("Unable to open: " + launcherHelpFile,
-                              "Error", wx.OK|wx.ICON_EXCLAMATION)
-        helpController.DisplayContents()
-        #helpController.Display("MASSIVE/CVL Launcher")
-        #helpController.Display("SSH Keys")
+            success = False
+            launcherHelpUrl = "https://cvl.massive.org.au/launcher_files/help/helpfiles.zip"
+            try:
+                helpZipFile = tempfile.NamedTemporaryFile(mode='w+b', prefix='helpfiles-', suffix='.zip', delete=False)
+                logger_debug("helpZipFile.name = " + helpZipFile.name)
+                r = requests.get(launcherHelpUrl)
+                if r.status_code == 200:
+                    for chunk in r.iter_content():
+                        helpZipFile.write(chunk)
+                helpZipFile.close()
+
+                # We should be able to add the zip archive directly to the 
+                # help controller, but that didn't seem to work.
+
+                helpZipFilePath = helpZipFile.name
+                (helpZipFileDirectory, helpZipFileFilename) = os.path.split(helpZipFilePath)
+                # See utilityFunctions.py:
+                unzip(helpZipFilePath, helpZipFileDirectory)
+                helpFilesDirectory = os.path.join(helpZipFileDirectory, "helpfiles")
+                launcherHelpFile = os.path.join(helpFilesDirectory, "launcher.hhp")
+                success = helpController.AddBook(launcherHelpFile)
+
+                #clean-up:
+                #logger_debug("helpFilesDirectory = " + helpFilesDirectory)
+                #for helpFile in os.listdir(helpFilesDirectory):
+                    #os.remove(os.path.join(helpFilesDirectory,helpFile))
+
+                #helpController.Display("MASSIVE/CVL Launcher")
+                #helpController.Display("SSH Keys")
+            finally:
+                if success:
+                    helpController.DisplayContents()
+                else:
+                    wx.MessageBox("Unable to open: " + launcherHelpUrl,
+                                  "Error", wx.OK|wx.ICON_EXCLAMATION)
+
+                    # Maybe if we don't succeed in downloading help, 
+                    # we should use local help files instead?
 
     def onAbout(self, event):
         import commit_def
@@ -1315,6 +1347,7 @@ class MyApp(wx.App):
                                       "Error", wx.OK|wx.ICON_EXCLAMATION)
                 helpController.Display("SSH Keys")
             else:
+                logger_debug(traceback.format_exc())
                 dlg = wx.MessageDialog(launcherMainFrame,
                     "You can access the help later from the Help menu or from the Identity menu.",
                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
