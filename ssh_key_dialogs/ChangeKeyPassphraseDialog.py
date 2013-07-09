@@ -117,6 +117,10 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
         self.newPassphraseStatusLabel2 = wx.StaticText(self.innerNewPassphrasePanel, wx.ID_ANY, "")
         self.innerNewPassphrasePanelSizer.Add(self.newPassphraseStatusLabel2, flag=wx.EXPAND|wx.LEFT, border=20)
 
+        # Initially, set this label to its longest possible value
+        # to help with panel sizing:
+        self.newPassphraseStatusLabel2.SetLabel("Enter your new passphrase again.")
+
         self.innerNewPassphrasePanel.Fit()
         self.newPassphraseGroupBoxSizer.Add(self.innerNewPassphrasePanel, flag=wx.EXPAND)
         self.newPassphrasePanel.Fit()
@@ -156,6 +160,9 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
         self.changeKeyPassphraseDialogPanel.Fit()
         self.Fit()
         self.CenterOnParent()
+
+        # Now that panel sizing is done, we can clear this status label:
+        self.newPassphraseStatusLabel2.SetLabel("")
 
     def onPassphraseFieldsModified(self, event):
         self.validNewPassphrase = False
@@ -203,7 +210,11 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
             self.existingPassphraseField.SetFocus()
 
         def passphraseUpdatedSuccessfullyCallback():
-            logger_debug("Callback: Passphrase updated successfully! :-)")
+            message = "Passphrase updated successfully! :-)"
+            logger_debug(message)
+            dlg = wx.MessageDialog(self, message,
+                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
 
         def newPassphraseTooShortCallback():
             # This should have been caught earlier:

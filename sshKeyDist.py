@@ -52,21 +52,56 @@ class sshpaths():
         stripped-down OpenSSH build that uses Cygwin.
         """
 
+        useDirtyHack = False
         if sys.platform.startswith('win'):
-            if hasattr(sys, 'frozen'):
-                f = lambda x: os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR, 'bin', x)
+            if useDirtyHack:
+                # Dirty hack: a non-administrator user on Windows XP can't run charade.exe
+                # because it tries to create a temporary file in the Cygwin OpenSSH tree. So
+                # we'll quietly copy it to the user's home directory and run it from there instead.
+
+                if hasattr(sys, 'frozen'):
+                    ssh_base_directory = os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR)
+                else:
+                    launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
+                    ssh_base_directory = os.path.join(launcherModulePath, OPENSSH_BUILD_DIR)
+
+                import tempfile
+                import distutils.dir_util
+
+                for d in os.listdir(os.path.expanduser('~')):
+                    if d.find('.' + OPENSSH_BUILD_DIR) != 0: continue
+
+                    full_path = os.path.join(os.path.expanduser('~'), d)
+                    try:
+                        logger_debug('Attempting to remove openssh temp directory: ' + str(d))
+                        distutils.dir_util.remove_tree(full_path)
+                    except:
+                        logger_debug('Could not remove temp directory, exception: ' + str(traceback.format_exc()))
+                        pass
+
+                user_ssh_directory = tempfile.mkdtemp(prefix='.' + OPENSSH_BUILD_DIR, dir=os.path.expanduser('~'))
+
+                logger_debug('copying system OpenSSH binaries from <%s> to <%s>' % (ssh_base_directory, user_ssh_directory,))
+                distutils.dir_util.copy_tree(ssh_base_directory, user_ssh_directory)
+
+                f = lambda x: os.path.join(user_ssh_directory, 'bin', x)
             else:
-                #f = lambda x: os.path.join(os.getcwd(), OPENSSH_BUILD_DIR, 'bin', x)
-                launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
-                f = lambda x: os.path.join(launcherModulePath, OPENSSH_BUILD_DIR, 'bin', x)
- 
-            sshBinary        = f('ssh.exe')
-            sshKeyGenBinary  = f('ssh-keygen.exe')
-            sshKeyScanBinary = f('ssh-keyscan.exe')
-            sshAgentBinary   = f('charade.exe')
-            sshAddBinary     = f('ssh-add.exe')
-            chownBinary      = f('chown.exe')
-            chmodBinary      = f('chmod.exe')
+                # Don't use dirty hack.
+                # Assume that our InnoSetup script will set appropriate permissions on the "tmp" directory.
+
+                 if hasattr(sys, 'frozen'):
+                    f = lambda x: os.path.join(os.path.dirname(sys.executable), OPENSSH_BUILD_DIR, 'bin', x)
+                 else:
+                    launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
+                    f = lambda x: os.path.join(launcherModulePath, OPENSSH_BUILD_DIR, 'bin', x)
+
+            sshBinary        = double_quote(f('ssh.exe'))
+            sshKeyGenBinary  = double_quote(f('ssh-keygen.exe'))
+            sshKeyScanBinary = double_quote(f('ssh-keyscan.exe'))
+            sshAgentBinary   = double_quote(f('charade.exe'))
+            sshAddBinary     = double_quote(f('ssh-add.exe'))
+            chownBinary      = double_quote(f('chown.exe'))
+            chmodBinary      = double_quote(f('chmod.exe'))
         elif sys.platform.startswith('darwin'):
             sshBinary        = '/usr/bin/ssh'
             sshKeyGenBinary  = '/usr/bin/ssh-keygen'
@@ -295,6 +330,7 @@ class KeyDist():
             threadid = threading.currentThread().ident
             logger_debug("getPubKeyThread %i: started"%threadid)
             sshKeyListCmd = self.keydistObject.sshpaths.sshAddBinary + " -L "
+            logger_debug('getPubKeyThread: running command: ' + sshKeyListCmd)
             keylist = subprocess.Popen(sshKeyListCmd, stdout = subprocess.PIPE,stderr=subprocess.STDOUT,shell=True,universal_newlines=True)
             (stdout,stderr) = keylist.communicate()
             self.keydistObject.pubkeylock.acquire()
@@ -445,27 +481,24 @@ class KeyDist():
             return self._stop.isSet()
 
         def run(self):
-            from ssh_key_dialogs import KeyModel
+            from ssh_key_dialogs.KeyModel import KeyModel
             threadid=threading.currentThread().ident
             threadname=threading.currentThread().name
-            km = KeyModel.KeyModel(self.keydistObject.sshpaths.sshKeyPath)
+            km = KeyModel(self.keydistObject.sshpaths.sshKeyPath)
             if (self.keydistObject.password!=None):
                 password=self.keydistObject.password
                 newevent1 = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_WRONGPASS, self.keydistObject)
             else:
                 password=""
-                newevent1 = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
-            incorrectCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent1)
-            newevent2 = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_GETPUBKEY, self.keydistObject)
-            loadedCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent2)
-            newevent3 = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_REQ,self.keydistObject)
-            notFoundCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent3)
-            try:
-                km.addKeyToAgent(password,loadedCallback,incorrectCallback,notFoundCallback)
-                logger_debug("loadKeyThread %i %s: added key to Agent. Events were posted by the KeyModel class"%(threadid,threadname))
-            except Exception as e:
-                logger_debug("loadKeyThread %i %s: failed to add key to agent. It is unlikely events were posted %s"%(threadid,threadname,e))
-                self.keydistObject.cancel("I'm sorry, I encountered and unexpected error and could not continue")
+            newevent2 = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_KEY_LOCKED, self.keydistObject)
+            incorrectCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent2)
+            newevent3 = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_GETPUBKEY, self.keydistObject)
+            loadedCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent3)
+            newevent4 = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEWPASS_REQ,self.keydistObject)
+            notFoundCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent4)
+            newevent5 = KeyDist.sshKeyDistEvent(KeyDist.EVT_KEYDIST_NEEDAGENT,self.keydistObject)
+            failedToConnectToAgentCallback=lambda:wx.PostEvent(self.keydistObject.notifywindow.GetEventHandler(),newevent5)
+            km.addKeyToAgent(password,loadedCallback,incorrectCallback,notFoundCallback,failedToConnectToAgentCallback)
 
 
     class CopyIDThread(Thread):

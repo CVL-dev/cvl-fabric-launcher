@@ -1292,6 +1292,8 @@ class MyApp(wx.App):
         if not turboVncConfig.has_section("TurboVNC Preferences"):
             turboVncConfig.add_section("TurboVNC Preferences")
 
+        if sys.platform.startswith("win"):
+            os.environ['CYGWIN'] = "nodosfilewarning"
         global launcherMainFrame
         launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
         launcherMainFrame.Show(True)

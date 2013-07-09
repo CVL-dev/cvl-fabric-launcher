@@ -181,7 +181,12 @@ class ResetKeyPassphraseDialog(wx.Dialog):
                     logger_debug("ResetPassphraseDialog.onAddKeyToOrRemoveFromAgent callback: Passphrase incorrect. :-(")
                 def privateKeyFileNotFoundCallback():
                     logger_debug("ResetPassphraseDialog.onAddKeyToOrRemoveFromAgent callback: Private key file not found. :-(")
-                success = keyModelObject.addKeyToAgent(self.passphraseField.GetValue(), keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback)
+                def failedToConnectToAgentCallback():
+                    dlg = wx.MessageDialog(self,
+                        "Could not open a connection to your authentication agent.",
+                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
+                success = keyModelObject.addKeyToAgent(self.passphraseField.GetValue(), keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback, failedToConnectToAgentCallback)
                 if success:
                     message = "Adding key to agent succeeded."
                     logger_debug(message)

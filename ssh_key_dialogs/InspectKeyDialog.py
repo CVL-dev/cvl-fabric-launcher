@@ -276,7 +276,7 @@ class InspectKeyDialog(wx.Dialog):
 
         # ssh-keygen can give us public key fingerprint, key type and size from private key
 
-        proc = subprocess.Popen([self.sshPathsObject.sshKeyGenBinary,"-yl","-f",self.privateKeyFilePath], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        proc = subprocess.Popen([self.sshPathsObject.sshKeyGenBinary.strip('"'),"-yl","-f",self.privateKeyFilePath], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         stdout,stderr = proc.communicate()
         sshKeyGenOutComponents = stdout.split(" ")
         if len(sshKeyGenOutComponents)>1:
@@ -295,7 +295,7 @@ class InspectKeyDialog(wx.Dialog):
         # ssh-add -l | grep Launcher
 
         publicKeyFingerprintInAgent = ""
-        proc = subprocess.Popen([self.sshPathsObject.sshAddBinary,"-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        proc = subprocess.Popen([self.sshPathsObject.sshAddBinary.strip('"'),"-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         fingerprintLinesInAgent = proc.stdout.readlines()
         for fingerprintLine in fingerprintLinesInAgent:
             if "Launcher" in fingerprintLine:
@@ -314,18 +314,27 @@ class InspectKeyDialog(wx.Dialog):
                 return
             else:
                 def keyAddedSuccessfullyCallback():
-                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Key added successfully! :-)")
+                    message = "Key added successfully! :-)"
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: " + message)
                 def passphraseIncorrectCallback():
-                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Passphrase incorrect. :-(")
+                    message = "Passphrase incorrect. :-("
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: " + message)
+                    dlg = wx.MessageDialog(self, message, "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
                 def privateKeyFileNotFoundCallback():
-                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Private key file not found. :-(")
-                success = keyModelObject.addKeyToAgent(passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback)
+                    message = "Private key file not found. :-("
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: " + message)
+                    dlg = wx.MessageDialog(self, message, "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
+                def failedToConnectToAgentCallback():
+                    message = "Could not open a connection to your authentication agent."
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: " + message)
+                    dlg = wx.MessageDialog(self, message, "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
+                success = keyModelObject.addKeyToAgent(passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback, failedToConnectToAgentCallback)
                 if success:
-                    logger_debug("Adding key to agent succeeded.")
                     self.populateFingerprintInAgentField()
                     self.addKeyToOrRemoveKeyFromAgentButton.SetLabel("Remove MASSIVE Launcher key from agent")
-                else:
-                    logger_debug("Adding key to agent failed.")
         elif self.addKeyToOrRemoveKeyFromAgentButton.GetLabel()=="Remove MASSIVE Launcher key from agent":
             keyModelObject = KeyModel(self.privateKeyFilePath)
             success = keyModelObject.removeKeyFromAgent()
@@ -357,10 +366,7 @@ class InspectKeyDialog(wx.Dialog):
         from ChangeKeyPassphraseDialog import ChangeKeyPassphraseDialog
         changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self, wx.ID_ANY, 'Change Key Passphrase', self.privateKeyFilePath)
         if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
-            dlg = wx.MessageDialog(self, 
-                "Passphrase changed successfully! :-)",
-                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-            dlg.ShowModal()
+            logger_debug("Passphrase changed successfully! :-)")
 
     def onResetPassphrase(self, event):
         from ResetKeyPassphraseDialog import ResetKeyPassphraseDialog
@@ -390,7 +396,7 @@ class InspectKeyDialog(wx.Dialog):
             agentenv = os.environ['SSH_AUTH_SOCK']
         except:
             try:
-                agent = subprocess.Popen(self.sshPathsObject.sshAgentBinary,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
+                agent = subprocess.Popen(self.sshPathsObject.sshAgentBinary.strip('"'),stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
                 stdout = agent.stdout.readlines()
                 for line in stdout:
                     if sys.platform.startswith('win'):
