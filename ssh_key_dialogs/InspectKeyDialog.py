@@ -314,23 +314,27 @@ class InspectKeyDialog(wx.Dialog):
                 return
             else:
                 def keyAddedSuccessfullyCallback():
-                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Key added successfully! :-)")
+                    message = "Key added successfully! :-)"
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: " + message)
                 def passphraseIncorrectCallback():
-                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Passphrase incorrect. :-(")
+                    message = "Passphrase incorrect. :-("
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: " + message)
+                    dlg = wx.MessageDialog(self, message, "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
                 def privateKeyFileNotFoundCallback():
-                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: Private key file not found. :-(")
+                    message = "Private key file not found. :-("
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: " + message)
+                    dlg = wx.MessageDialog(self, message, "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
                 def failedToConnectToAgentCallback():
-                    dlg = wx.MessageDialog(self, 
-                        "Could not open a connection to your authentication agent.",
-                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    message = "Could not open a connection to your authentication agent."
+                    logger_debug("InspectKeyDialog.onAddKeyToOrRemoveFromAgent callback: " + message)
+                    dlg = wx.MessageDialog(self, message, "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                     dlg.ShowModal()
                 success = keyModelObject.addKeyToAgent(passphrase, keyAddedSuccessfullyCallback, passphraseIncorrectCallback, privateKeyFileNotFoundCallback, failedToConnectToAgentCallback)
                 if success:
-                    logger_debug("Adding key to agent succeeded.")
                     self.populateFingerprintInAgentField()
                     self.addKeyToOrRemoveKeyFromAgentButton.SetLabel("Remove MASSIVE Launcher key from agent")
-                else:
-                    logger_debug("Adding key to agent failed.")
         elif self.addKeyToOrRemoveKeyFromAgentButton.GetLabel()=="Remove MASSIVE Launcher key from agent":
             keyModelObject = KeyModel(self.privateKeyFilePath)
             success = keyModelObject.removeKeyFromAgent()

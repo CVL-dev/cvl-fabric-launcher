@@ -246,13 +246,21 @@ class KeyModel():
             if idx == 0:
                 lp.sendline(passphrase)
 
-                idx = lp.expect(["Identity added", "Bad pass"])
+                idx = lp.expect(["Identity added", "Bad pass", pexpect.EOF])
                 if idx == 0:
                     success = True
                     keyAddedSuccessfullyCallback()
                 elif idx == 1:
                     lp.kill(0)
                     passphraseIncorrectCallback()
+                    success = False
+                    return success
+                elif idx == 2:
+                    # ssh-add seems to fail silently if you don't enter a passphrase
+                    # It will exit without displaying "Identity added" or "Bad passphrase".
+                    lp.kill(0)
+                    passphraseIncorrectCallback()
+                    success = False
                     return success
             else:
                 logger_debug("Unexpected result from attempt to add key.")
