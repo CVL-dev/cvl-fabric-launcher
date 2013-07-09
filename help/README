@@ -1,0 +1,5 @@
+The Launcher will download its help content from a remote server, e.g.
+
+https://raw.github.com/CVL-dev/cvl-fabric-launcher/master/help/helpfiles.zip
+
+so that the content can be updated without having to release a new version.
