@@ -5,6 +5,7 @@ import os
 import subprocess
 import tempfile
 import traceback
+import threading
 
 if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
@@ -108,13 +109,13 @@ class KeyModel():
             elif "passphrase too short" in stdout:
                 newPassphraseTooShortCallback()
             elif 'Bad pass' in stdout or 'load failed' in stdout:
-                logger_debug('Got "Bad pass" from ssh-keygen binary')
+                logger_debug("changePassphrase %i %s: Got \"Bad pass\" from ssh-keygen binary"%(threading.currentThread().ident,threading.currentThread().name))
                 if existingPassphrase == '':
                     keyLockedCallback()
                 else:
                     existingPassphraseIncorrectCallback()
             else:
-                logger_debug('Got unknown error from ssh-keygen binary')
+                logger_debug("changePassphrase %i %s: Got unknown error from ssh-keygen binary"%(threading.currentThread().ident,threading.currentThread().name))
                 logger_debug(stdout)
                 keyLockedCallback()
         else:
@@ -128,7 +129,7 @@ class KeyModel():
             idx = lp.expect(["Enter old passphrase", "Key has comment"])
 
             if idx == 0:
-                logger_debug("sending passphrase to " + self.sshPathsObject.sshKeyGenBinary + " -f " + self.privateKeyFilePath + " -p")
+                logger_debug("changePassphrase %i %s: sending passphrase to "%(threading.currentThread().ident,threading.currentThread().name) + self.sshPathsObject.sshKeyGenBinary + " -f " + self.privateKeyFilePath + " -p")
                 lp.sendline(existingPassphrase)
 
             idx = lp.expect(["Enter new passphrase", "Bad pass", "load failed", pexpect.EOF])
@@ -147,14 +148,14 @@ class KeyModel():
                     # so repeated newPassphrase should have 
                     # already been checked before changePassphrase
                     # is called.
-                    logger_debug("Passphrases do not match")
+                    logger_debug("changePassphrase %i %s: Passphrases do not match"%(threading.currentThread().ident,threading.currentThread().name))
                 elif idx == 2:
                     newPassphraseTooShortCallback()
             elif idx == 1 or idx == 2:
                 existingPassphraseIncorrectCallback()
             else:
                 #logger_debug("1 returning KEY_LOCKED %s %s"%(lp.before,lp.after))
-                logger_debug("Unexpected result from attempt to change passphrase.")
+                logger_debug("changePassphase %i %s: Unexpected result from attempt to change passphrase."%(threading.currentThread().ident,threading.currentThread().name))
             lp.close()
         return success
 
@@ -219,10 +220,12 @@ class KeyModel():
                 logger_debug('(1) Got EOF from ssh-add binary, probably because an empty passphrase was entered for a passphrase-locked key.')
                 passphraseIncorrectCallback()
             elif stdout is not None and "No such file or directory" in stdout:
+                logger_debug("addKeyToAgent couldn't find a private key")
                 privateKeyFileNotFoundCallback()
                 return False
             elif "Identity added" in stdout:
                 success = True
+                logger_debug("addKeyToAgent succesfully added a key to the agent")
                 keyAddedSuccessfullyCallback()
             elif 'Bad pass' in stdout:
                 logger_debug('Got "Bad pass" from ssh-add binary')
@@ -250,9 +253,11 @@ class KeyModel():
                 idx = lp.expect(["Identity added", "Bad pass", pexpect.EOF])
                 if idx == 0:
                     success = True
+                    logger_debug("addKeyToAgent %i %s sucesfully added the key to the agent, calling keyAddedSuccesfullCallback"%(threading.currentThread().ident,threading.currentThread().name))
                     keyAddedSuccessfullyCallback()
                 elif idx == 1:
                     lp.kill(0)
+                    logger_debug("addKeyToAgent %i %s determined the passphrase was incorrect, calling passphraseIncorrectCallback"%(threading.currentThread().ident,threading.currentThread().name))
                     passphraseIncorrectCallback()
                     success = False
                     return success

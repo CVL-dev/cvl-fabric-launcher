@@ -90,7 +90,12 @@ class LoginProcess():
         def run(self):
             sshCmd = self.loginprocess.sshCmd
             self.loginprocess.matchlist=[]
-            (stdout, stderr) = run_ssh_command(sshCmd.format(**self.loginprocess.jobParams), self.cmd.format(**self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
+            try:
+                (stdout, stderr) = run_ssh_command(sshCmd.format(**self.loginprocess.jobParams), self.cmd.format(**self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
+            except Exception as e:
+                logger_error("could not format the command in runServerCommandThread %s)"%self.cmd)
+                self.loginprocess.cancel("An error occured. I'm sorry I can't give any more detailed information")
+                return
             import itertools
             messages=parseMessages(self.loginprocess.messageRegexs,stdout,stderr)
             concat=""
