@@ -1,5 +1,7 @@
 #HelpController.py
 
+import sys
+import os
 import wx.html
 import tempfile
 import requests
@@ -7,15 +9,13 @@ import traceback
 import pkgutil
 from utilityFunctions import logger_debug, unzip
 
-#helpController.DisplayContents()
-#helpController.Display("MASSIVE/CVL Launcher")
-#helpController.Display("SSH Keys")
-
 launcherHtmlHelpProjectFilename = "launcher.hhp"
 
-class HelpController(wx.html.HtmlHelpController):
+class HelpController():
 
     def __init__(self):
+
+        self.wxHtmlHelpController = wx.html.HtmlHelpController(style=wx.html.HF_DEFAULT_STYLE, parentWindow=None)
 
         self.helpZipFile = None
         self.helpZipFilePath = None
@@ -31,7 +31,7 @@ class HelpController(wx.html.HtmlHelpController):
             self.helpZipFile = tempfile.NamedTemporaryFile(mode='w+b', prefix='helpfiles-', suffix='.zip', delete=False)
             self.helpZipFilePath = self.helpZipFile.name
             logger_debug("self.helpZipFilePath = " + self.helpZipFilePath)
-            r = requests.get(launcherHelpUrl)
+            r = requests.get(self.launcherHelpUrl, verify=False)
             if r.status_code == 200:
                 for chunk in r.iter_content():
                     self.helpZipFile.write(chunk)
@@ -48,7 +48,7 @@ class HelpController(wx.html.HtmlHelpController):
             logger_debug("self.helpFilesDirectory = " + self.helpFilesDirectory)
 
             self.launcherHtmlHelpProjectFile = os.path.join(self.helpFilesDirectory, launcherHtmlHelpProjectFilename)
-            self.initializationSucceeded = helpController.AddBook(self.launcherHtmlHelpProjectFile)
+            self.initializationSucceeded = self.wxHtmlHelpController.AddBook(self.launcherHtmlHelpProjectFile)
 
         except:
             logger_debug(traceback.format_exc())
@@ -64,7 +64,7 @@ class HelpController(wx.html.HtmlHelpController):
                     self.helpFilesDirectory = os.path.join(launcherModulePath, "help", "helpfiles")
 
                 self.launcherHtmlHelpProjectFile = os.path.join(self.helpFilesDirectory, launcherHtmlHelpProjectFilename)
-                self.initializationSucceeded = helpController.AddBook(self.launcherHtmlHelpProjectFile)
+                self.initializationSucceeded = self.wxHtmlHelpController.AddBook(self.launcherHtmlHelpProjectFile)
 
             except:
                 logger_debug(traceback.format_exc())
@@ -73,10 +73,25 @@ class HelpController(wx.html.HtmlHelpController):
     def cleanUp(self):
         if self.helpZipFilePath is not None:
             os.remove(self.helpZipFilePath)
-        if self.helpFilesDirectory is not None
+        if self.helpFilesDirectory is not None:
             for helpFile in os.listdir(self.helpFilesDirectory):
                 os.remove(os.path.join(self.helpFilesDirectory,helpFile))
             os.remove(self.helpFilesDirectory)
 
+    # At first I tried inheriting from the wx.html.HtmlHelpController class,
+    # so that I would get these methods for free, but then AddBook complained
+    # that objects of my derived class were not instances of 
+    # wx.html.HtmlHelpController
+
+    def DisplayContents(self):
+        self.wxHtmlHelpController.DisplayContents()
+
+    def Display(self,chapter):
+        self.wxHtmlHelpController.Display(chapter)
+
 helpController = HelpController()
+
+#helpController.DisplayContents()
+#helpController.Display("MASSIVE/CVL Launcher")
+#helpController.Display("SSH Keys")
 

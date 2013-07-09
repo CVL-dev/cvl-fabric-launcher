@@ -19,12 +19,11 @@ from sshKeyDist import sshpaths
 
 class IdentityMenu(wx.Menu):
 
-    def initialize(self, launcherMainFrame, massiveLauncherConfig, massiveLauncherPreferencesFilePath, helpController):
+    def initialize(self, launcherMainFrame, massiveLauncherConfig, massiveLauncherPreferencesFilePath):
 
         self.launcherMainFrame = launcherMainFrame
         self.massiveLauncherConfig = massiveLauncherConfig
         self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
-        self.helpController = helpController
 
         createNewKeyMenuItemId = wx.NewId()
         self.Append(createNewKeyMenuItemId, "Create &new key")
@@ -219,12 +218,10 @@ class IdentityMenu(wx.Menu):
 
 
     def onHelpAboutKeys(self,event):
-        logger_debug("")
-        if self.helpController is None:
-            self.helpController = wx.html.HtmlHelpController()
-            launcherHelpFile = "helpfiles/launcher.hhp"
-            if not self.helpController.AddBook(launcherHelpFile):
-                wx.MessageBox("Unable to open: " + launcherHelpFile,
-                              "Error", wx.OK|wx.ICON_EXCLAMATION)
-        self.helpController.Display("SSH Keys")
+        from help.HelpController import helpController
+        if helpController is not None and helpController.initializationSucceeded:
+            helpController.Display("SSH Keys")
+        else:
+            wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
+                          "Error", wx.OK|wx.ICON_EXCLAMATION)
 

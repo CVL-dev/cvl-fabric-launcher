@@ -10,9 +10,6 @@ if os.path.abspath("..") not in sys.path:
 from sshKeyDist import sshpaths
 from sshKeyDist import double_quote
 
-global helpController
-helpController = None
-
 from utilityFunctions import logger_debug
 
 class ChangeKeyPassphraseDialog(wx.Dialog):
@@ -241,15 +238,12 @@ class ChangeKeyPassphraseDialog(wx.Dialog):
         self.Show(False)
 
     def onHelp(self, event):
-        global helpController
-        if helpController is None:
-            helpController = wx.html.HtmlHelpController()
-            launcherHelpFile = "helpfiles/launcher.hhp"
-            if not helpController.AddBook(launcherHelpFile):
-                wx.MessageBox("Unable to open: " + launcherHelpFile,
-                              "Error", wx.OK|wx.ICON_EXCLAMATION)
-        #helpController.DisplayContents()
-        helpController.Display("SSH Keys")
+        from help.HelpController import helpController
+        if helpController is not None and helpController.initializationSucceeded:
+            helpController.Display("SSH Keys")
+        else:
+            wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
+                          "Error", wx.OK|wx.ICON_EXCLAMATION)
 
     def getNewPassphrase(self):
         return self.newPassphraseField.GetValue()

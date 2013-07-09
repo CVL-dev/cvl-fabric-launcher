@@ -7,9 +7,6 @@ import sys
 
 from KeyModel import KeyModel
 
-global helpController
-helpController = None
-
 from utilityFunctions import logger_debug
 
 class CreateNewKeyDialog(wx.Dialog):
@@ -309,15 +306,12 @@ class CreateNewKeyDialog(wx.Dialog):
         self.Show(False)
 
     def onHelp(self, event):
-        global helpController
-        if helpController is None:
-            helpController = wx.html.HtmlHelpController()
-            launcherHelpFile = "helpfiles/launcher.hhp"
-            if not helpController.AddBook(launcherHelpFile):
-                wx.MessageBox("Unable to open: " + launcherHelpFile,
-                              "Error", wx.OK|wx.ICON_EXCLAMATION)
-        #helpController.DisplayContents()
-        helpController.Display("SSH Keys")
+        from help.HelpController import helpController
+        if helpController is not None and helpController.initializationSucceeded:
+            helpController.Display("SSH Keys")
+        else:
+            wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
+                          "Error", wx.OK|wx.ICON_EXCLAMATION)
 
     def onBrowse(self, event):
         saveFileDialog = wx.FileDialog (self, message = 'MASSIVE Launcher private key file...', defaultDir=self.privateKeyDir, defaultFile=self.privateKeyFilename, style = wx.SAVE)
