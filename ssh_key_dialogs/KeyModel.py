@@ -216,7 +216,8 @@ class KeyModel():
             stdout, stderr = proc.communicate(input=passphrase + '\r\n')
 
             if stdout is None or str(stdout).strip() == '':
-                logger_debug('(1) Got EOF from ssh-add binary')
+                logger_debug('(1) Got EOF from ssh-add binary, probably because an empty passphrase was entered for a passphrase-locked key.')
+                passphraseIncorrectCallback()
             elif stdout is not None and "No such file or directory" in stdout:
                 privateKeyFileNotFoundCallback()
                 return False
