@@ -7,11 +7,11 @@ import sys
 if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
 
-from ssh_key_dialogs.ChangeKeyPassphraseDialog import ChangeKeyPassphraseDialog
-from ssh_key_dialogs.InspectKeyDialog import InspectKeyDialog
-from ssh_key_dialogs.ResetKeyPassphraseDialog import ResetKeyPassphraseDialog
-from ssh_key_dialogs.CreateNewKeyDialog import CreateNewKeyDialog
-from ssh_key_dialogs.KeyModel import KeyModel
+from cvlsshutils.ChangeKeyPassphraseDialog import ChangeKeyPassphraseDialog
+from cvlsshutils.InspectKeyDialog import InspectKeyDialog
+from cvlsshutils.ResetKeyPassphraseDialog import ResetKeyPassphraseDialog
+from cvlsshutils.CreateNewKeyDialog import CreateNewKeyDialog
+from cvlsshutils.KeyModel import KeyModel
 
 from utilityFunctions import logger_debug
 
