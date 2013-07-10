@@ -9,6 +9,12 @@
 		<param name="Name" value="Authentication Overview">
 		<param name="Local" value="authentication_overview.htm">
 		</OBJECT>
+        <UL>
+            <LI> <OBJECT type="text/sitemap">
+                <param name="Name" value="Password">
+                <param name="Local" value="authentication_overview.htm#Password">
+                </OBJECT>
+        </UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="SSH Keys">
 		<param name="Local" value="ssh_keys.htm">
