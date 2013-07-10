@@ -571,7 +571,7 @@ class LoginProcess():
         def distributeKey(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring Authorisation")
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.notify_window,event.loginprocess.sshpaths)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.notify_window,event.loginprocess.sshpaths)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      event.loginprocess.cancel)
@@ -951,7 +951,8 @@ class LoginProcess():
 
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,username,host,resolution,cipher,notifywindow,sshpaths,siteConfig=None,project=None,hours=None,nodes=1,usePBS=True,directConnect=False,autoExit=False,fastInterface="-ib"):
+    def __init__(self,parentWindow,username,host,resolution,cipher,notifywindow,sshpaths,siteConfig=None,project=None,hours=None,nodes=1,usePBS=True,directConnect=False,autoExit=False,fastInterface="-ib"):
+        self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
         self.notify_window = notifywindow
