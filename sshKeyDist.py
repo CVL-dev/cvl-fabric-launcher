@@ -204,19 +204,21 @@ class KeyDist():
             self.Close()
     
         def onHelp(self,e):
-            helpDialog = HelpDialog(self.GetParent(), title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
-            helpPanel = wx.Panel(helpDialog)
-            helpPanelSizer = wx.FlexGridSizer()
-            helpPanel.SetSizer(helpPanelSizer)
-            helpText = wx.TextCtrl(helpPanel,wx.ID_ANY,value="",size=(400,400),style=wx.TE_READONLY|wx.TE_MULTILINE)
-            try:
-                helpText.LoadFile("sshHelpText.txt")
-            except:
-                pass
-            helpPanelSizer.Add(helpText,border=20,flag=wx.BORDER|wx.TOP|wx.RIGHT)
-            helpPanelSizer.Fit(helpPanel)
-            helpDialog.addPanel(helpPanel)
-            helpDialog.ShowModal()
+            from help.HelpController import helpController
+            helpController.Display("Authentication Overview")
+            #helpDialog = HelpDialog(self.GetParent(), title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
+            #helpPanel = wx.Panel(helpDialog)
+            #helpPanelSizer = wx.FlexGridSizer()
+            #helpPanel.SetSizer(helpPanelSizer)
+            #helpText = wx.TextCtrl(helpPanel,wx.ID_ANY,value="",size=(400,400),style=wx.TE_READONLY|wx.TE_MULTILINE)
+            #try:
+                #helpText.LoadFile("sshHelpText.txt")
+            #except:
+                #pass
+            #helpPanelSizer.Add(helpText,border=20,flag=wx.BORDER|wx.TOP|wx.RIGHT)
+            #helpPanelSizer.Fit(helpPanel)
+            #helpDialog.addPanel(helpPanel)
+            #helpDialog.ShowModal()
 
 
         def getPassword(self):
