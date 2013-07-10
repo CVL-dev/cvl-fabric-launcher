@@ -4,12 +4,13 @@ Compiled file=testing.chm
 Contents file=contents.hhc
 Display compile progress=No
 Index file=Index.hhk
-Language=0x405 Èesky
+Language=0x409 English (United States)
 Title=MASSIVE/CVL Launcher
 Default topic=main.htm
 
 [FILES]
 main.htm
+authentication_overview.htm
 ssh_keys.htm
 ssh_agent_forwarding.htm
 
