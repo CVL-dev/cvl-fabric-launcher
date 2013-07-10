@@ -15,7 +15,7 @@ from ssh_key_dialogs.KeyModel import KeyModel
 
 from utilityFunctions import logger_debug
 
-from sshKeyDist import sshpaths
+from cvlsshutils.sshKeyDist import sshpaths
 
 class IdentityMenu(wx.Menu):
 
@@ -68,7 +68,7 @@ class IdentityMenu(wx.Menu):
                 self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
 
         (self.privateKeyDirectory, self.privateKeyFileName) = os.path.split(self.privateKeyFilePath)
-        # sshKeyDist.sshpaths currently assumes that private key is in ~/.ssh
+        # cvlsshutils.sshKeyDist.sshpaths currently assumes that private key is in ~/.ssh
         self.sshPathsObject = sshpaths(self.privateKeyFileName)
 
         return os.path.exists(self.privateKeyFilePath)

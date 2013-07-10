@@ -11,8 +11,8 @@ from KeyModel import KeyModel
 
 if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
-from sshKeyDist import KeyDist
-from sshKeyDist import sshpaths
+from cvlsshutils.sshKeyDist import KeyDist
+from cvlsshutils.sshKeyDist import sshpaths
 
 from utilityFunctions import logger_debug, configureLogger
 
@@ -24,7 +24,7 @@ class InspectKeyDialog(wx.Dialog):
         self.privateKeyFilePath = privateKeyFilePath
 
         (self.privateKeyDirectory, self.privateKeyFileName) = os.path.split(self.privateKeyFilePath)
-        # sshKeyDist.sshpaths currently assumes that private key is in ~/.ssh
+        # cvlsshutils.sshKeyDist.sshpaths currently assumes that private key is in ~/.ssh
         self.sshPathsObject = sshpaths(self.privateKeyFileName)
 
         # I really miss Java Swing's BorderLayout and
