@@ -110,7 +110,7 @@ from StringIO import StringIO
 import logging
 import LoginTasks
 from utilityFunctions import *
-import sshKeyDist
+import cvlsshutils.sshKeyDist
 import launcher_progress_dialog
 from menus.IdentityMenu import IdentityMenu
 import tempfile
@@ -1212,11 +1212,11 @@ class LauncherMainFrame(wx.Frame):
         userCanAbort=True
         maximumProgressBarValue = 10
 
-        self.sshpaths = sshKeyDist.sshpaths('MassiveLauncherKey',massiveLauncherConfig,massiveLauncherPreferencesFilePath)
+        self.sshpaths = cvlsshutils.sshKeyDist.sshpaths('MassiveLauncherKey',massiveLauncherConfig,massiveLauncherPreferencesFilePath)
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         self.loginProcess=LoginTasks.LoginProcess(username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=hours,nodes=nodes,usePBS=launcherMainFrame.massiveTabSelected,directConnect=(not launcherMainFrame.massiveTabSelected),autoExit=autoExit)
         if sys.platform.startswith("win"):
-            sshKeyDist.start_pageant()
+            cvlsshutils.sshKeyDist.start_pageant()
             if 'HOME' not in os.environ:
                 os.environ['HOME'] = os.path.expanduser('~')
         self.loginProcess.doLogin()

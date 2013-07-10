@@ -1,5 +1,5 @@
 from threading import *
-import sshKeyDist
+import cvlsshutils.sshKeyDist
 from utilityFunctions import *
 import traceback
 import sys
@@ -571,7 +571,7 @@ class LoginProcess():
         def distributeKey(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring Authorisation")
-                event.loginprocess.skd = sshKeyDist.KeyDist(event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.notify_window,event.loginprocess.sshpaths)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.notify_window,event.loginprocess.sshpaths)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      event.loginprocess.cancel)
