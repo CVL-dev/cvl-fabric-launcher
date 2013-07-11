@@ -866,12 +866,30 @@ class LoginProcess():
                     wx.CallAfter(event.loginprocess.notify_window.progressDialog.Destroy)
                     event.loginprocess.notify_window.progressDialog = None
                 logger_debug("all threads stopped and joined")
+                if event.loginprocess.autoExit:
+                    os._exit(0)
             else:
                 event.Skip()
 
         def statRunningJob(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB):
                 logger_debug("caught STAT_RUNNING_JOB")
+                if sys.platform.startswith("darwin"):
+                    if hasattr(sys, 'frozen'):
+                        applicationName = "MASSIVE Launcher"
+                    else:
+                        applicationName = "Python"
+                    def grabFocusBackFromTurboVNC():
+                        subprocess.Popen(['osascript', '-e',
+                            "tell application \"System Events\"\r" +
+                            "  set launcherApps to every process whose name contains \"" + applicationName + "\"\r" +
+                            "  try\r" +
+                            "    set launcherApp to item 1 of launcherApps\r" +
+                            "    set frontmost of launcherApp to true\r" +
+                            "    tell application \"" + applicationName + "\" to activate\r" +
+                            "  end try\r" +
+                            "end tell\r"])
+                    grabFocusBackFromTurboVNC()
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER,event.loginprocess)
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.listAllCmd,event.loginprocess.listAllRegEx,nextevent,"")
                 t.setDaemon(False)
@@ -1008,7 +1026,8 @@ class LoginProcess():
                 self.runningCmd='qstat -u {username}'
                 self.runningRegEx='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
                 # request_visnode is a little buggy, if you issue a qdel <jobid> ; request_visnode it will may the id of the deleted job. Sleep to work around
-                self.stopCmd='\'qdel {jobid} ; sleep 5\''
+                #self.stopCmd='\'qdel {jobid} ; sleep 5\''
+                self.stopCmd='\'qdel -a {jobid}\''
                 self.execHostCmd='qpeek {jobidNumber}'
                 self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
                 self.startServerCmd="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
@@ -1038,7 +1057,7 @@ class LoginProcess():
                 self.runningRegEx='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
                 self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username}\""
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
-                self.stopCmd='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
+                self.stopCmd='\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"'
                 self.showStartCmd="echo -"
                 self.showStartRegEx="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
                 self.vncDisplayCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
