@@ -944,7 +944,10 @@ class LoginProcess():
                 else:
                     logger_debug("caught an EVT_LOGINPROCESS_KILL_SERVER")
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".*",nextevent,"",requireMatch=False)
+                if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmdForRestart,".*",nextevent,"",requireMatch=False)
+                else:
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".*",nextevent,"",requireMatch=False)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1006,6 +1009,7 @@ class LoginProcess():
             self.runningCmd=siteConfig['runningCmd']
             self.runningRegEx=siteConfig['runningRegEx']
             self.stopCmd=siteConfig['stopCmd']
+            self.stopCmdForRestart=siteConfig['stopCmdForRestart']
             self.execHostCmd=siteConfig['execHostCmd']
             self.startServerCmd=siteConfig['startServerCmd']
             self.startServerRegEx=siteConfig['startServerRegEx']
@@ -1026,8 +1030,8 @@ class LoginProcess():
                 self.runningCmd='qstat -u {username}'
                 self.runningRegEx='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
                 # request_visnode is a little buggy, if you issue a qdel <jobid> ; request_visnode it will may the id of the deleted job. Sleep to work around
-                #self.stopCmd='\'qdel {jobid} ; sleep 5\''
                 self.stopCmd='\'qdel -a {jobid}\''
+                self.stopCmdForRestart='\'qdel {jobid} ; sleep 5\''
                 self.execHostCmd='qpeek {jobidNumber}'
                 self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
                 self.startServerCmd="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
@@ -1058,6 +1062,7 @@ class LoginProcess():
                 self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username}\""
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
                 self.stopCmd='\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"'
+                self.stopCmdForRestart='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
                 self.showStartCmd="echo -"
                 self.showStartRegEx="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
                 self.vncDisplayCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
@@ -1071,6 +1076,7 @@ class LoginProcess():
                 self.runningCmd='"module load turbovnc ; vncserver -list"'
                 self.runningRegEx='^(?P<vncDisplay>{vncDisplay})\s*(?P<vncPID>[0-9]+)\s*$'
                 self.stopCmd='"module load turbovnc ; vncserver -kill {vncDisplay}"'
+                self.stopCmdForRestart='"module load turbovnc ; vncserver -kill {vncDisplay}"'
                 self.execHostCmd='echo execHost: {loginHost}'
                 self.execHostRegEx='^\s*execHost: (?P<execHost>\S+)\s*$'
                 self.startServerCmd = "vncsession --vnc turbovnc --geometry {resolution}"
