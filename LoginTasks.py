@@ -1021,6 +1021,7 @@ class LoginProcess():
         else:
             self.siteConfig={}
 
+            logger_debug('loginParams["loginHost"]: ' + self.loginParams['loginHost'])
 
             self.messageRegexs=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
             # output from startServerCmd that matches and of these regular expressions will pop up in a window for the user
