@@ -62,3 +62,7 @@ Source: "dist\launcher\*.*"; DestDir: "{app}"; Flags: recursesubdirs
 [Icons]
 Name: "{group}\{#LauncherAppName}"; Filename: "{app}\{#LauncherAppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#LauncherAppName}}"; Filename: "{uninstallexe}"
+
+[Dirs]
+Name: "{pf}\{#LauncherAppName}\openssh-cygwin-stdin-build\tmp"; Permissions: "users-modify"
+
