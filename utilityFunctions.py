@@ -609,17 +609,21 @@ def logger_warning(message):
         wx.CallAfter(logger.warning, message)
 
 def unzip(zipFilePath, destDir):
+
     zfile = zipfile.ZipFile(zipFilePath)
+
     for name in zfile.namelist():
+
         (dirName, fileName) = os.path.split(name)
-        if fileName == '':
-            # directory
-            newDir = destDir + '/' + dirName
-            if not os.path.exists(newDir):
-                os.mkdir(newDir)
-        else:
-            # file
-            fd = open(destDir + '/' + name, 'wb')
+
+        absoluteDirectoryPath = os.path.join(destDir, dirName)
+        if not os.path.exists(absoluteDirectoryPath):
+            os.mkdir(absoluteDirectoryPath)
+
+        if fileName != '':
+            fd = open(os.path.join(absoluteDirectoryPath, fileName), 'wb')
             fd.write(zfile.read(name))
             fd.close()
+
     zfile.close()
+
