@@ -1046,7 +1046,7 @@ class LoginProcess():
                 self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
                 self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
 
-            elif ("cvllogin" in self.loginParams['loginHost']):
+            else:
                 update={}
                 update['loginHost']="118.138.241.53"
                 self.loginParams.update(update)
@@ -1066,28 +1066,11 @@ class LoginProcess():
                 self.stopCmdForRestart='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
                 self.showStartCmd="echo -"
                 self.showStartRegEx="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
-                self.vncDisplayCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
+                self.vncDisplayCmd = '" sleep 3 ; /usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"' # arbitary use of sleep 3 because sometimes it takes a while between a job starting the vncserver starting.
                 self.vncDisplayRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
                 self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
                 self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
 
-            else:
-                self.listAllCmd='"module load turbovnc ; vncserver -list"'
-                self.listAllRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
-                self.runningCmd='"module load turbovnc ; vncserver -list"'
-                self.runningRegEx='^(?P<vncDisplay>{vncDisplay})\s*(?P<vncPID>[0-9]+)\s*$'
-                self.stopCmd='"module load turbovnc ; vncserver -kill {vncDisplay}"'
-                self.stopCmdForRestart='"module load turbovnc ; vncserver -kill {vncDisplay}"'
-                self.execHostCmd='echo execHost: {loginHost}'
-                self.execHostRegEx='^\s*execHost: (?P<execHost>\S+)\s*$'
-                self.startServerCmd = "vncsession --vnc turbovnc --geometry {resolution}"
-                self.startServerRegEx="^.*started on display \S+(?P<vncDisplay>:[0-9]+).*$"
-                self.vncDisplayCmd="echo {vncDisplay}"
-                self.vncDisplayRegEx="."
-                self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
-                self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
-                self.showStartCmd="echo -"
-                self.showStartRegEx="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
 
             if (not self.directConnect):
                 self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
