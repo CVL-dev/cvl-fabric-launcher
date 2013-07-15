@@ -1214,6 +1214,11 @@ class LauncherMainFrame(wx.Frame):
         userCanAbort=True
         maximumProgressBarValue = 10
 
+        try:
+            os.mkdir(os.path.join(os.path.expanduser('~'), '.ssh'))
+        except:
+            pass
+
         self.sshpaths = cvlsshutils.sshKeyDist.sshpaths('MassiveLauncherKey',massiveLauncherConfig,massiveLauncherPreferencesFilePath)
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=hours,nodes=nodes,usePBS=launcherMainFrame.massiveTabSelected,directConnect=(not launcherMainFrame.massiveTabSelected),autoExit=autoExit)
