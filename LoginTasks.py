@@ -851,7 +851,8 @@ class LoginProcess():
                     text=wx.StaticText(panel,wx.ID_ANY,label=event.string)
                     sizer.Add(text,0,wx.ALL,15)
                     dlg.addPanel(panel)
-                    wx.CallAfter(dlg.ShowModal)
+                    dlg.ShowModal()
+                dump_log(event.loginprocess.notify_window,submit_log=True)
             else:
                 event.Skip()
 
