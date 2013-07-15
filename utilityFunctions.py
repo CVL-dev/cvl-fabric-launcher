@@ -327,42 +327,36 @@ def dump_log(launcherMainFrame,submit_log=False):
     logging.shutdown()
 
     def yes_no():
+
+        def submit_log():
+            import requests
+            url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
+            #file_info = {'logfile': launcherMainFrame.logger_output.getvalue()}
+            file_info = {'logfile': logger_output.getvalue()}
+
+            # If we are running in an installation then we have to use
+            # our packaged cacert.pem file:
+            if os.path.exists('cacert.pem'):
+                r = requests.post(url, files=file_info, verify='cacert.pem')
+            elif os.path.exists('/opt/MassiveLauncher/cacert.pem'):
+                r = requests.post(url, files=file_info, verify='/opt/MassiveLauncher/cacert.pem')
+            elif os.path.exists('c:/program files/massive launcher/cacert.pem'):
+                r = requests.post(url, files=file_info, verify='c:/program files/massive launcher/cacert.pem')
+            elif os.path.exists('c:/program files (x86)/massive launcher/cacert.pem'):
+                r = requests.post(url, files=file_info, verify='c:/program files (x86)/massive launcher/cacert.pem')
+            else:
+                r = requests.post(url, files=file_info)
         dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
         try:
             result = dlg.ShowModal()
-            launcherMainFrame.submit_log = result == wx.ID_YES
+            if (result == wx.ID_YES):
+                submit_log()
         finally:
             dlg.Destroy()
-            launcherMainFrame.yes_no_completed = True
-
-    launcherMainFrame.yes_no_completed = False
 
     if submit_log:
         wx.CallAfter(yes_no)
-        while not launcherMainFrame.yes_no_completed:
-            time.sleep(0.1)
 
-    if submit_log and launcherMainFrame.submit_log:
-        logger_debug('about to send debug log')
-
-        url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
-        #file_info = {'logfile': launcherMainFrame.logger_output.getvalue()}
-        file_info = {'logfile': logger_output.getvalue()}
-
-        # If we are running in an installation then we have to use
-        # our packaged cacert.pem file:
-        if os.path.exists('cacert.pem'):
-            r = requests.post(url, files=file_info, verify='cacert.pem')
-        elif os.path.exists('/opt/MassiveLauncher/cacert.pem'):
-            r = requests.post(url, files=file_info, verify='/opt/MassiveLauncher/cacert.pem')
-        elif os.path.exists('c:/program files/massive launcher/cacert.pem'):
-            r = requests.post(url, files=file_info, verify='c:/program files/massive launcher/cacert.pem')
-        elif os.path.exists('c:/program files (x86)/massive launcher/cacert.pem'):
-            r = requests.post(url, files=file_info, verify='c:/program files (x86)/massive launcher/cacert.pem')
-        else:
-            r = requests.post(url, files=file_info)
-
-    return
 
 def seconds_to_hours_minutes(seconds):
     m, s = divmod(seconds, 60)

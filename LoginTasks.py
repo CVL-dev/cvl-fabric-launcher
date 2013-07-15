@@ -114,7 +114,7 @@ class LoginProcess():
                 text=wx.StaticText(panel,wx.ID_ANY,label=concat)
                 sizer.Add(text,0,wx.ALL,15)
                 dlg.addPanel(panel)
-                wx.CallAfter(dlg.ShowModal)
+                wx.CallAfter(dlg.Show)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
                 match=re.search(self.regex.format(**self.loginprocess.jobParams),line)
                 if (match):
@@ -257,7 +257,7 @@ class LoginProcess():
                             self.loginprocess.jobParams.update(match.groupdict())
                             self.loginprocess.matchlist.append(match.groupdict())
                             matched=True
-                if (not matched and tsleep == 1):
+                if (not matched and tsleep > 15):
                     sleepperiod=15
                 if (not matched and tsleep > 15 and not self.loginprocess.canceled()):
                     newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_ESTIMATED_START,self.loginprocess)
@@ -689,6 +689,7 @@ class LoginProcess():
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER,event.loginprocess)
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.startServerCmd,event.loginprocess.startServerRegEx,nextevent,"Error starting the VNC server. This could occur")
                 t.setDaemon(False)
+                event.loginprocess.started_job.set()
                 t.start()
                 event.loginprocess.threads.append(t)
             else:
@@ -697,8 +698,6 @@ class LoginProcess():
         def waitForServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER):
                 logger_debug("caught event WAIT_FOR_SERVER")
-                if event.loginprocess.jobParams.has_key('jobid'):
-                    event.loginprocess.started_job.set()
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Waiting for the VNC server to start")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_EXECUTION_HOST,event.loginprocess)
                 t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.runningCmd,event.loginprocess.runningRegEx,nextevent,"")
@@ -749,7 +748,7 @@ class LoginProcess():
                 logger_debug("caught event GET_VNCDISPLAY")
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting the display number")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_TUNNEL,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.vncDisplayCmd,event.loginprocess.vncDisplayRegEx,nextevent,"Unable to get the VNC display")
+                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.vncDisplayCmd,event.loginprocess.vncDisplayRegEx,nextevent,"Unable to get the VNC display")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -828,10 +827,16 @@ class LoginProcess():
                 if event.loginprocess.started_job.isSet():
                     # try to stop the job on MASSIVE/CVL but since we are already in a cancel state, we won't try to be to graceful about it.
                     nextevent=None
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".",nextevent,"")
-                    t.setDaemon(True)
-                    t.start()
-                    event.loginprocess.threads.append(t)
+                    # Cancelation during the startup process is tricky. It concievable although unlikely that we will have set the event to say the job is started, but not succesfully submitted a job.
+                    # Therefore test if the stopCmd can actually be formated before attempting to execute it.
+                    try:
+                        event.loginprocess.stopCmd.format(**event.loginprocess.jobParams)
+                        t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".",nextevent,"")
+                        t.setDaemon(True)
+                        t.start()
+                        event.loginprocess.threads.append(t)
+                    except:
+                        pass
                 logger_debug("caught LOGINPROCESS_CANCEL")
                 if (event.loginprocess.skd!=None): 
                         logger_debug("calling SKD cancel")
@@ -846,7 +851,8 @@ class LoginProcess():
                     text=wx.StaticText(panel,wx.ID_ANY,label=event.string)
                     sizer.Add(text,0,wx.ALL,15)
                     dlg.addPanel(panel)
-                    wx.CallAfter(dlg.ShowModal)
+                    dlg.ShowModal()
+                dump_log(event.loginprocess.notify_window,submit_log=True)
             else:
                 event.Skip()
 
@@ -1066,7 +1072,7 @@ class LoginProcess():
                 self.stopCmdForRestart='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
                 self.showStartCmd="echo -"
                 self.showStartRegEx="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
-                self.vncDisplayCmd = '" sleep 3 ; /usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"' # arbitary use of sleep 3 because sometimes it takes a while between a job starting the vncserver starting.
+                self.vncDisplayCmd = '" /usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
                 self.vncDisplayRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
                 self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
                 self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
