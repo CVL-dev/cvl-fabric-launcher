@@ -875,8 +875,9 @@ class LauncherMainFrame(wx.Frame):
         configureLogger('launcher')
         # print "after configure Logger, logger is"
 
-
-
+        import commit_def
+        logger_debug('launcher commit hash: ' + commit_def.LATEST_COMMIT)
+        logger_debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
 
         # Check for the latest version of the launcher:
         try:
@@ -963,7 +964,8 @@ class LauncherMainFrame(wx.Frame):
     def onAbout(self, event):
         import commit_def
         dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n"
-                                   + 'Commit: ' + commit_def.LATEST_COMMIT + '\n',
+                                   + 'launcher Commit: ' + commit_def.LATEST_COMMIT + '\n'
+                                   + 'cvlsshutils Commit: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS + '\n',
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
