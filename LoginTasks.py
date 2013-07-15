@@ -1070,7 +1070,7 @@ class LoginProcess():
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
                 self.stopCmd='\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"'
                 self.stopCmdForRestart='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
-                self.showStartCmd="echo -"
+                self.showStartCmd=None
                 self.showStartRegEx="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
                 self.vncDisplayCmd = '" /usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
                 self.vncDisplayRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
