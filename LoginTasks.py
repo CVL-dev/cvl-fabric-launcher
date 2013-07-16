@@ -1208,7 +1208,6 @@ class LoginProcess():
             self._canceled.set()
             event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CANCEL,self,error)
             wx.PostEvent(self.notify_window.GetEventHandler(),event)
-            #logger_error("LoginTasks.cancel error message %s"%error)
 
     def canceled(self):
         return self._canceled.isSet()
