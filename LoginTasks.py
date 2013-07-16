@@ -75,7 +75,10 @@ class LoginProcess():
             self.loginprocess = loginprocess
             self._stop = Event()
             self.cmd=cmd
-            self.regex=regex
+            if (not isinstance(regex,list)):
+                self.regex=[regex]
+            else:
+                self.regex=regex
             self.nextevent=nextevent
             self.errormessage=errormessage
             self.requireMatch=requireMatch
@@ -116,16 +119,19 @@ class LoginProcess():
                 dlg.addPanel(panel)
                 wx.CallAfter(dlg.Show)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
-                match=re.search(self.regex.format(**self.loginprocess.jobParams),line)
-                if (match):
-                    oneMatchFound=True
-                    logger_debug('runServerCommand matched the regex %s %s' % (self.regex.format(**self.loginprocess.jobParams),line))
-                    self.loginprocess.jobParams.update(match.groupdict())
-                    self.loginprocess.matchlist.append(match.groupdict())
-                else:
-                    logger_debug('runServerCommand did not match the regex %s %s' % (self.regex.format(**self.loginprocess.jobParams),line))
+                for regex in self.regex:
+                    if (regex != None):
+                        match=re.search(regex.format(**self.loginprocess.jobParams),line)
+                        if (match):
+                            oneMatchFound=True
+                            logger_debug('runServerCommand matched the regex %s %s' % (regex.format(**self.loginprocess.jobParams),line))
+                            self.loginprocess.jobParams.update(match.groupdict())
+                            self.loginprocess.matchlist.append(match.groupdict())
+                        else:
+                            logger_debug('runServerCommand did not match the regex %s %s' % (regex.format(**self.loginprocess.jobParams),line))
             if (not oneMatchFound and self.requireMatch):
-                    logger_error("no match found for the regex %s"%self.regex.format(**self.loginprocess.jobParams))
+                    for regex in self.regex:
+                        logger_error("no match found for the regex %s"%regex.format(**self.loginprocess.jobParams))
                     self.loginprocess.cancel(self.errormessage)
             if (not self.stopped() and self.nextevent!=None and not self.loginprocess.canceled()):
                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
@@ -215,7 +221,10 @@ class LoginProcess():
             self._stop = Event()
             self.nextEvent = nextEvent
             self.cmd=cmd
-            self.regex=regex
+            if (not isinstance(regex,list)):
+                self.regex=[regex]
+            else:
+                self.regex=regex
             self.errorstring=errorstring
     
         def stop(self):
@@ -233,6 +242,9 @@ class LoginProcess():
             sshCmd = self.loginprocess.sshCmd
             jobParams=self.loginprocess.jobParams
             matched=False
+            matchedDict={}
+            for regex in self.regex:
+                matchedDict[regex]=False
             while (not matched and not self.stopped()):
                 tsleep+=sleepperiod
                 if (not self.stopped()):
@@ -240,23 +252,29 @@ class LoginProcess():
                 try:
                     (stdout,stderr) = run_ssh_command(sshCmd.format(**jobParams),self.cmd.format(**jobParams),ignore_errors=True)
                 except KeyError as e:
-                    self.loginprocess.cancel("Trying to check if the job is running yet, I was missing a parameter %s"%e)
+                    self.loginprocess.cancel("Trying to running %s\n%s, I was missing a parameter %s"%(sshCmd,self.cmd,e))
                     return
                 
+            
                 for line in stdout.splitlines(False):
-                    if (not self.stopped()):
-                        try:
-                            regex=self.regex.format(**jobParams)
-                            logger_debug("searching the output of %s using regex %s"%(self.cmd.format(**jobParams),regex))
-                        except KeyError as e:
-                            logger_error("Trying to check if the job is running yet, unable to formulate regex, missing parameter %s"%e)
-                            self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
-                            return
-                        match = re.search(regex,line)
-                        if (match):
-                            self.loginprocess.jobParams.update(match.groupdict())
-                            self.loginprocess.matchlist.append(match.groupdict())
-                            matched=True
+                    for regexUnformatted in self.regex:
+                        if regexUnformatted != None:
+                            if (not self.stopped()):
+                                try:
+                                    regex=regexUnformatted.format(**jobParams)
+                                    logger_debug("searching the output of %s using regex %s"%(self.cmd.format(**jobParams),regex))
+                                except KeyError as e:
+                                    logger_error("Trying to running %s, unable to formulate regex, missing parameter %s"%(regexUnformatted,e))
+                                    self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
+                                    return
+                                match = re.search(regex,line)
+                                if (match):
+                                    self.loginprocess.jobParams.update(match.groupdict())
+                                    self.loginprocess.matchlist.append(match.groupdict())
+                                    matchedDict[regexUnformatted]=True
+                                    matched=True
+                                    for oneMatch in matchedDict.values():
+                                        matched=(matched and oneMatch)
                 if (not matched and tsleep > 15):
                     sleepperiod=15
                 if (not matched and tsleep > 15 and not self.loginprocess.canceled()):
@@ -1058,22 +1076,22 @@ class LoginProcess():
                 self.loginParams.update(update)
                 self.jobParams.update(self.loginParams)
                 self.directConnect=True
-                self.execHostCmd='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \'\"'
-                self.execHostRegEx='^\s*(?P<execHost>\S+)\s*$'
+                self.execHostCmd='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
+                self.execHostRegEx='^\s*execHost (?P<execHost>\S+)\s*$'
                 self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
                 self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
                 self.listAllCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
                 self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
                 self.runningCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
                 self.runningRegEx='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
-                self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username}\""
+                self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
                 self.stopCmd='\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"'
                 self.stopCmdForRestart='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
                 self.showStartCmd=None
                 self.showStartRegEx="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
-                self.vncDisplayCmd = '" /usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
-                self.vncDisplayRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
+                self.vncDisplayCmd = '" /usr/bin/ssh {execHost} \' cat /var/spool/torque/spool/{jobidNumber}.*\'"'
+                self.vncDisplayRegEx='^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$'
                 self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
                 self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
 
