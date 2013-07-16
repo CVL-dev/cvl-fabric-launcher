@@ -253,7 +253,7 @@ class LoginProcess():
                 try:
                     (stdout,stderr) = run_ssh_command(sshCmd.format(**jobParams),self.cmd.format(**jobParams),ignore_errors=True)
                 except KeyError as e:
-                    self.loginprocess.cancel("Trying to running %s\n%s, I was missing a parameter %s"%(sshCmd,self.cmd,e))
+                    self.loginprocess.cancel("Trying to run %s\n%s but I was missing a parameter %s"%(sshCmd,self.cmd,e))
                     return
                 
             
@@ -265,7 +265,7 @@ class LoginProcess():
                                     regex=regexUnformatted.format(**jobParams)
                                     logger_debug("searching the output of %s using regex %s"%(self.cmd.format(**jobParams),regex))
                                 except KeyError as e:
-                                    logger_error("Trying to running %s, unable to formulate regex, missing parameter %s"%(regexUnformatted,e))
+                                    logger_error("Trying to run %s, unable to formulate regex, missing parameter %s"%(regexUnformatted,e))
                                     self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
                                     return
                                 match = re.search(regex,line)
