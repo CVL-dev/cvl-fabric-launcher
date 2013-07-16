@@ -442,8 +442,8 @@ class LoginProcess():
             turboVncNotFoundPanelSizer.Add(turboVncNotFoundTitleLabel, flag=wx.EXPAND)
             turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
             turboVncNotFoundTextLabel1 = wx.StaticText(turboVncNotFoundPanel,
-                label = "TurboVNC not found.\n" +
-                        "Please download from:\n")
+                label = "TurboVNC was not found.\n\n" +
+                        "Please download it from:\n")
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             if sys.platform.startswith("darwin"):
                 font.SetPointSize(11)
@@ -465,7 +465,10 @@ class LoginProcess():
             turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
 
             turboVncNotFoundDialog.addPanel(turboVncNotFoundPanel)
+            turboVncNotFoundDialog.Centre()
             turboVncNotFoundDialog.ShowModal()
+
+            self.loginprocess.cancel()
     
         def run(self):
             # Check for TurboVNC
@@ -525,7 +528,6 @@ class LoginProcess():
                 if os.path.exists(vnc):
                     logger_debug("TurboVNC was found in " + vnc)
                 else:
-                    self.loginprocess.cancel()
                     wx.CallAfter(self.showTurboVncNotFoundMessageDialog,turboVncLatestVersion)
                     return
                 (vnc,turboVncVersionNumber,turboVncFlavour) = self.getTurboVncVersionNumber(vnc)
