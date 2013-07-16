@@ -567,7 +567,7 @@ def configureLogger(name):
     transport_logger = logging.getLogger('ssh.transport')
     transport_logger.setLevel(logging.DEBUG)
 
-    log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
+    log_format_string = '%(asctime)s - %(name)s - %(module)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s'
 
     # Send all log messages to a string.
     logger_output = StringIO()
@@ -620,4 +620,3 @@ def unzip(zipFilePath, destDir):
             fd.close()
 
     zfile.close()
-
