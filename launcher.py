@@ -1231,11 +1231,11 @@ class LauncherMainFrame(wx.Frame):
 
         if self.massiveTabSelected:
             def initializeProgressDialog():
-                CancelCallback=lambda: wx.PostEvent(self.loginProcess.notify_window.GetEventHandler(),LoginTasks.LoginProcess.loginProcessEvent(LoginTasks.LoginProcess.EVT_LOGINPROCESS_CANCEL,self.loginProcess))
+                CancelCallback=self.loginProcess.cancel
                 self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, "Connecting to MASSIVE...", "", maximumProgressBarValue, userCanAbort,CancelCallback)
         else:
             def initializeProgressDialog():
-                CancelCallback=lambda: wx.PostEvent(self.loginProcess.notify_window.GetEventHandler(),LoginTasks.LoginProcess.loginProcessEvent(LoginTasks.LoginProcess.EVT_LOGINPROCESS_CANCEL,self.loginProcess))
+                CancelCallback=self.loginProcess.cancel
                 self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, "Connecting to CVL...", "", maximumProgressBarValue, userCanAbort,CancelCallback)
 
         wx.CallAfter(initializeProgressDialog)
