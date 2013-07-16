@@ -226,7 +226,6 @@ class LoginProcess():
             else:
                 self.regex=regex
             self.errorstring=errorstring
- 
             logger_debug('runLoopServerCommandThread properties: ' + str(self.__dict__))
     
         def stop(self):
