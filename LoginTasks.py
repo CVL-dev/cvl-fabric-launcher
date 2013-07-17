@@ -521,7 +521,8 @@ class LoginProcess():
                 if os.path.exists(vnc):
                     logger_debug("TurboVNC was found in " + vnc)
                 else:
-                    self.loginprocess.cancel("TurboVNC not found")
+                    wx.CallAfter(self.showTurboVncNotFoundMessageDialog,turboVncLatestVersion)
+                    return
                 turboVncFlavour = None
             else:
                 vnc = "/opt/TurboVNC/bin/vncviewer"
