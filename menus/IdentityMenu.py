@@ -9,7 +9,7 @@ if os.path.abspath("..") not in sys.path:
 
 from cvlsshutils.ChangeKeyPassphraseDialog import ChangeKeyPassphraseDialog
 from cvlsshutils.InspectKeyDialog import InspectKeyDialog
-from cvlsshutils.ResetKeyPassphraseDialog import ResetKeyPassphraseDialog
+from cvlsshutils.ResetKeyDialog import ResetKeyDialog
 from cvlsshutils.CreateNewKeyDialog import CreateNewKeyDialog
 from cvlsshutils.KeyModel import KeyModel
 
@@ -37,9 +37,9 @@ class IdentityMenu(wx.Menu):
         self.Append(changePassphraseMenuItemId, "&Change passphrase")
         self.launcherMainFrame.Bind(wx.EVT_MENU, self.onChangePassphrase, id=changePassphraseMenuItemId)
 
-        resetPassphraseMenuItemId = wx.NewId()
-        self.Append(resetPassphraseMenuItemId, "&Reset passphrase")
-        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onResetPassphrase, id=resetPassphraseMenuItemId)
+        resetKeyMenuItemId = wx.NewId()
+        self.Append(resetKeyMenuItemId, "&Reset key")
+        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onResetKey, id=resetKeyMenuItemId)
 
         deleteKeyMenuItemId = wx.NewId()
         self.Append(deleteKeyMenuItemId, "&Delete key")
@@ -104,10 +104,10 @@ class IdentityMenu(wx.Menu):
         keyModelObject = KeyModel(self.privateKeyFilePath)
         success = keyModelObject.deleteKeyAndRemoveFromAgent()
         if success:
-            message = "Launcher key was successfully deleted! :-)"
+            message = "Launcher key was successfully deleted!"
             logger_debug(message)
         else:
-            message = "An error occured while attempting to delete the existing key. :-("
+            message = "An error occured while attempting to delete the existing key."
             logger_debug(message)
             dlg = wx.MessageDialog(self.launcherMainFrame, message,
                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
@@ -127,7 +127,7 @@ class IdentityMenu(wx.Menu):
                 success = self.deleteKey()
                 if not success:
                     dlg = wx.MessageDialog(self.launcherMainFrame, 
-                        "An error occured while attempting to delete your existing key. :-(",
+                        "An error occured while attempting to delete your existing key.",
                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                     dlg.ShowModal()
                     return
@@ -175,7 +175,7 @@ class IdentityMenu(wx.Menu):
             changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Change Key Passphrase', self.privateKeyFilePath)
             if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
                 dlg = wx.MessageDialog(self.launcherMainFrame,
-                    "Passphrase changed successfully! :-)",
+                    "Passphrase changed successfully!",
                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
         else:
@@ -183,11 +183,11 @@ class IdentityMenu(wx.Menu):
                 self.createKey()
 
 
-    def onResetPassphrase(self,event):
+    def onResetKey(self,event):
 
         if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
-            resetKeyPassphraseDialog = ResetKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Reset Key Passphrase', self.privateKeyFilePath, self.keyIsInAgent())
-            resetKeyPassphraseDialog.ShowModal()
+            resetKeyDialog = ResetKeyDialog(self.launcherMainFrame, wx.ID_ANY, 'Reset Key', self.privateKeyFilePath, self.keyIsInAgent())
+            resetKeyDialog.ShowModal()
         else:
             if self.offerToCreateKey()==wx.ID_YES:
                 self.createKey()
@@ -202,9 +202,9 @@ class IdentityMenu(wx.Menu):
             if dlg.ShowModal()==wx.ID_YES:
                 success = self.deleteKey()
                 if success:
-                    message = "Your Launcher key was successfully deleted! :-)"
+                    message = "Your Launcher key was successfully deleted!"
                 else:
-                    message = "An error occured while attempting to delete your key. :-("
+                    message = "An error occured while attempting to delete your key."
                 dlg = wx.MessageDialog(self.launcherMainFrame, message,
                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
