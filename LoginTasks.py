@@ -1064,7 +1064,7 @@ class LoginProcess():
         self.loginParams={}
         self.jobParams={}
         self.loginParams['username']=username
-        self.loginParams['loginHost']=host
+        self.loginParams['configName']=host
         self.loginParams['project']=project
         self.loginParams['sshBinary']=sshpaths.sshBinary
         self.jobParams['resolution']=resolution
@@ -1107,7 +1107,9 @@ class LoginProcess():
 
             self.messageRegexs=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
             # output from startServerCmd that matches and of these regular expressions will pop up in a window for the user
-            if ("m1" in self.loginParams['loginHost'] or "m2" in self.loginParams['loginHost']):
+            if ("m1" in self.loginParams['configName'] or "m2" in self.loginParams['configName']):
+                update={}
+                update['loginHost']=self.loginParams['configName']
                 self.listAllCmd='qstat -u {username}'
                 self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
                 self.runningCmd='qstat -u {username}'
@@ -1144,7 +1146,10 @@ class LoginProcess():
                 self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
                 self.runningCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
                 self.runningRegEx='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
-                self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
+                if ("Hugyens" in self.loginParams['configName']):
+                    self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -q huygens -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
+                else:
+                    self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
                 self.stopCmd='\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"'
                 self.stopCmdForRestart='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
