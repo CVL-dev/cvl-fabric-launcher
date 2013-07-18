@@ -809,11 +809,46 @@ class LauncherMainFrame(wx.Frame):
 
         self.cvlShowDebugWindowLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
         self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.cvlShowDebugWindowCheckBox = wx.CheckBox(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, "")
+
+        self.cvlDebugAndAutoExitPanel = wx.Panel(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY)
+        self.cvlDebugAndAutoExitPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=3, hgap=5)
+        self.cvlDebugAndAutoExitPanel.SetSizer(self.cvlDebugAndAutoExitPanelSizer)
+
+        self.cvlShowDebugWindowCheckBox = wx.CheckBox(self.cvlDebugAndAutoExitPanel, wx.ID_ANY, "")
         self.cvlShowDebugWindowCheckBox.SetValue(False)
         self.cvlShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onCvlDebugWindowCheckBoxStateChanged)
-        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlDebugAndAutoExitPanelSizer.Add(self.cvlShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
+        self.cvlAutomaticallyExitLabel = wx.StaticText(self.cvlDebugAndAutoExitPanel, wx.ID_ANY, "          Automatically exit")
+        self.cvlDebugAndAutoExitPanelSizer.Add(self.cvlAutomaticallyExitLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, border=5)
+
+        self.cvlAutomaticallyExit = False
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_automatically_exit"):
+                self.cvlAutomaticallyExit = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_automatically_exit")
+                if self.cvlAutomaticallyExit.strip() == "":
+                    self.cvlAutomaticallyExit = False
+                else:
+                    if self.cvlAutomaticallyExit==True or self.cvlAutomaticallyExit=='True':
+                        self.cvlAutomaticallyExit = True
+                    else:
+                        self.cvlAutomaticallyExit = False
+            else:
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_automatically_exit","False")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        else:
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
+            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+
+        self.cvlAutomaticallyExitCheckBox = wx.CheckBox(self.cvlDebugAndAutoExitPanel, wx.ID_ANY, "")
+        self.cvlAutomaticallyExitCheckBox.SetValue(self.cvlAutomaticallyExit)
+        self.cvlDebugAndAutoExitPanelSizer.Add(self.cvlAutomaticallyExitCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, border=5)
+
+        self.cvlDebugAndAutoExitPanel.Fit()
+        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlDebugAndAutoExitPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        
         self.cvlSimpleLoginFieldsPanel.SetSizerAndFit(self.cvlSimpleLoginFieldsPanelSizer)
 
         self.cvlLoginDialogPanelSizer.Add(self.cvlSimpleLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
@@ -1098,6 +1133,7 @@ class LauncherMainFrame(wx.Frame):
             self.massiveUsername = self.massiveUsernameTextField.GetValue()
             self.massiveVncDisplayResolution = self.massiveVncDisplayResolutionComboBox.GetValue()
             self.massiveSshTunnelCipher = self.massiveSshTunnelCipherComboBox.GetValue()
+            self.massiveAutomaticallyExit = self.massiveAutomaticallyExitCheckBox.GetValue()
 
             if self.massiveUsername.strip()=="":
                 dlg = wx.MessageDialog(launcherMainFrame,
@@ -1111,6 +1147,7 @@ class LauncherMainFrame(wx.Frame):
             self.cvlUsername = self.cvlUsernameTextField.GetValue()
             self.cvlVncDisplayResolution = self.cvlVncDisplayResolutionComboBox.GetValue()
             self.cvlSshTunnelCipher = self.cvlSshTunnelCipherComboBox.GetValue()
+            self.cvlAutomaticallyExit = self.cvlAutomaticallyExitCheckBox.GetValue()
 
             if self.cvlUsername.strip()=="":
                 dlg = wx.MessageDialog(launcherMainFrame,
@@ -1144,7 +1181,6 @@ class LauncherMainFrame(wx.Frame):
                     # Project was not found in combo-box.
                     self.massiveProjectComboBox.SetSelection(-1)
                 self.massiveProjectComboBox.SetValue(self.massiveProject)
-            self.massiveAutomaticallyExit = self.massiveAutomaticallyExitCheckBox.GetValue()
 
 
         if launcherMainFrame.massiveTabSelected:
@@ -1152,17 +1188,18 @@ class LauncherMainFrame(wx.Frame):
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_username", self.massiveUsername)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_vnc_display_resolution", self.massiveVncDisplayResolution)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher", self.massiveSshTunnelCipher)
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_automatically_exit", self.massiveAutomaticallyExit)
         else:
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher", self.cvlSshTunnelCipher)
+            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_automatically_exit", self.cvlAutomaticallyExit)
 
         if launcherMainFrame.massiveTabSelected:
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested", self.massiveVisNodesRequested)
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_automatically_exit", self.massiveAutomaticallyExit)
 
         if launcherMainFrame.massiveTabSelected:
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -1228,9 +1265,9 @@ class LauncherMainFrame(wx.Frame):
             resolution = self.cvlVncDisplayResolution
             cipher     = self.cvlSshTunnelCipher
             username   = self.cvlUsername
+            autoExit   = self.cvlAutomaticallyExit
             hours      = 298261 # maximum number of hours its possible to request without overflowing a signed int32 when converted to seconds.
             nodes      = 1
-            autoExit  = False
 
         host       = host.lstrip().rstrip()
         resolution = resolution.lstrip().rstrip()
