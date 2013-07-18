@@ -665,7 +665,7 @@ class LauncherMainFrame(wx.Frame):
         self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlLoginHost = ""
-        cvlLoginHosts = ["cvllogin"]
+        cvlLoginHosts = ["cvl.massive.org.au","Huygens on the CVL"]
         defaultCvlHost = "cvllogin"
         self.cvlLoginHostComboBox = wx.ComboBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_READONLY)
         self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
