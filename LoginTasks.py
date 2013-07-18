@@ -49,9 +49,15 @@ class LoginProcess():
                 else:
                     cmd = shlex.split(cmd)
                 
-                startupinfo = subprocess.STARTUPINFO()
-                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = subprocess.SW_HIDE
+                try:
+                    startupinfo = subprocess.STARTUPINFO()
+                    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                    startupinfo.wShowWindow = subprocess.SW_HIDE
+                except:
+                    # On non-Windows systems the previous block will die with 
+                    # "AttributeError: 'module' object has no attribute 'STARTUPINFO'" even though
+                    # the code is inside the 'if' block, hence the use of a dodgy try/except block.
+                    startupinfo = None
 
                 self.process = subprocess.Popen(cmd, universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, startupinfo=startupinfo)
                 while (not self.stopped()):
