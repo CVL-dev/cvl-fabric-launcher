@@ -996,9 +996,9 @@ class LoginProcess():
                             timestring = "%s minute"%minutes
                         else:
                             timestring = "%s minutes"%minutes
-                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
                     elif ("m1" not in event.loginprocess.loginParams['loginHost'] and "m2" not in event.loginprocess.loginParams['loginHost']):
-                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave the desktop running so you can reconnect later?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
                     if dialog:
                         wx.CallAfter(dialog.ShowModal)
                 else:
