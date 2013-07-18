@@ -1088,11 +1088,27 @@ class LauncherMainFrame(wx.Frame):
             self.massiveUsername = self.massiveUsernameTextField.GetValue()
             self.massiveVncDisplayResolution = self.massiveVncDisplayResolutionComboBox.GetValue()
             self.massiveSshTunnelCipher = self.massiveSshTunnelCipherComboBox.GetValue()
+
+            if self.massiveUsername.strip()=="":
+                dlg = wx.MessageDialog(launcherMainFrame,
+                        "Please enter your MASSIVE username.",
+                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                self.massiveUsernameTextField.SetFocus()
+                return
         else:
             self.cvlLoginHost = self.cvlLoginHostComboBox.GetValue()
             self.cvlUsername = self.cvlUsernameTextField.GetValue()
             self.cvlVncDisplayResolution = self.cvlVncDisplayResolutionComboBox.GetValue()
             self.cvlSshTunnelCipher = self.cvlSshTunnelCipherComboBox.GetValue()
+
+            if self.cvlUsername.strip()=="":
+                dlg = wx.MessageDialog(launcherMainFrame,
+                        "Please enter your CVL username.",
+                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                self.cvlUsernameTextField.SetFocus()
+                return
 
         if launcherMainFrame.massiveTabSelected:
             self.massiveHoursRequested = str(self.massiveHoursField.GetValue())
