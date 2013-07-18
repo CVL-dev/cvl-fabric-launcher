@@ -842,6 +842,15 @@ class LoginProcess():
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
+
+                # On Massive we have to run a server-side script to set the display resolution. This should be
+                # done as soon as the tunnel is up, to replicate behaviour of the old launcher.
+                if event.loginprocess.loginParams['loginHost'] in ['m1', 'm2']:
+                    logger_debug('Setting the desktop resolution.')
+                    u = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.setDisplayResolutionCmd, '.*', nextevent, '', requireMatch=False)
+                    u.setDaemon(False)
+                    u.start()
+                    event.loginprocess.threads.append(u)
             else:
                 event.Skip()
 
@@ -1109,6 +1118,8 @@ class LoginProcess():
                 self.execHostCmd='qpeek {jobidNumber}'
                 self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
                 self.startServerCmd="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
+                self.runSanityCheckCmd="\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'"
+                self.setDisplayResolutionCmd="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
                 self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
                 self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
