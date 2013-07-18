@@ -13,4 +13,5 @@ main.htm
 authentication_overview.htm
 ssh_keys.htm
 ssh_agent_forwarding.htm
+new_authentication_method.htm
 
