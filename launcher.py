@@ -388,6 +388,7 @@ class LauncherMainFrame(wx.Frame):
             'pVPAC0008',
             'Training',]
         self.massiveProjectComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=self.massiveProjects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.massiveProjectComboBox.Bind(wx.EVT_TEXT, self.onMassiveProjectTextChanged)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveProjectComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.massiveProject = ""
         if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
@@ -924,6 +925,15 @@ class LauncherMainFrame(wx.Frame):
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()
         selectedMassiveLoginHost = self.massiveLoginHostComboBox.GetValue()
+
+    def onMassiveProjectTextChanged(self, event):
+        massiveProjectTextFieldValue = launcherMainFrame.massiveProjectComboBox.GetValue().strip()
+        if massiveProjectTextFieldValue=="" or massiveProjectTextFieldValue.startswith("[Use"):
+            launcherMainFrame.massiveProjectComboBox.SetValue(launcherMainFrame.defaultProjectPlaceholder)
+            launcherMainFrame.massiveProjectComboBox.SelectAll()
+            launcherMainFrame.massiveProjectComboBox.SetFocus()
+        if massiveProjectTextFieldValue in launcherMainFrame.massiveProjects:
+            launcherMainFrame.massiveProjectComboBox.SetSelection(launcherMainFrame.massiveProjects.index(massiveProjectTextFieldValue))
 
     def onMassiveDebugWindowCheckBoxStateChanged(self, event):
         if launcherMainFrame.logWindow!=None:
