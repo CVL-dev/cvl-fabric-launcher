@@ -45,6 +45,8 @@ class IdentityMenu(wx.Menu):
         self.Append(deleteKeyMenuItemId, "&Delete key")
         self.launcherMainFrame.Bind(wx.EVT_MENU, self.onDeleteKey, id=deleteKeyMenuItemId)
 
+        self.AppendSeparator()
+
         helpAboutKeysMenuItem = wx.NewId()
         self.Append(helpAboutKeysMenuItem, "&Help about keys")
         self.launcherMainFrame.Bind(wx.EVT_MENU, self.onHelpAboutKeys, id=helpAboutKeysMenuItem)
