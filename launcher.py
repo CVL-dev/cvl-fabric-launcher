@@ -1307,7 +1307,7 @@ class MyApp(wx.App):
             if dlg.ShowModal()==wx.ID_YES:
                 from help.HelpController import helpController
                 if helpController is not None and helpController.initializationSucceeded:
-                    helpController.Display("SSH Keys")
+                    helpController.Display("New Authentication Method")
                 else:
                     wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
                                   "Error", wx.OK|wx.ICON_EXCLAMATION)
