@@ -239,7 +239,7 @@ class LauncherMainFrame(wx.Frame):
         massiveLoginHosts = ["m1-login1.massive.org.au", "m1-login2.massive.org.au",
             "m2-login1.massive.org.au", "m2-login2.massive.org.au"]
         defaultMassiveHost = "m2-login2.massive.org.au"
-        self.massiveLoginHostComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value=defaultMassiveHost, choices=massiveLoginHosts, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.massiveLoginHostComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value=defaultMassiveHost, choices=massiveLoginHosts, size=(widgetWidth2, -1), style=wx.CB_READONLY)
         self.massiveLoginHostComboBox.Bind(wx.EVT_TEXT, self.onMassiveLoginHostNameChanged)
         self.massiveLoginFieldsPanelSizer.Add(self.massiveLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
