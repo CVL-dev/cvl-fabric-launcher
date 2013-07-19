@@ -79,7 +79,7 @@ class LoginProcess():
                 return
 
     class runServerCommandThread(Thread):
-        def __init__(self,loginprocess,cmd,regex,nextevent,errormessage,requireMatch=True):
+        def __init__(self, loginprocess, cmd, regex, nextevent,errormessage, requireMatch=True, requireNotMatch=False):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
@@ -91,6 +91,7 @@ class LoginProcess():
             self.nextevent=nextevent
             self.errormessage=errormessage
             self.requireMatch=requireMatch
+            self.requireNotMatch = requireNotMatch
     
         def stop(self):
             logger_debug("stoping the runServerCommandThread cmd %s"%self.cmd.format(**self.loginprocess.jobParams))
@@ -142,6 +143,10 @@ class LoginProcess():
                     for regex in self.regex:
                         logger_error("no match found for the regex %s"%regex.format(**self.loginprocess.jobParams))
                     self.loginprocess.cancel(self.errormessage)
+            if oneMatchFound and self.requireNotMatch:
+                for regex in self.regex:
+                    logger_error("regex matched but we should NOT see this regex: %s" % regex.format(**self.loginprocess.jobParams))
+                self.loginprocess.cancel(self.errormessage)
             if (not self.stopped() and self.nextevent!=None and not self.loginprocess.canceled()):
                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
 
@@ -853,11 +858,14 @@ class LoginProcess():
                     event.loginprocess.threads.append(u)
 
                     logger_debug('Running server-side sanity check.')
-                    u = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd, '.*', nextevent, '', requireMatch=False)
-                    u.setDaemon(False)
-                    u.start()
-                    event.loginprocess.threads.append(u)
-
+                    v = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
+                                                            event.loginprocess.runSanityCheckRegEx,
+                                                            None,
+                                                            'Error reported by server-side sanity check.',
+                                                            requireNotMatch=True)
+                    v.setDaemon(False)
+                    v.start()
+                    event.loginprocess.threads.append(t)
             else:
                 event.Skip()
 
@@ -1129,6 +1137,7 @@ class LoginProcess():
                 self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
                 self.startServerCmd="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
                 self.runSanityCheckCmd="\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'"
+                self.runSanityCheckRegEx = '^REQUEST_VISNODE_ERROR (?P<vncPasswd>\S+)\s*$'
                 self.setDisplayResolutionCmd="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
                 self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
                 self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
