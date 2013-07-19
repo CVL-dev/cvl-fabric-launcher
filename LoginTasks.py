@@ -460,7 +460,7 @@ class LoginProcess():
             turboVncNotFoundPanelSizer.Add(turboVncNotFoundTitleLabel, flag=wx.EXPAND)
             turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
             turboVncNotFoundTextLabel1 = wx.StaticText(turboVncNotFoundPanel,
-                label = "TurboVNC was not found.\n\n" +
+                label = "TurboVNC (>= 1.1) was not found.\n\n" +
                         "Please download it from:\n")
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             if sys.platform.startswith("darwin"):
@@ -537,7 +537,11 @@ class LoginProcess():
             if sys.platform.startswith("win"):
                 (vnc, turboVncVersionNumber) = self.getTurboVncVersionNumber_Windows()
                 if os.path.exists(vnc):
-                    logger_debug("TurboVNC was found in " + vnc)
+                    if not turboVncVersionNumber.startswith("0.") and not turboVncVersionNumber.startswith("1.0"):
+                        logger_debug("TurboVNC (>=1.1) was found in " + vnc)
+                    else:
+                        wx.CallAfter(self.showTurboVncNotFoundMessageDialog,turboVncLatestVersion)
+                        return
                 else:
                     wx.CallAfter(self.showTurboVncNotFoundMessageDialog,turboVncLatestVersion)
                     return
@@ -545,11 +549,15 @@ class LoginProcess():
             else:
                 vnc = "/opt/TurboVNC/bin/vncviewer"
                 if os.path.exists(vnc):
-                    logger_debug("TurboVNC was found in " + vnc)
+                    (vnc,turboVncVersionNumber,turboVncFlavour) = self.getTurboVncVersionNumber(vnc)
+                    if not turboVncVersionNumber.startswith("0.") and not turboVncVersionNumber.startswith("1.0"):
+                        logger_debug("TurboVNC (>=1.1) was found in " + vnc)
+                    else:
+                        wx.CallAfter(self.showTurboVncNotFoundMessageDialog,turboVncLatestVersion)
+                        return
                 else:
                     wx.CallAfter(self.showTurboVncNotFoundMessageDialog,turboVncLatestVersion)
                     return
-                (vnc,turboVncVersionNumber,turboVncFlavour) = self.getTurboVncVersionNumber(vnc)
 
             if turboVncVersionNumber is None:
                 def error_dialog():
@@ -573,21 +581,10 @@ class LoginProcess():
 
             logger_debug("TurboVNC viewer version number = " + turboVncVersionNumber)
             
-            #self.loginprocess.turboVncVersionNumber = turboVncVersionNumber
             self.loginprocess.jobParams['vnc'] = vnc
             self.loginprocess.jobParams['turboVncFlavour'] = turboVncFlavour
             self.loginprocess.jobParams['vncOptionsString'] = self.loginprocess.buildVNCOptionsString()
 
-            if turboVncVersionNumber.startswith("0.") or turboVncVersionNumber.startswith("1.0"):
-                def showOldTurboVncWarningMessageDialog():
-                    dlg = wx.MessageDialog(self.notify_window, "Warning: Using a TurboVNC viewer earlier than v1.1 means that you will need to enter your password twice.\n",
-                                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                    dlg.ShowModal()
-                    dlg.Destroy()
-                    logger_debug("vnc viewer found, user warned about old version")
-                wx.CallAfter(showOldTurboVncWarningMessageDialog)
-            else:
-                logger_debug("vnc viewer found")
             if (not self.stopped() and not self.loginprocess.canceled()):
                 event=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY,self.loginprocess)
                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),event)
