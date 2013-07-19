@@ -851,6 +851,13 @@ class LoginProcess():
                     u.setDaemon(False)
                     u.start()
                     event.loginprocess.threads.append(u)
+
+                    logger_debug('Running server-side sanity check.')
+                    u = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd, '.*', nextevent, '', requireMatch=False)
+                    u.setDaemon(False)
+                    u.start()
+                    event.loginprocess.threads.append(u)
+
             else:
                 event.Skip()
 
@@ -1063,6 +1070,7 @@ class LoginProcess():
         self.notify_window = notifywindow
         self.loginParams={}
         self.jobParams={}
+        self.loginParams['launcher_version_number'] = launcher_version_number.version_number
         self.loginParams['username']=username
         self.loginParams['configName']=host
         self.loginParams['project']=project
