@@ -1125,7 +1125,9 @@ class LoginProcess():
             # output from startServerCmd that matches and of these regular expressions will pop up in a window for the user
             if ("m1" in self.loginParams['configName'] or "m2" in self.loginParams['configName']):
                 update={}
-                update['loginHost']=self.loginParams['configName']
+                update['loginHost']=host
+                self.loginParams.update(update)
+                self.jobParams.update(self.loginParams)
                 self.listAllCmd='qstat -u {username}'
                 self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
                 self.runningCmd='qstat -u {username}'
