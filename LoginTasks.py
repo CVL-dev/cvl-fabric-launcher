@@ -79,7 +79,7 @@ class LoginProcess():
                 return
 
     class runServerCommandThread(Thread):
-        def __init__(self, loginprocess, cmd, regex, nextevent,errormessage, requireMatch=True, requireNotMatch=False):
+        def __init__(self, loginprocess, cmd, regex, nextevent,errormessage, requireMatch=True, sanityCheckHack=False):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
@@ -91,7 +91,7 @@ class LoginProcess():
             self.nextevent=nextevent
             self.errormessage=errormessage
             self.requireMatch=requireMatch
-            self.requireNotMatch = requireNotMatch
+            self.sanityCheckHack = sanityCheckHack
     
         def stop(self):
             logger_debug("stoping the runServerCommandThread cmd %s"%self.cmd.format(**self.loginprocess.jobParams))
@@ -109,6 +109,14 @@ class LoginProcess():
                 logger_error("could not format the command in runServerCommandThread %s)"%self.cmd)
                 self.loginprocess.cancel("An error occured. I'm sorry I can't give any more detailed information")
                 return
+
+
+            if self.sanityCheckHack:
+                if 'REQUEST_VISNODE_ERROR' in stdout:
+                    logger_debug('We saw REQUEST_VISNODE_ERROR so we are quitting.')
+                    self.loginprocess.cancel('Server-side sanity check reported an error.') # FIXME give detail?
+                    return
+
             import itertools
             messages=parseMessages(self.loginprocess.messageRegexs,stdout,stderr)
             concat=""
@@ -143,10 +151,6 @@ class LoginProcess():
                     for regex in self.regex:
                         logger_error("no match found for the regex %s"%regex.format(**self.loginprocess.jobParams))
                     self.loginprocess.cancel(self.errormessage)
-            if oneMatchFound and self.requireNotMatch:
-                for regex in self.regex:
-                    logger_error("regex matched but we should NOT see this regex: %s" % regex.format(**self.loginprocess.jobParams))
-                self.loginprocess.cancel(self.errormessage)
             if (not self.stopped() and self.nextevent!=None and not self.loginprocess.canceled()):
                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
 
@@ -840,32 +844,38 @@ class LoginProcess():
                 logger_debug('loginProcessEvent: startTunnel: set remotePortNumber to ' + str(event.loginprocess.jobParams['remotePortNumber']))
 
 
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
-                logger_debug('loginProcessEvent: startTunnel: posting EVT_LOGINPROCESS_FORWARD_AGENT')
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION,event.loginprocess)
 
                 t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.tunnelCmd,event.loginprocess.tunnelRegEx,nextevent,"Unable to start the tunnel for some reason")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
 
-                # On Massive we have to run a server-side script to set the display resolution. This should be
-                # done as soon as the tunnel is up, to replicate behaviour of the old launcher.
-                if event.loginprocess.loginParams['loginHost'] in ['m1', 'm2']:
-                    logger_debug('Setting the desktop resolution.')
-                    u = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.setDisplayResolutionCmd, '.*', nextevent, '', requireMatch=False)
-                    u.setDaemon(False)
-                    u.start()
-                    event.loginprocess.threads.append(u)
+            else:
+                event.Skip()
 
-                    logger_debug('Running server-side sanity check.')
-                    v = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
-                                                            event.loginprocess.runSanityCheckRegEx,
-                                                            None,
-                                                            'Error reported by server-side sanity check.',
-                                                            requireNotMatch=True)
-                    v.setDaemon(False)
-                    v.start()
-                    event.loginprocess.threads.append(t)
+        def setDesktopResolution(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION):
+                logger_debug('loginProcessEvent: caught EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION')
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 8, "Setting the desktop resolution")
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
+
+                logger_debug('Setting the desktop resolution.')
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.setDisplayResolutionCmd, '.*', nextevent, '', requireMatch=False)
+                t.setDaemon(False)
+                t.start()
+                event.loginprocess.threads.append(t)
+
+                # FIXME move this into a separate event, chained onto the end of this one.
+                #logger_debug('Running server-side sanity check.')
+                #v = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
+                #                                        '.*',
+                #                                        None,
+                #                                        'Error reported by server-side sanity check.',
+                #                                        sanityCheckHack=True)
+                #v.setDaemon(False)
+                #v.start()
+                #event.loginprocess.threads.append(v)
             else:
                 event.Skip()
 
@@ -1139,7 +1149,6 @@ class LoginProcess():
                 self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
                 self.startServerCmd="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
                 self.runSanityCheckCmd="\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'"
-                self.runSanityCheckRegEx = '^REQUEST_VISNODE_ERROR (?P<vncPasswd>\S+)\s*$'
                 self.setDisplayResolutionCmd="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
                 self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
                 self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
@@ -1223,6 +1232,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_SHOW_ESTIMATED_START = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION = wx.NewId()
 
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.cancel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.distributeKey)
@@ -1247,6 +1257,7 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showEstimatedStart)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getProjects)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.selectProject)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.setDesktopResolution)
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
 
     def timeRemaining(self):
