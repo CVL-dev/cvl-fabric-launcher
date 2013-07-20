@@ -13,7 +13,7 @@ from cvlsshutils.ResetKeyDialog import ResetKeyDialog
 from cvlsshutils.CreateNewKeyDialog import CreateNewKeyDialog
 from cvlsshutils.KeyModel import KeyModel
 
-from utilityFunctions import logger_debug
+from logger.Logger import logger
 
 from cvlsshutils.sshKeyDist import sshpaths
 
@@ -92,10 +92,10 @@ class IdentityMenu(wx.Menu):
         createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
         createNewKeyDialog.Center()
         if createNewKeyDialog.ShowModal()==wx.ID_OK:
-            logger_debug("User pressed OK from CreateNewKeyDialog.")
+            logger.debug("User pressed OK from CreateNewKeyDialog.")
             createdKey = True
         else:
-            logger_debug("User canceled from CreateNewKeyDialog.")
+            logger.debug("User canceled from CreateNewKeyDialog.")
             createdKey= False
 
         return createdKey
@@ -107,10 +107,10 @@ class IdentityMenu(wx.Menu):
         success = keyModelObject.deleteKeyAndRemoveFromAgent()
         if success:
             message = "Launcher key was successfully deleted!"
-            logger_debug(message)
+            logger.debug(message)
         else:
             message = "An error occured while attempting to delete the existing key."
-            logger_debug(message)
+            logger.debug(message)
             dlg = wx.MessageDialog(self.launcherMainFrame, message,
                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
@@ -139,9 +139,9 @@ class IdentityMenu(wx.Menu):
         createNewKeyDialog = CreateNewKeyDialog(self.launcherMainFrame, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
         createNewKeyDialog.Center()
         if createNewKeyDialog.ShowModal()==wx.ID_OK:
-            logger_debug("User pressed OK from CreateNewKeyDialog.")
+            logger.debug("User pressed OK from CreateNewKeyDialog.")
         else:
-            logger_debug("User canceled from CreateNewKeyDialog.")
+            logger.debug("User canceled from CreateNewKeyDialog.")
             return False
 
 

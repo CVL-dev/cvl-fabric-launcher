@@ -11,34 +11,33 @@ import requests
 
 class Logger():
 
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.transport_logger = None
-        self.logger = None
-        self.logger_debug = None
-        self.logger_error = None
-        self.logger_warning = None
-        self.logger_output = None
-        self.logger_fh = None
+        self.loggerObject = None
+        self.loggerOutput = None
+        self.loggerFileHandler = None
+        self.configureLogger()
 
-    def sendLogMessagesToDebugWindowTextControl(logTextCtrl):
+    def sendLogMessagesToDebugWindowTextControl(self, logTextCtrl):
         # Send all log messages to the debug window, which may or may not be visible.
         log_window_handler = logging.StreamHandler(stream=logTextCtrl)
         log_window_handler.setLevel(logging.DEBUG)
         log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
         log_window_handler.setFormatter(logging.Formatter(log_format_string))
-        logger = logging.getLogger('launcher')
-        logger.addHandler(log_window_handler)
+        self.loggerObject = logging.getLogger(self.name)
+        self.loggerObject.addHandler(log_window_handler)
         # Don't send ssh.transport log messages to
         # the log window, because they won't be
         # wrapped in wx.CallAfter, unless we provide
         # our own customized version of the ssh module.
         #transport_logger.addHandler(log_window_handler)
 
-    def configureLogger(name):
+    def configureLogger(self):
         # print "defining global logger"
-        self.logger = logging.getLogger(name)
+        self.loggerObject = logging.getLogger(self.name)
         # print self.logger
-        self.logger.setLevel(logging.DEBUG)
+        self.loggerObject.setLevel(logging.DEBUG)
 
         self.transport_logger = logging.getLogger('ssh.transport')
         self.transport_logger.setLevel(logging.DEBUG)
@@ -46,41 +45,45 @@ class Logger():
         log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
 
         # Send all log messages to a string.
-        logger_output = StringIO()
-        string_handler = logging.StreamHandler(stream=logger_output)
+        loggerOutput = StringIO()
+        string_handler = logging.StreamHandler(stream=loggerOutput)
         string_handler.setLevel(logging.DEBUG)
         string_handler.setFormatter(logging.Formatter(log_format_string))
-        self.logger.addHandler(string_handler)
+        self.loggerObject.addHandler(string_handler)
         self.transport_logger.addHandler(string_handler)
 
         # Finally, send all log messages to a log file.
         from os.path import expanduser, join
-        self.logger_fh = logging.FileHandler(join(expanduser("~"), '.MASSIVE_Launcher_debug_log.txt'))
-        self.logger_fh.setLevel(logging.DEBUG)
-        self.logger_fh.setFormatter(logging.Formatter(log_format_string))
-        self.logger.addHandler(self.logger_fh)
-        self.transport_logger.addHandler(self.logger_fh)
+        self.loggerFileHandler = logging.FileHandler(join(expanduser("~"), '.MASSIVE_Launcher_debug_log.txt'))
+        self.loggerFileHandler.setLevel(logging.DEBUG)
+        self.loggerFileHandler.setFormatter(logging.Formatter(log_format_string))
+        self.loggerObject.addHandler(self.loggerFileHandler)
+        self.transport_logger.addHandler(self.loggerFileHandler)
 
-    def logger_debug(self, message):
+    def debug(self, message):
         if threading.current_thread().name=="MainThread":
-            self.logger.debug(message)
+            self.loggerObject.debug(message)
         else:
-            wx.CallAfter(self.logger.debug, message)
+            wx.CallAfter(self.loggerObject.debug, message)
 
-    def logger_error(self, message):
+    def error(self, message):
         if threading.current_thread().name=="MainThread":
-            self.logger.error(message)
+            self.loggerObject.error(message)
         else:
-            wx.CallAfter(self.logger.error, message)
+            wx.CallAfter(self.loggerObject.error, message)
 
-    def logger_warning(self, message):
+    def warning(self, message):
         if threading.current_thread().name=="MainThread":
-            self.logger.warning(message)
+            self.loggerObject.warning(message)
         else:
-            wx.CallAfter(self.logger.warning, message)
+            wx.CallAfter(self.loggerObject.warning, message)
 
-    def dump_log(launcherMainFrame,submit_log=False):
-        logging.shutdown()
+    def dump_log(self, launcherMainFrame, submit_log=False):
+        # Commenting out logging.shutdown() for now,
+        # because of concerns that logging could be used
+        # after the call to logging.shutdown() which is
+        # not allowed.
+        # logging.shutdown()
 
         def yes_no():
             dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
@@ -94,16 +97,19 @@ class Logger():
         launcherMainFrame.yes_no_completed = False
 
         if submit_log:
-            wx.CallAfter(yes_no)
+            if threading.current_thread().name=="MainThread":
+                yes_no()
+            else:
+                wx.CallAfter(yes_no)
             while not launcherMainFrame.yes_no_completed:
                 time.sleep(0.1)
 
         if submit_log and launcherMainFrame.submit_log:
-            self.logger_debug('about to send debug log')
+            self.debug('about to send debug log')
 
             url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
-            #file_info = {'logfile': launcherMainFrame.logger_output.getvalue()}
-            file_info = {'logfile': logger_output.getvalue()}
+            #file_info = {'logfile': launcherMainFrame.loggerOutput.getvalue()}
+            file_info = {'logfile': loggerOutput.getvalue()}
 
             # If we are running in an installation then we have to use
             # our packaged cacert.pem file:
@@ -118,11 +124,6 @@ class Logger():
             else:
                 r = requests.post(url, files=file_info)
 
-#class MyApp(wx.App):
-    #def OnInit(self): 
-        #loggerObject = Logger() 
-        #return True
+logger = Logger("launcher")
 
-#app = MyApp(0)
-#app.MainLoop()
 

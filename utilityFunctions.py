@@ -12,6 +12,7 @@ import itertools
 import wx.lib.mixins.listctrl as listmix
 import zipfile
 
+from logger.Logger import logger
 
 #LAUNCHER_URL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
 global LAUNCHER_URL
@@ -305,8 +306,6 @@ class MyHtmlParser(HTMLParser.HTMLParser):
 
 
 
-
-
 def destroy_dialog(dialog):
     wx.CallAfter(dialog.Hide)
     wx.CallAfter(dialog.Show, False)
@@ -322,41 +321,6 @@ def destroy_dialog(dialog):
             break
         except wx._core.PyDeadObjectError:
             break
-
-def dump_log(launcherMainFrame,submit_log=False):
-    logging.shutdown()
-
-    def yes_no():
-
-        def submit_log():
-            import requests
-            url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
-            #file_info = {'logfile': launcherMainFrame.logger_output.getvalue()}
-            file_info = {'logfile': logger_output.getvalue()}
-
-            # If we are running in an installation then we have to use
-            # our packaged cacert.pem file:
-            if os.path.exists('cacert.pem'):
-                r = requests.post(url, files=file_info, verify='cacert.pem')
-            elif os.path.exists('/opt/MassiveLauncher/cacert.pem'):
-                r = requests.post(url, files=file_info, verify='/opt/MassiveLauncher/cacert.pem')
-            elif os.path.exists('c:/program files/massive launcher/cacert.pem'):
-                r = requests.post(url, files=file_info, verify='c:/program files/massive launcher/cacert.pem')
-            elif os.path.exists('c:/program files (x86)/massive launcher/cacert.pem'):
-                r = requests.post(url, files=file_info, verify='c:/program files (x86)/massive launcher/cacert.pem')
-            else:
-                r = requests.post(url, files=file_info)
-        dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
-        try:
-            result = dlg.ShowModal()
-            if (result == wx.ID_YES):
-                submit_log()
-        finally:
-            dlg.Destroy()
-
-    if submit_log:
-        wx.CallAfter(yes_no)
-
 
 def seconds_to_hours_minutes(seconds):
     m, s = divmod(seconds, 60)
@@ -404,14 +368,14 @@ def deleteMassiveJobIfNecessary(launcherMainFrame,write_debug_log=False, update_
     launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = True
     if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
         if write_debug_log:
-            logger_debug('Possibly running qdel for MASSIVE Vis node...')
+            logger.debug('Possibly running qdel for MASSIVE Vis node...')
         if launcherMainFrame.loginThread.massiveJobNumber != "0" and launcherMainFrame.loginThread.deletedMassiveJob == False:
             if update_status_bar:
                 wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Deleting MASSIVE Vis node job.")
             if update_main_progress_bar:
                 wx.CallAfter(launcherMainFrame.loginThread.updateProgressDialog, 6, "Deleting MASSIVE Vis node job...")
             if write_debug_log:
-                logger_debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
+                logger.debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
             run_ssh_command(sshCmd.format(username=launcherMainFrame.massiveUsername,host=launcherMainFrame.massiveLoginHost),
                             "qdel -a " + launcherMainFrame.loginThread.massiveJobNumber, launcherMainFrame,ignore_errors=ignore_errors)
             launcherMainFrame.loginThread.deletedMassiveJob = True
@@ -419,7 +383,7 @@ def deleteMassiveJobIfNecessary(launcherMainFrame,write_debug_log=False, update_
                 wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
     elif launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode:
         if write_debug_log:
-            logger_debug('Not running qdel for massive visnode because persistent mode is active.')
+            logger.debug('Not running qdel for massive visnode because persistent mode is active.')
 
         wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, 'Checking remaining visnode walltime...')
         wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
@@ -439,15 +403,15 @@ def deleteMassiveJobIfNecessary(launcherMainFrame,write_debug_log=False, update_
                 launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = True
             launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = False
 
-            logger_debug('About to run showNotDeletingMassiveJobWarning()')
+            logger.debug('About to run showNotDeletingMassiveJobWarning()')
             wx.CallAfter(showNotDeletingMassiveJobWarning)
             while not launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted:
                 time.sleep(0.1)
 
-            logger_debug('User clicked ok on showNotDeletingMassiveJobWarning()')
+            logger.debug('User clicked ok on showNotDeletingMassiveJobWarning()')
     else:
         if write_debug_log:
-            logger_debug('Not running qdel for massive visnode.')
+            logger.debug('Not running qdel for massive visnode.')
     launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = False
 
 
@@ -492,7 +456,7 @@ def die_from_login_thread(launcherMainFrame,error_message, display_error_dialog=
     wx.CallAfter(launcherMainFrame.massiveShowDebugWindowCheckBox.SetValue, False)
     wx.CallAfter(launcherMainFrame.cvlShowDebugWindowCheckBox.SetValue, False)
 
-    dump_log(launcherMainFrame,submit_log=submit_log)
+    logger.dump_log(launcherMainFrame,submit_log=submit_log)
 
 def die_from_main_frame(launcherMainFrame,error_message):
     if (launcherMainFrame.progressDialog != None):
@@ -514,93 +478,28 @@ def die_from_main_frame(launcherMainFrame,error_message):
     while not launcherMainFrame.loginThread.die_from_main_frame_dialog_completed:
         time.sleep(0.1)
  
-    dump_log(launcherMainFrame,submit_log=True)
+    logger.dump_log(launcherMainFrame,submit_log=True)
     os._exit(1)
 
 def run_ssh_command(sshCmd,command,ignore_errors=False,log_output=True,callback=None):
-    logger_debug('run_ssh_command: %s' % sshCmd+command)
-    logger_debug('   called from %s:%d' % inspect.stack()[1][1:3])
+    logger.debug('run_ssh_command: %s' % sshCmd+command)
+    logger.debug('   called from %s:%d' % inspect.stack()[1][1:3])
     ssh_process=subprocess.Popen(sshCmd+command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
 
     #(stdout,stderr) = ssh_process.communicate(command)
     (stdout,stderr) = ssh_process.communicate()
     ssh_process.wait()
     if log_output:
-        logger_debug('command stdout: %s' % stdout)
-        logger_debug('command stderr: %s' % stderr)
+        logger.debug('command stdout: %s' % stdout)
+        logger.debug('command stderr: %s' % stderr)
     if not ignore_errors and len(stderr) > 0:
         error_message = 'Error running command: "%s" at line %d' % (command, inspect.stack()[1][2])
-        logger_error('Nonempty stderr and ignore_errors == False; exiting the launcher with error dialog: ' + error_message)
+        logger.error('Nonempty stderr and ignore_errors == False; exiting the launcher with error dialog: ' + error_message)
         if (callback != None):
             callback(error_message)
 
     return stdout, stderr
 
-
-global transport_logger
-global logger
-global logger_debug
-global logger_error
-global logger_warning
-global logger_output
-global logger_fh
-
-
-
-
-
-def configureLogger(name):
-
-    global transport_logger
-    global logger
-    global logger_debug
-    global logger_error
-    global logger_warning
-    global logger_output
-    global logger_fh
-    
-    # print "defining global logger"
-    logger = logging.getLogger(name)
-    # print logger
-    logger.setLevel(logging.DEBUG)
-
-    transport_logger = logging.getLogger('ssh.transport')
-    transport_logger.setLevel(logging.DEBUG)
-
-    log_format_string = '%(asctime)s - %(name)s - %(module)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s'
-
-    # Send all log messages to a string.
-    logger_output = StringIO()
-    string_handler = logging.StreamHandler(stream=logger_output)
-    string_handler.setLevel(logging.DEBUG)
-    string_handler.setFormatter(logging.Formatter(log_format_string))
-    logger.addHandler(string_handler)
-    transport_logger.addHandler(string_handler)
-
-    # Finally, send all log messages to a log file.
-    from os.path import expanduser, join
-    logger_fh = logging.FileHandler(join(expanduser("~"), '.MASSIVE_Launcher_debug_log.txt'))
-    logger_fh.setLevel(logging.DEBUG)
-    logger_fh.setFormatter(logging.Formatter(log_format_string))
-    logger.addHandler(logger_fh)
-    transport_logger.addHandler(logger_fh)
-
-# variable logger is a global
-def logger_debug(message):
-    if threading.current_thread().name=="MainThread":
-        logger.debug(message)
-    else:
-        wx.CallAfter(logger.debug, message)
-def logger_error(message):
-    if threading.current_thread().name=="MainThread":
-        logger.error(message)
-    else:
-        wx.CallAfter(logger.error, message)
-def logger_warning(message):
-    if threading.current_thread().name=="MainThread":
-        logger.warning(message)
-    else:
-        wx.CallAfter(logger.warning, message)
 
 def unzip(zipFilePath, destDir):
 

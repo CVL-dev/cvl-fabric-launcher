@@ -115,6 +115,8 @@ import launcher_progress_dialog
 from menus.IdentityMenu import IdentityMenu
 import tempfile
 
+from logger.Logger import logger
+
 global launcherMainFrame
 launcherMainFrame = None
 global massiveLauncherConfig
@@ -905,15 +907,9 @@ class LauncherMainFrame(wx.Frame):
 
         self.Centre()
 
-        # Moved logger definitions to earlier in the code,
-        # before the first call to dump_log()
-
-        configureLogger('launcher')
-        # print "after configure Logger, logger is"
-
         import commit_def
-        logger_debug('launcher commit hash: ' + commit_def.LATEST_COMMIT)
-        logger_debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
+        logger.debug('launcher commit hash: ' + commit_def.LATEST_COMMIT)
+        logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
 
         # Check for the latest version of the launcher:
         try:
@@ -945,8 +941,8 @@ class LauncherMainFrame(wx.Frame):
 
             # Tried submit_log=True, but it didn't work.
             # Maybe the requests stuff hasn't been initialized yet.
-            logger_debug("Failed version number check.")
-            dump_log(launcherMainFrame,submit_log=False)
+            logger.debug("Failed version number check.")
+            logger.dump_log(launcherMainFrame,submit_log=False)
             sys.exit(1)
 
     def onTabbedViewChanged(self, event):
@@ -1021,7 +1017,7 @@ class LauncherMainFrame(wx.Frame):
         # so there's no need to delete it as part of clean-up.
 
         try:
-            dump_log(launcherMainFrame)
+            logger.dump_log(launcherMainFrame)
         finally:
             os._exit(0)
 
@@ -1060,7 +1056,7 @@ class LauncherMainFrame(wx.Frame):
         # so there's no need to delete it as part of clean-up.
 
         try:
-            dump_log(launcherMainFrame)
+            logger.dump_log(launcherMainFrame)
         finally:
             os._exit(0)
 
@@ -1116,7 +1112,6 @@ class LauncherMainFrame(wx.Frame):
         super(LauncherMainFrame, self).SetCursor(cursor)
 
     def onLogin(self, event):
-        global logger
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
 
@@ -1171,7 +1166,7 @@ class LauncherMainFrame(wx.Frame):
                     self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
                 except:
                     error_string = "Error contacting Massive to retrieve user's default project"
-                    logger_error(error_string)
+                    logger.error(error_string)
                     die_from_main_frame(launcherMainFrame,error_string)
                     return
 
@@ -1233,18 +1228,7 @@ class LauncherMainFrame(wx.Frame):
             font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         self.logTextCtrl.SetFont(font)
 
-        # Send all log messages to the debug window, which may or may not be visible.
-        log_window_handler = logging.StreamHandler(stream=self.logTextCtrl)
-        log_window_handler.setLevel(logging.DEBUG)
-        log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
-        log_window_handler.setFormatter(logging.Formatter(log_format_string))
-        logger = logging.getLogger('launcher')
-        logger.addHandler(log_window_handler)
-        # Don't send ssh.transport log messages to
-        # the log window, because they won't be
-        # wrapped in wx.CallAfter, unless we provide
-        # our own customized version of the ssh module.
-        #transport_logger.addHandler(log_window_handler)
+        logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
 
         if launcherMainFrame.massiveTabSelected:
             self.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
@@ -1375,7 +1359,7 @@ class MyApp(wx.App):
                     wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
                                   "Error", wx.OK|wx.ICON_EXCLAMATION)
             else:
-                logger_debug(traceback.format_exc())
+                logger.debug(traceback.format_exc())
                 dlg = wx.MessageDialog(launcherMainFrame,
                     "You can access the help later from the Help menu or from the Identity menu.",
                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
@@ -1383,7 +1367,7 @@ class MyApp(wx.App):
 
         if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
             if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path"):
-                logger_debug("Found massive_launcher_private_key_path in local settings.")
+                logger.debug("Found massive_launcher_private_key_path in local settings.")
             else:
                 usingPrivateKeyForTheFirstTime()
         else:
