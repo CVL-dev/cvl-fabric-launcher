@@ -952,7 +952,7 @@ class LoginProcess():
                     # Therefore test if the stopCmd can actually be formated before attempting to execute it.
                     try:
                         event.loginprocess.stopCmd.format(**event.loginprocess.jobParams)
-                        t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".",nextevent,"")
+                        t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".",nextevent,"",requireMatch=False)
                         t.setDaemon(True)
                         t.start()
                         event.loginprocess.threads.append(t)
@@ -974,7 +974,13 @@ class LoginProcess():
                     sizer.Add(text,0,wx.ALL,15)
                     dlg.addPanel(panel)
                     dlg.ShowModal()
-                logger.dump_log(event.loginprocess.notify_window,submit_log=True)
+                if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds') and event.loginprocess.turboVncElapsedTimeInSeconds > 3:
+                    logger.debug("TurboVNC's elapsed time was greater than 3 seconds, " +
+                        "so presumably user stopped VNC session, so no need to ask " +
+                        "if they want to submit a debug log to cvl.massive.org.au")
+                    logger.dump_log(event.loginprocess.notify_window,submit_log=False)
+                else:
+                    logger.dump_log(event.loginprocess.notify_window,submit_log=True)
             else:
                 event.Skip()
 
@@ -1040,9 +1046,11 @@ class LoginProcess():
                 NOOPCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
                 dialog = None
                 if (len(event.loginprocess.matchlist)>0):
+                    logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)>0")
                     event.loginprocess.job=event.loginprocess.matchlist[0]
                     timeRemaining=event.loginprocess.timeRemaining()
                     if (timeRemaining != None):
+                        logger.debug("showKillServerDialog: timeRemaining != None")
                         hours, remainder = divmod(timeRemaining, 3600)
                         minutes, seconds = divmod(remainder, 60)
                         if (hours > 1):
@@ -1058,10 +1066,15 @@ class LoginProcess():
                         dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
                     elif ("m1" not in event.loginprocess.loginParams['loginHost'] and "m2" not in event.loginprocess.loginParams['loginHost']):
                         dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                    else:
+                        logger.debug("showKillServerDialog: timeRemaining is None and ('m1' or 'm2' is in loginHost)")
                     if dialog:
+                        logger.debug("showKillServerDialog: Showing the 'Stop the desktop' question dialog.")
                         wx.CallAfter(dialog.ShowModal)
+                    else:
+                        logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
                 else:
-                    # Presumably, the user has already ended their MASSIVE session, so there is no need to ask whether they want to stop it.
+                    logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)=0")
                     wx.CallAfter(NOOPCallback)
             else:
                 event.Skip()
