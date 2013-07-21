@@ -113,7 +113,6 @@ class LoginProcess():
                 self.loginprocess.cancel("An error occured. I'm sorry I can't give any more detailed information")
                 return
 
-
             if self.sanityCheckHack:
                 if 'REQUEST_VISNODE_ERROR' in stdout:
                     logger.debug('We saw REQUEST_VISNODE_ERROR so we are quitting.')
@@ -900,24 +899,37 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 8, "Setting the desktop resolution")
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK,event.loginprocess)
 
                 logger.debug('Setting the desktop resolution.')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.setDisplayResolutionCmd, '.*', nextevent, '', requireMatch=False)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
+            else:
+                event.Skip()
 
-                # FIXME move this into a separate event, chained onto the end of this one.
-                #logger.debug('Running server-side sanity check.')
-                #v = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
-                #                                        '.*',
-                #                                        None,
-                #                                        'Error reported by server-side sanity check.',
-                #                                        sanityCheckHack=True)
-                #v.setDaemon(False)
-                #v.start()
-                #event.loginprocess.threads.append(v)
+        def runSanityCheck(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_RUN_SANITY_CHECK')
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 8, "Running the sanity check script")
+                nextevent = LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
+
+                if "m1" in event.loginprocess.loginParams['loginHost'] or "m2" in event.loginprocess.loginParams['loginHost']:
+                    logger.debug('Running server-side sanity check.')
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
+                                                            '.*',
+                                                            nextevent,
+                                                            'Error reported by server-side sanity check.',
+                                                            sanityCheckHack=True)
+                    t.setDaemon(False)
+                    t.start()
+                    event.loginprocess.threads.append(t)
+                else:
+                    logger.debug('Not running server-side sanity check; must be using a CVL host.')
+                    if not event.loginprocess.canceled():
+                        logger.debug('Posting the EVT_LOGINPROCESS_FORWARD_AGENT event.')
+                        wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(), nextevent)
             else:
                 event.Skip()
 
@@ -1295,6 +1307,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK = wx.NewId()
 
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.cancel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.distributeKey)
@@ -1320,6 +1333,7 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getProjects)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.selectProject)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.setDesktopResolution)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.runSanityCheck)
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
 
     def timeRemaining(self):
