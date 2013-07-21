@@ -131,7 +131,7 @@ class LoginProcess():
                 logger.error("canceling the loginprocess due to errors in the output of the command: %s %s"%(self.cmd.format(**self.loginprocess.jobParams),messages))
                 self.loginprocess.cancel(concat)
             elif (messages.has_key('warn') or messages.has_key('info')):
-                dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
+                dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                 panel=wx.Panel(dlg)
                 sizer=wx.BoxSizer()
                 panel.SetSizer(sizer)
@@ -159,7 +159,7 @@ class LoginProcess():
 
     class SimpleOptionDialog(wx.Dialog):
         def __init__(self, parent, id, title, text, okString, cancelString, OKCallback, CancelCallback):
-            wx.Dialog.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER | wx.STAY_ON_TOP)
+            wx.Dialog.__init__(self, parent, id, title, style=wx.DEFAULT_DIALOG_STYLE ^ wx.RESIZE_BORDER | wx.STAY_ON_TOP)
             self.SetTitle(title)
             self.panel = wx.Panel(self,-1)
             self.label = wx.StaticText(self.panel, -1, text)
@@ -468,7 +468,7 @@ class LoginProcess():
 
         def showTurboVncNotFoundMessageDialog(self,turboVncLatestVersion):
 
-            turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
+            turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
 
             turboVncNotFoundPanel = wx.Panel(turboVncNotFoundDialog)
             turboVncNotFoundPanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5, hgap=5)
@@ -723,7 +723,7 @@ class LoginProcess():
                     event.loginprocess.startServerCmd.format(**event.loginprocess.jobParams) # check if we actually need the project to format the startServerCmd
                     if (event.loginprocess.jobParams.has_key('project') and not (event.loginprocess.jobParams['project'] in grouplist)):
                         logger.debug("we have a value for project, but the user is not a member of that project")
-                        msg='You don\'t appear to be a member of the project {project}. Please select from one of the following:'.format(**event.loginprocess.jobParams)
+                        msg='You don\'t appear to be a member of the project {project}.\n\nPlease select from one of the following:'.format(**event.loginprocess.jobParams)
                         event.loginprocess.jobParams.pop('project',None)
                         try: # check again if we really need the project field.
                             logger.debug("trying to format the startServerCmd")
@@ -743,11 +743,28 @@ class LoginProcess():
                         msg="Please select your project"
                         showDialog=True
                 if (not showDialog):
-                    logger.debug("don't need to show the dialog, either the project was set correclty, or it was not set, but also not required")
+                    logger.debug("don't need to show the dialog, either the project was set correctly, or it was not set, but also not required")
                 else:
                     logger.debug("creating a list dialog for the user to select their project from")
-                    callback=lambda x: event.loginprocess.jobParams.update([('project',"%s"%x.GetText())])
-                    dlg=ListSelectionDialog(event.loginprocess.notify_window, headers=None,message=msg, items=grouplist, callback=callback, style=wx.RESIZE_BORDER)
+                    #okCallback=lambda x: event.loginprocess.jobParams.update([('project',"%s"%x.GetText())])
+                    def okCallback(listSelectionItem):
+                        project = listSelectionItem.GetText()
+                        event.loginprocess.jobParams.update([('project',"%s"%project)])
+                        parentWindow = event.loginprocess.notify_window
+                        if parentWindow!=None and parentWindow.__class__.__name__=="LauncherMainFrame":
+                            launcherMainFrame = parentWindow
+                            launcherMainFrame.massiveProjectComboBox.SetValue(project)
+                            if project in launcherMainFrame.massiveProjects:
+                                launcherMainFrame.massiveProjectComboBox.SetSelection(launcherMainFrame.massiveProjects.index(project))
+                            massiveLauncherConfig = event.loginprocess.massiveLauncherConfig
+                            massiveLauncherPreferencesFilePath = event.loginprocess.massiveLauncherPreferencesFilePath
+                            if massiveLauncherConfig!=None and massiveLauncherPreferencesFilePath!=None:
+                               massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", project)
+                               with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                                   massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+                    cancelCallback=lambda x: event.loginprocess.cancel(x)
+                    #dlg=ListSelectionDialog(event.loginprocess.notify_window, headers=None,message=msg, items=grouplist, callback=callback, style=wx.RESIZE_BORDER)
+                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE)
                     dlg.ShowModal()
                 if (not event.loginprocess.canceled()):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
@@ -966,7 +983,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN')
                 wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
                 if (event.string!=""):
-                    dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",pos=(200,150),size=(680,290),style=wx.STAY_ON_TOP)
+                    dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                     panel=wx.Panel(dlg)
                     sizer=wx.BoxSizer()
                     panel.SetSizer(sizer)
@@ -1121,7 +1138,7 @@ class LoginProcess():
 
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,parentWindow,username,host,resolution,cipher,notifywindow,sshpaths,siteConfig=None,project=None,hours=None,nodes=1,usePBS=True,directConnect=False,autoExit=False,fastInterface="-ib"):
+    def __init__(self,parentWindow,username,host,resolution,cipher,notifywindow,sshpaths,siteConfig=None,project=None,hours=None,nodes=1,usePBS=True,directConnect=False,autoExit=False,fastInterface="-ib",massiveLauncherConfig=None, massiveLauncherPreferencesFilePath=None):
         self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
@@ -1153,6 +1170,8 @@ class LoginProcess():
         self.joblist=[]
         self.started_job=threading.Event()
         self.skd=None
+        self.massiveLauncherConfig = massiveLauncherConfig
+        self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
         if (siteConfig!=None):
             self.listAllCmd=siteConfig['listAllCmd']
             self.listAllRegEx=siteConfig['listAllRegEx']
@@ -1190,7 +1209,8 @@ class LoginProcess():
                 self.startServerCmd="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
                 self.runSanityCheckCmd="\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'"
                 self.setDisplayResolutionCmd="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
-                self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
+                #self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
+                self.getProjectsCmd='\"gbalance -u {username} --show Name | tail -n +3\"'
                 self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
                 self.showStartCmd="showstart {jobid}"
@@ -1343,6 +1363,7 @@ class LoginProcess():
     def cancel(self,error=""):
         if (not self._canceled.isSet()):
             self._canceled.set()
+            logger.debug("LoginProcess.cancel: " + error)
             event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CANCEL,self,error)
             wx.PostEvent(self.notify_window.GetEventHandler(),event)
 

@@ -86,7 +86,7 @@ class Logger():
         # logging.shutdown()
 
         def yes_no():
-            dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'Submit log?', wx.YES | wx.NO | wx.ICON_INFORMATION)
+            dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'MASSIVE/CVL Launcher', wx.YES_NO | wx.ICON_QUESTION)
             try:
                 result = dlg.ShowModal()
                 launcherMainFrame.submit_log = result == wx.ID_YES

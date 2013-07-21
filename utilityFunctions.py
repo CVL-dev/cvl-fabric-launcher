@@ -44,6 +44,13 @@ class ListSelectionDialog(wx.Dialog):
 
 
     def __init__(self, *args, **kw):
+        if kw.has_key('parent'):
+            self.parent=kw.get('parent')
+            logger.debug("ListSelectionDialog: parent is not None.")
+            logger.debug("ListSelectionDialog: parent class name is " + self.parent.__class__.__name__) 
+        else:
+            self.parent = None
+            logger.debug("ListSelectionDialog: parent is None.")
         if kw.has_key('headers'):
             self.headers=kw.pop('headers')
         else:
@@ -56,14 +63,32 @@ class ListSelectionDialog(wx.Dialog):
             self.message=kw.pop('message')
         else:
             self.message=None
-        if kw.has_key('callback'):
-            self.callback=kw.pop('callback')
+        if kw.has_key('noSelectionMessage'):
+            self.noSelectionMessage=kw.pop('noSelectionMessage')
         else:
-            print "callback set to none"
-            self.callback=None
+            self.noSelectionMessage="Please select a valid item from the list.",
+        if kw.has_key('okCallback'):
+            self.okCallback=kw.pop('okCallback')
+        else:
+            logger.debug("okCallback set to none")
+            self.okCallback=None
+        if kw.has_key('cancelCallback'):
+            self.cancelCallback=kw.pop('cancelCallback')
+        else:
+            logger.debug("cancelCallback set to none")
+            self.cancelCallback=None
         super(ListSelectionDialog, self).__init__(*args, **kw)
         self.itemList=[]
-         
+       
+        self.closedProgressDialog = False
+        if self.parent is not None and self.parent.__class__.__name__=="LauncherMainFrame":
+            launcherMainFrame = self.parent
+            if launcherMainFrame is not None and launcherMainFrame.progressDialog is not None:
+                launcherMainFrame.progressDialog.Show(False)
+                self.closedProgressDialog = True
+
+        self.CenterOnParent()
+
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
             self.SetIcon(_icon)
@@ -72,7 +97,12 @@ class ListSelectionDialog(wx.Dialog):
             import MASSIVE_icon
             self.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
 
-        iconPanel = wx.Panel(self)
+        listSelectionDialogPanel = wx.Panel(self)
+        listSelectionDialogSizer = wx.FlexGridSizer(rows=1, cols=1)
+        self.SetSizer(listSelectionDialogSizer)
+        listSelectionDialogSizer.Add(listSelectionDialogPanel, flag=wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, border=10)
+
+        iconPanel = wx.Panel(listSelectionDialogPanel)
 
         import MASSIVE_icon
         iconAsBitmap = MASSIVE_icon.getMASSIVElogoTransparent128x128Bitmap()
@@ -86,7 +116,7 @@ class ListSelectionDialog(wx.Dialog):
         rcSizer = wx.BoxSizer(wx.VERTICAL)
 
 
-        contactPanel = wx.Panel(self)
+        contactPanel = wx.Panel(listSelectionDialogPanel)
         contactPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
         contactPanel.SetSizer(contactPanelSizer)
         contactQueriesContactLabel = wx.StaticText(contactPanel, label = "For queries, please contact:")
@@ -110,7 +140,7 @@ class ListSelectionDialog(wx.Dialog):
 
         contactPanelSizer.Fit(contactPanel)
 
-        listSelectionPanel=wx.Panel(self)
+        listSelectionPanel = wx.Panel(listSelectionDialogPanel)
         listSelectionPanelSizer = wx.BoxSizer(wx.VERTICAL)
         listSelectionPanel.SetSizer(listSelectionPanelSizer)
         if (self.message!=None):
@@ -141,26 +171,42 @@ class ListSelectionDialog(wx.Dialog):
         #self.listSelectionList=wx.ListView(listSelectionPanel,style=wx.LC_REPORT)
         listSelectionPanelSizer.Add(self.listSelectionList,proportion=1,border=10,flag=wx.EXPAND|wx.ALL)
 
-        self.okButton = wx.Button(self, 1, ' OK ')
+        self.buttonsPanel = wx.Panel(listSelectionDialogPanel, wx.ID_ANY)
+        self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=2, hgap=5, vgap=5)
+        self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
+
+        self.cancelButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Cancel')
+        self.cancelButton.SetDefault()
+        self.cancelButton.Bind(wx.EVT_BUTTON, self.onClose)
+        self.Bind(wx.EVT_CLOSE, self.onClose)
+        # Bottom border of 5 is a workaround for an OS X bug where bottom of button can be clipped.
+        self.buttonsPanelSizer.Add(self.cancelButton, flag=wx.BOTTOM, border=5)
+
+        self.okButton = wx.Button(self.buttonsPanel, wx.ID_ANY, ' OK ')
         self.okButton.SetDefault()
         self.okButton.Bind(wx.EVT_BUTTON, self.onClose)
-        self.okButton.Disable()
-        self.listSelectionList.Bind(wx.EVT_LIST_ITEM_SELECTED,self.onFocus)
+        self.Bind(wx.EVT_CLOSE, self.onClose)
+        #self.okButton.Disable()
+        # Bottom border of 5 is a workaround for an OS X bug where bottom of button can be clipped.
+        self.buttonsPanelSizer.Add(self.okButton, flag=wx.BOTTOM, border=5)
+
+        self.buttonsPanel.Fit()
+
+        #self.listSelectionList.Bind(wx.EVT_LIST_ITEM_SELECTED,self.onFocus)
         self.listSelectionList.Bind(wx.EVT_LIST_ITEM_ACTIVATED,self.onClose)
 
         lcSizer.Add(iconPanel,proportion=1,flag=wx.EXPAND|wx.ALIGN_TOP|wx.ALIGN_LEFT)
         lcSizer.Add(contactPanel,proportion=0,flag=wx.ALIGN_LEFT|wx.ALIGN_BOTTOM)
         rcSizer.Add(listSelectionPanel,proportion=1,flag=wx.EXPAND)
-        rcSizer.Add(self.okButton,proportion=0,flag=wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM)
-        #rcSizer.Add(okButton, flag=wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM|wx.RIGHT|wx.BOTTOM^wx.EXPAND)
-#        rcSizer.Add(okButton, flag=wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM|wx.RIGHT|wx.BOTTOM|wx.EXPAND)
-        #sizer.Add(wx.StaticText(self,label="       "))
-        #sizer.Add(okButton,proportion=1,flag=wx.EXPAND)
+        #rcSizer.Add(self.okButton,proportion=0,flag=wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM|wx.BOTTOM,border=5)
+        rcSizer.Add(self.buttonsPanel,proportion=0,flag=wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM)
         sizer.Add(lcSizer,proportion=0,flag=wx.EXPAND)
         sizer.Add(rcSizer,proportion=1,flag=wx.EXPAND)
-        self.SetSizer(sizer)
-        sizer.Fit(self)
+        listSelectionDialogPanel.SetSizer(sizer)
+        sizer.Fit(listSelectionDialogPanel)
+        self.Fit()
 
+        self.listSelectionList.SetFocus()
 
     def setItems(self,items,headers=None):
         self.itemList=items
@@ -173,19 +219,43 @@ class ListSelectionDialog(wx.Dialog):
         for item in self.itemList:
             self.listSelectionList.Append(item)
 
-    def onFocus(self,e):
-        if (self.listSelectionList.GetSelectedItemCount()>0):
-            self.okButton.Enable()
-        else:
-            self.okButton.Disable()
+    #def onFocus(self,e):
+        #if (self.listSelectionList.GetSelectedItemCount()>0):
+            #self.okButton.Enable()
+        #else:
+            #self.okButton.Disable()
 
     def onClose(self, e):
-    
+   
+        if (e.GetId() != self.okButton.GetId()):
+            logger.debug("ListSelectionDialog.onClose: User canceled.")
+            if self.cancelCallback != None:
+                #self.cancelCallback("User canceled from ListSelectionDialog.")
+                self.cancelCallback("")
+            self.Destroy()
+            return
+
+        if self.listSelectionList.GetFirstSelected()==-1:
+            dlg = wx.MessageDialog(self.parent, 
+                self.noSelectionMessage,
+                "MASSIVE/CVL Launcher", 
+                wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            self.listSelectionList.SetFocus()
+            return
+
         itemnum=self.listSelectionList.GetFocusedItem()
         item=self.listSelectionList.GetItem(itemnum,0)
-        if self.callback != None:
-            self.callback(item)
+        if self.okCallback != None:
+            self.okCallback(item)
         self.Destroy()
+
+        if self.closedProgressDialog:
+            if self.parent is not None and self.parent.__class__.__name__=="LauncherMainFrame":
+                launcherMainFrame = self.parent
+                if launcherMainFrame is not None and launcherMainFrame.progressDialog is not None:
+                    launcherMainFrame.progressDialog.Show(True)
+
 
 class HelpDialog(wx.Dialog):
     def __init__(self, *args, **kw):
@@ -200,6 +270,8 @@ class HelpDialog(wx.Dialog):
         if sys.platform.startswith("linux"):
             import MASSIVE_icon
             self.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+
+        self.CenterOnParent()
 
         iconPanel = wx.Panel(self)
 

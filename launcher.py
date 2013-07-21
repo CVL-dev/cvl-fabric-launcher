@@ -1268,7 +1268,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.sshpaths = cvlsshutils.sshKeyDist.sshpaths('MassiveLauncherKey',massiveLauncherConfig,massiveLauncherPreferencesFilePath)
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=hours,nodes=nodes,usePBS=launcherMainFrame.massiveTabSelected,directConnect=(not launcherMainFrame.massiveTabSelected),autoExit=autoExit)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,username,host,resolution,cipher,self,self.sshpaths,project=self.massiveProject,hours=hours,nodes=nodes,usePBS=launcherMainFrame.massiveTabSelected,directConnect=(not launcherMainFrame.massiveTabSelected),autoExit=autoExit,massiveLauncherConfig=massiveLauncherConfig, massiveLauncherPreferencesFilePath=massiveLauncherPreferencesFilePath)
         if sys.platform.startswith("win"):
             cvlsshutils.sshKeyDist.start_pageant()
             if 'HOME' not in os.environ:
