@@ -1275,7 +1275,8 @@ class LoginProcess():
                 self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
                 self.tunnelRegEx='tunnel_hello'
 
-        logger.debug('loginProcessEvent properties: ' + str(self.__dict__))
+        for k, v in self.__dict__.iteritems():
+            logger.debug('loginProcessEvent properties: %s = %s' % (str(k), str(v),))
 
         LoginProcess.EVT_LOGINPROCESS_CHECK_VNC_VER = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY = wx.NewId()
