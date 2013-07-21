@@ -263,7 +263,8 @@ class LoginProcess():
             else:
                 self.regex=regex
             self.errorstring=errorstring
-            logger.debug('runLoopServerCommandThread properties: ' + str(self.__dict__))
+            for k, v in self.__dict__.iteritems():
+                logger.debug('runLoopServerCommandThread properties: %s = %s' % (str(k), str(v),))
     
         def stop(self):
             logger.debug("runLoopServerCommandThread: stopping the thread that determines the execution host")
@@ -618,7 +619,8 @@ class LoginProcess():
             self.loginprocess = loginprocess
             self.string = string
 
-            logger.debug('loginProcessEvent properties: ' + str(self.__dict__))
+            for k, v in self.__dict__.iteritems():
+                logger.debug('loginProcessEvent properties: %s = %s' % (str(k), str(v),))
 
         def checkVNCVer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CHECK_VNC_VER):
