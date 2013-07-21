@@ -23,7 +23,7 @@ class Logger():
         # Send all log messages to the debug window, which may or may not be visible.
         log_window_handler = logging.StreamHandler(stream=logTextCtrl)
         log_window_handler.setLevel(logging.DEBUG)
-        log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
+        log_format_string = '%(asctime)s - %(name)s - %(module)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s'
         log_window_handler.setFormatter(logging.Formatter(log_format_string))
         self.loggerObject = logging.getLogger(self.name)
         self.loggerObject.addHandler(log_window_handler)
@@ -42,7 +42,7 @@ class Logger():
         self.transport_logger = logging.getLogger('ssh.transport')
         self.transport_logger.setLevel(logging.DEBUG)
 
-        log_format_string = '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
+        log_format_string = '%(asctime)s - %(name)s - %(module)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s'
 
         # Send all log messages to a string.
         loggerOutput = StringIO()
