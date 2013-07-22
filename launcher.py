@@ -145,9 +145,7 @@ class LauncherMainFrame(wx.Frame):
                     siteConfigComboBox.SetValue(siteConfigDefault)
                     site=siteConfigDefault
         if (site != None):
-            print "get children"
             for item in window.GetChildren():
-                print "control name %s"%item.GetName()
                 if isinstance(item,wx.Control):
                     print "control name %s"%item.GetName()
                 else:
@@ -263,6 +261,7 @@ class LauncherMainFrame(wx.Frame):
         self.SetTitle("MASSIVE / CVL Launcher")
 
         self.SetMenuBar(self.menu_bar)
+        print "set the menu bar"
 
         self.loginDialogPanel = wx.Panel(self, wx.ID_ANY)
         self.loginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=15, hgap=5)
@@ -283,7 +282,7 @@ class LauncherMainFrame(wx.Frame):
         widgetWidth3 = 75
 
         configChoices=["choice 1","choice 2"]
-        self.siteConfigComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, choices=configChoices, size=(widgetWidth2, -1), style=wx.CB_READONLY)
+        self.siteConfigComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, choices=configChoices, size=(widgetWidth2, -1), style=wx.CB_READONLY,name='jobParams_siteName')
         #self.siteConfigComboBox.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
         self.loginFieldsPanelSizer.Add(self.siteConfigComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -294,36 +293,31 @@ class LauncherMainFrame(wx.Frame):
 
         self.defaultProjectPlaceholder = '[Use my default project]'
         self.projects = ['[Use my defauly projec]']
-        self.projectComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=self.projects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
+        self.projectField = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=self.projects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_project')
         #self.projectComboBox.Bind(wx.EVT_TEXT, self.onProjectTextChanged)
-        self.loginFieldsPanelSizer.Add(self.projectComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.loginFieldsPanelSizer.Add(self.projectField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.hoursLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Hours requested')
-        self.loginFieldsPanelSizer.Add(self.hoursLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        o = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Hours requested')
+        self.loginFieldsPanelSizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.hoursAndNodesPanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
-        self.hoursAndNodesPanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=3, hgap=5)
-        self.hoursAndNodesPanel.SetSizer(self.hoursAndNodesPanelSizer)
-
+        panel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
+        sizer = wx.FlexGridSizer(rows=2, cols=3, vgap=3, hgap=5)
+        panel.SetSizer(sizer)
         # Maximum of 336 hours is 2 weeks:
         #self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=336)
-        self.hoursField = wx.SpinCtrl(self.hoursAndNodesPanel, wx.ID_ANY, size=(widgetWidth3,-1), min=1,max=336,name='hoursField')
-
+        o = wx.SpinCtrl(panel, wx.ID_ANY, size=(widgetWidth3,-1), min=1,max=336,name='jobParams_hours')
         #self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.hoursAndNodesPanelSizer.Add(self.hoursField, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.nodesLabel = wx.StaticText(self.hoursAndNodesPanel, wx.ID_ANY, 'Vis nodes')
-        self.hoursAndNodesPanelSizer.Add(self.nodesLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.nodesField = wx.SpinCtrl(self.hoursAndNodesPanel, wx.ID_ANY, value="1", size=(widgetWidth3,-1), min=1,max=10,name='nodesField')
-        self.hoursAndNodesPanelSizer.Add(self.nodesField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.hoursAndNodesPanel.SetSizerAndFit(self.hoursAndNodesPanelSizer)
-        self.loginFieldsPanelSizer.Add(self.hoursAndNodesPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        sizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        o = wx.StaticText(panel, wx.ID_ANY, 'Vis nodes')
+        sizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        o = wx.SpinCtrl(panel, wx.ID_ANY, value="1", size=(widgetWidth3,-1), min=1,max=10,name='jobParams_nodes')
+        sizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        panel.SetSizerAndFit(sizer)
+        self.loginFieldsPanelSizer.Add(panel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
 
-        self.vncDisplayResolutionLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Resolution')
-        self.loginFieldsPanelSizer.Add(self.vncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        o = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Resolution')
+        self.loginFieldsPanelSizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         displaySize = wx.DisplaySize()
         desiredWidth = displaySize[0] * 0.99
@@ -547,8 +541,8 @@ class LauncherMainFrame(wx.Frame):
         vncDisplayResolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        self.vncDisplayResolutionComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=vncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
-        self.loginFieldsPanelSizer.Add(self.vncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        o = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=vncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_resolution')
+        self.loginFieldsPanelSizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
 
 
@@ -849,151 +843,45 @@ If this account is shared by a number of people then passwords are preferable
     def onLogin(self, event):
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
-
-        if launcherMainFrame.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
-            launcherMainFrame.massiveTabSelected = True
-            launcherMainFrame.cvlTabSelected = False
-
-        if launcherMainFrame.tabbedView.GetSelection()==CVL_TAB_INDEX:
-            launcherMainFrame.massiveTabSelected = False
-            launcherMainFrame.cvlTabSelected = True
-
-        if launcherMainFrame.massiveTabSelected:
-            self.massiveLoginHost = self.massiveLoginHostComboBox.GetValue()
-            self.massiveUsername = self.massiveUsernameTextField.GetValue()
-            self.massiveVncDisplayResolution = self.massiveVncDisplayResolutionComboBox.GetValue()
-            self.massiveSshTunnelCipher = self.massiveSshTunnelCipherComboBox.GetValue()
-            self.massiveAutomaticallyExit = self.massiveAutomaticallyExitCheckBox.GetValue()
-
-            if self.massiveUsername.strip()=="":
-                dlg = wx.MessageDialog(launcherMainFrame,
-                        "Please enter your MASSIVE username.",
-                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-                self.massiveUsernameTextField.SetFocus()
-                return
-        else:
-            self.cvlLoginHost = self.cvlLoginHostComboBox.GetValue()
-            self.cvlUsername = self.cvlUsernameTextField.GetValue()
-            self.cvlVncDisplayResolution = self.cvlVncDisplayResolutionComboBox.GetValue()
-            self.cvlSshTunnelCipher = self.cvlSshTunnelCipherComboBox.GetValue()
-            self.cvlAutomaticallyExit = self.cvlAutomaticallyExitCheckBox.GetValue()
-
-            if self.cvlUsername.strip()=="":
-                dlg = wx.MessageDialog(launcherMainFrame,
-                        "Please enter your CVL username.",
-                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-                self.cvlUsernameTextField.SetFocus()
-                return
-
-        if launcherMainFrame.massiveTabSelected:
-            self.massiveHoursRequested = str(self.massiveHoursField.GetValue())
-            self.massiveVisNodesRequested = str(self.massiveVisNodesField.GetValue())
-            self.massiveProject = self.massiveProjectComboBox.GetValue()
-            if self.massiveProject == self.defaultProjectPlaceholder:
-                try:
-                    xmlrpcServer = xmlrpclib.Server("https://m2-web.massive.org.au/kgadmin/xmlrpc/")
-                    # Get list of user's massiveProjects from Karaage:
-                    # users_massiveProjects = xmlrpcServer.get_users_massiveProjects(self.massiveUsername, self.massivePassword)
-                    # self.massiveProjects = users_massiveProjects[1]
-                    # Get user's default massiveProject from Karaage:
-                    self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
-                except:
-                    logger.debug(traceback.format_exc())
-                    error_string = "Error contacting Massive to retrieve user's default project"
-                    logger.error(error_string)
-                    die_from_main_frame(launcherMainFrame,error_string)
-                    return
-
-                if self.massiveProject in self.massiveProjects:
-                    self.massiveProjectComboBox.SetSelection(self.massiveProjects.index(self.massiveProject))
-                else:
-                    # Project was not found in combo-box.
-                    self.massiveProjectComboBox.SetSelection(-1)
-                self.massiveProjectComboBox.SetValue(self.massiveProject)
+#        jobParams = build_jobParam_dict()
+#        if jobParams('username') == "":
+#            dlg = wx.MessageDialog(launcherMainFrame,
+#                    "Please enter your username.",
+#                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+#            dlg.ShowModal()
+#            usernamefield = self.getWXCtrl('jobParams_username')
+#            usernamefield.SetFocus()
+#            return
 
 
-        if launcherMainFrame.massiveTabSelected:
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_login_host", self.massiveLoginHost)
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_username", self.massiveUsername)
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_vnc_display_resolution", self.massiveVncDisplayResolution)
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher", self.massiveSshTunnelCipher)
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_automatically_exit", self.massiveAutomaticallyExit)
-        else:
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher", self.cvlSshTunnelCipher)
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_automatically_exit", self.cvlAutomaticallyExit)
+        if (self.logWindow == None):
 
-        if launcherMainFrame.massiveTabSelected:
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", self.massiveProject)
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested", self.massiveVisNodesRequested)
+            self.logWindow = wx.Frame(self, title='{configCN} Login'.format(**jobParams), name='{configCN} Login'.format(**jobParams),pos=(200,150),size=(700,450))
+            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
 
-        if launcherMainFrame.massiveTabSelected:
-            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        else:
-            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+            if sys.platform.startswith("win"):
+                _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+                self.logWindow.SetIcon(_icon)
 
-        if self.logWindow == None:
-            if launcherMainFrame.massiveTabSelected:
-                self.logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
-                self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseMassiveDebugWindow)
+            if sys.platform.startswith("linux"):
+                import MASSIVE_icon
+                self.logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+
+            self.logTextCtrl = wx.TextCtrl(self.logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
+            logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
+            logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
+            self.logWindow.SetSizer(logWindowSizer)
+            if sys.platform.startswith("darwin"):
+                font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
             else:
-                self.logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
-                self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseCvlDebugWindow)
-
-        if sys.platform.startswith("win"):
-            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
-            self.logWindow.SetIcon(_icon)
-
-        if sys.platform.startswith("linux"):
-            import MASSIVE_icon
-            self.logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
-
-        self.logTextCtrl = wx.TextCtrl(self.logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
-        logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
-        logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
-        self.logWindow.SetSizer(logWindowSizer)
-        if sys.platform.startswith("darwin"):
-            font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-        else:
-            font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-        self.logTextCtrl.SetFont(font)
-
-        logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
-
-        if launcherMainFrame.massiveTabSelected:
-            self.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
-        else:
-            self.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
+                font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+            self.logTextCtrl.SetFont(font)
 
 
-        if launcherMainFrame.massiveTabSelected:
-            host       = self.massiveLoginHost
-            resolution = self.massiveVncDisplayResolution
-            cipher     = self.massiveSshTunnelCipher
-            username   = self.massiveUsername
-            autoExit   = self.massiveAutomaticallyExit
-            hours      = self.massiveHoursRequested
-            nodes      = self.massiveVisNodesRequested
-        else:
-            host       = self.cvlLoginHost
-            resolution = self.cvlVncDisplayResolution
-            cipher     = self.cvlSshTunnelCipher
-            username   = self.cvlUsername
-            autoExit   = self.cvlAutomaticallyExit
-            hours      = 298261 # maximum number of hours its possible to request without overflowing a signed int32 when converted to seconds.
-            nodes      = 1
+            logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
 
-        host       = host.lstrip().rstrip()
-        resolution = resolution.lstrip().rstrip()
-        cipher     = cipher.lstrip().rstrip()
-        username   = username.lstrip().rstrip()
+        self.logWindow.Show(jobParams('showDebug'))
+
 
         userCanAbort=True
         maximumProgressBarValue = 10
@@ -1037,14 +925,9 @@ If this account is shared by a number of people then passwords are preferable
         self.loginProcess.doLogin()
 
 
-        if self.massiveTabSelected:
-            def initializeProgressDialog():
-                CancelCallback=self.loginProcess.cancel
-                self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, "Connecting to MASSIVE...", "", maximumProgressBarValue, userCanAbort,CancelCallback)
-        else:
-            def initializeProgressDialog():
-                CancelCallback=self.loginProcess.cancel
-                self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, "Connecting to CVL...", "", maximumProgressBarValue, userCanAbort,CancelCallback)
+        def initializeProgressDialog():
+            CancelCallback=self.loginProcess.cancel
+            self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, 'Connecting to {configCN}...'.format(**jobParams), "", maximumProgressBarValue, userCanAbort,CancelCallback)
 
 #        wx.CallAfter(initializeProgressDialog)
 
