@@ -1,3 +1,3 @@
-[submodule "cvl-ssh-utils"]
+[submodule "cvlsshutils"]
 	path = cvlsshutils
-	url = https://github.com/CVL-dev/cvl-ssh-utils.git
+	url = git@github.com:CVL-dev/cvl-ssh-utils.git
