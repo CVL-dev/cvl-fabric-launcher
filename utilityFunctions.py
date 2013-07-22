@@ -519,6 +519,7 @@ def die_from_login_thread(launcherMainFrame,error_message, display_error_dialog=
             launcherMainFrame.loginThread.die_from_login_thread_completed = True
 
         launcherMainFrame.loginThread.die_from_login_thread_completed = False
+
         wx.CallAfter(error_dialog)
         while not launcherMainFrame.loginThread.die_from_login_thread_completed:
             time.sleep(0.1)
