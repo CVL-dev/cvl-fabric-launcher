@@ -637,7 +637,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISTRIBUTE_KEY')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.notify_window,event.loginprocess.sshpaths)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.sshpaths,event.loginprocess.passwdPrompt)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      event.loginprocess.cancel)
@@ -1184,6 +1184,7 @@ class LoginProcess():
         self.joblist=[]
         self.started_job=threading.Event()
         self.skd=None
+        self.passwdPrompt=None
         self.massiveLauncherConfig = massiveLauncherConfig
         self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
         if (siteConfig!=None):
@@ -1236,7 +1237,7 @@ class LoginProcess():
 
             else:
                 update={}
-                update['loginHost']="118.138.241.53"
+                update['loginHost']=host
                 self.loginParams.update(update)
                 self.jobParams.update(self.loginParams)
                 self.directConnect=True
@@ -1261,6 +1262,7 @@ class LoginProcess():
                 self.vncDisplayRegEx='^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$'
                 self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
                 self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+                self.passwdPrompt='Please enter your CVL password for username {username}.\n\nIf you are using the CVL for the first time,\nthis is the password you entered when you applied for an account\non the webpage https://web.cvl.massive.org.au'
 
 
             if (not self.directConnect):
