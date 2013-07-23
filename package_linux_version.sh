@@ -33,6 +33,7 @@ cp massiveLauncher.sh 		dist/launcher/
 mkdir dist/launcher/icons
 cp IconPngs/* dist/launcher/icons/
 cp README_LINUX dist/launcher/
+cp -r cvlsshutils dist/launcher/
 
 cp `python -c 'import requests; print requests.certs.where()'` dist/launcher/
 
