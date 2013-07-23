@@ -270,10 +270,9 @@ class LauncherMainFrame(wx.Frame):
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,  self.onTabbedViewChanged, id=self.tabbedView.GetId())
 
         self.loginFieldsPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
-        self.loginFieldsPanelSizer = wx.FlexGridSizer(rows=7, cols=2, vgap=3, hgap=5)
+        #self.loginFieldsPanelSizer = wx.FlexGridSizer(rows=7, cols=2, vgap=3, hgap=5)
+        self.loginFieldsPanelSizer = wx.BoxSizer(wx.VERTICAL)
         self.loginFieldsPanel.SetSizer(self.loginFieldsPanelSizer)
-        self.configLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Host')
-        self.loginFieldsPanelSizer.Add(self.configLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         widgetWidth1 = 180
         widgetWidth2 = 180
@@ -281,151 +280,104 @@ class LauncherMainFrame(wx.Frame):
             widgetWidth2 = widgetWidth2 + 25
         widgetWidth3 = 75
 
+        self.siteConfigPanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
+        self.siteConfigPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.configLabel = wx.StaticText(self.siteConfigPanel, wx.ID_ANY, 'Host')
+        self.siteConfigPanelSizer.Add(self.configLabel, proportion=1, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, border=5)
         configChoices=["choice 1","choice 2"]
-        self.siteConfigComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, choices=configChoices, size=(widgetWidth2, -1), style=wx.CB_READONLY,name='jobParams_siteName')
+        self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=configChoices, size=(widgetWidth2, -1), style=wx.CB_READONLY,name='jobParams_siteName')
         #self.siteConfigComboBox.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
-        self.loginFieldsPanelSizer.Add(self.siteConfigComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.siteConfigPanelSizer.Add(self.siteConfigComboBox, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.siteConfigPanel.SetSizerAndFit(self.siteConfigPanelSizer)
+        self.loginFieldsPanelSizer.Add(self.siteConfigPanel,proportion=0,flag=wx.EXPAND)
 
         # load the default site from the users preferences
         #loadPrefs(prefs)
-        self.projectLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Project')
-        self.loginFieldsPanelSizer.Add(self.projectLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.projectPanel = wx.Panel(self.loginFieldsPanel,wx.ID_ANY)
+        self.projectPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.projectLabel = wx.StaticText(self.projectPanel, wx.ID_ANY, 'Project')
+        self.projectPanelSizer.Add(self.projectLabel, proportion=1, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, border=5)
 
         self.defaultProjectPlaceholder = '[Use my default project]'
         self.projects = ['[Use my defauly projec]']
-        self.projectField = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=self.projects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_project')
+        self.projectField = wx.ComboBox(self.projectPanel, wx.ID_ANY, value='', choices=self.projects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_project')
         #self.projectComboBox.Bind(wx.EVT_TEXT, self.onProjectTextChanged)
-        self.loginFieldsPanelSizer.Add(self.projectField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.projectPanelSizer.Add(self.projectField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.projectPanel.SetSizerAndFit(self.projectPanelSizer)
+        self.loginFieldsPanelSizer.Add(self.projectPanel, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
 
 
         self.resourcePanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
-        self.resourcePanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=3, hgap=5)
+        self.resourcePanelSizer = wx.FlexGridSizer(rows=1, cols=4, vgap=3, hgap=5)
         self.resourcePanel.SetSizer(self.resourcePanelSizer)
 
-        self.hoursLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Hours requested')
-        self.loginFieldsPanelSizer.Add(self.hoursLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.hoursLabel = wx.StaticText(self.resourcePanel, wx.ID_ANY, 'Hours requested')
+        self.resourcePanelSizer.Add(self.hoursLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
         # Maximum of 336 hours is 2 weeks:
         #self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=336)
         self.hoursField = wx.SpinCtrl(self.resourcePanel, wx.ID_ANY, size=(widgetWidth3,-1), min=1,max=336,name='jobParams_hours')
         #self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.resourcePanelSizer.Add(self.hoursField, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resourcePanelSizer.Add(self.hoursField, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
         self.nodesLabel = wx.StaticText(self.resourcePanel, wx.ID_ANY, 'Vis nodes')
-        self.resourcePanelSizer.Add(self.nodesLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resourcePanelSizer.Add(self.nodesLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
         self.nodesField = wx.SpinCtrl(self.resourcePanel, wx.ID_ANY, value="1", size=(widgetWidth3,-1), min=1,max=10,name='jobParams_nodes')
         self.resourcePanelSizer.Add(self.nodesField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.resourcePanel.SetSizerAndFit(self.resourcePanelSizer)
-        self.loginFieldsPanelSizer.Add(self.resourcePanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.loginFieldsPanelSizer.Add(self.resourcePanel, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
 
 
-        self.resolutionLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Resolution',name='label_resolution')
-        self.loginFieldsPanelSizer.Add(self.resolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resolutionPanel = wx.Panel(self.loginFieldsPanel)
+        self.resolutionPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.resolutionLabel = wx.StaticText(self.resolutionPanel, wx.ID_ANY, 'Resolution',name='label_resolution')
+        self.resolutionPanelSizer.Add(self.resolutionLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         displaySize = wx.DisplaySize()
         desiredWidth = displaySize[0] * 0.99
         desiredHeight = displaySize[1] * 0.85
         defaultResolution = str(int(desiredWidth)) + "x" + str(int(desiredHeight))
-        self.massiveVncDisplayResolution = defaultResolution
-        massiveVncDisplayResolutions = [
+
+        displaySize = wx.DisplaySize()
+        desiredWidth = displaySize[0] * 0.99
+        desiredHeight = displaySize[1] * 0.85
+        defaultResolution = str(int(desiredWidth)) + "x" + str(int(desiredHeight))
+        vncDisplayResolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        self.massiveVncDisplayResolutionComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveVncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
-        self.massiveLoginFieldsPanelSizer.Add(self.massiveVncDisplayResolutionComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_vnc_display_resolution"):
-                self.massiveVncDisplayResolution = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_vnc_display_resolution")
-            elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "resolution"):
-                self.massiveVncDisplayResolution = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "resolution")
-            else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_vnc_display_resolution","")
-                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        else:
-            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
-            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        self.massiveVncDisplayResolution = self.massiveVncDisplayResolution.strip()
-        if self.massiveVncDisplayResolution!="":
-            if self.massiveVncDisplayResolution in massiveVncDisplayResolutions:
-                self.massiveVncDisplayResolutionComboBox.SetSelection(massiveVncDisplayResolutions.index(self.massiveVncDisplayResolution))
-            else:
-                # Resolution was not found in combo-box.
-                self.massiveVncDisplayResolutionComboBox.SetSelection(-1)
-            self.massiveVncDisplayResolutionComboBox.SetValue(self.massiveVncDisplayResolution)
-        else:
-            self.massiveVncDisplayResolutionComboBox.SetValue(defaultResolution)
+        self.resolutionField = wx.ComboBox(self.resolutionPanel, wx.ID_ANY, value='', choices=vncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_resolution')
+        self.resolutionPanelSizer.Add(self.resolutionField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resolutionPanel.SetSizerAndFit(self.resolutionPanelSizer)
+        self.loginFieldsPanelSizer.Add(self.resolutionPanel,proportion=0,flag=wx.EXPAND)
 
-        self.massiveSshTunnelCipherLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher')
-        self.massiveLoginFieldsPanelSizer.Add(self.massiveSshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        
+        self.cipherPanel = wx.Panel(self.loginFieldsPanel)
+        self.cipherPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sshTunnelCipherLabel = wx.StaticText(self.cipherPanel, wx.ID_ANY, 'SSH tunnel cipher',name='label_cipher')
+        self.cipherPanelSizer.Add(self.sshTunnelCipherLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.massiveSshTunnelCipher = ""
         if sys.platform.startswith("win"):
             defaultCipher = "arcfour"
-            massiveSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour"]
+            sshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour"]
         else:
             defaultCipher = "arcfour128"
-            massiveSshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
-        self.massiveSshTunnelCipher = defaultCipher
-        self.massiveSshTunnelCipherComboBox = wx.ComboBox(self.massiveLoginFieldsPanel, wx.ID_ANY, value='', choices=massiveSshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN)
-        self.massiveLoginFieldsPanelSizer.Add(self.massiveSshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher"):
-                self.massiveSshTunnelCipher = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher")
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "cipher"):
-                self.massiveSshTunnelCipher = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "cipher")
-            else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher","")
-                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        else:
-            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
-            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        self.massiveSshTunnelCipher = self.massiveSshTunnelCipher.strip()
-        if self.massiveSshTunnelCipher=="":
-            self.massiveSshTunnelCipher = defaultCipher
-        if self.massiveSshTunnelCipher!="":
-            if self.massiveSshTunnelCipher in massiveSshTunnelCiphers:
-                self.massiveSshTunnelCipherComboBox.SetSelection(massiveSshTunnelCiphers.index(self.massiveSshTunnelCipher))
-            else:
-                # Cipher was not found in combo-box.
-                self.massiveSshTunnelCipherComboBox.SetSelection(-1)
-            self.massiveSshTunnelCipherComboBox.SetValue(self.massiveSshTunnelCipher)
-        else:
-            self.massiveSshTunnelCipherComboBox.SetValue(defaultCipher)
+            sshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
+        self.sshTunnelCipherComboBox = wx.ComboBox(self.cipherPanel, wx.ID_ANY, value=defaultCipher, choices=sshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_cipher')
+        self.cipherPanelSizer.Add(self.sshTunnelCipherComboBox, proportion=0,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cipherPanel.SetSizerAndFit(self.cipherPanelSizer)
+        self.loginFieldsPanelSizer.Add(self.cipherPanel,proportion=0,flag=wx.EXPAND)
 
-        self.massiveUsernameLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Username')
-        self.massiveLoginFieldsPanelSizer.Add(self.massiveUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.usernamePanel=wx.Panel(self.loginFieldsPanel)
+        self.usernamePanelSizer=wx.BoxSizer(wx.HORIZONTAL)
+        self.usernameLabel = wx.StaticText(self.usernamePanel, wx.ID_ANY, 'Username',name='label_username')
+        self.usernamePanelSizer.Add(self.usernameLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        #self.usernameTextField = wx.TextCtrl(self.usernamePanel, wx.ID_ANY, size=(widgetWidth1, -1),name='jobParams_username')
+        self.usernameTextField = wx.TextCtrl(self.usernamePanel, wx.ID_ANY, size=(widgetWidth2, -1),name='jobParams_username')
+        self.usernamePanelSizer.Add(self.usernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
+        self.usernamePanel.SetSizerAndFit(self.usernamePanelSizer)
+        self.loginFieldsPanelSizer.Add(self.usernamePanel,proportion=0,flag=wx.EXPAND)
 
-        self.massiveUsername = ""
-        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_username"):
-                self.massiveUsername = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_username")
-            elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "username"):
-                self.massiveUsername = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "username")
-            else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_username","")
-                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        else:
-            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
-            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        self.massiveUsernameTextField = wx.TextCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, self.massiveUsername, size=(widgetWidth1, -1))
-        self.massiveLoginFieldsPanelSizer.Add(self.massiveUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
-        if self.massiveUsername.strip()!="":
-            self.massiveUsernameTextField.SelectAll()
-
-
-        self.massiveUsernameTextField.SetFocus()
-
-        self.massiveProjectComboBox.MoveAfterInTabOrder(self.massiveLoginHostComboBox)
-        #self.massiveHoursField.MoveAfterInTabOrder(self.massiveProjectComboBox)
-        self.massiveHoursAndVisNodesPanel.MoveAfterInTabOrder(self.massiveProjectComboBox)
-        #self.massiveVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursField)
-        self.massiveVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursAndVisNodesPanel)
-        self.massiveSshTunnelCipherComboBox.MoveAfterInTabOrder(self.massiveVncDisplayResolutionComboBox)
-        self.massiveUsernameTextField.MoveAfterInTabOrder(self.massiveSshTunnelCipherComboBox)
-
+        self.checkBoxPanel = wx.Panel(self.loginFieldsPanel)
+        self.checkBoxPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        
         self.massiveShowDebugWindowLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -440,129 +392,6 @@ class LauncherMainFrame(wx.Frame):
 
         self.massiveAutomaticallyExitLabel = wx.StaticText(self.massiveDebugAndAutoExitPanel, wx.ID_ANY, "          Automatically exit")
         self.massiveDebugAndAutoExitPanelSizer.Add(self.massiveAutomaticallyExitLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, border=5)
-
-        self.massiveAutomaticallyExit = True
-        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_automatically_exit"):
-                self.massiveAutomaticallyExit = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_automatically_exit")
-                if self.massiveAutomaticallyExit.strip() == "":
-                    self.massiveAutomaticallyExit = True
-                else:
-                    if self.massiveAutomaticallyExit==True or self.massiveAutomaticallyExit=='True':
-                        self.massiveAutomaticallyExit = True
-                    else:
-                        self.massiveAutomaticallyExit = False
-            else:
-                massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_automatically_exit","False")
-                with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                    massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        else:
-            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
-            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-
-        self.massiveAutomaticallyExitCheckBox = wx.CheckBox(self.massiveDebugAndAutoExitPanel, wx.ID_ANY, "")
-        self.massiveAutomaticallyExitCheckBox.SetValue(self.massiveAutomaticallyExit)
-        self.massiveDebugAndAutoExitPanelSizer.Add(self.massiveAutomaticallyExitCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, border=5)
-
-        self.massiveDebugAndAutoExitPanel.Fit()
-        self.massiveLoginFieldsPanelSizer.Add(self.massiveDebugAndAutoExitPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        
-        self.massiveLoginFieldsPanel.SetSizerAndFit(self.massiveLoginFieldsPanelSizer)
-
-        self.massiveLoginDialogPanelSizer.Add(self.massiveLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
-
-        self.massiveLoginDialogPanel.SetSizerAndFit(self.massiveLoginDialogPanelSizer)
-        self.massiveLoginDialogPanel.Layout()
-
-        self.tabbedView.AddPage(self.massiveLoginDialogPanel, "MASSIVE")
-
-        # CVL tab
-
-        # Overall CVL login panel:
-        self.cvlLoginDialogPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
-        self.tabbedView.AddPage(self.cvlLoginDialogPanel, "CVL")
-
-        self.cvlLoginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
-
-        # Simple login fields: connection profile, username, advanced settings checkbox
-        self.cvlSimpleLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
-        self.cvlSimpleLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
-        self.cvlSimpleLoginFieldsPanel.SetSizer(self.cvlSimpleLoginFieldsPanelSizer)
-
-        self.cvlAdvancedLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
-        self.cvlAdvancedLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
-        self.cvlAdvancedLoginFieldsPanel.SetSizer(self.cvlAdvancedLoginFieldsPanelSizer)
-
-        self.cvlConnectionProfileLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Connection')
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlConnectionProfileLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.cvlConnectionProfile = ""
-        cvlConnectionProfiles = ["login.cvl.massive.org.au","Huygens on the CVL"]
-        defaultCvlConnectionProfile = "login.cvl.massive.org.au"
-        self.cvlConnectionProfileComboBox = wx.ComboBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, value=defaultCvlConnectionProfile, choices=cvlConnectionProfiles, size=(widgetWidth2, -1), style=wx.CB_READONLY)
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlConnectionProfileComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
-            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_connection_profile"):
-                self.cvlConnectionProfile = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_connection_profile")
-
-                # If the user has a setting for cvl_connection_profile that is not in our approved list, just take
-                # the first known CVL connection profile.
-                if self.cvlConnectionProfile not in cvlConnectionProfiles:
-                    self.cvlConnectionProfile = cvlConnectionProfiles[0]
-
-                    cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_connection_profile", self.cvlConnectionProfile)
-                    with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                        cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-            else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_connection_profile","")
-                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        else:
-            cvlLauncherConfig.add_section("CVL Launcher Preferences")
-            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        self.cvlConnectionProfile = self.cvlConnectionProfile.strip()
-        if self.cvlConnectionProfile!="":
-            if self.cvlConnectionProfile in cvlConnectionProfiles:
-                self.cvlConnectionProfileComboBox.SetSelection(cvlConnectionProfiles.index(self.cvlConnectionProfile))
-            else:
-                # Connection profile was not found in combo-box.
-                self.cvlConnectionProfileComboBox.SetSelection(0)
-
-
-        self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Resolution')
-        self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        displaySize = wx.DisplaySize()
-        desiredWidth = displaySize[0] * 0.99
-        desiredHeight = displaySize[1] * 0.85
-        defaultResolution = str(int(desiredWidth)) + "x" + str(int(desiredHeight))
-        vncDisplayResolutions = [
-            defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
-            ]
-        self.resolutionField = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=vncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_resolution')
-        self.loginFieldsPanelSizer.Add(self.resolutionField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-
-        
-        self.sshTunnelCipherLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher',name='label_cipher')
-        self.loginFieldsPanelSizer.Add(self.sshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        if sys.platform.startswith("win"):
-            defaultCipher = "arcfour"
-            sshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour"]
-        else:
-            defaultCipher = "arcfour128"
-            sshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
-        self.sshTunnelCipherComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value=defaultCipher, choices=sshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_cipher')
-        self.loginFieldsPanelSizer.Add(self.sshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.usernameLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Username',name='label_username')
-        self.loginFieldsPanelSizer.Add(self.usernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.usernameTextField = wx.TextCtrl(self.loginFieldsPanel, wx.ID_ANY, size=(widgetWidth1, -1),name='jobParams_username')
-        self.loginFieldsPanelSizer.Add(self.usernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
-
 
         self.tabbedView.AddPage(self.loginFieldsPanel, "Login")
         self.loadPrefs(None,self.tabbedView,'m2')
