@@ -36,15 +36,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-# Enquires: James.Wettenhall@monash.edu or help@massive.org.au
+# Enquires: help@massive.org.au
 
 import wx
 
 class LauncherProgressDialog(wx.Frame):
-    def __init__(self, parent, id, title, message, maxValue, userCanAbort):
-        wx.Frame.__init__(self, parent, id, title, style=wx.STAY_ON_TOP)
+    def __init__(self, parent, id, title, message, maxValue, userCanAbort,cancelCallback=None):
+        wx.Frame.__init__(self, parent, id, title, style=wx.FRAME_FLOAT_ON_PARENT)
 
         self.user_requested_abort = False
+        self.cancelCallback=cancelCallback
 
         self.panel = wx.Panel(self, wx.ID_ANY) 
         # We'll just set a temporary message while the dialog,
@@ -52,7 +53,7 @@ class LauncherProgressDialog(wx.Frame):
         # likely to appear in the progress dialog.
         # At the end of the __init__ method, we will use
         # SetLabel to set the initial message correctly.
-        temporaryMessage = "Checking installed version of TurboVNC..."
+        temporaryMessage = "Getting the one time password for the VNC server"
         self.messageStaticText = wx.StaticText(self.panel, label = temporaryMessage)
 
         self.progressBar = wx.Gauge(self, -1, maxValue)
@@ -65,6 +66,8 @@ class LauncherProgressDialog(wx.Frame):
             sizer = wx.FlexGridSizer(rows=3, cols=3, vgap=5, hgap=15)
         else:
             sizer = wx.FlexGridSizer(rows=2, cols=3, vgap=5, hgap=15)
+
+	sizer.AddGrowableCol(1)
 
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
         sizer.Add(self.messageStaticText, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, border=15)
@@ -97,6 +100,11 @@ class LauncherProgressDialog(wx.Frame):
         self.messageStaticText.SetLabel("Aborting login...")
         self.user_requested_abort = True
         self.cancelButton.Enable(False)
+        if (self.cancelCallback != None):
+            self.cancelCallback()
+    
+    def setCancelCallback(self,callback):
+        self.cancelCallback = callback
 
     def Update(self, value, message):
         if self.user_requested_abort:

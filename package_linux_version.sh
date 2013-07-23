@@ -36,6 +36,11 @@ cp README_LINUX dist/launcher/
 
 cp `python -c 'import requests; print requests.certs.where()'` dist/launcher/
 
+cp sshHelpText.txt dist/launcher/
+mkdir -p dist/launcher/help/helpfiles/
+cp help/helpfiles/* dist/launcher/help/helpfiles/
+cp help/README.txt dist/launcher/help/
+
 cd dist
 mv launcher MassiveLauncher-${VERSION}_${ARCHITECTURE}
 tar zcf MassiveLauncher_v${VERSION}_${ARCHITECTURE}.tar.gz MassiveLauncher-${VERSION}_${ARCHITECTURE}

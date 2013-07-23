@@ -37,7 +37,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-#  Enquires: James.Wettenhall@monash.edu or help@massive.org.au
+#  Enquires: help@massive.org.au
 
 """
 A distutils script to make a standalone .app of the MASSIVE Launcher for
@@ -50,12 +50,26 @@ Traditionally, this script would be named setup.py
 """
 
 from setuptools import setup, Extension
-
 import launcher_version_number
-
 import create_commit_def
-
 import requests
+import os
+import pkgutil
+
+resource_files=["MASSIVE.icns", requests.certs.where(), "sshHelpText.txt"]
+
+launcherVersionNumberModulePath = os.path.dirname(pkgutil.get_loader("launcher_version_number").filename)
+helpFilesDirectory = os.path.join(launcherVersionNumberModulePath, "help", "helpfiles")
+
+for helpFile in os.listdir(helpFilesDirectory):
+    helpFilePath = os.path.join(helpFilesDirectory, helpFile)
+    if os.path.isfile(helpFilePath): # skip directories
+        resource_file = ('help/helpfiles', [helpFilePath])
+        resource_files.append(resource_file)
+
+helpDirectory = os.path.join(launcherVersionNumberModulePath, "help")
+resource_file = ('help', [os.path.join(helpDirectory, "README.txt")])
+resource_files.append(resource_file)
 
 setup(
     options=dict(py2app=dict(
@@ -71,7 +85,7 @@ setup(
             )
         )
     ),
-    data_files=["MASSIVE.icns",requests.certs.where()],
+    data_files=resource_files,
     name="MASSIVE Launcher",
     setup_requires=["py2app"],
     app=['launcher.py']
