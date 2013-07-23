@@ -297,27 +297,28 @@ class LauncherMainFrame(wx.Frame):
         #self.projectComboBox.Bind(wx.EVT_TEXT, self.onProjectTextChanged)
         self.loginFieldsPanelSizer.Add(self.projectField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        o = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Hours requested')
-        self.loginFieldsPanelSizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        panel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
-        sizer = wx.FlexGridSizer(rows=2, cols=3, vgap=3, hgap=5)
-        panel.SetSizer(sizer)
+        self.resourcePanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
+        self.resourcePanelSizer = wx.FlexGridSizer(rows=2, cols=3, vgap=3, hgap=5)
+        self.resourcePanel.SetSizer(self.resourcePanelSizer)
+
+        self.hoursLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Hours requested')
+        self.loginFieldsPanelSizer.Add(self.hoursLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         # Maximum of 336 hours is 2 weeks:
         #self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=336)
-        o = wx.SpinCtrl(panel, wx.ID_ANY, size=(widgetWidth3,-1), min=1,max=336,name='jobParams_hours')
+        self.hoursField = wx.SpinCtrl(self.resourcePanel, wx.ID_ANY, size=(widgetWidth3,-1), min=1,max=336,name='jobParams_hours')
         #self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        sizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        o = wx.StaticText(panel, wx.ID_ANY, 'Vis nodes')
-        sizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        o = wx.SpinCtrl(panel, wx.ID_ANY, value="1", size=(widgetWidth3,-1), min=1,max=10,name='jobParams_nodes')
-        sizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        panel.SetSizerAndFit(sizer)
-        self.loginFieldsPanelSizer.Add(panel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resourcePanelSizer.Add(self.hoursField, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.nodesLabel = wx.StaticText(self.resourcePanel, wx.ID_ANY, 'Vis nodes')
+        self.resourcePanelSizer.Add(self.nodesLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.nodesField = wx.SpinCtrl(self.resourcePanel, wx.ID_ANY, value="1", size=(widgetWidth3,-1), min=1,max=10,name='jobParams_nodes')
+        self.resourcePanelSizer.Add(self.nodesField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resourcePanel.SetSizerAndFit(self.resourcePanelSizer)
+        self.loginFieldsPanelSizer.Add(self.resourcePanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
 
-        o = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Resolution')
-        self.loginFieldsPanelSizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resolutionLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Resolution',name='label_resolution')
+        self.loginFieldsPanelSizer.Add(self.resolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         displaySize = wx.DisplaySize()
         desiredWidth = displaySize[0] * 0.99
@@ -541,9 +542,27 @@ class LauncherMainFrame(wx.Frame):
         vncDisplayResolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        o = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=vncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_resolution')
-        self.loginFieldsPanelSizer.Add(o, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resolutionField = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value='', choices=vncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_resolution')
+        self.loginFieldsPanelSizer.Add(self.resolutionField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
+
+        
+        self.sshTunnelCipherLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'SSH tunnel cipher',name='label_cipher')
+        self.loginFieldsPanelSizer.Add(self.sshTunnelCipherLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        if sys.platform.startswith("win"):
+            defaultCipher = "arcfour"
+            sshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour"]
+        else:
+            defaultCipher = "arcfour128"
+            sshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
+        self.sshTunnelCipherComboBox = wx.ComboBox(self.loginFieldsPanel, wx.ID_ANY, value=defaultCipher, choices=sshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_cipher')
+        self.loginFieldsPanelSizer.Add(self.sshTunnelCipherComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.usernameLabel = wx.StaticText(self.loginFieldsPanel, wx.ID_ANY, 'Username',name='label_username')
+        self.loginFieldsPanelSizer.Add(self.usernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.usernameTextField = wx.TextCtrl(self.loginFieldsPanel, wx.ID_ANY, size=(widgetWidth1, -1),name='jobParams_username')
+        self.loginFieldsPanelSizer.Add(self.usernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
 
 
         self.tabbedView.AddPage(self.loginFieldsPanel, "Login")
