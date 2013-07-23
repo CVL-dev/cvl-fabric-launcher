@@ -65,8 +65,10 @@ class LoginProcess():
                     if (line != None):
                         match = re.search(self.regex.format(**self.loginprocess.jobParams),line)
                         if (match and not self.stopped() and not self.loginprocess.canceled()):
+                            logger.debug("runAsyncServerCommandThread: Found match for " + self.regex.format(**self.loginprocess.jobParams))
                             wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
                     else:
+                        logger.debug("runAsyncServerCommandThread: Didn't find match for " + self.regex.format(**self.loginprocess.jobParams))
                         if (not success):
                             self.loginprocess.cancel(errormessage)
                     if self.stopped():
@@ -196,6 +198,72 @@ class LoginProcess():
             self.Destroy()
             self.CancelCallback()
 
+    class startWebDavServerThread(Thread):
+        def __init__(self,loginprocess,nextevent):
+            Thread.__init__(self)
+            self.loginprocess = loginprocess
+            self._stop = Event()
+            self.nextevent=nextevent
+    
+        def stop(self):
+            logger.debug("stopping the thread that starts the WebDAV server")
+            self._stop.set()
+        
+        def stopped(self):
+            return self._stop.isSet()
+
+        def run(self):
+            import wsgidav.version
+            import wsgidav.wsgidav_app
+            from wsgidav.wsgidav_app import DEFAULT_CONFIG
+            from wsgidav.server.run_server import SUPPORTED_SERVERS
+            from wsgidav.server.run_server import _runCherryPy
+            # lxml is not strictly required, but it makes WsgiDAV run faster.
+            import lxml
+
+            logger.debug("startWebDavServer: WsgiDAV version = " + wsgidav.version.__version__)
+
+            wsgidavConfig = DEFAULT_CONFIG.copy()
+            wsgidavConfig["host"] = "0.0.0.0"
+            wsgidavConfig["port"] = int(self.loginprocess.jobParams['localWebDavPortNumber'])
+            wsgidavConfig["root"] = os.path.expanduser('~')
+
+            wsgidavConfig["provider_mapping"] = {}
+            wsgidavConfig["user_mapping"] = {}
+
+            def addShare(shareName, davProvider):
+                wsgidavConfig["provider_mapping"][shareName] = davProvider
+
+            def addUser(realmName, user, password, description, roles=[]):
+                realmName = "/" + realmName.strip(r"\/")
+                userDict = wsgidavConfig["user_mapping"].setdefault(realmName, {}).setdefault(user, {})
+                userDict["password"] = password
+                userDict["description"] = description
+                userDict["roles"] = roles
+
+            if (not self.loginprocess.jobParams.has_key('localUsername')):
+                import getpass
+                self.loginprocess.jobParams['localUsername'] = getpass.getuser()
+
+            if (not self.loginprocess.jobParams.has_key('homeDirectoryWebDavShareName')):
+                self.loginprocess.jobParams['homeDirectoryWebDavShareName'] = self.loginprocess.jobParams['localUsername']
+
+            from wsgidav.fs_dav_provider import FilesystemProvider
+            addShare(self.loginprocess.jobParams['homeDirectoryWebDavShareName'], FilesystemProvider(os.path.expanduser('~'), readonly=False))
+
+            addUser(self.loginprocess.jobParams['homeDirectoryWebDavShareName'], self.loginprocess.jobParams['localUsername'], self.loginprocess.jobParams['vncPasswd'], "", roles=[])
+
+            for k, v in wsgidavConfig.iteritems():
+                logger.debug('startWebDavServer: wsgidavConfig properties: %s = %s' % (str(k), str(v),))
+            wsgidavApp = wsgidav.wsgidav_app.WsgiDAVApp(wsgidavConfig)
+            wsgidavServer = "cherrypy-bundled"
+            # From def startWebDavServer(event):
+            #        nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT,event.loginprocess)
+            if (not self.stopped() and self.nextevent!=None and not self.loginprocess.canceled()):
+                wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
+            _runCherryPy(wsgidavApp, wsgidavConfig, wsgidavServer)
+
+
     class startVNCViewer(Thread):
         def __init__(self,loginprocess,nextevent):
             Thread.__init__(self)
@@ -220,6 +288,8 @@ class LoginProcess():
                         vncCommandString = "\"{vnc}\" /user {username} /autopass /nounixlogin {vncOptionsString} localhost::{localPortNumber}".format(**self.loginprocess.jobParams)
                     else:
                         vncCommandString = "{vnc} -user {username} -autopass -nounixlogin {vncOptionsString} localhost::{localPortNumber}".format(**self.loginprocess.jobParams)
+                    logger.debug('vncCommandString = ' + vncCommandString)
+                    logger.debug('vncCommandString.format(**self.loginprocess.jobParams) = ' + vncCommandString.format(**self.loginprocess.jobParams))
                     self.loginprocess.turboVncStartTime = datetime.datetime.now()
                     logger.debug('turboVncStartTime = ' + str(self.loginprocess.turboVncStartTime))
 
@@ -950,14 +1020,121 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_OTP):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_OTP')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one-time password for the VNC server")
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
-                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
+                if (("m1" in event.loginprocess.loginParams['loginHost'] or "m2" in event.loginprocess.loginParams['loginHost']) and
+                        event.loginprocess.notify_window.vncOptions['share_local_home_directory_on_remote_desktop']==True):
+                    # FIXME: Should implement file-sharing for CVL Desktops too.
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
+                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_SERVER')
+                else:
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
+                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.otpCmd,event.loginprocess.otpRegEx,nextevent,"Unable to determine the one-time password for the VNC session")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
             else:
                 event.Skip()
+
+        def startWebDavServer(event):
+            # Only for MASSIVE for now.
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_SERVER')
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                if ("m1" in event.loginprocess.loginParams['loginHost'] or "m2" in event.loginprocess.loginParams['loginHost'] or not event.loginprocess.directConnect):
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT,event.loginprocess)
+                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT')
+                else:
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL,event.loginprocess)
+                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
+
+                event.loginprocess.localWebDavPortNumber = "0" # Request ephemeral port.
+                import socket
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.bind(('localhost', 0))
+                localWebDavPortNumber = sock.getsockname()[1]
+                sock.close()
+                event.loginprocess.localWebDavPortNumber = str(localWebDavPortNumber)
+                event.loginprocess.jobParams['localWebDavPortNumber'] = str(localWebDavPortNumber)
+                logger.debug('loginProcessEvent: startWebDavServer: set localWebDavPortNumber to ' + str(localWebDavPortNumber))
+
+                t = LoginProcess.startWebDavServerThread(event.loginprocess,nextevent)
+                t.setDaemon(True)
+                t.start()
+                event.loginprocess.threads.append(t)
+            else:
+                event.Skip()
+
+        def getWebDavIntermediateEphemeralPort(event):
+            # Only for MASSIVE for now.
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT')
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.webDavIntermediateEphemeralPortCmd,event.loginprocess.webDavIntermediateEphemeralPortRegEx,nextevent,"")
+                t.setDaemon(False)
+                t.start()
+                event.loginprocess.threads.append(t)
+            else:
+                event.Skip()
+
+        def startWebDavTunnel(event):
+            # Only for MASSIVE for now.
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+
+                event.loginprocess.jobParams['remoteWebDavPortNumber'] = 8080 # FIXME: Hard-coded remote WebDAV port number for now!
+                logger.debug('loginProcessEvent: startWebDavTunnel: set remoteWebDavPortNumber to ' + str(event.loginprocess.jobParams['remoteWebDavPortNumber']))
+
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER')
+
+                t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.webDavTunnelCmd,event.loginprocess.webDavTunnelRegEx,nextevent,"Unable to share your local home directory with the remote server")
+                t.setDaemon(False)
+                t.start()
+                event.loginprocess.threads.append(t)
+            else:
+                event.Skip()
+
+        def openWebDavShareInRemoteFileBrowser(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER')
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 10, "Sharing your home directory with the remote server")
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
+
+                # Here's one way to do it in GNOME, requiring pexpect, and fuse membership:
+                #echo "import pexpect;child = pexpect.spawn('gvfs-mount dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav');child.expect('Password: ');child.sendline('p
+                #nautilus dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav
+
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.openWebDavShareInRemoteFileBrowserCmd, '.*', None, '', requireMatch=False)
+                t.setDaemon(True)
+                t.start()
+                event.loginprocess.threads.append(t)
+
+                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
+
+            else:
+                event.Skip()
+
+        def displayWebDavAccessInfoInRemoteDialog(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 10, "Sharing your home directory with the remote server")
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
+
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.displayWebDavAccessInfoInRemoteDialogCmd, '.*', None, '', requireMatch=False)
+                t.setDaemon(True)
+                t.start()
+                event.loginprocess.threads.append(t)
+
+                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
+
+            else:
+                event.Skip()
+
 
         def startViewer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_VIEWER):
@@ -1215,8 +1392,8 @@ class LoginProcess():
                 self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
                 self.runningCmd='qstat -u {username}'
                 self.runningRegEx='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
-                # request_visnode is a little buggy, if you issue a qdel <jobid> ; request_visnode it may provide the id of the deleted job. Sleep to work around
                 self.stopCmd='\'qdel -a {jobid}\''
+                # request_visnode is a little buggy, if you issue a qdel <jobid> ; request_visnode it may provide the id of the deleted job. Sleep to work around:
                 self.stopCmdForRestart='\'qdel {jobid} ; sleep 5\''
                 self.execHostCmd='qpeek {jobidNumber}'
                 self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
@@ -1233,6 +1410,10 @@ class LoginProcess():
                 self.vncDisplayRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
                 self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
                 self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+                self.webDavIntermediateEphemeralPortCmd='/usr/local/desktop/get_ephemeral_port.py'
+                self.webDavIntermediateEphemeralPortRegEx='^(?P<webDavIntermediateEphemeralPortNumber>.*)$'
+                self.openWebDavShareInRemoteFileBrowserCmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:8080/{homeDirectoryWebDavShareName}\'"'
+                self.displayWebDavAccessInfoInRemoteDialogCmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:<br>\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}<br>\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 1; DISPLAY={vncDisplay} kdialog --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"'
 
             else:
                 update={}
@@ -1268,12 +1449,25 @@ class LoginProcess():
                 self.agentRegEx='agent_hello'
                 self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
                 self.tunnelRegEx='tunnel_hello'
+                self.webDavTunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+                self.webDavTunnelRegEx='tunnel_hello'
+                #self.webDavIntermediateEphemeralPortCmd='echo "import socket;sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM);sock.bind((\'localhost\',0));print sock.getsockname()[1]" | python'
+                #self.webDavIntermediateEphemeralPortRegEx='^(?P<webDavIntermediateEphemeralPortNumber>.*)$'
+                #echo "import pexpect;child = pexpect.spawn('gvfs-mount dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav');child.expect('Password: ');child.sendline('password')" | python
+                #nautilus dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav
+                #self.openWebDavShareInRemoteFileBrowserCmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} nautilus --browser\'"'
             else:
             # I've disabled StrickHostKeyChecking here temporarily untill all CVL vms are added a a most known hosts file.
                 self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "'
                 self.agentRegEx='agent_hello'
                 self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
                 self.tunnelRegEx='tunnel_hello'
+                self.webDavTunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
+                self.webDavTunnelRegEx='tunnel_hello'
+                #echo "import pexpect;child = pexpect.spawn('gvfs-mount dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav');child.expect('Password: ');child.sendline('password')" | python
+                #nautilus dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav
+                #self.openWebDavShareInRemoteFileBrowserCmd='DISPLAY={vncDisplay} nautilus --browser'
+
 
         for k, v in self.__dict__.iteritems():
             logger.debug('loginProcessEvent properties: %s = %s' % (str(k), str(v),))
@@ -1309,6 +1503,12 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG = wx.NewId()
+
 
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.cancel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.distributeKey)
@@ -1335,6 +1535,12 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.selectProject)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.setDesktopResolution)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.runSanityCheck)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startWebDavServer)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getWebDavIntermediateEphemeralPort)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startWebDavTunnel)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.openWebDavShareInRemoteFileBrowser)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.displayWebDavAccessInfoInRemoteDialog)
+
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
 
     def timeRemaining(self):
