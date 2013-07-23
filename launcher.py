@@ -114,6 +114,7 @@ import cvlsshutils.sshKeyDist
 import launcher_progress_dialog
 from menus.IdentityMenu import IdentityMenu
 import tempfile
+import pexpect
 
 from logger.Logger import logger
 
