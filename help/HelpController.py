@@ -7,7 +7,8 @@ import tempfile
 import requests
 import traceback
 import pkgutil
-from utilityFunctions import logger_debug, unzip
+from utilityFunctions import unzip
+from logger.Logger import logger
 
 launcherHtmlHelpProjectFilename = "launcher.hhp"
 
@@ -30,7 +31,7 @@ class HelpController():
 
             self.helpZipFile = tempfile.NamedTemporaryFile(mode='w+b', prefix='helpfiles-', suffix='.zip', delete=False)
             self.helpZipFilePath = self.helpZipFile.name
-            logger_debug("self.helpZipFilePath = " + self.helpZipFilePath)
+            logger.debug("self.helpZipFilePath = " + self.helpZipFilePath)
             r = requests.get(self.launcherHelpUrl, verify=False)
             if r.status_code == 200:
                 for chunk in r.iter_content():
@@ -45,13 +46,13 @@ class HelpController():
             (self.helpZipFileDirectory, self.helpZipFileFilename) = os.path.split(self.helpZipFilePath)
             unzip(self.helpZipFilePath, self.helpZipFileDirectory)
             self.helpFilesDirectory = os.path.join(self.helpZipFileDirectory, "helpfiles")
-            logger_debug("self.helpFilesDirectory = " + self.helpFilesDirectory)
+            logger.debug("self.helpFilesDirectory = " + self.helpFilesDirectory)
 
             self.launcherHtmlHelpProjectFile = os.path.join(self.helpFilesDirectory, launcherHtmlHelpProjectFilename)
             self.initializationSucceeded = self.wxHtmlHelpController.AddBook(self.launcherHtmlHelpProjectFile)
 
         except:
-            logger_debug(traceback.format_exc())
+            logger.debug(traceback.format_exc())
 
             try:
                 # If we don't succeed in downloading help, 
@@ -67,7 +68,7 @@ class HelpController():
                 self.initializationSucceeded = self.wxHtmlHelpController.AddBook(self.launcherHtmlHelpProjectFile)
 
             except:
-                logger_debug(traceback.format_exc())
+                logger.debug(traceback.format_exc())
 
 
     def cleanUp(self):
