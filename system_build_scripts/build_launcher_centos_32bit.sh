@@ -16,13 +16,13 @@ fi
 mkdir $WDIR
 cd $WDIR
 
-git clone git@github.com:CVL-dev/cvl-fabric-launcher.git
+git clone --recursive git@github.com:CVL-dev/cvl-fabric-launcher.git
 if [ $? -ne 0 ]; then
     echo ""
     echo "*** Attempting to use git with SSH keys failed. ***"
     echo "*** Cloning the Launcher's repository as read-only instead. ***"
     echo ""
-    git clone git://github.com/CVL-dev/cvl-fabric-launcher
+    git clone --recursive git://github.com/CVL-dev/cvl-fabric-launcher
 fi
 cd cvl-fabric-launcher
 
