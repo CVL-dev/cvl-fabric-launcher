@@ -45,8 +45,8 @@ class Logger():
         log_format_string = '%(asctime)s - %(name)s - %(module)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s'
 
         # Send all log messages to a string.
-        loggerOutput = StringIO()
-        string_handler = logging.StreamHandler(stream=loggerOutput)
+        self.loggerOutput = StringIO()
+        string_handler = logging.StreamHandler(stream=self.loggerOutput)
         string_handler.setLevel(logging.DEBUG)
         string_handler.setFormatter(logging.Formatter(log_format_string))
         self.loggerObject.addHandler(string_handler)
@@ -109,7 +109,7 @@ class Logger():
 
             url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
             #file_info = {'logfile': launcherMainFrame.loggerOutput.getvalue()}
-            file_info = {'logfile': loggerOutput.getvalue()}
+            file_info = {'logfile': self.loggerOutput.getvalue()}
 
             # If we are running in an installation then we have to use
             # our packaged cacert.pem file:
