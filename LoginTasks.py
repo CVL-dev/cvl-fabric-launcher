@@ -10,6 +10,7 @@ import re
 import urllib2
 import datetime
 import os
+from MacMessageDialog import MacMessageDialog
 
 from logger.Logger import logger
 
@@ -130,13 +131,16 @@ class LoginProcess():
                 logger.error("canceling the loginprocess due to errors in the output of the command: %s %s"%(self.cmd.format(**self.loginprocess.jobParams),messages))
                 self.loginprocess.cancel(concat)
             elif (messages.has_key('warn') or messages.has_key('info')):
-                dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
-                panel=wx.Panel(dlg)
-                sizer=wx.BoxSizer()
-                panel.SetSizer(sizer)
-                text=wx.StaticText(panel,wx.ID_ANY,label=concat)
-                sizer.Add(text,0,wx.ALL,15)
-                dlg.addPanel(panel)
+                if not sys.platform.startswith("darwin"):
+                    dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                    panel=wx.Panel(dlg)
+                    sizer=wx.BoxSizer()
+                    panel.SetSizer(sizer)
+                    text=wx.StaticText(panel,wx.ID_ANY,label=concat)
+                    sizer.Add(text,0,wx.ALL,15)
+                    dlg.addPanel(panel)
+                else:
+                    dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                 wx.CallAfter(dlg.Show)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
                 for regex in self.regex:
@@ -991,13 +995,16 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN')
                 wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
                 if (event.string!=""):
-                    dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
-                    panel=wx.Panel(dlg)
-                    sizer=wx.BoxSizer()
-                    panel.SetSizer(sizer)
-                    text=wx.StaticText(panel,wx.ID_ANY,label=event.string)
-                    sizer.Add(text,0,wx.ALL,15)
-                    dlg.addPanel(panel)
+                    if not sys.platform.startswith("darwin"):
+                        dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                        panel=wx.Panel(dlg)
+                        sizer=wx.BoxSizer()
+                        panel.SetSizer(sizer)
+                        text=wx.StaticText(panel,wx.ID_ANY,label=event.string)
+                        sizer.Add(text,0,wx.ALL,15)
+                        dlg.addPanel(panel)
+                    else:
+                        dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                     dlg.ShowModal()
                 if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds') and event.loginprocess.turboVncElapsedTimeInSeconds > 3:
                     logger.debug("TurboVNC's elapsed time was greater than 3 seconds, " +
