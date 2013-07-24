@@ -42,7 +42,7 @@ import wx
 
 class LauncherProgressDialog(wx.Frame):
     def __init__(self, parent, id, title, message, maxValue, userCanAbort,cancelCallback=None):
-        wx.Frame.__init__(self, parent, id, title, style=wx.FRAME_FLOAT_ON_PARENT)
+        wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_DIALOG_STYLE|wx.FRAME_FLOAT_ON_PARENT)
 
         self.user_requested_abort = False
         self.cancelCallback=cancelCallback
@@ -76,6 +76,8 @@ class LauncherProgressDialog(wx.Frame):
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
         sizer.Add(self.progressBar, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=15)
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
+
+        self.Bind(wx.EVT_CLOSE, self.onCancel)
 
         if userCanAbort:
             sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
