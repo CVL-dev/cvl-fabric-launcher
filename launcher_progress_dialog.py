@@ -39,6 +39,7 @@
 # Enquires: help@massive.org.au
 
 import wx
+from logger.Logger import logger
 
 class LauncherProgressDialog(wx.Frame):
     def __init__(self, parent, id, title, message, maxValue, userCanAbort,cancelCallback=None):
@@ -67,7 +68,7 @@ class LauncherProgressDialog(wx.Frame):
         else:
             sizer = wx.FlexGridSizer(rows=2, cols=3, vgap=5, hgap=15)
 
-	sizer.AddGrowableCol(1)
+        sizer.AddGrowableCol(1)
 
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
         sizer.Add(self.messageStaticText, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, border=15)
@@ -77,15 +78,18 @@ class LauncherProgressDialog(wx.Frame):
         sizer.Add(self.progressBar, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=15)
         sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
 
-        self.Bind(wx.EVT_CLOSE, self.onCancel)
-
         if userCanAbort:
+            self.Bind(wx.EVT_CLOSE, self.onCancel)
             sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
             CANCEL_BUTTON_ID=12345
             self.cancelButton = wx.Button(self.panel, CANCEL_BUTTON_ID, "Cancel")
             self.Bind(wx.EVT_BUTTON, self.onCancel, id=CANCEL_BUTTON_ID)
             sizer.Add(self.cancelButton, flag=wx.ALIGN_CENTER|wx.TOP|wx.BOTTOM, border=15)
             sizer.Add(wx.StaticText(self.panel, wx.ID_ANY, " "))
+        else:
+            # Currently the Launcher only uses this class with userCanAbort=True,
+            # so this event handler should never be called.
+            self.Bind(wx.EVT_CLOSE, self.doNothing)
 
         self.panel.SetSizerAndFit(sizer)
         self.Fit()
@@ -97,6 +101,11 @@ class LauncherProgressDialog(wx.Frame):
 
     def shouldAbort(self):
         return self.user_requested_abort
+
+    def doNothing(self, event):
+        # Currently the Launcher only uses this class with userCanAbort=True,
+        # so this event handler should never be called.
+        logger.debug("User tried to close the progress dialog, even though userCanAbort is False.")
 
     def onCancel(self, event):
         self.messageStaticText.SetLabel("Aborting login...")
