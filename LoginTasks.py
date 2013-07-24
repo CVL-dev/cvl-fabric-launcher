@@ -637,7 +637,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISTRIBUTE_KEY')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.notify_window,event.loginprocess.sshpaths)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.sshpaths,event.loginprocess.passwdPrompt)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      event.loginprocess.cancel)
@@ -915,21 +915,15 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 8, "Running the sanity check script")
                 nextevent = LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
 
-                if "m1" in event.loginprocess.loginParams['loginHost'] or "m2" in event.loginprocess.loginParams['loginHost']:
-                    logger.debug('Running server-side sanity check.')
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
-                                                            '.*',
-                                                            nextevent,
-                                                            'Error reported by server-side sanity check.',
-                                                            sanityCheckHack=True)
-                    t.setDaemon(False)
-                    t.start()
-                    event.loginprocess.threads.append(t)
-                else:
-                    logger.debug('Not running server-side sanity check; must be using a CVL host.')
-                    if not event.loginprocess.canceled():
-                        logger.debug('Posting the EVT_LOGINPROCESS_FORWARD_AGENT event.')
-                        wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(), nextevent)
+                logger.debug('Running server-side sanity check.')
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
+                                                        '.*',
+                                                        nextevent,
+                                                        'Error reported by server-side sanity check.',
+                                                        sanityCheckHack=True)
+                t.setDaemon(False)
+                t.start()
+                event.loginprocess.threads.append(t)
             else:
                 event.Skip()
 
@@ -1184,6 +1178,7 @@ class LoginProcess():
         self.joblist=[]
         self.started_job=threading.Event()
         self.skd=None
+        self.passwdPrompt=None
         self.massiveLauncherConfig = massiveLauncherConfig
         self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
         if (siteConfig!=None):
@@ -1225,7 +1220,8 @@ class LoginProcess():
                 self.setDisplayResolutionCmd="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
                 #self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
                 self.getProjectsCmd='\"gbalance -u {username} --show Name | tail -n +3\"'
-                self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
+                self.getProjectsCmd='\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"'
+                self.getProjectsRegEx='^(?P<group>\S+)\s+.*$'
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
                 self.showStartCmd="showstart {jobid}"
                 self.showStartRegEx="Estimated Rsv based start .*?on (?P<estimatedStart>.*)"
@@ -1236,7 +1232,7 @@ class LoginProcess():
 
             else:
                 update={}
-                update['loginHost']="118.138.241.53"
+                update['loginHost']=host
                 self.loginParams.update(update)
                 self.jobParams.update(self.loginParams)
                 self.directConnect=True
@@ -1261,6 +1257,8 @@ class LoginProcess():
                 self.vncDisplayRegEx='^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$'
                 self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
                 self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+                self.passwdPrompt='Please enter your CVL password for username {username}.\n\nIf you are using the CVL for the first time,\nthis is the password you entered when you applied for an account\non the webpage https://web.cvl.massive.org.au'
+                self.runSanityCheckCmd=None
 
 
             if (not self.directConnect):

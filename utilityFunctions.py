@@ -227,7 +227,8 @@ class ListSelectionDialog(wx.Dialog):
 
     def onClose(self, e):
    
-        if (e.GetId() != self.okButton.GetId()):
+        logger.debug("ListSelectionDialog.onClose: button ID %s okButton ID %s cancelButton ID %s"%(e.GetId(),self.okButton.GetId(),self.cancelButton.GetId()))
+        if (e.GetId() == self.cancelButton.GetId()):
             logger.debug("ListSelectionDialog.onClose: User canceled.")
             if self.cancelCallback != None:
                 #self.cancelCallback("User canceled from ListSelectionDialog.")
@@ -555,21 +556,24 @@ def die_from_main_frame(launcherMainFrame,error_message):
     os._exit(1)
 
 def run_ssh_command(sshCmd,command,ignore_errors=False,log_output=True,callback=None):
-    logger.debug('run_ssh_command: %s' % sshCmd+command)
-    logger.debug('   called from %s:%d' % inspect.stack()[1][1:3])
-    ssh_process=subprocess.Popen(sshCmd+command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
+    stdout=""
+    stderr=""
+    if command != None:
+        logger.debug('run_ssh_command: %s' % sshCmd+command)
+        logger.debug('   called from %s:%d' % inspect.stack()[1][1:3])
+        ssh_process=subprocess.Popen(sshCmd+command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
 
-    #(stdout,stderr) = ssh_process.communicate(command)
-    (stdout,stderr) = ssh_process.communicate()
-    ssh_process.wait()
-    if log_output:
-        logger.debug('command stdout: %s' % stdout)
-        logger.debug('command stderr: %s' % stderr)
-    if not ignore_errors and len(stderr) > 0:
-        error_message = 'Error running command: "%s" at line %d' % (command, inspect.stack()[1][2])
-        logger.error('Nonempty stderr and ignore_errors == False; exiting the launcher with error dialog: ' + error_message)
-        if (callback != None):
-            callback(error_message)
+        #(stdout,stderr) = ssh_process.communicate(command)
+        (stdout,stderr) = ssh_process.communicate()
+        ssh_process.wait()
+        if log_output:
+            logger.debug('command stdout: %s' % stdout)
+            logger.debug('command stderr: %s' % stderr)
+        if not ignore_errors and len(stderr) > 0:
+            error_message = 'Error running command: "%s" at line %d' % (command, inspect.stack()[1][2])
+            logger.error('Nonempty stderr and ignore_errors == False; exiting the launcher with error dialog: ' + error_message)
+            if (callback != None):
+                callback(error_message)
 
     return stdout, stderr
 
