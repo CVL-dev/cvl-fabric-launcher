@@ -49,8 +49,10 @@ def buildSiteConfigDict(configName):
         siteConfig['vncDisplayRegEx']='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
         siteConfig['otpCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
         siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+        siteConfig['directConnect']=False
 
     else:
+        siteConfig['directConnect']=True
         siteConfig['execHostCmd']='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
         siteConfig['execHostRegEx']='^\s*execHost (?P<execHost>\S+)\s*$'
         siteConfig['getProjectsCmd']='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
