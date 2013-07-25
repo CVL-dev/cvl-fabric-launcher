@@ -22,6 +22,72 @@ LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massiv
 global TURBOVNC_BASE_URL
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
 
+def buildSiteConfigDict(configName):
+    import re
+    siteConfig={}
+    siteConfig['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
+    if ("m1" in configName or "m2" in configName):
+        siteConfig['listAllCmd']='qstat -u {username}'
+        siteConfig['listAllRegEx']='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
+        siteConfig['runningCmd']='qstat -u {username}'
+        siteConfig['runningRegEx']='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
+        # request_visnode is a little buggy, if you issue a qdel <jobid> ; request_visnode it may provide the id of the deleted job. Sleep to work around
+        siteConfig['stopCmd']='\'qdel -a {jobid}\''
+        siteConfig['stopCmdForRestart']='\'qdel {jobid} ; sleep 5\''
+        siteConfig['execHostCmd']='qpeek {jobidNumber}'
+        siteConfig['execHostRegEx']='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
+        siteConfig['startServerCmd']="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
+        siteConfig['runSanityCheckCmd']="\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'"
+        siteConfig['setDisplayResolutionCmd']="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
+        siteConfig['getProjectsCmd']='\"gbalance -u {username} --show Name | tail -n +3\"'
+        siteConfig['getProjectsCmd']='\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"'
+        siteConfig['getProjectsRegEx']='^(?P<group>\S+)\s+.*$'
+        siteConfig['startServerRegEx']="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
+        siteConfig['showStartCmd']="showstart {jobid}"
+        siteConfig['showStartRegEx']="Estimated Rsv based start .*?on (?P<estimatedStart>.*)"
+        siteConfig['vncDisplayCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
+        siteConfig['vncDisplayRegEx']='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
+        siteConfig['otpCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
+        siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+
+    else:
+        siteConfig['execHostCmd']='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
+        siteConfig['execHostRegEx']='^\s*execHost (?P<execHost>\S+)\s*$'
+        siteConfig['getProjectsCmd']='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
+        siteConfig['getProjectsRegEx']='^\s*(?P<group>\S+)\s*$'
+        siteConfig['listAllCmd']='\"module load pbs ; module load maui ; qstat | grep {username}\"'
+        siteConfig['listAllRegEx']='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
+        siteConfig['runningCmd']='\"module load pbs ; module load maui ; qstat | grep {username}\"'
+        siteConfig['runningRegEx']='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
+        if ("Hugyens" in configName):
+            siteConfig['startServerCmd']="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -q huygens -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
+        else:
+            siteConfig['startServerCmd']="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
+        siteConfig['startServerRegEx']="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
+        siteConfig['stopCmd']='\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"'
+        siteConfig['stopCmdForRestart']='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
+        siteConfig['showStartCmd']=None
+        siteConfig['showStartRegEx']="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
+        siteConfig['vncDisplayCmd']= '" /usr/bin/ssh {execHost} \' cat /var/spool/torque/spool/{jobidNumber}.*\'"'
+        siteConfig['vncDisplayRegEx']='^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$'
+        siteConfig['otpCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
+        siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+        siteConfig['passwdPrompt']='Please enter your CVL password for username {username}.\n\nIf you are using the CVL for the first time,\nthis is the password you entered when you applied for an account\non the webpage https://web.cvl.massive.org.au'
+        siteConfig['runSanityCheckCmd']=None
+    if (siteConfig.has_key('directConnect') and siteConfig['directConnect']):
+    # I've disabled StrickHostKeyChecking here temporarily untill all CVL vms are added a a most known hosts file.
+        siteConfig['agentCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "'
+        siteConfig['agentRegEx']='agent_hello'
+        siteConfig['tunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
+        siteConfig['tunnelRegEx']='tunnel_hello'
+    else:
+        siteConfig['agentCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
+        siteConfig['agentRegEx']='agent_hello'
+        siteConfig['tunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
+        siteConfig['tunnelRegEx']='tunnel_hello'
+    return siteConfig
+    
+
 def parseMessages(regexs,stdout,stderr):
     # compare each line of output against a list of regular expressions and build up a dictionary of messages to give the user
     messages={}
