@@ -63,6 +63,7 @@ class LoginProcess():
                 while (not self.stopped()):
                     time.sleep(0.1)
                     line = self.process.stdout.readline()
+                    logger.debug("runAsyncServerCommandThread: line: " + line)
                     if (line != None):
                         match = re.search(self.regex.format(**self.loginprocess.jobParams),line)
                         if (match and not self.stopped() and not self.loginprocess.canceled()):
@@ -1088,6 +1089,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER')
 
                 t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.webDavTunnelCmd,event.loginprocess.webDavTunnelRegEx,nextevent,"Unable to share your local home directory with the remote server")
+                #t.setDaemon(True)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1454,6 +1456,7 @@ class LoginProcess():
                 self.agentRegEx='agent_hello'
                 self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
                 self.tunnelRegEx='tunnel_hello'
+                #self.webDavTunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -T -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
                 self.webDavTunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
                 self.webDavTunnelRegEx='tunnel_hello'
             else:
@@ -1462,6 +1465,7 @@ class LoginProcess():
                 self.agentRegEx='agent_hello'
                 self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
                 self.tunnelRegEx='tunnel_hello'
+                #self.webDavTunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
                 self.webDavTunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
                 self.webDavTunnelRegEx='tunnel_hello'
 
