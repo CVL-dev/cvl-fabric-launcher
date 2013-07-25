@@ -22,6 +22,75 @@ LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massiv
 global TURBOVNC_BASE_URL
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
 
+class sshKeyDistDisplayStrings():
+    def __init__(self):
+        self.passwdPrompt="enter passwd"
+        self.passwdPromptIncorrect="passwd incorrect. reenter"
+        self.passphrasePrompt="enter key passphrase"
+        self.passphrasePromptIncorrectl="Incorrect. enter key passphrase"
+        self.newPassphraseEmptyForbiden="new passphrase. empty passphrase forbiden"
+        self.newPassphraseTooShort="passphrase to short. enter a new passphrase"
+        self.newPassphraseMismatch="passphrases don't match. enter new passphrases"
+        self.newPassphrase="new passphrase for new key"
+        self.newPassphraseTitle="Please enter a new Passphrase"
+
+class sshKeyDistDisplayStringsCVL():
+    def __init__(self):
+        self.passwdPrompt="""Please enter the password for your CVL account.
+This is the password you entered when you requested an account
+at the website https://web.cvl.massive.org.au/users"""
+        self.passwdPromptIncorrect="Sorry, that password was incorrect"+self.passwdPrompt
+        self.passphrasePrompt="Please enter the passphrase for your SSH key"
+        self.passphrasePromptIncorrect="""Sorry, that passphrase was incorrect.
+Please enter the passphrase for you SSH Key
+If you have forgoten the passphrase for you key, you may need to delete it and create a new key.
+You can find this option under the Identity menu.
+"""
+        self.newPassphrase="""It looks like this is the first time you're using the CVL on this
+computer. To use the CVL, the launcher will generate a local
+passphrase protected key on your computer which is used to
+authenticate you and setup your remote CVL environment.
+
+Please enter a new passphrase (twice to avoid typos) to protect your local key. 
+After you've done this, your passphrase will be the primary method of
+authentication for the launcher.
+
+WHY?
+
+This new method of authentication allows you to create file system
+mounts to remote computer systems, and in the future it will support
+launching remote HPC jobs."""
+        self.newPassphraseEmptyForbiden="Sorry, empty passphrases are forbiden.\n"+self.newPassphrase
+        self.newPassphraseTooShort="Sorry, the passphrase must be at least six characters.\n"+self.newPassphrase
+        self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
+        self.newPassphraseTitle="Please enter a new Passphrase"
+
+class sshKeyDistDisplayStringsMASSIVE():
+    def __init__(self):
+        self.passwdPrompt="""Please enter the password for your MASSIVE account."""
+        self.passwdPromptIncorrect="Sorry, that password was incorrect"+self.passwdPrompt
+        self.passphrasePrompt="Please enter the passphrase for your SSH key"
+        self.passphrasePromptIncorrect="""
+Sorry, that passphrase was incorrect.
+Please enter the passphrase for you SSH Key
+If you have forgoten the passphrase for you key, you may need to delete it and create a new key.
+You can find this option under the Identity menu.
+"""
+        self.newPassphrase="""
+It looks like this is the first time you're logging in to MASSIVE with this version of the launcher.
+To make loging in faster and more secure, the launcher will generate a local
+passphrase protected key on your computer which is used to
+authenticate you and setup your MASSIVE desktop.
+
+Please enter a new passphrase (twice to avoid typos) to protect your local key. 
+After you've done this, your passphrase will be the primary method of
+authentication for the launcher."""
+
+        self.newPassphraseEmptyForbiden="Sorry, empty passphrases are forbiden.\n"+self.newPassphrase
+        self.newPassphraseTooShort="Sorry, the passphrase must be at least 6 characters.\n"+self.newPassphrase
+        self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
+        self.newPassphraseTitle="Please enter a new Passphrase"
+
 def buildSiteConfigDict(configName):
     import re
     siteConfig={}
