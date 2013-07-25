@@ -1069,7 +1069,7 @@ class turboVncOptions(wx.App):
         frame.Show(True)
         vncOptions = {}
         #dialog = LauncherOptionsDialog(frame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
-        dialog = LauncherOptionsDialog(frame, wx.ID_ANY, "MASSIVE/CVL Launcher Options", vncOptions)
+        dialog = LauncherOptionsDialog(frame, wx.ID_ANY, "VNC Options", vncOptions)
         dialog.ShowModal()
         return True
 

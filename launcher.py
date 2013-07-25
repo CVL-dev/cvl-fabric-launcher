@@ -1038,7 +1038,7 @@ class LauncherMainFrame(wx.Frame):
                         value = False
                     self.vncOptions[key] = value
 
-        launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher Options", self.vncOptions)
+        launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "VNC Options", self.vncOptions)
         launcherOptionsDialog.ShowModal()
 
         if launcherOptionsDialog.okClicked:
