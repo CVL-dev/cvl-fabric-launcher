@@ -10,6 +10,7 @@ import re
 import urllib2
 import datetime
 import os
+from MacMessageDialog import MacMessageDialog
 
 from logger.Logger import logger
 
@@ -132,13 +133,16 @@ class LoginProcess():
                 logger.error("canceling the loginprocess due to errors in the output of the command: %s %s"%(self.cmd.format(**self.loginprocess.jobParams),messages))
                 self.loginprocess.cancel(concat)
             elif (messages.has_key('warn') or messages.has_key('info')):
-                dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
-                panel=wx.Panel(dlg)
-                sizer=wx.BoxSizer()
-                panel.SetSizer(sizer)
-                text=wx.StaticText(panel,wx.ID_ANY,label=concat)
-                sizer.Add(text,0,wx.ALL,15)
-                dlg.addPanel(panel)
+                if not sys.platform.startswith("darwin"):
+                    dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                    panel=wx.Panel(dlg)
+                    sizer=wx.BoxSizer()
+                    panel.SetSizer(sizer)
+                    text=wx.StaticText(panel,wx.ID_ANY,label=concat)
+                    sizer.Add(text,0,wx.ALL,15)
+                    dlg.addPanel(panel)
+                else:
+                    dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                 wx.CallAfter(dlg.Show)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
                 for regex in self.regex:
@@ -707,7 +711,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISTRIBUTE_KEY')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.notify_window,event.loginprocess.sshpaths)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.sshpaths,event.loginprocess.passwdPrompt)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      event.loginprocess.cancel)
@@ -985,21 +989,15 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 8, "Running the sanity check script")
                 nextevent = LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
 
-                if "m1" in event.loginprocess.loginParams['loginHost'] or "m2" in event.loginprocess.loginParams['loginHost']:
-                    logger.debug('Running server-side sanity check.')
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
-                                                            '.*',
-                                                            nextevent,
-                                                            'Error reported by server-side sanity check.',
-                                                            sanityCheckHack=True)
-                    t.setDaemon(False)
-                    t.start()
-                    event.loginprocess.threads.append(t)
-                else:
-                    logger.debug('Not running server-side sanity check; must be using a CVL host.')
-                    if not event.loginprocess.canceled():
-                        logger.debug('Posting the EVT_LOGINPROCESS_FORWARD_AGENT event.')
-                        wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(), nextevent)
+                logger.debug('Running server-side sanity check.')
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
+                                                        '.*',
+                                                        nextevent,
+                                                        'Error reported by server-side sanity check.',
+                                                        sanityCheckHack=True)
+                t.setDaemon(False)
+                t.start()
+                event.loginprocess.threads.append(t)
             else:
                 event.Skip()
 
@@ -1168,13 +1166,16 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN')
                 wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
                 if (event.string!=""):
-                    dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
-                    panel=wx.Panel(dlg)
-                    sizer=wx.BoxSizer()
-                    panel.SetSizer(sizer)
-                    text=wx.StaticText(panel,wx.ID_ANY,label=event.string)
-                    sizer.Add(text,0,wx.ALL,15)
-                    dlg.addPanel(panel)
+                    if not sys.platform.startswith("darwin"):
+                        dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                        panel=wx.Panel(dlg)
+                        sizer=wx.BoxSizer()
+                        panel.SetSizer(sizer)
+                        text=wx.StaticText(panel,wx.ID_ANY,label=event.string)
+                        sizer.Add(text,0,wx.ALL,15)
+                        dlg.addPanel(panel)
+                    else:
+                        dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                     dlg.ShowModal()
                 if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds') and event.loginprocess.turboVncElapsedTimeInSeconds > 3:
                     logger.debug("TurboVNC's elapsed time was greater than 3 seconds, " +
@@ -1355,6 +1356,7 @@ class LoginProcess():
         self.joblist=[]
         self.started_job=threading.Event()
         self.skd=None
+        self.passwdPrompt=None
         self.massiveLauncherConfig = massiveLauncherConfig
         self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
         if (siteConfig!=None):
@@ -1396,7 +1398,8 @@ class LoginProcess():
                 self.setDisplayResolutionCmd="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
                 #self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
                 self.getProjectsCmd='\"gbalance -u {username} --show Name | tail -n +3\"'
-                self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
+                self.getProjectsCmd='\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"'
+                self.getProjectsRegEx='^(?P<group>\S+)\s+.*$'
                 self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
                 self.showStartCmd="showstart {jobid}"
                 self.showStartRegEx="Estimated Rsv based start .*?on (?P<estimatedStart>.*)"
@@ -1411,7 +1414,7 @@ class LoginProcess():
 
             else:
                 update={}
-                update['loginHost']="118.138.241.53"
+                update['loginHost']=host
                 self.loginParams.update(update)
                 self.jobParams.update(self.loginParams)
                 self.directConnect=True
@@ -1438,6 +1441,8 @@ class LoginProcess():
                 self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
                 self.openWebDavShareInRemoteFileBrowserCmd="\"sleep 1;/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" | python;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\\"\""
                 self.displayWebDavAccessInfoInRemoteDialogCmd='"/usr/bin/ssh {execHost} \'sleep 1;echo -e \\"You can access your local home directory in Nautilus File Browser with the URL:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
+                self.passwdPrompt='Please enter your CVL password for username {username}.\n\nIf you are using the CVL for the first time,\nthis is the password you entered when you applied for an account\non the webpage https://web.cvl.massive.org.au'
+                self.runSanityCheckCmd=None
 
 
             if (not self.directConnect):
