@@ -1020,9 +1020,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_OTP):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_OTP')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one-time password for the VNC server")
-                if (("m1" in event.loginprocess.loginParams['loginHost'] or "m2" in event.loginprocess.loginParams['loginHost']) and
-                        event.loginprocess.notify_window.vncOptions['share_local_home_directory_on_remote_desktop']==True):
-                    # FIXME: Should implement file-sharing for CVL Desktops too.
+                if event.loginprocess.notify_window.vncOptions['share_local_home_directory_on_remote_desktop']:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_SERVER')
                 else:
@@ -1103,10 +1101,6 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 10, "Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
-
-                # Here's one way to do it in GNOME, requiring pexpect, and fuse membership:
-                #echo "import pexpect;child = pexpect.spawn('gvfs-mount dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav');child.expect('Password: ');child.sendline('p
-                #nautilus dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav
 
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.openWebDavShareInRemoteFileBrowserCmd, '.*', None, '', requireMatch=False)
                 t.setDaemon(True)
@@ -1413,7 +1407,7 @@ class LoginProcess():
                 self.webDavIntermediateEphemeralPortCmd='/usr/local/desktop/get_ephemeral_port.py'
                 self.webDavIntermediateEphemeralPortRegEx='^(?P<webDavIntermediateEphemeralPortNumber>.*)$'
                 self.openWebDavShareInRemoteFileBrowserCmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:8080/{homeDirectoryWebDavShareName}\'"'
-                self.displayWebDavAccessInfoInRemoteDialogCmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:<br>\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}<br>\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 1; DISPLAY={vncDisplay} kdialog --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"'
+                self.displayWebDavAccessInfoInRemoteDialogCmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:<br>\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}<br>\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 1; DISPLAY={vncDisplay} kdialog --title \\"MASSIVE/CVL Launcher\\" --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"'
 
             else:
                 update={}
@@ -1442,6 +1436,8 @@ class LoginProcess():
                 self.vncDisplayRegEx='^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$'
                 self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
                 self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+                self.openWebDavShareInRemoteFileBrowserCmd="\"sleep 1;/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" | python;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\\"\""
+                self.displayWebDavAccessInfoInRemoteDialogCmd='"/usr/bin/ssh {execHost} \'sleep 1;echo -e \\"You can access your local home directory in Nautilus File Browser with the URL:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
 
 
             if (not self.directConnect):
@@ -1451,11 +1447,6 @@ class LoginProcess():
                 self.tunnelRegEx='tunnel_hello'
                 self.webDavTunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
                 self.webDavTunnelRegEx='tunnel_hello'
-                #self.webDavIntermediateEphemeralPortCmd='echo "import socket;sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM);sock.bind((\'localhost\',0));print sock.getsockname()[1]" | python'
-                #self.webDavIntermediateEphemeralPortRegEx='^(?P<webDavIntermediateEphemeralPortNumber>.*)$'
-                #echo "import pexpect;child = pexpect.spawn('gvfs-mount dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav');child.expect('Password: ');child.sendline('password')" | python
-                #nautilus dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav
-                #self.openWebDavShareInRemoteFileBrowserCmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} nautilus --browser\'"'
             else:
             # I've disabled StrickHostKeyChecking here temporarily untill all CVL vms are added a a most known hosts file.
                 self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "'
@@ -1464,9 +1455,6 @@ class LoginProcess():
                 self.tunnelRegEx='tunnel_hello'
                 self.webDavTunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
                 self.webDavTunnelRegEx='tunnel_hello'
-                #echo "import pexpect;child = pexpect.spawn('gvfs-mount dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav');child.expect('Password: ');child.sendline('password')" | python
-                #nautilus dav://wettenhj@mytardis.massive.org.au:8080/mytardis-webdav
-                #self.openWebDavShareInRemoteFileBrowserCmd='DISPLAY={vncDisplay} nautilus --browser'
 
 
         for k, v in self.__dict__.iteritems():
