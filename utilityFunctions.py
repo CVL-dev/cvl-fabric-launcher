@@ -95,6 +95,7 @@ def buildSiteConfigDict(configName):
     import re
     siteConfig={}
     siteConfig['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
+
     if ("m1" in configName or "m2" in configName):
         siteConfig['listAllCmd']='qstat -u {username}'
         siteConfig['listAllRegEx']='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
@@ -119,7 +120,10 @@ def buildSiteConfigDict(configName):
         siteConfig['otpCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
         siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
         siteConfig['directConnect']=False
-
+        siteConfig['webDavIntermediateEphemeralPortCmd']='/usr/local/desktop/get_ephemeral_port.py'
+        siteConfig['webDavIntermediateEphemeralPortRegEx']='^(?P<webDavIntermediateEphemeralPortNumber>.*)$'
+        siteConfig['openWebDavShareInRemoteFileBrowserCmd']='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:8080/{homeDirectoryWebDavShareName}\'"'
+        siteConfig['displayWebDavAccessInfoInRemoteDialogCmd']='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:<br>\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}<br>\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 2; DISPLAY={vncDisplay} kdialog --title \\"MASSIVE/CVL Launcher\\" --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"'
     else:
         siteConfig['directConnect']=True
         siteConfig['execHostCmd']='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
@@ -145,17 +149,41 @@ def buildSiteConfigDict(configName):
         siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
         siteConfig['passwdPrompt']='Please enter your CVL password for username {username}.\n\nIf you are using the CVL for the first time,\nthis is the password you entered when you applied for an account\non the webpage https://web.cvl.massive.org.au'
         siteConfig['runSanityCheckCmd']=None
+        if sys.platform.startswith("win"):
+            pipe = "^|"
+        else:
+            pipe = "|"
+        # Below, I initially tried to respect the user's Nautilus setting of always_use_location_entry and change it back after launching Nautilus,
+        # but doing so changes this setting in already-running Nautilus windows, and I want the user to see Nautilus's location bar when showing 
+        # them the WebDav share.  So now, I just brutally change the user's Nautilus location-bar setting to always_use_location_entry.
+        # Note that we might end up mounting WebDAV in a completely different way (e.g. using wdfs), but for now I'm trying to make the user
+        # experience similar on MASSIVE and the CVL.  On MASSIVE, users are not automatically added to the "fuse" group, but they can still 
+        # access a WebDAV share within Konqueror.  The method below for the CVL/Nautilus does require fuse membership, but it ends up looking
+        # similar to MASSIVE/Konqueror from the user's point of view.  Note that getting drag and drop working nicely depends on patching
+        # gtk2 (see CVLFAB-622 on JIRA).
+        siteConfig['openWebDavShareInRemoteFileBrowserCmd']="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
+        siteConfig['displayWebDavAccessInfoInRemoteDialogCmd']='"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
+
     if (siteConfig.has_key('directConnect') and siteConfig['directConnect']):
-    # I've disabled StrickHostKeyChecking here temporarily untill all CVL vms are added a a most known hosts file.
+        # Carlo: I've disabled StrickHostKeyChecking here temporarily untill all CVL vms are added a a most known hosts file.
+        # FIXME: This workaround for the server-side host key issue was only applied to the 'directConnect' case.
+        # Do we need to add it to the non-directConnect case?  Or are we confident that the server-side host key
+        # issues have been fixed now?
         siteConfig['agentCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "'
         siteConfig['agentRegEx']='agent_hello'
         siteConfig['tunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
         siteConfig['tunnelRegEx']='tunnel_hello'
+        #siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
+        siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
+        siteConfig['webDavTunnelRegEx']='tunnel_hello'
     else:
         siteConfig['agentCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
         siteConfig['agentRegEx']='agent_hello'
         siteConfig['tunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
         siteConfig['tunnelRegEx']='tunnel_hello'
+        #siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -T -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+        siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+        siteConfig['webDavTunnelRegEx']='tunnel_hello'
     return siteConfig
     
 
