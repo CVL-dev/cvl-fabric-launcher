@@ -378,20 +378,6 @@ class LauncherMainFrame(wx.Frame):
         self.checkBoxPanel = wx.Panel(self.loginFieldsPanel)
         self.checkBoxPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        self.massiveShowDebugWindowLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
-        self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.massiveDebugAndAutoExitPanel = wx.Panel(self.massiveLoginFieldsPanel, wx.ID_ANY)
-        self.massiveDebugAndAutoExitPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=3, hgap=5)
-        self.massiveDebugAndAutoExitPanel.SetSizer(self.massiveDebugAndAutoExitPanelSizer)
-
-        self.massiveShowDebugWindowCheckBox = wx.CheckBox(self.massiveDebugAndAutoExitPanel, wx.ID_ANY, "")
-        self.massiveShowDebugWindowCheckBox.SetValue(False)
-        self.massiveShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onMassiveDebugWindowCheckBoxStateChanged)
-        self.massiveDebugAndAutoExitPanelSizer.Add(self.massiveShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.massiveAutomaticallyExitLabel = wx.StaticText(self.massiveDebugAndAutoExitPanel, wx.ID_ANY, "          Automatically exit")
-        self.massiveDebugAndAutoExitPanelSizer.Add(self.massiveAutomaticallyExitLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, border=5)
 
         self.tabbedView.AddPage(self.loginFieldsPanel, "Login")
         self.loadPrefs(None,self.tabbedView,'m2')
