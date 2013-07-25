@@ -59,6 +59,17 @@ class LauncherProgressDialog(wx.Frame):
 
         self.progressBar = wx.Gauge(self, -1, maxValue)
 
+        import sys
+        if sys.platform.startswith("win"):
+            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+            self.SetIcon(_icon)
+        elif sys.platform.startswith("linux"):
+            import MASSIVE_icon
+            self.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+        else:
+            # FIXME OSX is handled somewhere else?
+            pass
+
         #self.progressBar.SetSize(wx.Size(250, -1))
         statusMessageWidth = self.messageStaticText.GetSize().width
         self.progressBar.SetSize(wx.Size(statusMessageWidth, -1))
