@@ -79,7 +79,7 @@ class LoginProcess():
                 return
 
     class runServerCommandThread(Thread):
-        def __init__(self, loginprocess, cmd, regex, nextevent,errormessage, requireMatch=True, sanityCheckHack=False):
+        def __init__(self, loginprocess, cmd, regex, nextevent,errormessage, requireMatch=True):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
@@ -91,7 +91,6 @@ class LoginProcess():
             self.nextevent=nextevent
             self.errormessage=errormessage
             self.requireMatch=requireMatch
-            self.sanityCheckHack = sanityCheckHack
     
         def stop(self):
             logger.debug("stoping the runServerCommandThread cmd %s"%self.cmd.format(**self.loginprocess.jobParams))
@@ -111,17 +110,13 @@ class LoginProcess():
                 logger.debug("runServerCommandThread: stdout = " + stdout)
             except Exception as e:
                 logger.error("could not format the command in runServerCommandThread %s)"%self.cmd)
+                logger.error("the error returned was %s"%e)
                 self.loginprocess.cancel("An error occured. I'm sorry I can't give any more detailed information")
                 return
 
-            if self.sanityCheckHack:
-                if 'REQUEST_VISNODE_ERROR' in stdout:
-                    logger.debug('We saw REQUEST_VISNODE_ERROR so we are quitting.')
-                    self.loginprocess.cancel('Server-side sanity check reported an error.') # FIXME give detail?
-                    return
 
             import itertools
-            messages=parseMessages(self.loginprocess.messageRegexs,stdout,stderr)
+            messages=parseMessages(self.loginprocess.siteConfig.messageRegexs,stdout,stderr)
             concat=""
             for key in messages.keys():
                 concat=concat+messages[key]
@@ -641,7 +636,11 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISTRIBUTE_KEY')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.sshpaths,event.loginprocess.passwdPrompt)
+                if ('CVL' in event.loginprocess.jobParams['configName'] or 'cvl' in event.loginprocess.jobParams['configName']):
+                    displayStrings = sshKeyDistDisplayStringsCVL()
+                else:
+                    displayStrings = sshKeyDistDisplayStringsMASSIVE()
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.sshpaths,displayStrings)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      event.loginprocess.cancel)
@@ -655,7 +654,7 @@ class LoginProcess():
                 event.loginprocess.skd = None # SSH key distritbution is complete at this point.
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 3,"Looking for an existing desktop to connect to")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RECONNECT_DIALOG,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.listAllCmd,event.loginprocess.listAllRegEx,nextevent,"Error determining if you have any existing jobs running",requireMatch=False)
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.listAllCmd,event.loginprocess.siteConfig.listAllRegEx,nextevent,"Error determining if you have any existing jobs running",requireMatch=False)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -702,7 +701,7 @@ class LoginProcess():
 
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Getting a list of your valid projects")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.getProjectsCmd,event.loginprocess.getProjectsRegEx,nextevent,"I couldn't find any projects that you were a member of.")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.getProjectsCmd,event.loginprocess.siteConfig.getProjectsRegEx,nextevent,"I couldn't find any projects that you were a member of.")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -725,19 +724,22 @@ class LoginProcess():
                 logger.debug('selectProject: groups = ' + str(groups))
 
                 try:
-                    event.loginprocess.startServerCmd.format(**event.loginprocess.jobParams) # check if we actually need the project to format the startServerCmd
+                    event.loginprocess.siteConfig.startServerCmd.format(**event.loginprocess.jobParams) # check if we actually need the project to format the startServerCmd
                     if (event.loginprocess.jobParams.has_key('project') and not (event.loginprocess.jobParams['project'] in grouplist)):
                         logger.debug("we have a value for project, but the user is not a member of that project")
                         msg='You don\'t appear to be a member of the project {project}.\n\nPlease select from one of the following:'.format(**event.loginprocess.jobParams)
                         event.loginprocess.jobParams.pop('project',None)
                         try: # check again if we really need the project field.
                             logger.debug("trying to format the startServerCmd")
-                            event.loginprocess.startServerCmd.format(**event.loginprocess.jobParams)
+                            event.loginprocess.siteConfig.startServerCmd.format(**event.loginprocess.jobParams)
                             logger.debug("trying to format the startServerCmd, project is not necessary")
                             showDialog=False
-                        except:
-                            logger.debug("trying to format the startServerCmd, project is necessary")
-                            showDialog=True
+                        except KeyError as e:
+                            if (e.str()=='project'):
+                                logger.debug("trying to format the startServerCmd, project is necessary")
+                                showDialog=True
+                            else:
+                                logger.debug("trying to format the startServerCmd, some other key is missing %s"%e)
                     elif (event.loginprocess.jobParams.has_key('project') and (event.loginprocess.jobParams['project'] in grouplist)):
                         logger.debug("we have a value for project, and the user is a member of that project")
                     else:
@@ -756,19 +758,7 @@ class LoginProcess():
                         project = listSelectionItem.GetText()
                         event.loginprocess.jobParams.update([('project',"%s"%project)])
                         parentWindow = event.loginprocess.notify_window
-                        if parentWindow!=None and parentWindow.__class__.__name__=="LauncherMainFrame":
-                            launcherMainFrame = parentWindow
-                            launcherMainFrame.massiveProjectComboBox.SetValue(project)
-                            if project in launcherMainFrame.massiveProjects:
-                                launcherMainFrame.massiveProjectComboBox.SetSelection(launcherMainFrame.massiveProjects.index(project))
-                            massiveLauncherConfig = event.loginprocess.massiveLauncherConfig
-                            massiveLauncherPreferencesFilePath = event.loginprocess.massiveLauncherPreferencesFilePath
-                            if massiveLauncherConfig!=None and massiveLauncherPreferencesFilePath!=None:
-                               massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_project", project)
-                               with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                                   massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
                     cancelCallback=lambda x: event.loginprocess.cancel(x)
-                    #dlg=ListSelectionDialog(event.loginprocess.notify_window, headers=None,message=msg, items=grouplist, callback=callback, style=wx.RESIZE_BORDER)
                     dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE)
                     dlg.ShowModal()
                 if (not event.loginprocess.canceled()):
@@ -782,7 +772,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_SERVER')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Starting a new desktop session")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.startServerCmd,event.loginprocess.startServerRegEx,nextevent,"Error starting the VNC server. This could occur")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.startServerCmd,event.loginprocess.siteConfig.startServerRegEx,nextevent,"Error starting the VNC server. This could occur")
                 t.setDaemon(False)
                 event.loginprocess.started_job.set()
                 t.start()
@@ -795,8 +785,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_WAIT_FOR_SERVER')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Waiting for the VNC server to start")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_EXECUTION_HOST,event.loginprocess)
-                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.runningCmd,event.loginprocess.runningRegEx,nextevent,"")
-                #t = LoginProcess.waitForStartThread(event.loginprocess,event)
+                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.runningCmd,event.loginprocess.siteConfig.runningRegEx,nextevent,"")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -807,10 +796,10 @@ class LoginProcess():
             # runLoopServerCommand can generate GET_ESTIMATED_START events. Most other threads can only post events that were given to them when they were initialised
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_ESTIMATED_START):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_ESTIMATED_START')
-                if (event.loginprocess.showStartCmd!=None):
+                if (event.loginprocess.siteConfig.showStartCmd!=None):
                     logger.debug('loginProcessEvent: event.loginprocess.showStartCmd is not None, so posting EVT_LOGINPROCESS_SHOW_ESTIMATED_START')
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHOW_ESTIMATED_START,event.loginprocess)
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.showStartCmd,event.loginprocess.showStartRegEx,nextevent,"Error estimating the start time")
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.showStartCmd,event.loginprocess.siteConfig.showStartRegEx,nextevent,"Error estimating the start time")
                     t.setDaemon(False)
                     t.start()
                     event.loginprocess.threads.append(t)
@@ -839,7 +828,7 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting execution host")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_VNCDISPLAY,event.loginprocess)
                 logger.debug('loginProcessEvent: getExecutionHost: posting EVT_LOGINPROCESS_GET_VNCDISPLAY')
-                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.execHostCmd,event.loginprocess.execHostRegEx,nextevent,"")
+                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.execHostCmd,event.loginprocess.siteConfig.execHostRegEx,nextevent,"")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -852,7 +841,7 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting the display number")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_TUNNEL,event.loginprocess)
                 logger.debug('loginProcessEvent: getVNCDisplay: posting EVT_LOGINPROCESS_START_TUNNEL')
-                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.vncDisplayCmd,event.loginprocess.vncDisplayRegEx,nextevent,"Unable to get the VNC display")
+                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.vncDisplayCmd,event.loginprocess.siteConfig.vncDisplayRegEx,nextevent,"Unable to get the VNC display")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -886,12 +875,12 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: startTunnel: set remotePortNumber to ' + str(event.loginprocess.jobParams['remotePortNumber']))
 
 
-                if ("m1" in event.loginprocess.loginParams['loginHost'] or "m2" in event.loginprocess.loginParams['loginHost']):
+                if ("m1" in event.loginprocess.jobParams['loginHost'] or "m2" in event.loginprocess.jobParams['loginHost']):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION,event.loginprocess)
                 else:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
 
-                t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.tunnelCmd,event.loginprocess.tunnelRegEx,nextevent,"Unable to start the tunnel for some reason")
+                t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.tunnelCmd,event.loginprocess.siteConfig.tunnelRegEx,nextevent,"Unable to start the tunnel for some reason")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -906,7 +895,7 @@ class LoginProcess():
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK,event.loginprocess)
 
                 logger.debug('Setting the desktop resolution.')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.setDisplayResolutionCmd, '.*', nextevent, '', requireMatch=False)
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.setDisplayResolutionCmd, '.*', nextevent, '', requireMatch=False)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -920,11 +909,11 @@ class LoginProcess():
                 nextevent = LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
 
                 logger.debug('Running server-side sanity check.')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.runSanityCheckCmd,
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.runSanityCheckCmd,
                                                         '.*',
                                                         nextevent,
-                                                        'Error reported by server-side sanity check.',
-                                                        sanityCheckHack=True)
+                                                        'Error reported by server-side sanity check.'
+                                                        )
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -937,7 +926,7 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 8,"Setting up SSH Agent forwarding")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_OTP,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_OTP')
-                t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.agentCmd,event.loginprocess.agentRegEx,nextevent,"Unable to forward the ssh agent")
+                t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.agentCmd,event.loginprocess.siteConfig.agentRegEx,nextevent,"Unable to forward the ssh agent")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -950,7 +939,7 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one-time password for the VNC server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.otpCmd,event.loginprocess.otpRegEx,nextevent,"Unable to determine the one-time password for the VNC session")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.otpCmd,event.loginprocess.siteConfig.otpRegEx,nextevent,"Unable to determine the one-time password for the VNC session")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -981,7 +970,7 @@ class LoginProcess():
                     # Therefore test if the stopCmd can actually be formated before attempting to execute it.
                     try:
                         event.loginprocess.stopCmd.format(**event.loginprocess.jobParams)
-                        t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".",nextevent,"",requireMatch=False)
+                        t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopCmd,".",nextevent,"",requireMatch=False)
                         t.setDaemon(True)
                         t.start()
                         event.loginprocess.threads.append(t)
@@ -1062,7 +1051,7 @@ class LoginProcess():
                     grabFocusBackFromTurboVNC()
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER,event.loginprocess)
                 logger.debug('loginProcessEvent: statRunningJob: posting EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.listAllCmd,event.loginprocess.listAllRegEx,nextevent,"")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.listAllCmd,event.loginprocess.siteConfig.listAllRegEx,nextevent,"")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1096,7 +1085,7 @@ class LoginProcess():
                         else:
                             timestring = "%s minutes"%minutes
                         dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
-                    elif ("m1" not in event.loginprocess.loginParams['loginHost'] and "m2" not in event.loginprocess.loginParams['loginHost']):
+                    elif ("m1" not in event.loginprocess.jobParams['loginHost'] and "m2" not in event.loginprocess.jobParams['loginHost']):
                         dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
                     else:
                         logger.debug("showKillServerDialog: timeRemaining is None and ('m1' or 'm2' is in loginHost)")
@@ -1124,9 +1113,9 @@ class LoginProcess():
                     logger.debug("caught an EVT_LOGINPROCESS_KILL_SERVER")
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                 if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmdForRestart,".*",nextevent,"",requireMatch=False)
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopCmdForRestart,".*",nextevent,"",requireMatch=False)
                 else:
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.stopCmd,".*",nextevent,"",requireMatch=False)
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopCmd,".*",nextevent,"",requireMatch=False)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1144,6 +1133,8 @@ class LoginProcess():
         def complete(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_COMPLETE):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
+                if event.loginprocess.completeCallback!=None:
+                    event.loginprocess.completeCallback(self.loginprocess.jobParams)
                 if event.loginprocess.autoExit:
                     if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds'):
                         if event.loginprocess.turboVncElapsedTimeInSeconds > 3:
@@ -1153,132 +1144,34 @@ class LoginProcess():
 
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,parentWindow,username,host,resolution,cipher,notifywindow,sshpaths,siteConfig=None,project=None,hours=None,nodes=1,usePBS=True,directConnect=False,autoExit=False,fastInterface="-ib",massiveLauncherConfig=None, massiveLauncherPreferencesFilePath=None):
+    def __init__(self,parentWindow,notifywindow,jobParams,sshpaths,siteConfig=None,autoExit=False,completeCallback=None):
         self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
         self.notify_window = notifywindow
-        self.loginParams={}
-        self.jobParams={}
-        self.loginParams['launcher_version_number'] = launcher_version_number.version_number
-        self.loginParams['username']=username
-        self.loginParams['configName']=host
-        self.loginParams['project']=project
-        self.loginParams['sshBinary']=sshpaths.sshBinary
-        self.jobParams['resolution']=resolution
-        self.jobParams['cipher']=cipher
-        self.jobParams.update(self.loginParams)
         self.sshpaths=sshpaths
         self.threads=[]
-        self.jobParams['project']=project
-        self.jobParams['hours']=hours
-        self.jobParams['wallseconds']=int(hours)*60*60
-        self.jobParams['nodes']=nodes
         self._canceled=threading.Event()
-        self.usePBS=usePBS
-        self.directConnect = directConnect
         self.autoExit = autoExit
         self.sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
         self.sshTunnelProcess=None
         self.sshAgentProcess=None
-        self.fastInterface="-ib"
         self.joblist=[]
         self.started_job=threading.Event()
         self.skd=None
         self.passwdPrompt=None
-        self.massiveLauncherConfig = massiveLauncherConfig
-        self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
-        if (siteConfig!=None):
-            self.listAllCmd=siteConfig['listAllCmd']
-            self.listAllRegEx=siteConfig['listAllRegEx']
-            self.runningCmd=siteConfig['runningCmd']
-            self.runningRegEx=siteConfig['runningRegEx']
-            self.stopCmd=siteConfig['stopCmd']
-            self.stopCmdForRestart=siteConfig['stopCmdForRestart']
-            self.execHostCmd=siteConfig['execHostCmd']
-            self.startServerCmd=siteConfig['startServerCmd']
-            self.startServerRegEx=siteConfig['startServerRegEx']
-            self.showStartCmd=siteConfig['showStartCmd']
-            self.showStartRegEx=siteConfig['showStartRegEx']
-            self.vncDisplayCmd = siteConfig['vncDisplayCmd']
-            self.vncDisplayRegEx=siteConfig['vncDisplayRegEx']
-            self.messageRegexs=siteConfig['messageRegexs']
-        else:
-            self.siteConfig={}
+        self.completeCallback=completeCallback
+        self.siteConfig = siteConfig
+        self.jobParams = jobParams
+        update={}
+        update['sshBinary']=sshpaths.sshBinary
+        update['launcher_version_number']=launcher_version_number.version_number
+        self.jobParams.update(update)
 
-            self.messageRegexs=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
             # output from startServerCmd that matches and of these regular expressions will pop up in a window for the user
-            if ("m1" in self.loginParams['configName'] or "m2" in self.loginParams['configName']):
-                update={}
-                update['loginHost']=host
-                self.loginParams.update(update)
-                self.jobParams.update(self.loginParams)
-                self.listAllCmd='qstat -u {username}'
-                self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
-                self.runningCmd='qstat -u {username}'
-                self.runningRegEx='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
-                # request_visnode is a little buggy, if you issue a qdel <jobid> ; request_visnode it may provide the id of the deleted job. Sleep to work around
-                self.stopCmd='\'qdel -a {jobid}\''
-                self.stopCmdForRestart='\'qdel {jobid} ; sleep 5\''
-                self.execHostCmd='qpeek {jobidNumber}'
-                self.execHostRegEx='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
-                self.startServerCmd="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
-                self.runSanityCheckCmd="\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'"
-                self.setDisplayResolutionCmd="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
-                #self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
-                self.getProjectsCmd='\"gbalance -u {username} --show Name | tail -n +3\"'
-                self.getProjectsCmd='\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"'
-                self.getProjectsRegEx='^(?P<group>\S+)\s+.*$'
-                self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
-                self.showStartCmd="showstart {jobid}"
-                self.showStartRegEx="Estimated Rsv based start .*?on (?P<estimatedStart>.*)"
-                self.vncDisplayCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
-                self.vncDisplayRegEx='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
-                self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
-                self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
-
-            else:
-                update={}
-                update['loginHost']=host
-                self.loginParams.update(update)
-                self.jobParams.update(self.loginParams)
-                self.directConnect=True
-                self.execHostCmd='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
-                self.execHostRegEx='^\s*execHost (?P<execHost>\S+)\s*$'
-                self.getProjectsCmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
-                self.getProjectsRegEx='^\s*(?P<group>\S+)\s*$'
-                self.listAllCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
-                self.listAllRegEx='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
-                self.runningCmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
-                self.runningRegEx='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
-                if ("Hugyens" in self.loginParams['configName']):
-                    self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -q huygens -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
-                else:
-                    self.startServerCmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
-                self.startServerRegEx="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
-                self.stopCmd='\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"'
-                self.stopCmdForRestart='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
-                self.showStartCmd=None
-                self.showStartRegEx="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
-                self.vncDisplayCmd = '" /usr/bin/ssh {execHost} \' cat /var/spool/torque/spool/{jobidNumber}.*\'"'
-                self.vncDisplayRegEx='^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$'
-                self.otpCmd = '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
-                self.otpRegEx='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
-                self.passwdPrompt='Please enter your CVL password for username {username}.\n\nIf you are using the CVL for the first time,\nthis is the password you entered when you applied for an account\non the webpage https://web.cvl.massive.org.au'
-                self.runSanityCheckCmd=None
 
 
-            if (not self.directConnect):
-                self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
-                self.agentRegEx='agent_hello'
-                self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
-                self.tunnelRegEx='tunnel_hello'
-            else:
-            # I've disabled StrickHostKeyChecking here temporarily untill all CVL vms are added a a most known hosts file.
-                self.agentCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "'
-                self.agentRegEx='agent_hello'
-                self.tunnelCmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
-                self.tunnelRegEx='tunnel_hello'
+
 
         for k, v in self.__dict__.iteritems():
             logger.debug('loginProcessEvent properties: %s = %s' % (str(k), str(v),))
