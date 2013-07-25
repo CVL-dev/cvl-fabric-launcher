@@ -36,7 +36,7 @@
 ; You should have received a copy of the GNU General Public License
 ; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ; 
-; Enquires: James.Wettenhall@monash.edu or help@massive.org.a
+; Enquires: help@massive.org.a
 
 ;MASSIVE Launcher InnoSetup script
 ;Change OutputDir to suit your build environment
@@ -65,4 +65,7 @@ Name: "{group}\{cm:UninstallProgram,{#LauncherAppName}}"; Filename: "{uninstalle
 
 [Dirs]
 Name: "{pf}\{#LauncherAppName}\openssh-cygwin-stdin-build\tmp"; Permissions: "users-modify"
+
+[UninstallRun]
+Filename: "{app}\kill-charade-processes.bat";
 
