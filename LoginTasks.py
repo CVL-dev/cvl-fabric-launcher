@@ -1018,7 +1018,8 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_OTP):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_OTP')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one-time password for the VNC server")
-                if event.loginprocess.notify_window.vncOptions['share_local_home_directory_on_remote_desktop']:
+                if 'share_local_home_directory_on_remote_desktop' in event.loginprocess.notify_window.vncOptions and \
+                        event.loginprocess.notify_window.vncOptions['share_local_home_directory_on_remote_desktop']:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_SERVER')
                 else:
