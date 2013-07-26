@@ -551,6 +551,7 @@ def job_has_been_canceled(ssh_cmd, launcherMainFrame,job_id):
     try:
         return str(job_id) in run_ssh_command(ssh_cmd, 'ls ~/.vnc/shutdown_%d*' % (job_id,), launcherMainFrame,ignore_errors=True)[0]
     except:
+        logger.debug(traceback.format_exc())
         return None
 
 def remaining_visnode_walltime(launcherMainFrame):
@@ -569,6 +570,7 @@ def remaining_visnode_walltime(launcherMainFrame):
         else:
             return seconds_to_hours_minutes(float(run_ssh_command(sshCmd.format(username=launcherMainFrame.massiveUsername,host=launcherMainFrame.massiveLoginHost), 'qstat -f %d | grep Remaining' % (job_id,), launcherMainFrame,ignore_errors=True)[0].split()[-1]))
     except:
+        logger.debug(traceback.format_exc())
         return
 
 def die_from_login_thread(launcherMainFrame,error_message, display_error_dialog=True, submit_log=False):

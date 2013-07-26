@@ -58,6 +58,7 @@ class LoginProcess():
                     # "AttributeError: 'module' object has no attribute 'STARTUPINFO'" even though
                     # the code is inside the 'if' block, hence the use of a dodgy try/except block.
                     startupinfo = None
+                    logger.debug('exception: ' + str(traceback.format_exc()))
 
                 self.process = subprocess.Popen(cmd, universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, startupinfo=startupinfo)
                 while (not self.stopped()):
@@ -1016,7 +1017,7 @@ class LoginProcess():
                         logger.debug('loginProcessEvent: shutdown: attempting to stop thread ' + str(t))
                         t.stop()
                     except:
-                        pass
+                        logger.debug('exception: ' + str(traceback.format_exc()))
                 # Throw away the thread references. We've done all we can to ask them to stop at this point.
                 event.loginprocess.threads=[]
                 if (event.loginprocess.notify_window.progressDialog != None):
@@ -1248,10 +1249,12 @@ class LoginProcess():
                     try:
                         (rhours,rmin) = job['reqTime'].split(':')
                     except:
+                        logger.debug('exception: ' + str(traceback.format_exc()))
                         return None
                     try:
                         (ehours,emin) = job['elapTime'].split(':')
                     except:
+                        logger.debug('exception: ' + str(traceback.format_exc()))
                         ehours=0
                         emin=0
                     return (int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
@@ -1259,6 +1262,7 @@ class LoginProcess():
                     try:
                         (rhours,rmin) = job['reqTime'].split(':')
                     except:
+                        logger.debug('exception: ' + str(traceback.format_exc()))
                         return None
                     ehours=0
                     emin=0

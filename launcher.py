@@ -926,6 +926,7 @@ class LauncherMainFrame(wx.Frame):
             latestVersionChanges = htmlCommentsSplit2[0].strip()
             self.contacted_massive_website = True
         except:
+            logger.debug(traceback.format_exc())
             self.contacted_massive_website = False
             dlg = wx.MessageDialog(self, "Warning: Could not contact the MASSIVE website to check version number.\n\n",
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
@@ -1165,6 +1166,7 @@ class LauncherMainFrame(wx.Frame):
                     # Get user's default massiveProject from Karaage:
                     self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
                 except:
+                    logger.debug(traceback.format_exc())
                     error_string = "Error contacting Massive to retrieve user's default project"
                     logger.error(error_string)
                     die_from_main_frame(launcherMainFrame,error_string)
@@ -1264,6 +1266,7 @@ class LauncherMainFrame(wx.Frame):
         try:
             os.mkdir(os.path.join(os.path.expanduser('~'), '.ssh'))
         except:
+            logger.debug(traceback.format_exc())
             pass
 
         self.sshpaths = cvlsshutils.sshKeyDist.sshpaths('MassiveLauncherKey',massiveLauncherConfig,massiveLauncherPreferencesFilePath)
@@ -1375,7 +1378,7 @@ class MyApp(wx.App):
                     wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
                                   "Error", wx.OK|wx.ICON_EXCLAMATION)
             else:
-                logger.debug(traceback.format_exc())
+                logger.debug('exception: ' + str(traceback.format_exc()))
                 dlg = wx.MessageDialog(launcherMainFrame,
                     "You can access the help later from the Help menu or from the Identity menu.",
                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
