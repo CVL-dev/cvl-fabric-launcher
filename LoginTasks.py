@@ -93,7 +93,7 @@ class LoginProcess():
             self.requireMatch=requireMatch
     
         def stop(self):
-            logger.debug("stoping the runServerCommandThread cmd %s"%self.cmd.format(**self.loginprocess.jobParams))
+            logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmd.format(**self.loginprocess.jobParams))
             self._stop.set()
         
         def stopped(self):
