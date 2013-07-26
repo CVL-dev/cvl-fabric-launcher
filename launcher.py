@@ -674,6 +674,15 @@ class LauncherMainFrame(wx.Frame):
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
                 self.cvlLoginHost = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_login_host")
+
+                # If the user has a setting for cvl_login_host that is not in our approved list, just take
+                # the first known CVL login host.
+                if self.cvlLoginHost not in cvlLoginHosts:
+                    self.cvlLoginHost = cvlLoginHosts[0]
+
+                    cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
+                    with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                        cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
             else:
                 cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
