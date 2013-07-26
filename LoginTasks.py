@@ -969,12 +969,15 @@ class LoginProcess():
                     # Cancelation during the startup process is tricky. It conceivable although unlikely that we will have set the event to say the job is started, but not succesfully submitted a job.
                     # Therefore test if the stopCmd can actually be formated before attempting to execute it.
                     try:
-                        event.loginprocess.stopCmd.format(**event.loginprocess.jobParams)
+                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (event.loginprocess.siteConfig.stopCmd, event.loginprocess.jobParams,))
+                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + event.loginprocess.siteConfig.stopCmd.format(**event.loginprocess.jobParams))
+                        event.loginprocess.siteConfig.stopCmd.format(**event.loginprocess.jobParams)
                         t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopCmd,".",nextevent,"",requireMatch=False)
                         t.setDaemon(True)
                         t.start()
                         event.loginprocess.threads.append(t)
                     except:
+                        logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
                         pass
  
                 if (event.loginprocess.skd!=None): 
