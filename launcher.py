@@ -293,7 +293,7 @@ class LauncherMainFrame(wx.Frame):
 
         # load the default site from the users preferences
         #loadPrefs(prefs)
-        self.projectPanel = wx.Panel(self.loginFieldsPanel,wx.ID_ANY)
+        self.projectPanel = wx.Panel(self.loginFieldsPanel,wx.ID_ANY,name="projectPanel")
         self.projectPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.projectLabel = wx.StaticText(self.projectPanel, wx.ID_ANY, 'Project')
         self.projectPanelSizer.Add(self.projectLabel, proportion=1, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, border=5)
@@ -317,7 +317,7 @@ class LauncherMainFrame(wx.Frame):
         #self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=336)
         self.hoursField = wx.SpinCtrl(self.resourcePanel, wx.ID_ANY, size=(widgetWidth3,-1), min=1,max=336,name='jobParams_hours')
         #self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.resourcePanelSizer.Add(self.hoursField, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+        self.resourcePanelSizer.Add(self.hoursField, proportion=0,flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
         self.nodesLabel = wx.StaticText(self.resourcePanel, wx.ID_ANY, 'Vis nodes')
         self.resourcePanelSizer.Add(self.nodesLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
         self.nodesField = wx.SpinCtrl(self.resourcePanel, wx.ID_ANY, value="1", size=(widgetWidth3,-1), min=1,max=10,name='jobParams_nodes')
@@ -326,7 +326,7 @@ class LauncherMainFrame(wx.Frame):
         self.loginFieldsPanelSizer.Add(self.resourcePanel, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
 
 
-        self.resolutionPanel = wx.Panel(self.loginFieldsPanel)
+        self.resolutionPanel = wx.Panel(self.loginFieldsPanel,name="resolutionPanel")
         self.resolutionPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.resolutionLabel = wx.StaticText(self.resolutionPanel, wx.ID_ANY, 'Resolution',name='label_resolution')
         self.resolutionPanelSizer.Add(self.resolutionLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -349,7 +349,7 @@ class LauncherMainFrame(wx.Frame):
         self.loginFieldsPanelSizer.Add(self.resolutionPanel,proportion=0,flag=wx.EXPAND)
 
         
-        self.cipherPanel = wx.Panel(self.loginFieldsPanel)
+        self.cipherPanel = wx.Panel(self.loginFieldsPanel,name="ciphersPanel")
         self.cipherPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.sshTunnelCipherLabel = wx.StaticText(self.cipherPanel, wx.ID_ANY, 'SSH tunnel cipher',name='label_cipher')
         self.cipherPanelSizer.Add(self.sshTunnelCipherLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -365,7 +365,7 @@ class LauncherMainFrame(wx.Frame):
         self.cipherPanel.SetSizerAndFit(self.cipherPanelSizer)
         self.loginFieldsPanelSizer.Add(self.cipherPanel,proportion=0,flag=wx.EXPAND)
 
-        self.usernamePanel=wx.Panel(self.loginFieldsPanel)
+        self.usernamePanel=wx.Panel(self.loginFieldsPanel,name='usernamePanel')
         self.usernamePanelSizer=wx.BoxSizer(wx.HORIZONTAL)
         self.usernameLabel = wx.StaticText(self.usernamePanel, wx.ID_ANY, 'Username',name='label_username')
         self.usernamePanelSizer.Add(self.usernameLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -377,7 +377,31 @@ class LauncherMainFrame(wx.Frame):
 
         self.checkBoxPanel = wx.Panel(self.loginFieldsPanel)
         self.checkBoxPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
-        
+        p = wx.Panel(self.checkBoxPanel)
+        s = wx.BoxSizer(wx.HORIZONTAL)
+
+        p = wx.Panel(self.checkBoxPanel,name="debugCheckBoxPanel")
+        s = wx.BoxSizer(wx.HORIZONTAL)
+        l = wx.StaticText(p, wx.ID_ANY, 'Show debug window')
+        c = wx.CheckBox(p, wx.ID_ANY, "")
+        c.Bind(wx.EVT_CHECKBOX, self.onDebugWindowCheckBoxStateChanged)
+        s.Add(l)
+        s.Add(c)
+        p.SetSizerAndFit(s)
+        self.checkBoxPanelSizer.Add(p,flag=wx.ALIGN_LEFT)
+
+        p = wx.Panel(self.checkBoxPanel,name="advancedCheckBoxPanel")
+        s = wx.BoxSizer(wx.HORIZONTAL)
+        l = wx.StaticText(p, wx.ID_ANY, 'Show Advanced Options')
+        c = wx.CheckBox(p, wx.ID_ANY, "")
+        c.Bind(wx.EVT_CHECKBOX, self.onAdvancedVisibilityStateChanged)
+        s.Add(l)
+        s.Add(c)
+        p.SetSizerAndFit(s)
+        self.checkBoxPanelSizer.Add(p,flag=wx.ALIGN_RIGHT)
+
+        self.checkBoxPanel.SetSizerAndFit(self.checkBoxPanelSizer) 
+        self.loginFieldsPanelSizer.Add(self.checkBoxPanel)
 
         self.tabbedView.AddPage(self.loginFieldsPanel, "Login")
         self.loadPrefs(None,self.tabbedView,'m2')
@@ -422,6 +446,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.Fit()
         self.Layout()
+        self.menu_bar.Show(False)
 
         self.Centre()
         print "seup the panel and fit"
@@ -530,10 +555,43 @@ class LauncherMainFrame(wx.Frame):
         if massiveProjectTextFieldValue in launcherMainFrame.massiveProjects:
             launcherMainFrame.massiveProjectComboBox.SetSelection(launcherMainFrame.massiveProjects.index(massiveProjectTextFieldValue))
 
-    def onMassiveDebugWindowCheckBoxStateChanged(self, event):
+    def buildJobParams(self,window):
+        jobParams={}
+        for item in window.GetChildren():
+            name = item.GetName()
+            if ('jobParam' in name):
+                (prefix,keyname) = name.split('_') 
+                print "foudn parameter for %s"%keyname
+                jobParams[keyname]=item.GetValue()
+            r = self.buildJobParams(item)
+            jobParams.update(r)
+        return jobParams
+
+    def onAdvancedVisibilityStateChanged(self, event):
+        advanced=event.GetEventObject().GetValue()
+        # hacky little dict to hide some stuff. Make this part of the site definition.
+        visible={}
+        visible['ciphersPanel']='Advanced'
+        visible['resolutionPanel']='Advanced'
+        visible['projectPanel']=False
+        visible['debugCheckBoxPanel']='Advanced'
+        for key in visible.keys():
+            try:
+                window=self.FindWindowByName(key) #Panels and controls are all subclasses of windows
+                if visible[key]==False:
+                    window.Hide()
+                if visible[key]==True:
+                    window.Show()
+                if visible[key]=='Advanced' and advanced==True:
+                    window.Show()
+                else:
+                    window.Hide()
+            except:
+                pass # a value in the dictionary didn't correspond to a named component of the panel. Fail silently.
+
+    def onDebugWindowCheckBoxStateChanged(self, event):
         if launcherMainFrame.logWindow!=None:
-            if launcherMainFrame.massiveTabSelected:
-                launcherMainFrame.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
+            launcherMainFrame.logWindow.Show(event.GetEventObject().GetValue())
 
     def onCvlDebugWindowCheckBoxStateChanged(self, event):
         if launcherMainFrame.logWindow!=None:
@@ -676,21 +734,23 @@ If this account is shared by a number of people then passwords are preferable
     def onLogin(self, event):
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
-#        jobParams = build_jobParam_dict()
-#        if jobParams('username') == "":
-#            dlg = wx.MessageDialog(launcherMainFrame,
-#                    "Please enter your username.",
-#                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-#            dlg.ShowModal()
-#            usernamefield = self.getWXCtrl('jobParams_username')
-#            usernamefield.SetFocus()
-#            return
+        jobParams={}
+        jobParams = self.buildJobParams(self)
+        if jobParams['username'] == "":
+            dlg = wx.MessageDialog(launcherMainFrame,
+                    "Please enter your username.",
+                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            usernamefield = self.FindWindowByName('jobParams_username')
+            usernamefield.SetFocus()
+            return
 
 
         if (self.logWindow == None):
 
-            self.logWindow = wx.Frame(self, title='{configCN} Login'.format(**jobParams), name='{configCN} Login'.format(**jobParams),pos=(200,150),size=(700,450))
-            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
+            #self.logWindow = wx.Frame(self, title='{configName} Login'.format(**jobParams), name='{configName} Login'.format(**jobParams),pos=(200,150),size=(700,450))
+            self.logWindow = wx.Frame(self, title='Debug Log'.format(**jobParams), pos=(200,150),size=(700,450))
+            #self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
 
             if sys.platform.startswith("win"):
                 _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -713,7 +773,7 @@ If this account is shared by a number of people then passwords are preferable
 
             logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
 
-        self.logWindow.Show(jobParams('showDebug'))
+        self.logWindow.Show(True)
 
 
         userCanAbort=True
@@ -726,16 +786,6 @@ If this account is shared by a number of people then passwords are preferable
             pass
 
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
-        jobParams={}
-        jobParams['username']=username
-        jobParams['loginHost']=host
-        jobParams['configName']=host
-        jobParams['resolution']=resolution
-        jobParams['cipher']=cipher
-        jobParams['project']=self.massiveProject
-        jobParams['hours']=hours
-        jobParams['nodes']=nodes
-        jobParams['wallseconds']=int(hours)*60*60
         configName=host
         if not self.vncOptions.has_key('auth_mode'):
             mode=self.queryAuthMode()
@@ -744,6 +794,9 @@ If this account is shared by a number of people then passwords are preferable
             self.identity_menu.disableItems()
             self.saveGlobalOptions()
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
+        jobParams=self.buildJobParams(self)
+        jobParams['wallseconds']=int(jobParams['hours'])*60*60
+        siteConfigDict = buildSiteConfigDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
         if launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launherMainFrame.onLogin: using a temporary Key pair")
@@ -1024,6 +1077,7 @@ class MyApp(wx.App):
         global launcherMainFrame
         launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
         launcherMainFrame.Show(True)
+        launcherMainFrame.menu_bar.Show(True)
 
 
 #        if massiveLauncherConfig is not None:
