@@ -261,7 +261,6 @@ class LauncherMainFrame(wx.Frame):
         self.SetTitle("MASSIVE / CVL Launcher")
 
         self.SetMenuBar(self.menu_bar)
-        print "set the menu bar"
 
         self.loginDialogPanel = wx.Panel(self, wx.ID_ANY)
         self.loginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=15, hgap=5)
@@ -280,13 +279,20 @@ class LauncherMainFrame(wx.Frame):
             widgetWidth2 = widgetWidth2 + 25
         widgetWidth3 = 75
 
+        self.sites={}
+        visible={}
+        #siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
+        self.sites['Desktop on m1.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m1"),visible)
+        self.sites['Desktop on m2.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m2"),visible)
+        self.sites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("cvl"),visible)
+        self.sites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("Huygens"),visible)
+
         self.siteConfigPanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
         self.siteConfigPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.configLabel = wx.StaticText(self.siteConfigPanel, wx.ID_ANY, 'Host')
         self.siteConfigPanelSizer.Add(self.configLabel, proportion=1, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, border=5)
-        configChoices=["choice 1","choice 2"]
-        self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=configChoices, size=(widgetWidth2, -1), style=wx.CB_READONLY,name='jobParams_siteName')
-        #self.siteConfigComboBox.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
+        self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=self.sites.keys(), size=(widgetWidth2, -1), style=wx.CB_READONLY,name='jobParams_configName')
+        self.siteConfigComboBox.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
         self.siteConfigPanelSizer.Add(self.siteConfigComboBox, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.siteConfigPanel.SetSizerAndFit(self.siteConfigPanelSizer)
         self.loginFieldsPanelSizer.Add(self.siteConfigPanel,proportion=0,flag=wx.EXPAND)
@@ -393,7 +399,7 @@ class LauncherMainFrame(wx.Frame):
         p = wx.Panel(self.checkBoxPanel,name="advancedCheckBoxPanel")
         s = wx.BoxSizer(wx.HORIZONTAL)
         l = wx.StaticText(p, wx.ID_ANY, 'Show Advanced Options')
-        c = wx.CheckBox(p, wx.ID_ANY, "")
+        c = wx.CheckBox(p, wx.ID_ANY, "",name='advancedCheckBox')
         c.Bind(wx.EVT_CHECKBOX, self.onAdvancedVisibilityStateChanged)
         s.Add(l)
         s.Add(c)
@@ -440,16 +446,13 @@ class LauncherMainFrame(wx.Frame):
         self.SetStatusBar(self.loginDialogStatusBar)
 
         self.loginDialogPanel.SetSizerAndFit(self.loginDialogPanelSizer)
-        print "setsizer and fit"
         self.loginDialogPanel.Layout()
-        print "set sizer and layedout"
 
         self.Fit()
         self.Layout()
         self.menu_bar.Show(False)
 
         self.Centre()
-        print "seup the panel and fit"
 
         import getpass
         logger.debug('getpass.getuser(): ' + getpass.getuser())
@@ -561,20 +564,26 @@ class LauncherMainFrame(wx.Frame):
             name = item.GetName()
             if ('jobParam' in name):
                 (prefix,keyname) = name.split('_') 
-                print "foudn parameter for %s"%keyname
                 jobParams[keyname]=item.GetValue()
             r = self.buildJobParams(item)
             jobParams.update(r)
         return jobParams
 
+    def onSiteConfigChanged(self,event):
+        self.configName=event.GetEventObject().GetValue()
+        #self.loadPrefs(configName)
+        self.updateVisibility()
+
     def onAdvancedVisibilityStateChanged(self, event):
-        advanced=event.GetEventObject().GetValue()
         # hacky little dict to hide some stuff. Make this part of the site definition.
-        visible={}
-        visible['ciphersPanel']='Advanced'
-        visible['resolutionPanel']='Advanced'
-        visible['projectPanel']=False
-        visible['debugCheckBoxPanel']='Advanced'
+        self.updateVisibility()
+
+    def updateVisibility(self):
+        advanced=self.FindWindowByName('advancedCheckBox').GetValue()
+        try:
+            visible = self.sites[self.configName].visibility
+        except KeyError:
+            visible={}
         for key in visible.keys():
             try:
                 window=self.FindWindowByName(key) #Panels and controls are all subclasses of windows
@@ -813,7 +822,7 @@ If this account is shared by a number of people then passwords are preferable
 
         def initializeProgressDialog():
             CancelCallback=self.loginProcess.cancel
-            self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, 'Connecting to {configCN}...'.format(**jobParams), "", maximumProgressBarValue, userCanAbort,CancelCallback)
+            self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, 'Connecting to {configName}...'.format(**jobParams), "", maximumProgressBarValue, userCanAbort,CancelCallback)
 
 #        wx.CallAfter(initializeProgressDialog)
 
@@ -870,6 +879,7 @@ class siteConfig():
         self.webDavTunnel=siteConfig.cmdRegEx()
         self.webDavUnmount=siteConfig.cmdRegEx()
         self.__dict__.update(siteConfigDict)
+        self.visibility=visibilityDict
 
 def buildSiteConfigCmdRegExDict(configName):
     import re

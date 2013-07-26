@@ -963,7 +963,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: startTunnel: set remotePortNumber to ' + str(event.loginprocess.jobParams['remotePortNumber']))
 
 
-                if ("m1" in event.loginprocess.jobParams['loginHost'] or "m2" in event.loginprocess.jobParams['loginHost']):
+                if ("m1" in event.loginprocess.siteConfig.loginHost or "m2" in event.loginprocess.siteConfig.loginHost):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION,event.loginprocess)
                 else:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
@@ -1282,7 +1282,8 @@ class LoginProcess():
                         else:
                             dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
                     else:
-                        logger.debug("showKillServerDialog: timeRemaining is None and ('m1' or 'm2' is in loginHost)")
+                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
+                        logger.debug("showKillServerDialog: timeRemaining is None")
                     if dialog:
                         logger.debug("showKillServerDialog: Showing the 'Stop the desktop' question dialog.")
                         wx.CallAfter(dialog.ShowModal)
@@ -1443,6 +1444,7 @@ class LoginProcess():
         update={}
         update['sshBinary']=self.keyModel.getsshBinary()
         update['launcher_version_number']=launcher_version_number.version_number
+        update['loginHost']=self.siteConfig.loginHost
         self.jobParams.update(update)
 
         for k, v in self.__dict__.iteritems():
