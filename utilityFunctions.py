@@ -123,7 +123,13 @@ def buildSiteConfigDict(configName):
         siteConfig['webDavIntermediateEphemeralPortCmd']='/usr/local/desktop/get_ephemeral_port.py'
         siteConfig['webDavIntermediateEphemeralPortRegEx']='^(?P<webDavIntermediateEphemeralPortNumber>.*)$'
         siteConfig['openWebDavShareInRemoteFileBrowserCmd']='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:8080/{homeDirectoryWebDavShareName}\'"'
-        siteConfig['displayWebDavAccessInfoInRemoteDialogCmd']='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:<br>\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}<br>\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 2; DISPLAY={vncDisplay} kdialog --title \\"MASSIVE/CVL Launcher\\" --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"'
+        if sys.platform.startswith("win"):
+            lt = "^<"
+            gt = "^>"
+        else:
+            lt = "<"
+            gt = ">"
+        siteConfig['displayWebDavAccessInfoInRemoteDialogCmd']='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 2; DISPLAY={vncDisplay} kdialog --title \\"MASSIVE/CVL Launcher\\" --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"' % (lt,gt,lt,gt)
     else:
         siteConfig['directConnect']=True
         siteConfig['execHostCmd']='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
@@ -157,7 +163,12 @@ def buildSiteConfigDict(configName):
         # access a WebDAV share within Konqueror.  The method below for the CVL/Nautilus does require fuse membership, but it ends up looking
         # similar to MASSIVE/Konqueror from the user's point of view.  Note that getting drag and drop working nicely depends on patching
         # gtk2 (see CVLFAB-622 on JIRA).
-        siteConfig['openWebDavShareInRemoteFileBrowserCmd']="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" | python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName};\\\"\""
+        if sys.platform.startswith("win"):
+            pipe = "^|"
+        else:
+            pipe = "|"
+        siteConfig['openWebDavShareInRemoteFileBrowserCmd']="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
+        #siteConfig['openWebDavShareInRemoteFileBrowserCmd']="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" | python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName};\\\"\""
         siteConfig['displayWebDavAccessInfoInRemoteDialogCmd']='"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
 
     if (siteConfig.has_key('directConnect') and siteConfig['directConnect']):

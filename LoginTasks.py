@@ -26,10 +26,6 @@ class LoginProcess():
             self.loginprocess = loginprocess
             self._stop = Event()
             self.cmd=cmd
-            if sys.platform.startswith("win"):
-                self.cmd = self.cmd.replace('|','^|')
-                self.cmd = self.cmd.replace('<','^<')
-                self.cmd = self.cmd.replace('>','^>')
             self.regex=regex
             self.nextevent=nextevent
             self.errormessage=errormessage
@@ -102,10 +98,6 @@ class LoginProcess():
             self.loginprocess = loginprocess
             self._stop = Event()
             self.cmd=cmd
-            if sys.platform.startswith("win"):
-                self.cmd = self.cmd.replace('|','^|')
-                self.cmd = self.cmd.replace('<','^<')
-                self.cmd = self.cmd.replace('>','^>')
             if (not isinstance(regex,list)):
                 self.regex=[regex]
             else:
@@ -346,10 +338,6 @@ class LoginProcess():
             self._stop = Event()
             self.nextEvent = nextEvent
             self.cmd=cmd
-            if sys.platform.startswith("win"):
-                self.cmd = self.cmd.replace('|','^|')
-                self.cmd = self.cmd.replace('<','^<')
-                self.cmd = self.cmd.replace('>','^>')
             if (not isinstance(regex,list)):
                 self.regex=[regex]
             else:
