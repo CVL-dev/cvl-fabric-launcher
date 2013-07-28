@@ -18,7 +18,7 @@ class LoginProcess():
     """LoginProcess Class."""
             
     class runAsyncServerCommandThread(Thread):
-        # Execute a command (might be start tunnel, or foward agent) wait for a regex to mactch and post an event. 
+        # Execute a command (might be start tunnel, or forward agent), wait for a regex to match and post an event. 
         # The command will continue to execute (e.g. the tunnel will remain open) but processing will continue on other tasks
 
         def __init__(self,loginprocess,cmd,regex,nextevent,errormessage):
@@ -61,10 +61,20 @@ class LoginProcess():
                     logger.debug('exception: ' + str(traceback.format_exc()))
 
                 self.process = subprocess.Popen(cmd, universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, startupinfo=startupinfo)
+                lastNonEmptyLine = None
                 while (not self.stopped()):
+                    self.process.poll()
+                    if self.process.returncode is not None and (line is None or line==""):
+                        exceptionMessage = "Process exited prematurely:\n\n" + " ".join(cmd)
+                        if lastNonEmptyLine is not None:
+                            exceptionMessage = exceptionMessage + "\n\n" + lastNonEmptyLine
+                        raise Exception(exceptionMessage)
                     time.sleep(0.1)
                     line = self.process.stdout.readline()
                     if (line != None):
+                        logger.debug("runAsyncServerCommandThread: line: " + line)
+                        if line!="":
+                            lastNonEmptyLine = line
                         match = re.search(self.regex.format(**self.loginprocess.jobParams),line)
                         if (match and not self.stopped() and not self.loginprocess.canceled()):
                             wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
