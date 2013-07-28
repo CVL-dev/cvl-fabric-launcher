@@ -58,6 +58,7 @@ class LoginProcess():
                     # "AttributeError: 'module' object has no attribute 'STARTUPINFO'" even though
                     # the code is inside the 'if' block, hence the use of a dodgy try/except block.
                     startupinfo = None
+                    logger.debug('exception: ' + str(traceback.format_exc()))
 
                 self.process = subprocess.Popen(cmd, universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, startupinfo=startupinfo)
                 lastNonEmptyLine = None
@@ -107,7 +108,7 @@ class LoginProcess():
             self.requireMatch=requireMatch
     
         def stop(self):
-            logger.debug("stoping the runServerCommandThread cmd %s"%self.cmd.format(**self.loginprocess.jobParams))
+            logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmd.format(**self.loginprocess.jobParams))
             self._stop.set()
         
         def stopped(self):
@@ -1154,12 +1155,15 @@ class LoginProcess():
                     # Cancelation during the startup process is tricky. It conceivable although unlikely that we will have set the event to say the job is started, but not succesfully submitted a job.
                     # Therefore test if the stopCmd can actually be formated before attempting to execute it.
                     try:
-                        event.loginprocess.stopCmd.format(**event.loginprocess.jobParams)
+                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (event.loginprocess.siteConfig.stopCmd, event.loginprocess.jobParams,))
+                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + event.loginprocess.siteConfig.stopCmd.format(**event.loginprocess.jobParams))
+                        event.loginprocess.siteConfig.stopCmd.format(**event.loginprocess.jobParams)
                         t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopCmd,".",nextevent,"",requireMatch=False)
                         t.setDaemon(True)
                         t.start()
                         event.loginprocess.threads.append(t)
                     except:
+                        logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
                         pass
  
                 if (event.loginprocess.skd!=None): 
@@ -1198,7 +1202,7 @@ class LoginProcess():
                         logger.debug('loginProcessEvent: shutdown: attempting to stop thread ' + str(t))
                         t.stop()
                     except:
-                        pass
+                        logger.debug('exception: ' + str(traceback.format_exc()))
                 # Throw away the thread references. We've done all we can to ask them to stop at this point.
                 event.loginprocess.threads=[]
                 if (event.loginprocess.notify_window.progressDialog != None):
@@ -1441,10 +1445,12 @@ class LoginProcess():
                     try:
                         (rhours,rmin) = job['reqTime'].split(':')
                     except:
+                        logger.debug('exception: ' + str(traceback.format_exc()))
                         return None
                     try:
                         (ehours,emin) = job['elapTime'].split(':')
                     except:
+                        logger.debug('exception: ' + str(traceback.format_exc()))
                         ehours=0
                         emin=0
                     return (int(rhours)-int(ehours))*60*60 + (int(rmin)-int(emin))*60
@@ -1452,6 +1458,7 @@ class LoginProcess():
                     try:
                         (rhours,rmin) = job['reqTime'].split(':')
                     except:
+                        logger.debug('exception: ' + str(traceback.format_exc()))
                         return None
                     ehours=0
                     emin=0

@@ -586,6 +586,7 @@ def job_has_been_canceled(ssh_cmd, launcherMainFrame,job_id):
     try:
         return str(job_id) in run_ssh_command(ssh_cmd, 'ls ~/.vnc/shutdown_%d*' % (job_id,), launcherMainFrame,ignore_errors=True)[0]
     except:
+        logger.debug(traceback.format_exc())
         return None
 
 def remaining_visnode_walltime(launcherMainFrame):
@@ -604,61 +605,8 @@ def remaining_visnode_walltime(launcherMainFrame):
         else:
             return seconds_to_hours_minutes(float(run_ssh_command(sshCmd.format(username=launcherMainFrame.massiveUsername,host=launcherMainFrame.massiveLoginHost), 'qstat -f %d | grep Remaining' % (job_id,), launcherMainFrame,ignore_errors=True)[0].split()[-1]))
     except:
+        logger.debug(traceback.format_exc())
         return
-
-def deleteMassiveJobIfNecessary(launcherMainFrame,write_debug_log=False, update_status_bar=True, update_main_progress_bar=False, ignore_errors=False):
-    if launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary:
-        return
-
-    launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = True
-    if launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode==False:
-        if write_debug_log:
-            logger.debug('Possibly running qdel for MASSIVE Vis node...')
-        if launcherMainFrame.loginThread.massiveJobNumber != "0" and launcherMainFrame.loginThread.deletedMassiveJob == False:
-            if update_status_bar:
-                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "Deleting MASSIVE Vis node job.")
-            if update_main_progress_bar:
-                wx.CallAfter(launcherMainFrame.loginThread.updateProgressDialog, 6, "Deleting MASSIVE Vis node job...")
-            if write_debug_log:
-                logger.debug("qdel -a " + launcherMainFrame.loginThread.massiveJobNumber)
-            run_ssh_command(sshCmd.format(username=launcherMainFrame.massiveUsername,host=launcherMainFrame.massiveLoginHost),
-                            "qdel -a " + launcherMainFrame.loginThread.massiveJobNumber, launcherMainFrame,ignore_errors=ignore_errors)
-            launcherMainFrame.loginThread.deletedMassiveJob = True
-            if update_status_bar:
-                wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, "")
-    elif launcherMainFrame.massiveTabSelected and launcherMainFrame.massivePersistentMode:
-        if write_debug_log:
-            logger.debug('Not running qdel for massive visnode because persistent mode is active.')
-
-        wx.CallAfter(launcherMainFrame.loginDialogStatusBar.SetStatusText, 'Checking remaining visnode walltime...')
-        wx.CallAfter(launcherMainFrame.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
-
-        try:
-            remaining_hours, remaining_minutes = remaining_visnode_walltime(launcherMainFrame)
-            launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob = False
-        except:
-            launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob = True
-
-        if not launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob:
-            def showNotDeletingMassiveJobWarning():
-                launcherMainFrame.loginThread.warnedUserAboutNotDeletingJob = True
-                dlg = wx.MessageDialog(launcherMainFrame, "MASSIVE job will not be deleted because persistent mode is active.\n\nRemaining walltime %d hours %d minutes." % (remaining_hours, remaining_minutes,), "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-                dlg.Destroy()
-                launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = True
-            launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted = False
-
-            logger.debug('About to run showNotDeletingMassiveJobWarning()')
-            wx.CallAfter(showNotDeletingMassiveJobWarning)
-            while not launcherMainFrame.loginThread.showNotDeletingMassiveJobWarningCompleted:
-                time.sleep(0.1)
-
-            logger.debug('User clicked ok on showNotDeletingMassiveJobWarning()')
-    else:
-        if write_debug_log:
-            logger.debug('Not running qdel for massive visnode.')
-    launcherMainFrame.loginThread.runningDeleteMassiveJobIfNecessary = False
-
 
 def die_from_login_thread(launcherMainFrame,error_message, display_error_dialog=True, submit_log=False):
     if (launcherMainFrame.progressDialog != None):

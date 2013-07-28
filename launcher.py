@@ -674,6 +674,15 @@ class LauncherMainFrame(wx.Frame):
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
                 self.cvlLoginHost = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_login_host")
+
+                # If the user has a setting for cvl_login_host that is not in our approved list, just take
+                # the first known CVL login host.
+                if self.cvlLoginHost not in cvlLoginHosts:
+                    self.cvlLoginHost = cvlLoginHosts[0]
+
+                    cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
+                    with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                        cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
             else:
                 cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
@@ -926,6 +935,7 @@ class LauncherMainFrame(wx.Frame):
             latestVersionChanges = htmlCommentsSplit2[0].strip()
             self.contacted_massive_website = True
         except:
+            logger.debug(traceback.format_exc())
             self.contacted_massive_website = False
             dlg = wx.MessageDialog(self, "Warning: Could not contact the MASSIVE website to check version number.\n\n",
                                 "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
@@ -1165,6 +1175,7 @@ class LauncherMainFrame(wx.Frame):
                     # Get user's default massiveProject from Karaage:
                     self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
                 except:
+                    logger.debug(traceback.format_exc())
                     error_string = "Error contacting Massive to retrieve user's default project"
                     logger.error(error_string)
                     die_from_main_frame(launcherMainFrame,error_string)
@@ -1264,6 +1275,7 @@ class LauncherMainFrame(wx.Frame):
         try:
             os.mkdir(os.path.join(os.path.expanduser('~'), '.ssh'))
         except:
+            logger.debug(traceback.format_exc())
             pass
 
         self.sshpaths = cvlsshutils.sshKeyDist.sshpaths('MassiveLauncherKey',massiveLauncherConfig,massiveLauncherPreferencesFilePath)
@@ -1375,7 +1387,7 @@ class MyApp(wx.App):
                     wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
                                   "Error", wx.OK|wx.ICON_EXCLAMATION)
             else:
-                logger.debug(traceback.format_exc())
+                logger.debug('exception: ' + str(traceback.format_exc()))
                 dlg = wx.MessageDialog(launcherMainFrame,
                     "You can access the help later from the Help menu or from the Identity menu.",
                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
