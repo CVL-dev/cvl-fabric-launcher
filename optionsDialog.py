@@ -44,7 +44,7 @@ import wx
 class LauncherOptionsDialog(wx.Dialog):
     def __init__(self, parent, id, title, vncOptions):
         wx.Dialog.__init__(self, parent, id, title, 
-            style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
+            style=wx.DEFAULT_DIALOG_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
 
         self.vncOptions = vncOptions
 
