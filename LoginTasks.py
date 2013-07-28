@@ -69,8 +69,6 @@ class LoginProcess():
                         if lastNonEmptyLine is not None:
                             exceptionMessage = exceptionMessage + "\n\n" + lastNonEmptyLine
                         raise Exception(exceptionMessage)
-                    else:
-                        logger.debug("Return code is None.")
                     time.sleep(0.1)
                     line = self.process.stdout.readline()
                     logger.debug("runAsyncServerCommandThread: line: " + line)
