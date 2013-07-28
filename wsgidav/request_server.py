@@ -440,10 +440,15 @@ class RequestServer(object):
         # Only accept Depth: 0 (but assume this, if omitted)
         if environ.setdefault("HTTP_DEPTH", "0") != "0":
             self._fail(HTTP_BAD_REQUEST, "Depth must be '0'.")
-        
+       
+        # WsgiDAV can fail here if GVFS user renames a file or folder, if
+        # using the version of GVFS supplied with RHEL 6, see:
+        # https://jira-vre.its.monash.edu.au/secure/RapidBoard.jspa?rapidView=61&view=detail&selectedIssue=CVLFAB-675
         if provider.exists(path, environ):
             self._fail(HTTP_METHOD_NOT_ALLOWED,
-                       "MKCOL can only be executed on an unmapped URL.")         
+                       "MKCOL can only be executed on an unmapped URL.\n\n" +
+                       "path = " + str(path) + "\n" +
+                       "environ = " + str(environ))
 
         parentRes = provider.getResourceInst(util.getUriParent(path), environ)
         if not parentRes or not parentRes.isCollection:
@@ -793,6 +798,12 @@ class RequestServer(object):
         _destParams, _destQuery, _destFrag = urlparse(destinationHeader, 
                                                       allow_fragments=False) 
 
+        # Hack by JW, because HTTP_HOST was giving localhost:8080
+        # but destNetloc was giving username@localhost:8080, so
+        # this was failing:
+        # elif destNetloc and destNetloc.lower() != environ["HTTP_HOST"].lower():
+        destNetloc = destNetloc.split("@")[-1]
+
         if srcRes.isCollection:
             destPath = destPath.rstrip("/") + "/"
         
@@ -802,7 +813,9 @@ class RequestServer(object):
         elif destNetloc and destNetloc.lower() != environ["HTTP_HOST"].lower():
             # TODO: this should consider environ["SERVER_PORT"] also
             self._fail(HTTP_BAD_GATEWAY,
-                       "Source and destination must have the same host name.")
+                       "Source and destination must have the same host name.\n\n" +
+                       "destNetloc.lower() = " + destNetloc.lower() + "\n" +
+                       "environ['HTTP_HOST'].lower() = " + environ['HTTP_HOST'].lower())
         elif not destPath.startswith(provider.mountPath + provider.sharePath):
             # Inter-realm copying not supported, since its not possible to 
             # authentication-wise
