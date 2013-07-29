@@ -183,6 +183,8 @@ def buildSiteConfigDict(configName):
         #siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
         siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
         siteConfig['webDavTunnelRegEx']='tunnel_hello'
+        siteConfig['webDavIntermediateEphemeralPortCmd']='exit'
+        siteConfig['webDavIntermediateEphemeralPortRegEx']='.*'
     else:
         siteConfig['agentCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
         siteConfig['agentRegEx']='agent_hello'
@@ -191,6 +193,8 @@ def buildSiteConfigDict(configName):
         #siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -T -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         siteConfig['webDavTunnelRegEx']='tunnel_hello'
+        siteConfig['webDavIntermediateEphemeralPortCmd']='exit'
+        siteConfig['webDavIntermediateEphemeralPortRegEx']='.*'
     return siteConfig
     
 

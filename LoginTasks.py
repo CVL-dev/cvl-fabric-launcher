@@ -1031,16 +1031,11 @@ class LoginProcess():
                 event.Skip()
 
         def startWebDavServer(event):
-            # Only for MASSIVE for now.
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_SERVER')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
-                if ("m1" in event.loginprocess.jobParams['loginHost'] or "m2" in event.loginprocess.jobParams['loginHost']):
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT,event.loginprocess)
-                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT')
-                else:
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL,event.loginprocess)
-                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT')
 
                 if (not event.loginprocess.jobParams.has_key('localWebDavPortNumber')):
                     event.loginprocess.jobParams['localWebDavPortNumber']="0"
