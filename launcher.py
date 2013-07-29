@@ -701,18 +701,6 @@ class LauncherMainFrame(wx.Frame):
             self.cvlLoginHostComboBox.SetValue(self.cvlLoginHost)
 
 
-
-        # FIXME: Check how the Launcher dialog's 
-        # 1. persistent mode check box (MASSIVE tab),
-        # 2. automatic display number check box (CVL tab), and
-        # 3. VNC display number spin control (CVL tab)
-        # relate to the new LoginTasks.py's showReconnectDialog(event) method.
-        # If these widgets are being ignored by LoginTasks.py, then perhaps they should be removed?
-        # But if they are removed, will Paul be happy, given that he has made some requests about
-        # the Launcher remembering the last-used state of persistent mode on m1 and on m2?
-
-
-
         self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Resolution')
         self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
