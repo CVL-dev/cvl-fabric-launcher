@@ -1032,7 +1032,7 @@ class LauncherMainFrame(wx.Frame):
             os._exit(0)
 
 
-    def onOptions(self, event):
+    def onOptions(self, event, tabIndex=0):
 
         import optionsDialog
 
@@ -1048,11 +1048,11 @@ class LauncherMainFrame(wx.Frame):
                         value = False
                     self.vncOptions[key] = value
 
-        launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher Options", self.vncOptions)
-        launcherOptionsDialog.ShowModal()
+        self.launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "VNC Options", self.vncOptions, tabIndex)
+        self.launcherOptionsDialog.ShowModal()
 
-        if launcherOptionsDialog.okClicked:
-            self.vncOptions = launcherOptionsDialog.getVncOptions()
+        if self.launcherOptionsDialog.okClicked:
+            self.vncOptions = self.launcherOptionsDialog.getVncOptions()
 
             for key in self.vncOptions:
                 turboVncConfig.set("TurboVNC Preferences", key, self.vncOptions[key])
@@ -1372,12 +1372,45 @@ class MyApp(wx.App):
         launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
         launcherMainFrame.Show(True)
 
+        def usingPrivatePublicModeForTheFirstTime():
+            import getpass
+            localUsername = getpass.getuser()
+            dlg = wx.MessageDialog(launcherMainFrame,
+                    "You are currently logged onto this computer as \"" + localUsername + "\". " +
+                    "Is this a private account (only accessible by you) ?\n\n" +
+                    "(You can change this setting later, by opening the Privacy tab " +
+                    "of the VNC Options dialog.)",
+                    "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
+            if dlg.ShowModal()==wx.ID_YES:
+                launcherMainFrame.vncOptions['private_mode'] = True
+                turboVncConfig.set("TurboVNC Preferences", "private_mode", True)
+                launcherMainFrame.vncOptions['public_mode'] = False
+                turboVncConfig.set("TurboVNC Preferences", "public_mode", False)
+            else:
+                launcherMainFrame.vncOptions['public_mode'] = True
+                turboVncConfig.set("TurboVNC Preferences", "public_mode", True)
+                launcherMainFrame.vncOptions['private_mode'] = False
+                turboVncConfig.set("TurboVNC Preferences", "private_mode", False)
+
+            with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
+                turboVncConfig.write(turboVncPreferencesFileObject)
+
+        # The VNC Options are saved in "TurboVNC Preferences.cfg" for historical reasons.
+        if turboVncConfig.has_section("TurboVNC Preferences"):
+            if turboVncConfig.has_option("TurboVNC Preferences", "public_mode"):
+                logger.debug("Found public_mode in local settings.")
+            else:
+                usingPrivatePublicModeForTheFirstTime()
+        else:
+            usingPrivatePublicModeForTheFirstTime()
+
         def usingPrivateKeyForTheFirstTime():
             dlg = wx.MessageDialog(launcherMainFrame,
                     "It looks like this is the first time you've used " +
                     "this version of the Launcher, which requires you to " +
                     "use a private key, instead of a password.\n\n" +
-                    "Would you like to view the Launcher's help on this topic?",
+                    "Would you like to view the Launcher's help on this topic?\n\n" +
+                    "(Alternatively, you can access the help later from the Help menu or from the Identity menu.)",
                     "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
             if dlg.ShowModal()==wx.ID_YES:
                 from help.HelpController import helpController
@@ -1388,10 +1421,6 @@ class MyApp(wx.App):
                                   "Error", wx.OK|wx.ICON_EXCLAMATION)
             else:
                 logger.debug('exception: ' + str(traceback.format_exc()))
-                dlg = wx.MessageDialog(launcherMainFrame,
-                    "You can access the help later from the Help menu or from the Identity menu.",
-                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
 
         if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
             if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path"):

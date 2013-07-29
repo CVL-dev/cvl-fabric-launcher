@@ -41,12 +41,18 @@
 import sys
 import wx
 
+LAUNCHER_VNC_OPTIONS_CONNECTION_TAB_INDEX = 0
+LAUNCHER_VNC_OPTIONS_GLOBALS_TAB_INDEX = 1 
+LAUNCHER_VNC_OPTIONS_PRIVACY_TAB_INDEX = 2
+LAUNCHER_VNC_OPTIONS_SHARING_TAB_INDEX = 3
+
 class LauncherOptionsDialog(wx.Dialog):
-    def __init__(self, parent, id, title, vncOptions):
+    def __init__(self, parent, id, title, vncOptions, tabIndex):
         wx.Dialog.__init__(self, parent, id, title, 
             style=wx.DEFAULT_DIALOG_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
 
         self.vncOptions = vncOptions
+        self.tabIndex = tabIndex
 
         self.okClicked = False
        
@@ -857,9 +863,75 @@ class LauncherOptionsDialog(wx.Dialog):
 
         self.globalsPanel.Layout()
 
+        # Privacy tab
+
+        self.privacyPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
+        self.privacyPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=15, hgap=25)
+
+        self.privacyLeftBorderPanel = wx.Panel(self.privacyPanel, wx.ID_ANY)
+        self.privacyPanelSizer.Add(self.privacyLeftBorderPanel)
+
+        self.privacyMainPanel = wx.Panel(self.privacyPanel, wx.ID_ANY)
+        self.privacyPanelSizer.Add(self.privacyMainPanel, flag=wx.EXPAND|wx.TOP, border=15)
+        self.privacyMainPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
+
+        self.privacyRightBorderPanel = wx.Panel(self.privacyPanel, wx.ID_ANY)
+        self.privacyPanelSizer.Add(self.privacyRightBorderPanel)
+
+        # Private Public Mode group box
+
+        self.privatePublicModePanel = wx.Panel(self.privacyMainPanel, wx.ID_ANY)
+        self.privacyMainPanelSizer.Add(self.privatePublicModePanel, flag=wx.EXPAND)
+
+        self.privatePublicModeGroupBox = wx.StaticBox(self.privatePublicModePanel, wx.ID_ANY, label="Privacy Options")
+        self.privatePublicModeGroupBox.SetFont(self.smallFont)
+        self.privatePublicModeGroupBoxSizer = wx.StaticBoxSizer(self.privatePublicModeGroupBox, wx.VERTICAL)
+        self.privatePublicModePanel.SetSizer(self.privatePublicModeGroupBoxSizer)
+
+        self.innerPrivatePublicModePanel = wx.Panel(self.privatePublicModePanel, wx.ID_ANY)
+        self.innerPrivatePublicModePanelSizer = wx.FlexGridSizer(rows=3, cols = 1, vgap=5,hgap=5)
+        self.innerPrivatePublicModePanel.SetSizer(self.innerPrivatePublicModePanelSizer)
+
+        self.privateModeRadioButton = wx.RadioButton(self.innerPrivatePublicModePanel, wx.ID_ANY, "Private mode (a passphrase-protected private key file will remain on this computer after the Launcher exits)")
+        self.privateModeRadioButton.SetValue(True)
+        if 'private_mode' in vncOptions:
+            self.privateModeRadioButton.SetValue(vncOptions['private_mode'])
+        self.innerPrivatePublicModePanelSizer.Add(self.privateModeRadioButton)
+        self.privateModeRadioButton.SetFont(self.smallFont)
+
+        self.publicModeRadioButton = wx.RadioButton(self.innerPrivatePublicModePanel, wx.ID_ANY, "Public mode (to be used when running the Launcher from a shared \"Guest\" account)")
+        self.publicModeRadioButton.SetValue(False)
+        if 'public_mode' in vncOptions:
+            self.publicModeRadioButton.SetValue(vncOptions['public_mode'])
+        self.innerPrivatePublicModePanelSizer.Add(self.publicModeRadioButton)
+        self.publicModeRadioButton.SetFont(self.smallFont)
+
+        explanation = "The Launcher's preferred mode of operating (\"private mode\") involves creating a \"~/.ssh/MassiveLauncherKey\" private key file within your home directory, " + \
+                        "and using an SSH Agent (e.g. PuTTY's Pageant) to load the private key into memory, so that you don't need to enter your password " + \
+                        "every time you run the Launcher.\n\n" + \
+                        "If you are running the Launcher on a shared computer (e.g. if you are using a \"Guest\") account, then you should use \"public mode\". " + \
+                        "When running in \"public mode\", you will need to enter your password every time you run the Launcher.\n\n"
+                        #"Future versions of the Launcher may have the ability to manage multiple private key files from within a single " + \
+                        #"\"Guest\" account, so it may then be possible to run the Launcher in \"private mode\" from within a \"Guest\" " + \
+                        #"account."
+        self.privatePublicModeExplanationLabel = wx.StaticText(self.innerPrivatePublicModePanel, wx.ID_ANY, explanation)
+        width = self.privateModeRadioButton.GetSize().width
+        self.privatePublicModeExplanationLabel.Wrap(width)
+        self.innerPrivatePublicModePanelSizer.Add(self.privatePublicModeExplanationLabel, flag=wx.TOP, border=15)
+        self.privatePublicModeExplanationLabel.SetFont(self.smallFont)
+       
+        self.innerPrivatePublicModePanel.SetSizerAndFit(self.innerPrivatePublicModePanelSizer)
+        self.privatePublicModeGroupBoxSizer.Add(self.innerPrivatePublicModePanel, flag=wx.EXPAND)
+        self.privatePublicModePanel.SetSizerAndFit(self.privatePublicModeGroupBoxSizer)
+
+        self.privacyMainPanel.SetSizerAndFit(self.privacyMainPanelSizer)
+        self.privacyPanel.SetSizerAndFit(self.privacyPanelSizer)
+        self.privacyPanel.Layout()
+
+        # Sharing tab
+
         if False: # FIXME review this feature in the future
             # File Sharing tab
-
             self.fileSharingPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
             self.fileSharingPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=15, hgap=25)
 
@@ -917,10 +989,14 @@ class LauncherOptionsDialog(wx.Dialog):
         # Adding Connection tab and Globals tab to tabbed view
         self.tabbedView.AddPage(self.connectionPanel, "Connection")
         self.tabbedView.AddPage(self.globalsPanel, "Globals")
+        self.tabbedView.AddPage(self.privacyPanel, "Privacy")
         if False: # FIXME review this feature in the future
             if sys.platform.startswith("darwin") or sys.platform.startswith("linux"):
                 self.tabbedView.AddPage(self.fileSharingPanel, "File Sharing")
-       
+        self.tabbedView.AddPage(self.fileSharingPanel, "Sharing")
+
+        self.tabbedView.SetSelection(self.tabIndex)
+ 
         # Buttons panel
 
         self.buttonsPanel = wx.Panel(self.notebookContainerPanel, wx.ID_ANY)
@@ -983,6 +1059,8 @@ class LauncherOptionsDialog(wx.Dialog):
             self.vncOptions['writelog'] = self.writeLogToAFileCheckBox.GetValue()
             self.vncOptions['loglevel'] = str(self.verbosityLevelSpinCtrl.GetValue())
             self.vncOptions['logfile'] = self.vncViewerLogFilenameTextField.GetValue()
+        self.vncOptions['private_mode'] = self.privateModeRadioButton.GetValue()
+        self.vncOptions['public_mode'] = self.publicModeRadioButton.GetValue()
         self.Close(True)
       
     def enableZlibCompressionLevelWidgets(self):

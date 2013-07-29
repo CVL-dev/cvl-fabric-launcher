@@ -658,11 +658,9 @@ class LoginProcess():
             else:
                 event.Skip()
 
-
         def checkRunningServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CHECK_RUNNING_SERVER')
-                event.loginprocess.skd = None # SSH key distritbution is complete at this point.
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 3,"Looking for an existing desktop to connect to")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RECONNECT_DIALOG,event.loginprocess)
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.listAllCmd,event.loginprocess.siteConfig.listAllRegEx,nextevent,"Error determining if you have any existing jobs running",requireMatch=False)
@@ -994,8 +992,10 @@ class LoginProcess():
                 if (event.loginprocess.skd!=None): 
                         logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
                         event.loginprocess.skd.cancel()
-                newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
-                logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN')
+                #newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
+                #logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN')
+                newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST,event.loginprocess)
+                logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN_KEYDIST')
                 wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
                 if (event.string!=""):
                     if not sys.platform.startswith("darwin"):
@@ -1016,6 +1016,21 @@ class LoginProcess():
                     logger.dump_log(event.loginprocess.notify_window,submit_log=False)
                 else:
                     logger.dump_log(event.loginprocess.notify_window,submit_log=True)
+            else:
+                event.Skip()
+
+        def shutdownKeyDist(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHUTDOWN_KEYDIST')
+                if (event.loginprocess.skd!=None):
+                    logger.debug('loginProcessEvent.shutdownKeyDist: calling skd.shutdown()')
+                    event.loginprocess.skd.shutdown()
+                else:
+                    logger.debug('loginProcessEvent.checkRunningServer: Not calling skd.shutdown(), because event.loginprocess.skd is None.')
+                event.loginprocess.skd = None # SSH key distribution is complete at this point.
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
+                logger.debug('loginProcessEvent: shutdownKeyDist: posting EVT_LOGINPROCESS_SHUTDOWN')
+                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
             else:
                 event.Skip()
 
@@ -1078,7 +1093,8 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
                 KillCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_KILL_SERVER,event.loginprocess))
-                NOOPCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
+                #NOOPCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
+                NOOPCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST,event.loginprocess))
                 dialog = None
                 if (len(event.loginprocess.matchlist)>0):
                     logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)>0")
@@ -1211,6 +1227,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_COMPLETE = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHUTDOWN = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHOW_MESSAGE = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHOW_WARNING = wx.NewId()
@@ -1237,6 +1254,7 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getVNCPassword)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startViewer)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showKillServerDialog)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.shutdownKeyDist)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.shutdown)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.normalTermination)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.complete)
