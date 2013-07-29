@@ -78,7 +78,7 @@ You can find this option under the Identity menu.
 """
         self.newPassphrase="""
 It looks like this is the first time you're logging in to MASSIVE with this version of the launcher.
-To make loging in faster and more secure, the launcher will generate a local
+To make logging in faster and more secure, the launcher will generate a local
 passphrase protected key on your computer which is used to
 authenticate you and setup your MASSIVE desktop.
 
@@ -86,7 +86,7 @@ Please enter a new passphrase (twice to avoid typos) to protect your local key.
 After you've done this, your passphrase will be the primary method of
 authentication for the launcher."""
 
-        self.newPassphraseEmptyForbiden="Sorry, empty passphrases are forbiden.\n"+self.newPassphrase
+        self.newPassphraseEmptyForbiden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
         self.newPassphraseTooShort="Sorry, the passphrase must be at least 6 characters.\n"+self.newPassphrase
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
         self.newPassphraseTitle="Please enter a new Passphrase"

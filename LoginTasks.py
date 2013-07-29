@@ -71,8 +71,8 @@ class LoginProcess():
                         raise Exception(exceptionMessage)
                     time.sleep(0.1)
                     line = self.process.stdout.readline()
-                    logger.debug("runAsyncServerCommandThread: line: " + line)
                     if (line != None):
+                        logger.debug("runAsyncServerCommandThread: line: " + line)
                         if line!="":
                             lastNonEmptyLine = line
                         match = re.search(self.regex.format(**self.loginprocess.jobParams),line)
