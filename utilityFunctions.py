@@ -28,11 +28,11 @@ class sshKeyDistDisplayStrings():
         self.passwdPromptIncorrect="passwd incorrect. reenter"
         self.passphrasePrompt="enter key passphrase"
         self.passphrasePromptIncorrectl="Incorrect. enter key passphrase"
-        self.newPassphraseEmptyForbiden="new passphrase. empty passphrase forbiden"
+        self.newPassphraseEmptyForbidden="new passphrase. empty passphrase forbidden"
         self.newPassphraseTooShort="passphrase to short. enter a new passphrase"
         self.newPassphraseMismatch="passphrases don't match. enter new passphrases"
         self.newPassphrase="new passphrase for new key"
-        self.newPassphraseTitle="Please enter a new Passphrase"
+        self.newPassphraseTitle="Please enter a new passphrase"
 
 class sshKeyDistDisplayStringsCVL():
     def __init__(self):
@@ -49,7 +49,7 @@ You can find this option under the Identity menu.
         self.newPassphrase="""It looks like this is the first time you're using the CVL on this
 computer. To use the CVL, the launcher will generate a local
 passphrase protected key on your computer which is used to
-authenticate you and setup your remote CVL environment.
+authenticate you and set up your remote CVL environment.
 
 Please enter a new passphrase (twice to avoid typos) to protect your local key. 
 After you've done this, your passphrase will be the primary method of
@@ -60,10 +60,13 @@ WHY?
 This new method of authentication allows you to create file system
 mounts to remote computer systems, and in the future it will support
 launching remote HPC jobs."""
-        self.newPassphraseEmptyForbiden="Sorry, empty passphrases are forbiden.\n"+self.newPassphrase
+        self.newPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
+        self.createNewKeyDialogNewPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden."
         self.newPassphraseTooShort="Sorry, the passphrase must be at least six characters.\n"+self.newPassphrase
+        self.createNewKeyDialogNewPassphraseTooShort="The passphrase must be at least 6 characters."
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
-        self.newPassphraseTitle="Please enter a new Passphrase"
+        self.createNewKeyDialogNewPassphraseMismatch="Sorry, the passphrases don't match."
+        self.newPassphraseTitle="Please enter a new passphrase"
 
 class sshKeyDistDisplayStringsMASSIVE():
     def __init__(self):
@@ -76,20 +79,22 @@ Please enter the passphrase for you SSH Key
 If you have forgoten the passphrase for you key, you may need to delete it and create a new key.
 You can find this option under the Identity menu.
 """
-        self.newPassphrase="""
-It looks like this is the first time you're logging in to MASSIVE with this version of the launcher.
+        self.newPassphrase="""It looks like this is the first time you're logging in to MASSIVE with this version of the launcher.
 To make logging in faster and more secure, the launcher will generate a local
 passphrase protected key on your computer which is used to
-authenticate you and setup your MASSIVE desktop.
+authenticate you and set up your MASSIVE desktop.
 
 Please enter a new passphrase (twice to avoid typos) to protect your local key. 
 After you've done this, your passphrase will be the primary method of
 authentication for the launcher."""
 
-        self.newPassphraseEmptyForbiden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
+        self.newPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
+        self.createNewKeyDialogNewPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden."
         self.newPassphraseTooShort="Sorry, the passphrase must be at least 6 characters.\n"+self.newPassphrase
+        self.createNewKeyDialogNewPassphraseTooShort="The passphrase must be at least 6 characters."
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
-        self.newPassphraseTitle="Please enter a new Passphrase"
+        self.createNewKeyDialogNewPassphraseMismatch="Sorry, the passphrases don't match."
+        self.newPassphraseTitle="Please enter a new passphrase"
 
 def buildSiteConfigDict(configName):
     import re
