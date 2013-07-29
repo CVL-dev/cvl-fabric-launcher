@@ -63,9 +63,9 @@ launching remote HPC jobs."""
         self.newPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
         self.createNewKeyDialogNewPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden."
         self.newPassphraseTooShort="Sorry, the passphrase must be at least six characters.\n"+self.newPassphrase
-        self.createNewKeyDialogNewPassphraseTooShort="The passphrase must be at least 6 characters."
+        self.createNewKeyDialogNewPassphraseTooShort="Passphrase is too short."
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
-        self.createNewKeyDialogNewPassphraseMismatch="Sorry, the passphrases don't match."
+        self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
 
 class sshKeyDistDisplayStringsMASSIVE():
@@ -91,9 +91,9 @@ authentication for the launcher."""
         self.newPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
         self.createNewKeyDialogNewPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden."
         self.newPassphraseTooShort="Sorry, the passphrase must be at least 6 characters.\n"+self.newPassphrase
-        self.createNewKeyDialogNewPassphraseTooShort="The passphrase must be at least 6 characters."
+        self.createNewKeyDialogNewPassphraseTooShort="Passphrase is too short."
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
-        self.createNewKeyDialogNewPassphraseMismatch="Sorry, the passphrases don't match."
+        self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
 
 def buildSiteConfigDict(configName):
