@@ -39,7 +39,7 @@ class sshKeyDistDisplayStringsCVL():
         self.passwdPrompt="""Please enter the password for your CVL account.
 This is the password you entered when you requested an account
 at the website https://web.cvl.massive.org.au/users"""
-        self.passwdPromptIncorrect="Sorry, that password was incorrect"+self.passwdPrompt
+        self.passwdPromptIncorrect="Sorry, that password was incorrect.\n"+self.passwdPrompt
         self.passphrasePrompt="Please enter the passphrase for your SSH key"
         self.passphrasePromptIncorrect="""Sorry, that passphrase was incorrect.
 Please enter the passphrase for you SSH Key
@@ -71,7 +71,7 @@ launching remote HPC jobs."""
 class sshKeyDistDisplayStringsMASSIVE():
     def __init__(self):
         self.passwdPrompt="""Please enter the password for your MASSIVE account."""
-        self.passwdPromptIncorrect="Sorry, that password was incorrect"+self.passwdPrompt
+        self.passwdPromptIncorrect="Sorry, that password was incorrect.\n"+self.passwdPrompt
         self.passphrasePrompt="Please enter the passphrase for your SSH key"
         self.passphrasePromptIncorrect="""
 Sorry, that passphrase was incorrect.

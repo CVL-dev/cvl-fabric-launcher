@@ -5,7 +5,6 @@
 # You may have to change PYINSTALLERDIR to point to the directory where
 # pyinstaller was unpacked.
 
-#PYINSTALLERDIR=`pwd`/pyinstaller-1.5.1
 PYINSTALLERDIR=`pwd`/pyinstaller-2.0
 
 set -o nounset
@@ -15,12 +14,6 @@ VERSION=`grep '^version_number' launcher_version_number.py | cut -f 2 -d '"'`
 ARCHITECTURE=`uname -m | sed s/x86_64/amd64/g | sed s/i686/i386/g`
 
 rm -fr dist
-
-# PyInstaller 1.5.1
-#python $PYINSTALLERDIR/Configure.py
-#rm -f launcher.spec
-#python ${PYINSTALLERDIR}/Makespec.py launcher.py
-#python ${PYINSTALLERDIR}/Build.py launcher.spec
 
 python create_commit_def.py
 
