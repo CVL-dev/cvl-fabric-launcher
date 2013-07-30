@@ -8,15 +8,15 @@ sys.path.append(r"c:\cvl-fabric-launcher-sikuli\sikuli-tests")
 import utils
 
 def set_private_pc():
-    if exists("1375141803291.png"):
-        click("1375141816540.png")
+    wait("1375141803291.png")
+    click("1375141816540.png")
 
 def first_time_help():
-    if exists("1375142069627.png"):
-        click("1375142076539.png")
+    wait("1375142069627.png")
+    click("1375142076539.png")
 
-        wait("1375142189042.png")
-        click("1375142196251.png")
+    # wait("1375142189042.png")
+    # click("1375142196251.png")
     
 def enter_passphrase():
     # The launcher is asking for the user's passphrase for their set up.
@@ -91,7 +91,7 @@ DELETE_LOCAL_CONFIG = True
 if DELETE_LOCAL_CONFIG:
     # Nuke the user's launcher config
     utils.delete_launcher_config()
- 
+
 # Nuke charade/pageant
 utils.kill_pageant_and_charade()
 
@@ -100,14 +100,11 @@ utils.kill_pageant_and_charade()
 # just using a hacky script that calls the normal CPython implementation:
 os.popen(r'C:\Python27\python.exe "c:\cvl-fabric-launcher-sikuli\sikuli-tests\delete_dot_ssh.py" ' + ' m2.massive.org.au ' + credentials.massive_username + ' ' + credentials.massive_password)
 
-sys.exit(0)
-
 # Start the Launcher
-os.popen(r'"C:\Program Files\MASSIVE Launcher\launcher.exe"')
+os.popen(r'"C:\Program Files\MASSIVE Launcher\launcher.exe"') # have to run an installed binary, otherwise all kinds of files can't be found
 sleep(2)
 
-# FIXME tidy up this kind of loop
-for _ in range(4):
+if DELETE_LOCAL_CONFIG:
     set_private_pc()
     first_time_help()
 
@@ -116,7 +113,7 @@ wait("1375057960522.png")
 
 # Enter the username:
 click("1375053541177.png")
-for _ in range(20):
+for _ in range(10):
     type(Key.BACKSPACE)
     type(Key.DELETE)
 type(credentials.massive_username)
@@ -149,6 +146,18 @@ for _ in range(120*10):
 
 print 'got here'
 utils.kill_launcher()
+
+# Finally, check that the visnode job was canceled.
+time.sleep(5) # give Massive time to cancel the visnode job
+stdout, stderr = subprocess.Popen(['C:\\Python27\\python.exe',  "c:\cvl-fabric-launcher-sikuli\sikuli-tests\check_massive_no_visnode_jobs_running.py", 'm2.massive.org.au', credentials.massive_username, credentials.massive_password], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+stdout = str(stdout)
+stderr = str(stderr)
+
+if stderr != '':
+    print 'Error, found visnode job running:', stderr
+else:
+    print 'success? :-)'
+
 
 
 
