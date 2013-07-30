@@ -90,23 +90,17 @@ DELETE_LOCAL_CONFIG = True
 
 if DELETE_LOCAL_CONFIG:
     # Nuke the user's launcher config
-    # print utils.delete_launcher_config()
-    print 'delete_launcher_config...'
-
-    username = os.path.split(os.path.expanduser('~'))[-1]
-
-    import glob
-    for file in glob.glob(r"\Documents and Settings\%s\Local Settings\Application Data\Monash University\MASSIVE Launcher\*.*" % (username,)):
-        print file
-        os.unlink(file)
-
+    utils.delete_launcher_config()
+ 
 # Nuke charade/pageant
 utils.kill_pageant_and_charade()
 
 # Delete ~/.ssh on the server
 # Can't for the life of me get trilead-ssh2 to work with Jython, so for the moment
 # just using a hacky script that calls the normal CPython implementation:
-os.popen(r'C:\Python27\python.exe "c:\cvl-fabric-launcher-sikuli\sikuli-tests\delete_dot_ssh.py" ' + credentials.massive_username + ' ' + credentials.massive_password)
+os.popen(r'C:\Python27\python.exe "c:\cvl-fabric-launcher-sikuli\sikuli-tests\delete_dot_ssh.py" ' + ' m2.massive.org.au ' + credentials.massive_username + ' ' + credentials.massive_password)
+
+sys.exit(0)
 
 # Start the Launcher
 os.popen(r'"C:\Program Files\MASSIVE Launcher\launcher.exe"')

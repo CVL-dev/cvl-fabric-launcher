@@ -21,6 +21,7 @@ def kill_pageant_and_charade():
             os.popen('TASKKILL /PID ' + str(pid) +' /F')
 
 def kill_launcher():
+    print 'Killing any launcher processes...'
     username = os.path.split(os.path.expanduser('~'))[-1]
 
     lines = os.popen('tasklist /FI "USERNAME eq %s"' % username).read().splitlines()
