@@ -1072,7 +1072,9 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
 
-                event.loginprocess.jobParams['remoteWebDavPortNumber'] = 8080 # FIXME: Hard-coded remote WebDAV port number for now!
+                #event.loginprocess.jobParams['remoteWebDavPortNumber'] = 8080 # FIXME: Hard-coded remote WebDAV port number for now!
+                # remoteWebDavPortNumber is now determined using /usr/local/desktop/get_ephemeral_port_number.py on MASSIVE
+                # and from /usr/local/bin/get_ephemeral_port_number.py on the CVL.
                 logger.debug('loginProcessEvent: startWebDavTunnel: set remoteWebDavPortNumber to ' + str(event.loginprocess.jobParams['remoteWebDavPortNumber']))
 
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER,event.loginprocess)
