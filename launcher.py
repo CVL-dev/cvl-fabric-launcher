@@ -281,7 +281,6 @@ class LauncherMainFrame(wx.Frame):
 
         self.sites={}
         visible={}
-        #siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         self.sites['Desktop on m1.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m1"),visible)
         self.sites['Desktop on m2.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m2"),visible)
         self.sites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("cvl"),visible)
@@ -862,7 +861,8 @@ class siteConfig():
             return string
             
         
-    def __init__(self,siteConfigDict):
+    def __init__(self,siteConfigDict,visibilityDict):
+        self.loginHost=None
         self.listAll=siteConfig.cmdRegEx()
         self.running=siteConfig.cmdRegEx()
         self.stop=siteConfig.cmdRegEx()
@@ -1030,6 +1030,7 @@ def buildSiteConfigCmdRegExDict(configName):
         cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
     else:
+        siteConfigDict['loginHost']=configName
         siteConfigDict['listAll']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
         siteConfigDict['startServer']=siteConfig.cmdRegEx('\"/usr/local/bin/vncsession --vnc turbovnc --geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
         siteConfigDict['stop']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -kill {vncDisplay}\'')
