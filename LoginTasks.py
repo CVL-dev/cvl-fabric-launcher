@@ -1055,7 +1055,6 @@ class LoginProcess():
                 event.Skip()
 
         def getWebDavIntermediateEphemeralPort(event):
-            # Only for MASSIVE for now.
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_EPHEMERAL_PORT')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
@@ -1069,7 +1068,6 @@ class LoginProcess():
                 event.Skip()
 
         def startWebDavTunnel(event):
-            # Only for MASSIVE for now.
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
@@ -1106,6 +1104,11 @@ class LoginProcess():
                 event.Skip()
 
         def displayWebDavAccessInfoInRemoteDialog(event):
+            """
+            This function may actually just write the WebDAV access info
+            to a file, instead of displaying it in a dialog, depending on:
+            siteConfig.displayWebDavAccessInfoInRemoteDialogCmd
+            """
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 10, "Sharing your home directory with the remote server")
@@ -1261,8 +1264,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
                 KillCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_KILL_SERVER,event.loginprocess))
-                #NOOPCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
-                NOOPCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST,event.loginprocess))
+                ShutdownKeyDistCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST,event.loginprocess))
                 dialog = None
                 if (len(event.loginprocess.matchlist)>0):
                     logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)>0")
@@ -1282,9 +1284,9 @@ class LoginProcess():
                             timestring = "%s minute"%minutes
                         else:
                             timestring = "%s minutes"%minutes
-                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,ShutdownKeyDistCallback)
                     elif ("m1" not in event.loginprocess.jobParams['loginHost'] and "m2" not in event.loginprocess.jobParams['loginHost']):
-                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,NOOPCallback)
+                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownKeyDistCallback)
                     else:
                         logger.debug("showKillServerDialog: timeRemaining is None and ('m1' or 'm2' is in loginHost)")
                     if dialog:
@@ -1294,7 +1296,7 @@ class LoginProcess():
                         logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
                 else:
                     logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)=0")
-                    wx.CallAfter(NOOPCallback)
+                    wx.CallAfter(ShutdownKeyDistCallback)
             else:
                 event.Skip()
 
@@ -1309,7 +1311,8 @@ class LoginProcess():
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS,event.loginprocess)
                 else:
                     logger.debug("caught an EVT_LOGINPROCESS_KILL_SERVER")
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
+                    #nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST,event.loginprocess)
                 if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
                     t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopCmdForRestart,".*",nextevent,"",requireMatch=False)
                 else:
