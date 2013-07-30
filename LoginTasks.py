@@ -28,9 +28,11 @@ class LoginProcess():
             self.cmdRegex=cmdRegex
             self.nextevent=nextevent
             self.errormessage=errormessage
+            self.process=None
     
         def stop(self):
-            self.process.stdin.write("exit\n")
+            if self.process!=None:
+                self.process.stdin.write("exit\n")
             self._stop.set()
         
         def stopped(self):
@@ -77,19 +79,13 @@ class LoginProcess():
                         logger.debug("runAsyncServerCommandThread: line: " + line)
                         if line!="":
                             lastNonEmptyLine = line
-<<<<<<< HEAD
                         for regex in self.cmdRegex.regex:
                             match = re.search(regex.format(**self.loginprocess.jobParams),line)
                             if (match and not self.stopped() and not self.loginprocess.canceled()):
+                                logger.debug("runAsyncServerCommandThread: Found match for " + regex.format(**self.loginprocess.jobParams))
                                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
-=======
-                        match = re.search(self.regex.format(**self.loginprocess.jobParams),line)
-                        if (match and not self.stopped() and not self.loginprocess.canceled()):
-                            logger.debug("runAsyncServerCommandThread: Found match for " + self.regex.format(**self.loginprocess.jobParams))
-                            wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
->>>>>>> 6e129751fb206a04cd886e788118e6b0e8a44af6
                     else:
-                        logger.debug("runAsyncServerCommandThread: Didn't find match for " + self.regex.format(**self.loginprocess.jobParams))
+                        logger.debug("runAsyncServerCommandThread: Didn't find match for " + regex.format(**self.loginprocess.jobParams))
                         if (not success):
                             self.loginprocess.cancel(errormessage)
                     if self.stopped():
@@ -113,7 +109,8 @@ class LoginProcess():
                 self.requireMatch=False
     
         def stop(self):
-            logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
+            if (self.cmdRegex.cmd!= None):
+                logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
             self._stop.set()
         
         def stopped(self):
@@ -147,7 +144,7 @@ class LoginProcess():
             event=None
             oneMatchFound=False
             if (messages.has_key('error')):
-                logger.error("canceling the loginprocess due to errors in the output of the command: %s %s"%(self.cmd.format(**self.loginprocess.jobParams),messages))
+                logger.error("canceling the loginprocess due to errors in the output of the command: %s %s"%(self.cmdRegex.cmd.format(**self.loginprocess.jobParams),messages))
                 self.loginprocess.cancel(concat)
             elif (messages.has_key('warn') or messages.has_key('info')):
                 if not sys.platform.startswith("darwin"):
@@ -173,7 +170,7 @@ class LoginProcess():
                         else:
                             logger.debug('runServerCommand did not match the regex %s %s' % (regex.format(**self.loginprocess.jobParams),line))
             if (not oneMatchFound and self.requireMatch):
-                    for regex in self.regex:
+                    for regex in self.cmdRegex.regex:
                         logger.error("no match found for the regex %s"%regex.format(**self.loginprocess.jobParams))
                     self.loginprocess.cancel(self.errormessage)
             if (not self.stopped() and self.nextevent!=None and not self.loginprocess.canceled()):
@@ -864,6 +861,7 @@ class LoginProcess():
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER,event.loginprocess)
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.startServer,nextevent,"Error starting the VNC server. This could occur")
                 t.setDaemon(False)
+                logger.debug('setting started_job so that we will qdel in the event of a cancel event')
                 event.loginprocess.started_job.set()
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1026,20 +1024,9 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_OTP):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_OTP')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one-time password for the VNC server")
-<<<<<<< HEAD
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
-                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_SERVER')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.otp,nextevent,"Unable to determine the one-time password for the VNC session")
-=======
-                if 'share_local_home_directory_on_remote_desktop' in event.loginprocess.notify_window.vncOptions and \
-                        event.loginprocess.notify_window.vncOptions['share_local_home_directory_on_remote_desktop']:
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
-                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_SERVER')
-                else:
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
-                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.otpCmd,event.loginprocess.siteConfig.otpRegEx,nextevent,"Unable to determine the one-time password for the VNC session")
->>>>>>> 6e129751fb206a04cd886e788118e6b0e8a44af6
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
