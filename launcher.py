@@ -669,7 +669,7 @@ class LauncherMainFrame(wx.Frame):
         self.cvlLoginHost = ""
         cvlLoginHosts = ["login.cvl.massive.org.au","Huygens on the CVL"]
         defaultCvlHost = "login.cvl.massive.org.au"
-        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_READONLY)
+        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1))
         self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
@@ -1291,7 +1291,7 @@ class LauncherMainFrame(wx.Frame):
         jobParams['nodes']=nodes
         jobParams['wallseconds']=int(hours)*60*60
         configName=host
-        siteConfigDict = buildSiteConfigDict(configName) #eventually this will be loaded from json downloaded from a website
+        siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
         self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,self,jobParams,self.sshpaths,siteConfig=siteConfigObj,autoExit=autoExit)
         if sys.platform.startswith("win"):
@@ -1315,8 +1315,92 @@ class LauncherMainFrame(wx.Frame):
 
 
 class siteConfig():
+    class cmdRegEx():
+        def __init__(self,cmd=None,regex=None,requireMatch=True,loop=False,async=False):
+
+            self.cmd=cmd
+            if (not isinstance(regex,list)):
+                self.regex=[regex]
+            else:
+                self.regex=regex
+            self.loop=loop
+            self.async=async
+            self.requireMatch=requireMatch
+            if regex==None:
+                self.requireMatch=False
+        
     def __init__(self,siteConfigDict):
+        self.listAll=siteConfig.cmdRegEx()
+        self.running=siteConfig.cmdRegEx()
+        self.stop=siteConfig.cmdRegEx()
+        self.stopForRestart=siteConfig.cmdRegEx()
+        self.execHost=siteConfig.cmdRegEx()
+        self.startServer=siteConfig.cmdRegEx()
+        self.runSanityCheck=siteConfig.cmdRegEx()
+        self.setDisplayResolution=siteConfig.cmdRegEx()
+        self.getProjects=siteConfig.cmdRegEx()
+        self.showStart=siteConfig.cmdRegEx()
+        self.vncDisplay=siteConfig.cmdRegEx()
+        self.otp=siteConfig.cmdRegEx()
+        self.directConnect=siteConfig.cmdRegEx()
+        self.messageRegeexs=siteConfig.cmdRegEx()
         self.__dict__.update(siteConfigDict)
+
+def buildSiteConfigCmdRegExDict(configName):
+    import re
+    siteConfigDict={}
+    siteConfigDict['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
+    if ("m1" in configName or "m2" in configName):
+        siteConfigDict['listAll']=siteConfig.cmdRegEx('qstat -u {username}','^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$',requireMatch=False)
+        siteConfigDict['running']=siteConfig.cmdRegEx('qstat -u {username}','^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$')
+        siteConfigDict['stop']=siteConfig.cmdRegEx('\'qdel -a {jobid}\'')
+        siteConfigDict['stopForRestart']=siteConfig.cmdRegEx('qdel {jobid} ; sleep 5\'')
+        siteConfigDict['execHost']=siteConfig.cmdRegEx('qpeek {jobidNumber}','\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$')
+        siteConfigDict['startServer']=siteConfig.cmdRegEx("\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'","^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$")
+        siteConfigDict['runSanityCheck']=siteConfig.cmdRegEx("\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'")
+        siteConfigDict['setDisplayResolution']=siteConfig.cmdRegEx("\'/usr/local/desktop/set_display_resolution.sh {resolution}\'")
+        siteConfigDict['getProjects']=siteConfig.cmdRegEx('\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"','^(?P<group>\S+)\s+.*$')
+        siteConfigDict['showStart']=siteConfig.cmdRegEx("showstart {jobid}","Estimated Rsv based start .*?on (?P<estimatedStart>.*)")
+        siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"','^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$')
+        siteConfigDict['otp']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
+        siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"','agent_hello')
+        siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello')
+    elif ('cvl' in configName or 'CVL' in configName or 'Huygens' in configName):
+        siteConfigDict['directConnect']=True
+        cmd='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
+        regex='^\s*execHost (?P<execHost>\S+)\s*$'
+        siteConfigDict['execHost'] = siteConfig.cmdRegEx(cmd,regex)
+        cmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
+        regex='^\s*(?P<group>\S+)\s*$'
+        siteConfigDict['getProjects'] = siteConfig.cmdRegEx(cmd,regex)
+        cmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
+        regex='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
+        siteConfigDict['listAll']=siteConfig.cmdRegEx(cmd,regex,requireMatch=False)
+        cmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
+        regex='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
+        siteConfigDict['running']=siteConfig.cmdRegEx(cmd,regex)
+        if ("Hugyens" in configName):
+            cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -q huygens -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
+        else:
+            cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
+        regex="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
+        siteConfigDict['startServer']=siteConfig.cmdRegEx(cmd,regex)
+        siteConfigDict['stop']=siteConfig.cmdRegEx('\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"','\"module load pbs ; module load maui ; qdel {jobidNumber}\"')
+        siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('" /usr/bin/ssh {execHost} \' cat /var/spool/torque/spool/{jobidNumber}.*\'"' ,'^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
+        cmd= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
+        regex='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+        siteConfigDict['otp']=siteConfig.cmdRegEx(cmd,regex)
+        siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "','agent_hello')
+        siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"','tunnel_hello')
+    else:
+        siteConfigDict['listAll']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
+        siteConfigDict['startServer']=siteConfig.cmdRegEx('\"/usr/local/bin/vncsession --vnc turbovnc --geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
+        siteConfigDict['stop']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -kill {vncDisplay}\'')
+        siteConfigDict['otp']= siteConfig.cmdRegEx('\'module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
+        siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {loginHost} "echo agent_hello; bash "','agent_hello')
+        siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello')
+
+    return siteConfigDict
 
 class LauncherStatusBar(wx.StatusBar):
     def __init__(self, parent):

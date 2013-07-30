@@ -91,6 +91,8 @@ authentication for the launcher."""
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
         self.newPassphraseTitle="Please enter a new Passphrase"
 
+
+
 def buildSiteConfigDict(configName):
     import re
     siteConfig={}
@@ -106,12 +108,12 @@ def buildSiteConfigDict(configName):
         siteConfig['execHostCmd']='qpeek {jobidNumber}'
         siteConfig['execHostRegEx']='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
         siteConfig['startServerCmd']="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
+        siteConfig['startServerRegEx']="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
         siteConfig['runSanityCheckCmd']="\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'"
         siteConfig['setDisplayResolutionCmd']="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
         siteConfig['getProjectsCmd']='\"gbalance -u {username} --show Name | tail -n +3\"'
         siteConfig['getProjectsCmd']='\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"'
         siteConfig['getProjectsRegEx']='^(?P<group>\S+)\s+.*$'
-        siteConfig['startServerRegEx']="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
         siteConfig['showStartCmd']="showstart {jobid}"
         siteConfig['showStartRegEx']="Estimated Rsv based start .*?on (?P<estimatedStart>.*)"
         siteConfig['vncDisplayCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
@@ -120,6 +122,25 @@ def buildSiteConfigDict(configName):
         siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
         siteConfig['directConnect']=False
 
+    elif ("118.138.241.58" in configName):
+        siteConfig['directConnect']=True
+        siteConfig['loginHost']='118.138.241.58'#fill in the ip address of cvldevl
+        siteConfig['execHostCmd'] = 'echo execHost {loginHost}'
+        siteConfig['execHostRegEx']='^\s*execHost (?P<execHost>\S+)$'
+        siteConfig['getProjectsCmd']='exit'
+        siteConfig['getProjectsRegEx']=".*"
+        siteConfig['listAllCmd']='\'module load turbovnc ; vncserver -list\''
+        siteConfig['listAllRegEx']='^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$'
+        siteConfig['runningCmd']="echo running"
+        siteConfig['runningRegEx']="(?P<running>running)"
+        siteConfig['startServerCmd']='\"/usr/local/bin/vncsession --vnc turbovnc --geometry {resolution}\"'
+        siteConfig['startServerRegEx']='^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$'
+        siteConfig['stopCmd']='\'module load turbovnc ; vncserver -kill {vncDisplay}\''
+        siteConfig['vncDisplayCmd']="\'module load turbovnc ; vncserver -list\'"
+        siteConfig['vncDisplayRegEx']='^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$'
+        siteConfig['otpCmd']= '\'module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\''
+        siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+        siteConfig['runSanityCheckCmd']="exit"
     else:
         siteConfig['directConnect']=True
         siteConfig['execHostCmd']='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'

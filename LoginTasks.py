@@ -21,12 +21,11 @@ class LoginProcess():
         # Execute a command (might be start tunnel, or forward agent), wait for a regex to match and post an event. 
         # The command will continue to execute (e.g. the tunnel will remain open) but processing will continue on other tasks
 
-        def __init__(self,loginprocess,cmd,regex,nextevent,errormessage):
+        def __init__(self,loginprocess,cmdRegex,nextevent,errormessage):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
-            self.cmd=cmd
-            self.regex=regex
+            self.cmdRegex=cmdRegex
             self.nextevent=nextevent
             self.errormessage=errormessage
     
@@ -38,11 +37,14 @@ class LoginProcess():
             return self._stop.isSet()
 
         def run(self):
+            if (self.cmdRegex.cmd==None):
+                wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
+                return
             try:
 
                 # Not 100% sure if this is necessary on Windows vs Linux. Seems to break the
                 # Windows version of the launcher, but leaving in for Linux/OSX.
-                cmd=self.cmd.format(**self.loginprocess.jobParams)
+                cmd=self.cmdRegex.cmd.format(**self.loginprocess.jobParams)
                 logger.debug("running %s"%cmd)
                 if sys.platform.startswith("win"):
                     pass
@@ -75,9 +77,10 @@ class LoginProcess():
                         logger.debug("runAsyncServerCommandThread: line: " + line)
                         if line!="":
                             lastNonEmptyLine = line
-                        match = re.search(self.regex.format(**self.loginprocess.jobParams),line)
-                        if (match and not self.stopped() and not self.loginprocess.canceled()):
-                            wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
+                        for regex in self.cmdRegex.regex:
+                            match = re.search(regex.format(**self.loginprocess.jobParams),line)
+                            if (match and not self.stopped() and not self.loginprocess.canceled()):
+                                wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
                     else:
                         if (not success):
                             self.loginprocess.cancel(errormessage)
@@ -90,37 +93,39 @@ class LoginProcess():
                 return
 
     class runServerCommandThread(Thread):
-        def __init__(self, loginprocess, cmd, regex, nextevent,errormessage, requireMatch=True):
+        def __init__(self, loginprocess, cmdRegex, nextevent,errormessage, requireMatch=True):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
-            self.cmd=cmd
-            if (not isinstance(regex,list)):
-                self.regex=[regex]
-            else:
-                self.regex=regex
+            self.cmdRegex=cmdRegex
             self.nextevent=nextevent
             self.errormessage=errormessage
             self.requireMatch=requireMatch
+            if (self.cmdRegex.regex==None or self.cmdRegex.regex[0]==None or self.cmdRegex.requireMatch==False):
+                self.requireMatch=False
     
         def stop(self):
-            logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmd.format(**self.loginprocess.jobParams))
+            logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
             self._stop.set()
         
         def stopped(self):
             return self._stop.isSet()
 
         def run(self):
-            logger.debug("runServerCommandThread: self.cmd = " + self.cmd)
-            logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) = " + self.cmd.format(**self.loginprocess.jobParams))
+            if self.cmdRegex.cmd==None:
+                if (not self.stopped() and self.nextevent!=None and not self.loginprocess.canceled()):
+                    wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
+                return
+            logger.debug("runServerCommandThread: self.cmd = " + self.cmdRegex.cmd)
+            logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) = " + self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
             sshCmd = self.loginprocess.sshCmd
             self.loginprocess.matchlist=[]
             try:
-                (stdout, stderr) = run_ssh_command(sshCmd.format(**self.loginprocess.jobParams), self.cmd.format(**self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
+                (stdout, stderr) = run_ssh_command(sshCmd.format(**self.loginprocess.jobParams), self.cmdRegex.cmd.format(**self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
                 logger.debug("runServerCommandThread: stderr = " + stderr)
                 logger.debug("runServerCommandThread: stdout = " + stdout)
             except Exception as e:
-                logger.error("could not format the command in runServerCommandThread %s)"%self.cmd)
+                logger.error("could not format the command in runServerCommandThread %s)"%self.cmdRegex.cmd)
                 logger.error("the error returned was %s"%e)
                 self.loginprocess.cancel("An error occured. I'm sorry I can't give any more detailed information")
                 return
@@ -149,7 +154,7 @@ class LoginProcess():
                     dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                 wx.CallAfter(dlg.Show)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
-                for regex in self.regex:
+                for regex in self.cmdRegex.regex:
                     if (regex != None):
                         match=re.search(regex.format(**self.loginprocess.jobParams),line)
                         if (match):
@@ -261,16 +266,12 @@ class LoginProcess():
 
 
     class runLoopServerCommandThread(Thread):
-        def __init__(self,loginprocess,cmd,regex,nextEvent,errorstring):
+        def __init__(self,loginprocess,cmdRegex,nextEvent,errorstring):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
             self.nextEvent = nextEvent
-            self.cmd=cmd
-            if (not isinstance(regex,list)):
-                self.regex=[regex]
-            else:
-                self.regex=regex
+            self.cmdRegex=cmdRegex
             self.errorstring=errorstring
             for k, v in self.__dict__.iteritems():
                 logger.debug('runLoopServerCommandThread properties: %s = %s' % (str(k), str(v),))
@@ -283,6 +284,10 @@ class LoginProcess():
             return self._stop.isSet()
 
         def run(self):
+            if self.cmdRegex.cmd==None:
+                if (not self.stopped() and self.nextEvent!=None and not self.loginprocess.canceled()):
+                    wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextEvent)
+                return
             notStarted=True
             tsleep=0
             sleepperiod=1
@@ -291,16 +296,16 @@ class LoginProcess():
             jobParams=self.loginprocess.jobParams
             matched=False
             matchedDict={}
-            for regex in self.regex:
+            for regex in self.cmdRegex.regex:
                 matchedDict[regex]=False
-            logger.debug("runLoopServerCommandThread: self.cmd = " + self.cmd)
-            logger.debug("runLoopServerCommandThread: self.cmd.format(**jobParams) = " + self.cmd.format(**jobParams))
+            logger.debug("runLoopServerCommandThread: self.cmd = " + self.cmdRegex.cmd)
+            logger.debug("runLoopServerCommandThread: self.cmd.format(**jobParams) = " + self.cmdRegex.cmd.format(**jobParams))
             while (not matched and not self.stopped()):
                 tsleep+=sleepperiod
                 if (not self.stopped()):
                     time.sleep(sleepperiod)
                 try:
-                    (stdout,stderr) = run_ssh_command(sshCmd.format(**jobParams),self.cmd.format(**jobParams),ignore_errors=True)
+                    (stdout,stderr) = run_ssh_command(sshCmd.format(**jobParams),self.cmdRegex.cmd.format(**jobParams),ignore_errors=True)
                     logger.debug("runLoopServerCommandThread: stderr = " + stderr)
                     logger.debug("runLoopServerCommandThread: stdout = " + stdout)
                 except KeyError as e:
@@ -309,12 +314,12 @@ class LoginProcess():
                 
             
                 for line in stdout.splitlines(False):
-                    for regexUnformatted in self.regex:
+                    for regexUnformatted in self.cmdRegex.regex:
                         if regexUnformatted != None:
                             if (not self.stopped()):
                                 try:
                                     regex=regexUnformatted.format(**jobParams)
-                                    logger.debug("searching the output of %s using regex %s"%(self.cmd.format(**jobParams),regex))
+                                    logger.debug("searching the output of %s using regex %s"%(self.cmdRegex.cmd.format(**jobParams),regex))
                                 except KeyError as e:
                                     logger.error("Trying to run %s, unable to formulate regex, missing parameter %s"%(regexUnformatted,e))
                                     self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
@@ -665,7 +670,7 @@ class LoginProcess():
                 event.loginprocess.skd = None # SSH key distritbution is complete at this point.
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 3,"Looking for an existing desktop to connect to")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RECONNECT_DIALOG,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.listAllCmd,event.loginprocess.siteConfig.listAllRegEx,nextevent,"Error determining if you have any existing jobs running",requireMatch=False)
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.listAll,nextevent,"Error determining if you have any existing jobs running")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -712,7 +717,7 @@ class LoginProcess():
 
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Getting a list of your valid projects")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.getProjectsCmd,event.loginprocess.siteConfig.getProjectsRegEx,nextevent,"I couldn't find any projects that you were a member of.")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.getProjects,nextevent,"I couldn't find any projects that you were a member of.")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -735,14 +740,14 @@ class LoginProcess():
                 logger.debug('selectProject: groups = ' + str(groups))
 
                 try:
-                    event.loginprocess.siteConfig.startServerCmd.format(**event.loginprocess.jobParams) # check if we actually need the project to format the startServerCmd
+                    event.loginprocess.siteConfig.startServer.cmd.format(**event.loginprocess.jobParams) # check if we actually need the project to format the startServerCmd
                     if (event.loginprocess.jobParams.has_key('project') and not (event.loginprocess.jobParams['project'] in grouplist)):
                         logger.debug("we have a value for project, but the user is not a member of that project")
                         msg='You don\'t appear to be a member of the project {project}.\n\nPlease select from one of the following:'.format(**event.loginprocess.jobParams)
                         event.loginprocess.jobParams.pop('project',None)
                         try: # check again if we really need the project field.
                             logger.debug("trying to format the startServerCmd")
-                            event.loginprocess.siteConfig.startServerCmd.format(**event.loginprocess.jobParams)
+                            event.loginprocess.siteConfig.startServer.cmd.format(**event.loginprocess.jobParams)
                             logger.debug("trying to format the startServerCmd, project is not necessary")
                             showDialog=False
                         except KeyError as e:
@@ -783,7 +788,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_SERVER')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Starting a new desktop session")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER,event.loginprocess)
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.startServerCmd,event.loginprocess.siteConfig.startServerRegEx,nextevent,"Error starting the VNC server. This could occur")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.startServer,nextevent,"Error starting the VNC server. This could occur")
                 t.setDaemon(False)
                 event.loginprocess.started_job.set()
                 t.start()
@@ -796,7 +801,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_WAIT_FOR_SERVER')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Waiting for the VNC server to start")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_EXECUTION_HOST,event.loginprocess)
-                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.runningCmd,event.loginprocess.siteConfig.runningRegEx,nextevent,"")
+                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.running,nextevent,"")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -807,10 +812,10 @@ class LoginProcess():
             # runLoopServerCommand can generate GET_ESTIMATED_START events. Most other threads can only post events that were given to them when they were initialised
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_ESTIMATED_START):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_ESTIMATED_START')
-                if (event.loginprocess.siteConfig.showStartCmd!=None):
+                if (event.loginprocess.siteConfig.showStart.cmd!=None):
                     logger.debug('loginProcessEvent: event.loginprocess.showStartCmd is not None, so posting EVT_LOGINPROCESS_SHOW_ESTIMATED_START')
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHOW_ESTIMATED_START,event.loginprocess)
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.showStartCmd,event.loginprocess.siteConfig.showStartRegEx,nextevent,"Error estimating the start time")
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.showStart,nextevent,"Error estimating the start time")
                     t.setDaemon(False)
                     t.start()
                     event.loginprocess.threads.append(t)
@@ -839,7 +844,7 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting execution host")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_VNCDISPLAY,event.loginprocess)
                 logger.debug('loginProcessEvent: getExecutionHost: posting EVT_LOGINPROCESS_GET_VNCDISPLAY')
-                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.execHostCmd,event.loginprocess.siteConfig.execHostRegEx,nextevent,"")
+                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.execHost,nextevent,"")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -852,7 +857,7 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting the display number")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_TUNNEL,event.loginprocess)
                 logger.debug('loginProcessEvent: getVNCDisplay: posting EVT_LOGINPROCESS_START_TUNNEL')
-                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.vncDisplayCmd,event.loginprocess.siteConfig.vncDisplayRegEx,nextevent,"Unable to get the VNC display")
+                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.vncDisplay,nextevent,"Unable to get the VNC display")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -891,7 +896,7 @@ class LoginProcess():
                 else:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
 
-                t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.tunnelCmd,event.loginprocess.siteConfig.tunnelRegEx,nextevent,"Unable to start the tunnel for some reason")
+                t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.tunnel,nextevent,"Unable to start the tunnel for some reason")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -906,7 +911,7 @@ class LoginProcess():
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK,event.loginprocess)
 
                 logger.debug('Setting the desktop resolution.')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.setDisplayResolutionCmd, '.*', nextevent, '', requireMatch=False)
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.setDisplayResolution, nextevent, '')
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -920,8 +925,7 @@ class LoginProcess():
                 nextevent = LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
 
                 logger.debug('Running server-side sanity check.')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.runSanityCheckCmd,
-                                                        '.*',
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.runSanityCheck,
                                                         nextevent,
                                                         'Error reported by server-side sanity check.'
                                                         )
@@ -937,7 +941,7 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 8,"Setting up SSH Agent forwarding")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_OTP,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_OTP')
-                t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.agentCmd,event.loginprocess.siteConfig.agentRegEx,nextevent,"Unable to forward the ssh agent")
+                t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.agent,nextevent,"Unable to forward the ssh agent")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -950,7 +954,7 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one-time password for the VNC server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.otpCmd,event.loginprocess.siteConfig.otpRegEx,nextevent,"Unable to determine the one-time password for the VNC session")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.otp,nextevent,"Unable to determine the one-time password for the VNC session")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -980,10 +984,10 @@ class LoginProcess():
                     # Cancelation during the startup process is tricky. It conceivable although unlikely that we will have set the event to say the job is started, but not succesfully submitted a job.
                     # Therefore test if the stopCmd can actually be formated before attempting to execute it.
                     try:
-                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (event.loginprocess.siteConfig.stopCmd, event.loginprocess.jobParams,))
-                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + event.loginprocess.siteConfig.stopCmd.format(**event.loginprocess.jobParams))
-                        event.loginprocess.siteConfig.stopCmd.format(**event.loginprocess.jobParams)
-                        t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopCmd,".",nextevent,"",requireMatch=False)
+                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (event.loginprocess.siteConfig.stop.cmd, event.loginprocess.jobParams,))
+                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + event.loginprocess.siteConfig.stop.cmd.format(**event.loginprocess.jobParams))
+                        event.loginprocess.siteConfig.stop.cmd.format(**event.loginprocess.jobParams)
+                        t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stop,nextevent,"")
                         t.setDaemon(True)
                         t.start()
                         event.loginprocess.threads.append(t)
@@ -1065,7 +1069,7 @@ class LoginProcess():
                     grabFocusBackFromTurboVNC()
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER,event.loginprocess)
                 logger.debug('loginProcessEvent: statRunningJob: posting EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.listAllCmd,event.loginprocess.siteConfig.listAllRegEx,nextevent,"")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.listAll,nextevent,"")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1127,9 +1131,9 @@ class LoginProcess():
                     logger.debug("caught an EVT_LOGINPROCESS_KILL_SERVER")
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                 if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopCmdForRestart,".*",nextevent,"",requireMatch=False)
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopForRestart,nextevent,"")
                 else:
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopCmd,".*",nextevent,"",requireMatch=False)
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stop,nextevent,"")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
