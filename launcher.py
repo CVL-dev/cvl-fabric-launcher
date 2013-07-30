@@ -1365,8 +1365,8 @@ def buildSiteConfigCmdRegExDict(configName):
         siteConfigDict['otp']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
         siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"','agent_hello')
         siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello')
-        cmd='/usr/local/desktop/get_ephemeral_port.py'
-        regex='^(?P<webDavIntermediateEphemeralPortNumber>.*)$'
+        cmd='\"/usr/bin/ssh {execHost} /usr/local/bin/get_ephemeral_port.py\"'
+        regex='^(?P<remoteWebDavPortNumber>[0-9]+)$'
         siteConfigDict['webDavIntermediateEphemeralPort']=siteConfig.cmdRegEx(cmd,regex)
         cmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:8080/{homeDirectoryWebDavShareName}\'"'
         siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
@@ -1374,7 +1374,7 @@ def buildSiteConfigCmdRegExDict(configName):
 #        cmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 2; DISPLAY={vncDisplay} kdialog --title \\"MASSIVE/CVL Launcher\\" --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"' % (lt,gt,lt,gt)
 #        siteConfigDict['displayWebDavAccessInfoInRemoteDialogCmd']=siteConfig.cmdRegEx(cmd)
 
-        cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+        cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:{execHost}:{localWebDavPortNumber} -l {username} {loginHost} \'echo tunnel_hello; bash\'"'
         regex='tunnel_hello'
         siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex)
         cmd='echo hello;exit'
