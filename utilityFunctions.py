@@ -39,7 +39,7 @@ class sshKeyDistDisplayStringsCVL():
         self.passwdPrompt="""Please enter the password for your CVL account.
 This is the password you entered when you requested an account
 at the website https://web.cvl.massive.org.au/users"""
-        self.passwdPromptIncorrect="Sorry, that password was incorrect"+self.passwdPrompt
+        self.passwdPromptIncorrect="Sorry, that password was incorrect.\n"+self.passwdPrompt
         self.passphrasePrompt="Please enter the passphrase for your SSH key"
         self.passphrasePromptIncorrect="""Sorry, that passphrase was incorrect.
 Please enter the passphrase for you SSH Key
@@ -63,15 +63,15 @@ launching remote HPC jobs."""
         self.newPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
         self.createNewKeyDialogNewPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden."
         self.newPassphraseTooShort="Sorry, the passphrase must be at least six characters.\n"+self.newPassphrase
-        self.createNewKeyDialogNewPassphraseTooShort="The passphrase must be at least 6 characters."
+        self.createNewKeyDialogNewPassphraseTooShort="Passphrase is too short."
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
-        self.createNewKeyDialogNewPassphraseMismatch="Sorry, the passphrases don't match."
+        self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
 
 class sshKeyDistDisplayStringsMASSIVE():
     def __init__(self):
         self.passwdPrompt="""Please enter the password for your MASSIVE account."""
-        self.passwdPromptIncorrect="Sorry, that password was incorrect"+self.passwdPrompt
+        self.passwdPromptIncorrect="Sorry, that password was incorrect.\n"+self.passwdPrompt
         self.passphrasePrompt="Please enter the passphrase for your SSH key"
         self.passphrasePromptIncorrect="""
 Sorry, that passphrase was incorrect.
@@ -91,9 +91,9 @@ authentication for the launcher."""
         self.newPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
         self.createNewKeyDialogNewPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden."
         self.newPassphraseTooShort="Sorry, the passphrase must be at least 6 characters.\n"+self.newPassphrase
-        self.createNewKeyDialogNewPassphraseTooShort="The passphrase must be at least 6 characters."
+        self.createNewKeyDialogNewPassphraseTooShort="Passphrase is too short."
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
-        self.createNewKeyDialogNewPassphraseMismatch="Sorry, the passphrases don't match."
+        self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
 
 def buildSiteConfigDict(configName):

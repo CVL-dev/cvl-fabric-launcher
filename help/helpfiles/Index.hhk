@@ -41,5 +41,19 @@
         <param name="Name" value="New Authentication Method">
         <param name="Local" value="new_authentication_method.htm">
         </OBJECT>
+    <LI> <OBJECT type="text/sitemap">
+        <param name="Name" value="Privacy Options">
+        <param name="Local" value="privacy_options.htm">
+        </OBJECT>
+        <UL>
+            <LI> <OBJECT type="text/sitemap">
+                <param name="Name" value="Private Mode">
+                <param name="Local" value="privacy_options.htm#PrivateMode">
+                </OBJECT>
+            <LI> <OBJECT type="text/sitemap">
+                <param name="Name" value="Public Mode">
+                <param name="Local" value="privacy_options.htm#PublicMode">
+                </OBJECT>
+        </UL>
 </UL>
 </BODY></HTML>
