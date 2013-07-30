@@ -107,7 +107,7 @@ if found:
 utils.kill_launcher()
 
 # Finally, check that a valid keypair exists on Massive.
-stdout, stderr = subprocess.Popen(['C:\\Python27\\python.exe',  os.path.join(sys.argv[0], 'check_massive_keypair.py'), 'm2.massive.org.au', credentials.massive_username, credentials.massive_password], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+stdout, stderr = subprocess.Popen(['C:\\Python27\\python.exe',  "c:\cvl-fabric-launcher-sikuli\sikuli-tests\check_massive_keypair.py", 'm2.massive.org.au', credentials.massive_username, credentials.massive_password], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 stdout = str(stdout)
 stderr = str(stderr)
 
