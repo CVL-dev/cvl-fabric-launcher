@@ -1,7 +1,8 @@
 import credentials
 import os
 import time
-
+import utils
+import subprocess
 
 def enter_passphrase():
     # The launcher is asking for the user's passphrase for their set up.
@@ -54,15 +55,22 @@ def close_and_stop_massive_desktop():
 
 #######################################
 
+# Nuke charade/pageant
+utils.kill_pageant_and_charade()
+
+# Delete ~/.ssh on the server
+# Can't for the life of me get trilead-ssh2 to work with Jython, so for the moment
+# just using a hacky script that calls the normal CPython implementation:
+os.popen(r'"C:\Python27\python.exe delete_dot_ssh.py" ' + credentials.massive_username + ' ' + credentials.massive_password)
+
 # Start the Launcher
 os.popen(r'"C:\Program Files\MASSIVE Launcher\launcher.exe"')
 sleep(2)
-
 wait("1375057960522.png")
 
 # Enter the username:
 click("1375053541177.png")
-for _ in range(100):
+for _ in range(20):
     type(Key.BACKSPACE)
     type(Key.DELETE)
 type(credentials.massive_username)
@@ -96,3 +104,18 @@ print 'result:', found
 if found:
     close_and_stop_massive_desktop()    
  
+utils.kill_launcher()
+
+# Finally, check that a valid keypair exists on Massive.
+stdout, stderr = subprocess.Popen(['C:\\Python27\\python.exe',  os.path.join(sys.argv[0], 'check_massive_keypair.py'), 'm2.massive.org.au', credentials.massive_username, credentials.massive_password], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+stdout = str(stdout)
+stderr = str(stderr)
+
+if stderr != '':
+    print 'Error with massive key:', stderr
+else:
+    print 'success? :-)'
+
+
+
+

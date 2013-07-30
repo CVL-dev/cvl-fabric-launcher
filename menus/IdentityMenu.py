@@ -47,6 +47,12 @@ class IdentityMenu(wx.Menu):
 
         self.AppendSeparator()
 
+        privacyOptionsMenuItemId = wx.NewId()
+        self.Append(privacyOptionsMenuItemId, "&Privacy options")
+        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onPrivacyOptions, id=privacyOptionsMenuItemId)
+
+        self.AppendSeparator()
+
         helpAboutKeysMenuItem = wx.NewId()
         self.Append(helpAboutKeysMenuItem, "&Help about keys")
         self.launcherMainFrame.Bind(wx.EVT_MENU, self.onHelpAboutKeys, id=helpAboutKeysMenuItem)
@@ -218,6 +224,10 @@ class IdentityMenu(wx.Menu):
                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
 
+
+    def onPrivacyOptions(self,event):
+        from optionsDialog import LAUNCHER_VNC_OPTIONS_PRIVACY_TAB_INDEX
+        self.launcherMainFrame.onOptions(event, tabIndex=LAUNCHER_VNC_OPTIONS_PRIVACY_TAB_INDEX)
 
     def onHelpAboutKeys(self,event):
         from help.HelpController import helpController

@@ -28,11 +28,11 @@ class sshKeyDistDisplayStrings():
         self.passwdPromptIncorrect="passwd incorrect. reenter"
         self.passphrasePrompt="enter key passphrase"
         self.passphrasePromptIncorrectl="Incorrect. enter key passphrase"
-        self.newPassphraseEmptyForbiden="new passphrase. empty passphrase forbiden"
+        self.newPassphraseEmptyForbidden="new passphrase. empty passphrase forbidden"
         self.newPassphraseTooShort="passphrase to short. enter a new passphrase"
         self.newPassphraseMismatch="passphrases don't match. enter new passphrases"
         self.newPassphrase="new passphrase for new key"
-        self.newPassphraseTitle="Please enter a new Passphrase"
+        self.newPassphraseTitle="Please enter a new passphrase"
 
 class sshKeyDistDisplayStringsCVL():
     def __init__(self):
@@ -49,7 +49,7 @@ You can find this option under the Identity menu.
         self.newPassphrase="""It looks like this is the first time you're using the CVL on this
 computer. To use the CVL, the launcher will generate a local
 passphrase protected key on your computer which is used to
-authenticate you and setup your remote CVL environment.
+authenticate you and set up your remote CVL environment.
 
 Please enter a new passphrase (twice to avoid typos) to protect your local key. 
 After you've done this, your passphrase will be the primary method of
@@ -60,10 +60,13 @@ WHY?
 This new method of authentication allows you to create file system
 mounts to remote computer systems, and in the future it will support
 launching remote HPC jobs."""
-        self.newPassphraseEmptyForbiden="Sorry, empty passphrases are forbiden.\n"+self.newPassphrase
+        self.newPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
+        self.createNewKeyDialogNewPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden."
         self.newPassphraseTooShort="Sorry, the passphrase must be at least six characters.\n"+self.newPassphrase
+        self.createNewKeyDialogNewPassphraseTooShort="Passphrase is too short."
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
-        self.newPassphraseTitle="Please enter a new Passphrase"
+        self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
+        self.newPassphraseTitle="Please enter a new passphrase"
 
 class sshKeyDistDisplayStringsMASSIVE():
     def __init__(self):
@@ -76,109 +79,23 @@ Please enter the passphrase for you SSH Key
 If you have forgoten the passphrase for you key, you may need to delete it and create a new key.
 You can find this option under the Identity menu.
 """
-        self.newPassphrase="""
-It looks like this is the first time you're logging in to MASSIVE with this version of the launcher.
-To make loging in faster and more secure, the launcher will generate a local
+        self.newPassphrase="""It looks like this is the first time you're logging in to MASSIVE with this version of the launcher.
+To make logging in faster and more secure, the launcher will generate a local
 passphrase protected key on your computer which is used to
-authenticate you and setup your MASSIVE desktop.
+authenticate you and set up your MASSIVE desktop.
 
 Please enter a new passphrase (twice to avoid typos) to protect your local key. 
 After you've done this, your passphrase will be the primary method of
 authentication for the launcher."""
 
-        self.newPassphraseEmptyForbiden="Sorry, empty passphrases are forbiden.\n"+self.newPassphrase
+        self.newPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden.\n"+self.newPassphrase
+        self.createNewKeyDialogNewPassphraseEmptyForbidden="Sorry, empty passphrases are forbidden."
         self.newPassphraseTooShort="Sorry, the passphrase must be at least 6 characters.\n"+self.newPassphrase
+        self.createNewKeyDialogNewPassphraseTooShort="Passphrase is too short."
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
-        self.newPassphraseTitle="Please enter a new Passphrase"
+        self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
+        self.newPassphraseTitle="Please enter a new passphrase"
 
-
-
-def buildSiteConfigDict(configName):
-    import re
-    siteConfig={}
-    siteConfig['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
-    if ("m1" in configName or "m2" in configName):
-        siteConfig['listAllCmd']='qstat -u {username}'
-        siteConfig['listAllRegEx']='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'
-        siteConfig['runningCmd']='qstat -u {username}'
-        siteConfig['runningRegEx']='^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$'
-        # request_visnode is a little buggy, if you issue a qdel <jobid> ; request_visnode it may provide the id of the deleted job. Sleep to work around
-        siteConfig['stopCmd']='\'qdel -a {jobid}\''
-        siteConfig['stopCmdForRestart']='\'qdel {jobid} ; sleep 5\''
-        siteConfig['execHostCmd']='qpeek {jobidNumber}'
-        siteConfig['execHostRegEx']='\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$'
-        siteConfig['startServerCmd']="\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'"
-        siteConfig['startServerRegEx']="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
-        siteConfig['runSanityCheckCmd']="\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'"
-        siteConfig['setDisplayResolutionCmd']="\'/usr/local/desktop/set_display_resolution.sh {resolution}\'"
-        siteConfig['getProjectsCmd']='\"gbalance -u {username} --show Name | tail -n +3\"'
-        siteConfig['getProjectsCmd']='\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"'
-        siteConfig['getProjectsRegEx']='^(?P<group>\S+)\s+.*$'
-        siteConfig['showStartCmd']="showstart {jobid}"
-        siteConfig['showStartRegEx']="Estimated Rsv based start .*?on (?P<estimatedStart>.*)"
-        siteConfig['vncDisplayCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"'
-        siteConfig['vncDisplayRegEx']='^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$'
-        siteConfig['otpCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
-        siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
-        siteConfig['directConnect']=False
-
-    elif ("118.138.241.58" in configName):
-        siteConfig['directConnect']=True
-        siteConfig['loginHost']='118.138.241.58'#fill in the ip address of cvldevl
-        siteConfig['execHostCmd'] = 'echo execHost {loginHost}'
-        siteConfig['execHostRegEx']='^\s*execHost (?P<execHost>\S+)$'
-        siteConfig['getProjectsCmd']='exit'
-        siteConfig['getProjectsRegEx']=".*"
-        siteConfig['listAllCmd']='\'module load turbovnc ; vncserver -list\''
-        siteConfig['listAllRegEx']='^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$'
-        siteConfig['runningCmd']="echo running"
-        siteConfig['runningRegEx']="(?P<running>running)"
-        siteConfig['startServerCmd']='\"/usr/local/bin/vncsession --vnc turbovnc --geometry {resolution}\"'
-        siteConfig['startServerRegEx']='^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$'
-        siteConfig['stopCmd']='\'module load turbovnc ; vncserver -kill {vncDisplay}\''
-        siteConfig['vncDisplayCmd']="\'module load turbovnc ; vncserver -list\'"
-        siteConfig['vncDisplayRegEx']='^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$'
-        siteConfig['otpCmd']= '\'module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\''
-        siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
-        siteConfig['runSanityCheckCmd']="exit"
-    else:
-        siteConfig['directConnect']=True
-        siteConfig['execHostCmd']='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
-        siteConfig['execHostRegEx']='^\s*execHost (?P<execHost>\S+)\s*$'
-        siteConfig['getProjectsCmd']='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
-        siteConfig['getProjectsRegEx']='^\s*(?P<group>\S+)\s*$'
-        siteConfig['listAllCmd']='\"module load pbs ; module load maui ; qstat | grep {username}\"'
-        siteConfig['listAllRegEx']='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
-        siteConfig['runningCmd']='\"module load pbs ; module load maui ; qstat | grep {username}\"'
-        siteConfig['runningRegEx']='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
-        if ("Hugyens" in configName):
-            siteConfig['startServerCmd']="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -q huygens -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
-        else:
-            siteConfig['startServerCmd']="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
-        siteConfig['startServerRegEx']="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
-        siteConfig['stopCmd']='\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"'
-        siteConfig['stopCmdForRestart']='\"module load pbs ; module load maui ; qdel {jobidNumber}\"'
-        siteConfig['showStartCmd']=None
-        siteConfig['showStartRegEx']="Estimated Rsv based start on (?P<estimatedStart>^-.*)"
-        siteConfig['vncDisplayCmd']= '" /usr/bin/ssh {execHost} \' cat /var/spool/torque/spool/{jobidNumber}.*\'"'
-        siteConfig['vncDisplayRegEx']='^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$'
-        siteConfig['otpCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
-        siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
-        siteConfig['passwdPrompt']='Please enter your CVL password for username {username}.\n\nIf you are using the CVL for the first time,\nthis is the password you entered when you applied for an account\non the webpage https://web.cvl.massive.org.au'
-        siteConfig['runSanityCheckCmd']=None
-    if (siteConfig.has_key('directConnect') and siteConfig['directConnect']):
-    # I've disabled StrickHostKeyChecking here temporarily untill all CVL vms are added a a most known hosts file.
-        siteConfig['agentCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "'
-        siteConfig['agentRegEx']='agent_hello'
-        siteConfig['tunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
-        siteConfig['tunnelRegEx']='tunnel_hello'
-    else:
-        siteConfig['agentCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
-        siteConfig['agentRegEx']='agent_hello'
-        siteConfig['tunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
-        siteConfig['tunnelRegEx']='tunnel_hello'
-    return siteConfig
-    
 
 def parseMessages(regexs,stdout,stderr):
     # compare each line of output against a list of regular expressions and build up a dictionary of messages to give the user
