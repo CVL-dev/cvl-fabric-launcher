@@ -628,7 +628,7 @@ class LoginProcess():
                     logger.debug("Exception while checking TurboVNC version number: " + str(e))
 
                     def error_dialog():
-                        dlg = wx.MessageDialog(self.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
+                        dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
                                                 "The launcher cannot continue.\n",
                                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                         dlg.ShowModal()

@@ -263,12 +263,15 @@ class LauncherMainFrame(wx.Frame):
         self.SetMenuBar(self.menu_bar)
 
         self.loginDialogPanel = wx.Panel(self, wx.ID_ANY)
-        self.loginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=15, hgap=5)
+        #self.loginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=15, hgap=5)
+        self.loginDialogPanelSizer = wx.BoxSizer(wx.VERTICAL)
+        self.loginDialogPanel.SetSizer(self.loginDialogPanelSizer)
 
-        self.tabbedView = wx.Notebook(self.loginDialogPanel, wx.ID_ANY, style=(wx.NB_TOP))
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,  self.onTabbedViewChanged, id=self.tabbedView.GetId())
+        #self.tabbedView = wx.Notebook(self.loginDialogPanel, wx.ID_ANY, style=(wx.NB_TOP))
+        #self.tabbedView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,  self.onTabbedViewChanged)
 
-        self.loginFieldsPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
+        #self.loginFieldsPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
+        self.loginFieldsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
         #self.loginFieldsPanelSizer = wx.FlexGridSizer(rows=7, cols=2, vgap=3, hgap=5)
         self.loginFieldsPanelSizer = wx.BoxSizer(wx.VERTICAL)
         self.loginFieldsPanel.SetSizer(self.loginFieldsPanelSizer)
@@ -280,61 +283,91 @@ class LauncherMainFrame(wx.Frame):
         widgetWidth3 = 75
 
         self.sites={}
-        visible={}
-        self.sites['Desktop on m1.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m1"),visible)
-        self.sites['Desktop on m2.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m2"),visible)
-        self.sites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("cvl"),visible)
-        self.sites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("Huygens"),visible)
+        massivevisible={}
+        massivevisible['usernamePanel']=True
+        massivevisible['projectPanel']=True
+        massivevisible['resourcePanel']=True
+        massivevisible['resolutionPanel']='Advanced'
+        massivevisible['cipherPanel']='Advanced'
+        massivevisible['debugCheckBoxPanel']='Advanced'
+        massivevisible['advancedCheckBoxPanel']=True
+        cvlvisible={}
+        cvlvisible['usernamePanel']=True
+        cvlvisible['projectPanel']=False
+        cvlvisible['resourcePanel']='Advanced'
+        cvlvisible['resolutionPanel']='Advanced'
+        cvlvisible['cipherPanel']='Advanced'
+        cvlvisible['debugCheckBoxPanel']='Advanced'
+        cvlvisible['advancedCheckBoxPanel']=True
+        noneVisible={}
+        noneVisible['usernamePanel']=False
+        noneVisible['projectPanel']=False
+        noneVisible['resourcePanel']=False
+        noneVisible['resolutionPanel']=False
+        noneVisible['cipherPanel']=False
+        noneVisible['debugCheckBoxPanel']=False
+        noneVisible['advancedCheckBoxPanel']=True
+        self.sites['Desktop on m1.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m1"),massivevisible)
+        self.sites['Desktop on m2.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m2"),massivevisible)
+        self.sites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("cvl"),cvlvisible)
+        self.sites['Huygens on the CVL']  = siteConfig(buildSiteConfigCmdRegExDict("Huygens"),cvlvisible)
 
         self.siteConfigPanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
-        self.siteConfigPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.configLabel = wx.StaticText(self.siteConfigPanel, wx.ID_ANY, 'Host')
-        self.siteConfigPanelSizer.Add(self.configLabel, proportion=1, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, border=5)
-        self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=self.sites.keys(), size=(widgetWidth2, -1), style=wx.CB_READONLY,name='jobParams_configName')
+        self.siteConfigPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+        self.configLabel = wx.StaticText(self.siteConfigPanel, wx.ID_ANY, 'Site')
+        self.siteConfigPanel.GetSizer().Add(self.configLabel, proportion=0, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND, border=5)
+        self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=self.sites.keys(), value='', style=wx.CB_READONLY,name='jobParams_configName')
         self.siteConfigComboBox.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
-        self.siteConfigPanelSizer.Add(self.siteConfigComboBox, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.siteConfigPanel.SetSizerAndFit(self.siteConfigPanelSizer)
-        self.loginFieldsPanelSizer.Add(self.siteConfigPanel,proportion=0,flag=wx.EXPAND)
+        self.siteConfigPanel.GetSizer().Add(self.siteConfigComboBox, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.siteConfigPanel.Fit()
+        self.loginFieldsPanel.GetSizer().Add(self.siteConfigPanel,proportion=0,flag=wx.EXPAND)
+
+        self.usernamePanel=wx.Panel(self.loginFieldsPanel,name='usernamePanel')
+        self.usernamePanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+        self.usernameLabel = wx.StaticText(self.usernamePanel, wx.ID_ANY, 'Username',name='label_username')
+        self.usernamePanel.GetSizer().Add(self.usernameLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.usernameTextField = wx.TextCtrl(self.usernamePanel, wx.ID_ANY, size=(widgetWidth2, -1),name='jobParams_username')
+        self.usernamePanel.GetSizer().Add(self.usernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.usernamePanel.Fit()
+        self.loginFieldsPanel.GetSizer().Add(self.usernamePanel,proportion=0,flag=wx.EXPAND)
 
         # load the default site from the users preferences
         #loadPrefs(prefs)
         self.projectPanel = wx.Panel(self.loginFieldsPanel,wx.ID_ANY,name="projectPanel")
-        self.projectPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.projectPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.projectLabel = wx.StaticText(self.projectPanel, wx.ID_ANY, 'Project')
-        self.projectPanelSizer.Add(self.projectLabel, proportion=1, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, border=5)
+        self.projectPanel.GetSizer().Add(self.projectLabel, proportion=1, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, border=5)
 
         self.defaultProjectPlaceholder = '[Use my default project]'
-        self.projects = ['[Use my defauly projec]']
+        self.projects = ['[Use my default projec]']
         self.projectField = wx.ComboBox(self.projectPanel, wx.ID_ANY, value='', choices=self.projects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_project')
         #self.projectComboBox.Bind(wx.EVT_TEXT, self.onProjectTextChanged)
-        self.projectPanelSizer.Add(self.projectField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.projectPanel.SetSizerAndFit(self.projectPanelSizer)
-        self.loginFieldsPanelSizer.Add(self.projectPanel, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+        self.projectPanel.GetSizer().Add(self.projectField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.projectPanel.Fit()
+        self.loginFieldsPanel.GetSizer().Add(self.projectPanel, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
 
 
-        self.resourcePanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
-        self.resourcePanelSizer = wx.FlexGridSizer(rows=1, cols=4, vgap=3, hgap=5)
-        self.resourcePanel.SetSizer(self.resourcePanelSizer)
+        self.resourcePanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY,name="resourcePanel")
+        self.resourcePanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
 
         self.hoursLabel = wx.StaticText(self.resourcePanel, wx.ID_ANY, 'Hours requested')
-        self.resourcePanelSizer.Add(self.hoursLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        self.resourcePanel.GetSizer().Add(self.hoursLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,border=5)
         # Maximum of 336 hours is 2 weeks:
         #self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=336)
         self.hoursField = wx.SpinCtrl(self.resourcePanel, wx.ID_ANY, size=(widgetWidth3,-1), min=1,max=336,name='jobParams_hours')
-        #self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.resourcePanelSizer.Add(self.hoursField, proportion=0,flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        self.resourcePanel.GetSizer().Add(self.hoursField, proportion=0,flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,border=5)
         self.nodesLabel = wx.StaticText(self.resourcePanel, wx.ID_ANY, 'Vis nodes')
-        self.resourcePanelSizer.Add(self.nodesLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        self.resourcePanel.GetSizer().Add(self.nodesLabel, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,border=5)
         self.nodesField = wx.SpinCtrl(self.resourcePanel, wx.ID_ANY, value="1", size=(widgetWidth3,-1), min=1,max=10,name='jobParams_nodes')
-        self.resourcePanelSizer.Add(self.nodesField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.resourcePanel.SetSizerAndFit(self.resourcePanelSizer)
-        self.loginFieldsPanelSizer.Add(self.resourcePanel, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+        self.resourcePanel.GetSizer().Add(self.nodesField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resourcePanel.Fit()
+        self.loginFieldsPanel.GetSizer().Add(self.resourcePanel, proportion=0,border=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
 
 
         self.resolutionPanel = wx.Panel(self.loginFieldsPanel,name="resolutionPanel")
-        self.resolutionPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.resolutionPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.resolutionLabel = wx.StaticText(self.resolutionPanel, wx.ID_ANY, 'Resolution',name='label_resolution')
-        self.resolutionPanelSizer.Add(self.resolutionLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resolutionPanel.GetSizer().Add(self.resolutionLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         displaySize = wx.DisplaySize()
         desiredWidth = displaySize[0] * 0.99
@@ -349,15 +382,15 @@ class LauncherMainFrame(wx.Frame):
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
         self.resolutionField = wx.ComboBox(self.resolutionPanel, wx.ID_ANY, value='', choices=vncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_resolution')
-        self.resolutionPanelSizer.Add(self.resolutionField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.resolutionPanel.SetSizerAndFit(self.resolutionPanelSizer)
-        self.loginFieldsPanelSizer.Add(self.resolutionPanel,proportion=0,flag=wx.EXPAND)
+        self.resolutionPanel.GetSizer().Add(self.resolutionField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.resolutionPanel.Fit()
+        self.loginFieldsPanel.GetSizer().Add(self.resolutionPanel,proportion=0,flag=wx.EXPAND)
 
         
-        self.cipherPanel = wx.Panel(self.loginFieldsPanel,name="ciphersPanel")
-        self.cipherPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.cipherPanel = wx.Panel(self.loginFieldsPanel,name="cipherPanel")
+        self.cipherPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.sshTunnelCipherLabel = wx.StaticText(self.cipherPanel, wx.ID_ANY, 'SSH tunnel cipher',name='label_cipher')
-        self.cipherPanelSizer.Add(self.sshTunnelCipherLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cipherPanel.GetSizer().Add(self.sshTunnelCipherLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         if sys.platform.startswith("win"):
             defaultCipher = "arcfour"
@@ -366,60 +399,54 @@ class LauncherMainFrame(wx.Frame):
             defaultCipher = "arcfour128"
             sshTunnelCiphers = ["3des-cbc", "aes128-cbc", "blowfish-cbc", "arcfour128"]
         self.sshTunnelCipherComboBox = wx.ComboBox(self.cipherPanel, wx.ID_ANY, value=defaultCipher, choices=sshTunnelCiphers, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_cipher')
-        self.cipherPanelSizer.Add(self.sshTunnelCipherComboBox, proportion=0,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.cipherPanel.SetSizerAndFit(self.cipherPanelSizer)
-        self.loginFieldsPanelSizer.Add(self.cipherPanel,proportion=0,flag=wx.EXPAND)
+        self.cipherPanel.GetSizer().Add(self.sshTunnelCipherComboBox, proportion=0,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cipherPanel.Fit()
+        self.loginFieldsPanel.GetSizer().Add(self.cipherPanel,proportion=0,flag=wx.EXPAND)
 
-        self.usernamePanel=wx.Panel(self.loginFieldsPanel,name='usernamePanel')
-        self.usernamePanelSizer=wx.BoxSizer(wx.HORIZONTAL)
-        self.usernameLabel = wx.StaticText(self.usernamePanel, wx.ID_ANY, 'Username',name='label_username')
-        self.usernamePanelSizer.Add(self.usernameLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        #self.usernameTextField = wx.TextCtrl(self.usernamePanel, wx.ID_ANY, size=(widgetWidth1, -1),name='jobParams_username')
-        self.usernameTextField = wx.TextCtrl(self.usernamePanel, wx.ID_ANY, size=(widgetWidth2, -1),name='jobParams_username')
-        self.usernamePanelSizer.Add(self.usernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
-        self.usernamePanel.SetSizerAndFit(self.usernamePanelSizer)
-        self.loginFieldsPanelSizer.Add(self.usernamePanel,proportion=0,flag=wx.EXPAND)
 
-        self.checkBoxPanel = wx.Panel(self.loginFieldsPanel)
-        self.checkBoxPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
-        p = wx.Panel(self.checkBoxPanel)
-        s = wx.BoxSizer(wx.HORIZONTAL)
-
+        self.checkBoxPanel = wx.Panel(self.loginFieldsPanel,name="checkBoxPanel")
+        self.checkBoxPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+        
         p = wx.Panel(self.checkBoxPanel,name="debugCheckBoxPanel")
-        s = wx.BoxSizer(wx.HORIZONTAL)
+        p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         l = wx.StaticText(p, wx.ID_ANY, 'Show debug window')
         c = wx.CheckBox(p, wx.ID_ANY, "")
         c.Bind(wx.EVT_CHECKBOX, self.onDebugWindowCheckBoxStateChanged)
-        s.Add(l)
-        s.Add(c)
-        p.SetSizerAndFit(s)
-        self.checkBoxPanelSizer.Add(p,flag=wx.ALIGN_LEFT)
+        p.GetSizer().Add(l,border=5,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT)
+        p.GetSizer().Add(c,border=5,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT)
+        p.Fit()
+        self.checkBoxPanel.GetSizer().Add(p,flag=wx.ALIGN_LEFT)
+    
+        #t=wx.StaticText(self.checkBoxPanel,label="")
+        #self.checkBoxPanelSizer.Add(t,proportion=1,flag=wx.EXPAND)
 
         p = wx.Panel(self.checkBoxPanel,name="advancedCheckBoxPanel")
-        s = wx.BoxSizer(wx.HORIZONTAL)
+        p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         l = wx.StaticText(p, wx.ID_ANY, 'Show Advanced Options')
         c = wx.CheckBox(p, wx.ID_ANY, "",name='advancedCheckBox')
         c.Bind(wx.EVT_CHECKBOX, self.onAdvancedVisibilityStateChanged)
-        s.Add(l)
-        s.Add(c)
-        p.SetSizerAndFit(s)
-        self.checkBoxPanelSizer.Add(p,flag=wx.ALIGN_RIGHT)
+        p.GetSizer().Add(l,border=5,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT)
+        p.GetSizer().Add(c,border=5,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT)
+        p.Fit()
+        self.checkBoxPanel.GetSizer().Add(p,flag=wx.ALIGN_RIGHT)
 
-        self.checkBoxPanel.SetSizerAndFit(self.checkBoxPanelSizer) 
-        self.loginFieldsPanelSizer.Add(self.checkBoxPanel)
+        #self.checkBoxPanel.SetSizerAndFit(self.checkBoxPanelSizer) 
+        self.checkBoxPanel.Fit()
+        self.loginFieldsPanel.GetSizer().Add(self.checkBoxPanel,flag=wx.ALIGN_BOTTOM)
 
-        self.tabbedView.AddPage(self.loginFieldsPanel, "Login")
-        self.loadPrefs(None,self.tabbedView,'m2')
+        #self.tabbedView.AddPage(self.loginFieldsPanel, "Login")
+        #self.loadPrefs(None,self.loginFieldsPanel)
 
-        self.loginDialogPanelSizer.Add(self.tabbedView, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
+        #self.loginDialogPanelSizer.Add(self.tabbedView, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
+        self.loginFieldsPanel.Fit()
+        self.loginDialogPanel.GetSizer().Add(self.loginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
 
-        MASSIVE_TAB_INDEX = 0
-        self.tabbedView.ChangeSelection(MASSIVE_TAB_INDEX)
+        #MASSIVE_TAB_INDEX = 0
+        #self.tabbedView.ChangeSelection(MASSIVE_TAB_INDEX)
 
         # Buttons Panel
 
         self.buttonsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
-
         self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=10)
         self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
 
@@ -445,11 +472,12 @@ class LauncherMainFrame(wx.Frame):
         self.SetStatusBar(self.loginDialogStatusBar)
 
         self.loginDialogPanel.SetSizerAndFit(self.loginDialogPanelSizer)
+        self.loginDialogPanel.Fit()
         self.loginDialogPanel.Layout()
 
         self.Fit()
         self.Layout()
-        self.menu_bar.Show(False)
+        #self.menu_bar.Show(False)
 
         self.Centre()
 
@@ -484,14 +512,7 @@ class LauncherMainFrame(wx.Frame):
         import commit_def
         logger.debug('launcher commit hash: ' + commit_def.LATEST_COMMIT)
         logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
-        MASSIVE_TAB_INDEX = 0
-        CVL_TAB_INDEX =1
-        if self.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
-            logger.debug("Using MASSIVE display strings.")
-            self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
-        if self.tabbedView.GetSelection()==CVL_TAB_INDEX:
-            logger.debug("Using CVL display strings.")
-            self.displayStrings = sshKeyDistDisplayStringsCVL()
+        wx.CallAfter(self.updateVisibility,cvlvisible)
 
         # Check for the latest version of the launcher:
         try:
@@ -577,12 +598,21 @@ class LauncherMainFrame(wx.Frame):
         # hacky little dict to hide some stuff. Make this part of the site definition.
         self.updateVisibility()
 
-    def updateVisibility(self):
+    def showAll(self,window=None):
+        if window==None:
+            window=self
+        for p in window.GetChildren():
+            self.showAll(p)
+        window.Show()
+
+    def updateVisibility(self,visible=None):
+        self.showAll()
         advanced=self.FindWindowByName('advancedCheckBox').GetValue()
-        try:
-            visible = self.sites[self.configName].visibility
-        except KeyError:
-            visible={}
+        if visible==None:
+            try:
+                visible = self.sites[self.configName].visibility
+            except KeyError:
+                visible={}
         for key in visible.keys():
             try:
                 window=self.FindWindowByName(key) #Panels and controls are all subclasses of windows
@@ -592,7 +622,7 @@ class LauncherMainFrame(wx.Frame):
                     window.Show()
                 if visible[key]=='Advanced' and advanced==True:
                     window.Show()
-                else:
+                if visible[key]=='Advanced' and advanced==False:
                     window.Hide()
             except:
                 pass # a value in the dictionary didn't correspond to a named component of the panel. Fail silently.
