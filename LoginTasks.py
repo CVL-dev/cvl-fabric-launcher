@@ -123,10 +123,9 @@ class LoginProcess():
                 return
             logger.debug("runServerCommandThread: self.cmd = " + self.cmdRegex.cmd)
             logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) = " + self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
-            sshCmd = self.loginprocess.sshCmd
             self.loginprocess.matchlist=[]
             try:
-                (stdout, stderr) = run_ssh_command(sshCmd.format(**self.loginprocess.jobParams), self.cmdRegex.cmd.format(**self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
+                (stdout, stderr) = run_command(self.cmdRegex.getCmd(self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
                 logger.debug("runServerCommandThread: stderr = " + stderr)
                 logger.debug("runServerCommandThread: stdout = " + stdout)
             except Exception as e:
@@ -365,7 +364,6 @@ class LoginProcess():
             tsleep=0
             sleepperiod=1
             # Make local copies, just because I tired of typing "self.loginprocess."
-            sshCmd = self.loginprocess.sshCmd
             jobParams=self.loginprocess.jobParams
             matched=False
             matchedDict={}
@@ -378,11 +376,11 @@ class LoginProcess():
                 if (not self.stopped()):
                     time.sleep(sleepperiod)
                 try:
-                    (stdout,stderr) = run_ssh_command(sshCmd.format(**jobParams),self.cmdRegex.cmd.format(**jobParams),ignore_errors=True)
+                    (stdout,stderr) = run_command(self.cmdRegex.getCmd(jobParams),ignore_errors=True)
                     logger.debug("runLoopServerCommandThread: stderr = " + stderr)
                     logger.debug("runLoopServerCommandThread: stdout = " + stdout)
                 except KeyError as e:
-                    self.loginprocess.cancel("Trying to run %s\n%s but I was missing a parameter %s"%(sshCmd,self.cmd,e))
+                    self.loginprocess.cancel("Trying to run a command but I was missing a parameter %s"%(e))
                     return
                 
             
@@ -1355,7 +1353,7 @@ class LoginProcess():
         self.threads=[]
         self._canceled=threading.Event()
         self.autoExit = autoExit
-        self.sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
+        #self.sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
         self.sshTunnelProcess=None
         self.sshAgentProcess=None
         self.joblist=[]

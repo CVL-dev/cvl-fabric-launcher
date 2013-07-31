@@ -475,41 +475,6 @@ def seconds_to_hours_minutes(seconds):
     h, m = divmod(m, 60)
     return int(h), int(m)
 
-def job_has_been_canceled(ssh_cmd, launcherMainFrame,job_id):
-    """
-    When a visnode job is canceled, a file of the form
-    $HOME/.vnc/shutdown_${JOB_ID}.${NODE} is created, e.g.
-    $HOME/.vnc/shutdown_1234567.m2-m. This function checks if
-    a particular shutdown file exists.
-
-    We do minimal error checking because this code is used just as
-    the launcher exits.
-    """
-
-    try:
-        return str(job_id) in run_ssh_command(ssh_cmd, 'ls ~/.vnc/shutdown_%d*' % (job_id,), launcherMainFrame,ignore_errors=True)[0]
-    except:
-        logger.debug(traceback.format_exc())
-        return None
-
-def remaining_visnode_walltime(launcherMainFrame):
-    """
-    Get the remaining walltime for the user's visnode job. We do
-    minimal error checking because this code is used just as the user
-    is exiting the launcher.
-    """
-
-    try:
-
-        job_id = int(launcherMainFrame.loginThread.massiveJobNumber)
-
-        if job_has_been_canceled(sshCmd.format(username=launcherMainFrame.massiveUsername,host=launcherMainFrame.massiveLoginHost), launcherMainFrame,job_id):
-            return
-        else:
-            return seconds_to_hours_minutes(float(run_ssh_command(sshCmd.format(username=launcherMainFrame.massiveUsername,host=launcherMainFrame.massiveLoginHost), 'qstat -f %d | grep Remaining' % (job_id,), launcherMainFrame,ignore_errors=True)[0].split()[-1]))
-    except:
-        logger.debug(traceback.format_exc())
-        return
 
 def die_from_login_thread(launcherMainFrame,error_message, display_error_dialog=True, submit_log=False):
     if (launcherMainFrame.progressDialog != None):
@@ -578,13 +543,13 @@ def die_from_main_frame(launcherMainFrame,error_message):
     logger.dump_log(launcherMainFrame,submit_log=True)
     os._exit(1)
 
-def run_ssh_command(sshCmd,command,ignore_errors=False,log_output=True,callback=None):
+def run_command(command,ignore_errors=False,log_output=True,callback=None):
     stdout=""
     stderr=""
     if command != None:
-        logger.debug('run_ssh_command: %s' % sshCmd+command)
+        logger.debug('run_command: %s' % command)
         logger.debug('   called from %s:%d' % inspect.stack()[1][1:3])
-        ssh_process=subprocess.Popen(sshCmd+command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
+        ssh_process=subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
 
         #(stdout,stderr) = ssh_process.communicate(command)
         (stdout,stderr) = ssh_process.communicate()
