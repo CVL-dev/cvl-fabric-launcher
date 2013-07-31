@@ -296,7 +296,7 @@ class LoginProcess():
             return self._stop.isSet()
 
         def run(self):
-            wx.CallAfter(self.loginprocess.notify_window.progressDialog.Show, False)
+            wx.CallAfter(self.loginprocess.progressDialog.Show, False)
             
             if (self.loginprocess.jobParams.has_key('vncPasswd')):
 
@@ -613,7 +613,7 @@ class LoginProcess():
             #     _windows_.MessageDialog_swiginit(self,_windows_.new_MessageDialog(*args, **kwargs))
             # TypeError: in method 'new_MessageDialog', expected argument 1 of type 'wxWindow *'
 
-            if self.loginprocess.notify_window.contacted_massive_website:
+            if self.loginprocess.contacted_massive_website:
                 try:
                     myHtmlParser = MyHtmlParser('TurboVncLatestVersionNumber')
                     feed = urllib2.urlopen(LAUNCHER_URL, timeout=10)
@@ -678,11 +678,11 @@ class LoginProcess():
                     logger.dump_log(self.loginprocess.notify_window)
                     sys.exit(1)
 
-                if (self.loginprocess.notify_window.progressDialog != None):
-                    wx.CallAfter(self.loginprocess.notify_window.progressDialog.Hide)
-                    wx.CallAfter(self.loginprocess.notify_window.progressDialog.Show, False)
-                    wx.CallAfter(self.loginprocess.notify_window.progressDialog.Destroy)
-                    self.loginprocess.notify_window.progressDialog = None
+                if (self.loginprocess.progressDialog != None):
+                    wx.CallAfter(self.loginprocess.progressDialog.Hide)
+                    wx.CallAfter(self.loginprocess.progressDialog.Show, False)
+                    wx.CallAfter(self.loginprocess.progressDialog.Destroy)
+                    self.loginprocess.progressDialog = None
 
                 wx.CallAfter(error_dialog)
                 return
@@ -1022,7 +1022,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_OTP):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_OTP')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one-time password for the VNC server")
-                if (event.loginprocess.notify_window.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.notify_window.vncOptions['share_local_home_directory_on_remote_desktop']):
+                if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
                 else:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
@@ -1215,11 +1215,11 @@ class LoginProcess():
                         logger.debug('exception: ' + str(traceback.format_exc()))
                 # Throw away the thread references. We've done all we can to ask them to stop at this point.
                 event.loginprocess.threads=[]
-                if (event.loginprocess.notify_window.progressDialog != None):
-                    wx.CallAfter(event.loginprocess.notify_window.progressDialog.Hide)
-                    wx.CallAfter(event.loginprocess.notify_window.progressDialog.Show, False)
-                    wx.CallAfter(event.loginprocess.notify_window.progressDialog.Destroy)
-                    event.loginprocess.notify_window.progressDialog = None
+                if (event.loginprocess.progressDialog != None):
+                    wx.CallAfter(event.loginprocess.progressDialog.Hide)
+                    wx.CallAfter(event.loginprocess.progressDialog.Show, False)
+                    wx.CallAfter(event.loginprocess.progressDialog.Destroy)
+                    event.loginprocess.progressDialog = None
                 logger.debug('loginProcessEvent: shutdown: all threads stopped and joined')
                 if event.loginprocess.autoExit:
                     if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds'):
@@ -1344,11 +1344,10 @@ class LoginProcess():
 
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,parentWindow,notifywindow,jobParams,sshpaths,siteConfig=None,autoExit=False,completeCallback=None):
+    def __init__(self,parentWindow,jobParams,sshpaths,siteConfig=None,autoExit=False,completeCallback=None,vncOptions=None,contacted_massive_website=False):
         self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
-        self.notify_window = notifywindow
         self.sshpaths=sshpaths
         self.threads=[]
         self._canceled=threading.Event()
@@ -1363,6 +1362,21 @@ class LoginProcess():
         self.completeCallback=completeCallback
         self.siteConfig = siteConfig
         self.jobParams = jobParams
+        self.vncOptions=vncOptions
+        self.contacted_massive_website=contacted_massive_website
+        self.notify_window=wx.Window(parent=None)
+        #self.notify_window.Hide()
+        self.notify_window.Center()
+        try:
+            s = 'Connecting to {configShortName}...'.format(**jobParams)
+        except:
+            s = 'Connecting...'
+        import launcher_progress_dialog
+        userCanAbort=True
+        maximumProgressBarValue=10
+        #self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.parentWindow, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
+        self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.notify_window, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
+
         update={}
         update['sshBinary']=sshpaths.sshBinary
         update['launcher_version_number']=launcher_version_number.version_number
@@ -1502,9 +1516,9 @@ class LoginProcess():
 
 
     def updateProgressDialog(self, value, message):
-        if self.notify_window.progressDialog!=None:
-            self.notify_window.progressDialog.Update(value, message)
-            self.shouldAbort = self.notify_window.progressDialog.shouldAbort()
+        if self.progressDialog!=None:
+            self.progressDialog.Update(value, message)
+            self.shouldAbort = self.progressDialog.shouldAbort()
 
     def buildVNCOptionsString(self):
         if sys.platform.startswith("win"):
@@ -1522,64 +1536,64 @@ class LoginProcess():
             else:
                 vncOptionsString = "-encoding \"Tight\""
 
-        if 'jpeg_compression' in self.notify_window.vncOptions and self.notify_window.vncOptions['jpeg_compression']==False:
+        if 'jpeg_compression' in self.vncOptions and self.vncOptions['jpeg_compression']==False:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nojpeg"
         defaultJpegChrominanceSubsampling = "1x"
-        if 'jpeg_chrominance_subsampling' in self.notify_window.vncOptions and self.notify_window.vncOptions['jpeg_chrominance_subsampling']!=defaultJpegChrominanceSubsampling:
-            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + self.notify_window.vncOptions['jpeg_chrominance_subsampling']
+        if 'jpeg_chrominance_subsampling' in self.vncOptions and self.vncOptions['jpeg_chrominance_subsampling']!=defaultJpegChrominanceSubsampling:
+            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + self.vncOptions['jpeg_chrominance_subsampling']
         defaultJpegImageQuality = "95"
-        if 'jpeg_image_quality' in self.notify_window.vncOptions and self.notify_window.vncOptions['jpeg_image_quality']!=defaultJpegImageQuality:
-            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + self.notify_window.vncOptions['jpeg_image_quality']
-        if 'zlib_compression_enabled' in self.notify_window.vncOptions and self.notify_window.vncOptions['zlib_compression_enabled']==True:
-            if 'zlib_compression_level' in self.notify_window.vncOptions:
-                vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + self.notify_window.vncOptions['zlib_compression_level']
-        if 'view_only' in self.notify_window.vncOptions and self.notify_window.vncOptions['view_only']==True:
+        if 'jpeg_image_quality' in self.vncOptions and self.vncOptions['jpeg_image_quality']!=defaultJpegImageQuality:
+            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + self.vncOptions['jpeg_image_quality']
+        if 'zlib_compression_enabled' in self.vncOptions and self.vncOptions['zlib_compression_enabled']==True:
+            if 'zlib_compression_level' in self.vncOptions:
+                vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + self.vncOptions['zlib_compression_level']
+        if 'view_only' in self.vncOptions and self.vncOptions['view_only']==True:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "viewonly"
-        if 'disable_clipboard_transfer' in self.notify_window.vncOptions and self.notify_window.vncOptions['disable_clipboard_transfer']==True:
+        if 'disable_clipboard_transfer' in self.vncOptions and self.vncOptions['disable_clipboard_transfer']==True:
             if sys.platform.startswith("win"):
                 vncOptionsString = vncOptionsString + " /disableclipboard"
             #else:
                 #vncOptionsString = vncOptionsString + " -noclipboardsend -noclipboardrecv"
         if sys.platform.startswith("win"):
-            if 'scale' in self.notify_window.vncOptions:
-                if self.notify_window.vncOptions['scale']=="Auto":
+            if 'scale' in self.vncOptions:
+                if self.vncOptions['scale']=="Auto":
                     vncOptionsString = vncOptionsString + " /fitwindow"
                 else:
-                    vncOptionsString = vncOptionsString + " /scale " + self.notify_window.vncOptions['scale']
+                    vncOptionsString = vncOptionsString + " /scale " + self.vncOptions['scale']
             defaultSpanMode = 'automatic'
-            if 'span' in self.notify_window.vncOptions and self.notify_window.vncOptions['span']!=defaultSpanMode:
-                vncOptionsString = vncOptionsString + " /span " + self.notify_window.vncOptions['span']
-        if 'double_buffering' in self.notify_window.vncOptions and self.notify_window.vncOptions['double_buffering']==False:
+            if 'span' in self.vncOptions and self.vncOptions['span']!=defaultSpanMode:
+                vncOptionsString = vncOptionsString + " /span " + self.vncOptions['span']
+        if 'double_buffering' in self.vncOptions and self.vncOptions['double_buffering']==False:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
-        if 'full_screen_mode' in self.notify_window.vncOptions and self.notify_window.vncOptions['full_screen_mode']==True:
+        if 'full_screen_mode' in self.vncOptions and self.vncOptions['full_screen_mode']==True:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "fullscreen"
-        if 'deiconify_on_remote_bell_event' in self.notify_window.vncOptions and self.notify_window.vncOptions['deiconify_on_remote_bell_event']==False:
+        if 'deiconify_on_remote_bell_event' in self.vncOptions and self.vncOptions['deiconify_on_remote_bell_event']==False:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noraiseonbeep"
         if sys.platform.startswith("win"):
-            if 'emulate3' in self.notify_window.vncOptions and self.notify_window.vncOptions['emulate3']==True:
+            if 'emulate3' in self.vncOptions and self.vncOptions['emulate3']==True:
                 vncOptionsString = vncOptionsString + " /emulate3"
-            if 'swapmouse' in self.notify_window.vncOptions and self.notify_window.vncOptions['swapmouse']==True:
+            if 'swapmouse' in self.vncOptions and self.vncOptions['swapmouse']==True:
                 vncOptionsString = vncOptionsString + " /swapmouse"
-        if 'dont_show_remote_cursor' in self.notify_window.vncOptions and self.notify_window.vncOptions['dont_show_remote_cursor']==True:
+        if 'dont_show_remote_cursor' in self.vncOptions and self.vncOptions['dont_show_remote_cursor']==True:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nocursorshape"
-        elif 'let_remote_server_deal_with_mouse_cursor' in self.notify_window.vncOptions and self.notify_window.vncOptions['let_remote_server_deal_with_mouse_cursor']==True:
+        elif 'let_remote_server_deal_with_mouse_cursor' in self.vncOptions and self.vncOptions['let_remote_server_deal_with_mouse_cursor']==True:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "x11cursor"
-        if 'request_shared_session' in self.notify_window.vncOptions and self.notify_window.vncOptions['request_shared_session']==False:
+        if 'request_shared_session' in self.vncOptions and self.vncOptions['request_shared_session']==False:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
         if sys.platform.startswith("win"):
-            if 'toolbar' in self.notify_window.vncOptions and self.notify_window.vncOptions['toolbar']==False:
+            if 'toolbar' in self.vncOptions and self.vncOptions['toolbar']==False:
                 vncOptionsString = vncOptionsString + " /notoolbar"
-            if 'dotcursor' in self.notify_window.vncOptions and self.notify_window.vncOptions['dotcursor']==True:
+            if 'dotcursor' in self.vncOptions and self.vncOptions['dotcursor']==True:
                 vncOptionsString = vncOptionsString + " /dotcursor"
-            if 'smalldotcursor' in self.notify_window.vncOptions and self.notify_window.vncOptions['smalldotcursor']==True:
+            if 'smalldotcursor' in self.vncOptions and self.vncOptions['smalldotcursor']==True:
                 vncOptionsString = vncOptionsString + " /smalldotcursor"
-            if 'normalcursor' in self.notify_window.vncOptions and self.notify_window.vncOptions['normalcursor']==True:
+            if 'normalcursor' in self.vncOptions and self.vncOptions['normalcursor']==True:
                 vncOptionsString = vncOptionsString + " /normalcursor"
-            if 'nocursor' in self.notify_window.vncOptions and self.notify_window.vncOptions['nocursor']==True:
+            if 'nocursor' in self.vncOptions and self.vncOptions['nocursor']==True:
                 vncOptionsString = vncOptionsString + " /nocursor"
-            if 'writelog' in self.notify_window.vncOptions and self.notify_window.vncOptions['writelog']==True:
-                if 'loglevel' in self.notify_window.vncOptions and self.notify_window.vncOptions['loglevel']==True:
-                    vncOptionsString = vncOptionsString + " /loglevel " + self.notify_window.vncOptions['loglevel']
-                if 'logfile' in self.notify_window.vncOptions:
-                    vncOptionsString = vncOptionsString + " /logfile \"" + self.notify_window.vncOptions['logfile'] + "\""
+            if 'writelog' in self.vncOptions and self.vncOptions['writelog']==True:
+                if 'loglevel' in self.vncOptions and self.vncOptions['loglevel']==True:
+                    vncOptionsString = vncOptionsString + " /loglevel " + self.vncOptions['loglevel']
+                if 'logfile' in self.vncOptions:
+                    vncOptionsString = vncOptionsString + " /logfile \"" + self.vncOptions['logfile'] + "\""
         return vncOptionsString

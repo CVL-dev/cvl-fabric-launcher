@@ -1281,7 +1281,7 @@ class LauncherMainFrame(wx.Frame):
         configName=host
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,self,jobParams,self.sshpaths,siteConfig=siteConfigObj,autoExit=autoExit)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.sshpaths,siteConfig=siteConfigObj,autoExit=autoExit,vncOptions=self.vncOptions)
         if sys.platform.startswith("win"):
             cvlsshutils.sshKeyDist.start_pageant()
             if 'HOME' not in os.environ:
@@ -1298,7 +1298,7 @@ class LauncherMainFrame(wx.Frame):
                 CancelCallback=self.loginProcess.cancel
                 self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, "Connecting to CVL...", "", maximumProgressBarValue, userCanAbort,CancelCallback)
 
-        wx.CallAfter(initializeProgressDialog)
+#        wx.CallAfter(initializeProgressDialog)
 
 
 
