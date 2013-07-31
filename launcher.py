@@ -173,6 +173,7 @@ class LauncherMainFrame(wx.Frame):
 #        global launcherMainFrame
 #        launcherMainFrame = self
 
+        self.loginProcess=[]
         self.logWindow = None
         self.progressDialog = None
 
@@ -262,6 +263,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.SetMenuBar(self.menu_bar)
 
+        self.SetAutoLayout(1)
         self.loginDialogPanel = wx.Panel(self, wx.ID_ANY)
         #self.loginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=15, hgap=5)
         self.loginDialogPanelSizer = wx.BoxSizer(wx.VERTICAL)
@@ -306,7 +308,7 @@ class LauncherMainFrame(wx.Frame):
         noneVisible['resolutionPanel']=False
         noneVisible['cipherPanel']=False
         noneVisible['debugCheckBoxPanel']=False
-        noneVisible['advancedCheckBoxPanel']=True
+        noneVisible['advancedCheckBoxPanel']=False
         self.sites['Desktop on m1.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m1"),massivevisible)
         self.sites['Desktop on m2.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m2"),massivevisible)
         self.sites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("cvl"),cvlvisible)
@@ -381,7 +383,7 @@ class LauncherMainFrame(wx.Frame):
         vncDisplayResolutions = [
             defaultResolution, "1024x768", "1152x864", "1280x800", "1280x1024", "1360x768", "1366x768", "1440x900", "1600x900", "1680x1050", "1920x1080", "1920x1200", "7680x3200",
             ]
-        self.resolutionField = wx.ComboBox(self.resolutionPanel, wx.ID_ANY, value='', choices=vncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_resolution')
+        self.resolutionField = wx.ComboBox(self.resolutionPanel, wx.ID_ANY, value=defaultResolution, choices=vncDisplayResolutions, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_resolution')
         self.resolutionPanel.GetSizer().Add(self.resolutionField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.resolutionPanel.Fit()
         self.loginFieldsPanel.GetSizer().Add(self.resolutionPanel,proportion=0,flag=wx.EXPAND)
@@ -410,16 +412,16 @@ class LauncherMainFrame(wx.Frame):
         p = wx.Panel(self.checkBoxPanel,name="debugCheckBoxPanel")
         p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         l = wx.StaticText(p, wx.ID_ANY, 'Show debug window')
-        c = wx.CheckBox(p, wx.ID_ANY, "")
+        c = wx.CheckBox(p, wx.ID_ANY, "",name='debugCheckBox')
         c.Bind(wx.EVT_CHECKBOX, self.onDebugWindowCheckBoxStateChanged)
         p.GetSizer().Add(l,border=5,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT)
         p.GetSizer().Add(c,border=5,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT)
         p.Fit()
         self.checkBoxPanel.GetSizer().Add(p,flag=wx.ALIGN_LEFT)
     
-        #t=wx.StaticText(self.checkBoxPanel,label="")
-        #self.checkBoxPanelSizer.Add(t,proportion=1,flag=wx.EXPAND)
-
+        t=wx.StaticText(self.checkBoxPanel,label="")
+        self.checkBoxPanel.GetSizer().Add(t,proportion=1,flag=wx.EXPAND)
+  
         p = wx.Panel(self.checkBoxPanel,name="advancedCheckBoxPanel")
         p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         l = wx.StaticText(p, wx.ID_ANY, 'Show Advanced Options')
@@ -430,7 +432,6 @@ class LauncherMainFrame(wx.Frame):
         p.Fit()
         self.checkBoxPanel.GetSizer().Add(p,flag=wx.ALIGN_RIGHT)
 
-        #self.checkBoxPanel.SetSizerAndFit(self.checkBoxPanelSizer) 
         self.checkBoxPanel.Fit()
         self.loginFieldsPanel.GetSizer().Add(self.checkBoxPanel,flag=wx.ALIGN_BOTTOM)
 
@@ -512,8 +513,12 @@ class LauncherMainFrame(wx.Frame):
         import commit_def
         logger.debug('launcher commit hash: ' + commit_def.LATEST_COMMIT)
         logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
-        wx.CallAfter(self.updateVisibility,cvlvisible)
+        self.updateVisibility(noneVisible)
+        self.contacted_massive_website = False
+#        self.checkVersionNumber()
 
+
+    def checkVersionNumber(self):
         # Check for the latest version of the launcher:
         try:
             myHtmlParser = MyHtmlParser('MassiveLauncherLatestVersionNumber')
@@ -595,7 +600,6 @@ class LauncherMainFrame(wx.Frame):
         self.updateVisibility()
 
     def onAdvancedVisibilityStateChanged(self, event):
-        # hacky little dict to hide some stuff. Make this part of the site definition.
         self.updateVisibility()
 
     def showAll(self,window=None):
@@ -611,7 +615,7 @@ class LauncherMainFrame(wx.Frame):
         if visible==None:
             try:
                 visible = self.sites[self.configName].visibility
-            except KeyError:
+            except:
                 visible={}
         for key in visible.keys():
             try:
@@ -626,6 +630,8 @@ class LauncherMainFrame(wx.Frame):
                     window.Hide()
             except:
                 pass # a value in the dictionary didn't correspond to a named component of the panel. Fail silently.
+        self.Fit()
+        self.Layout()
 
     def onDebugWindowCheckBoxStateChanged(self, event):
         if launcherMainFrame.logWindow!=None:
@@ -675,6 +681,8 @@ class LauncherMainFrame(wx.Frame):
         # Clean-up (including qdel if necessary) is now done in LoginTasks.py
         # No longer using temporary private key file, 
         # so there's no need to delete it as part of clean-up.
+        for lp in self.loginProcess:
+            lp.cancel()
 
         try:
             logger.dump_log(launcherMainFrame)
@@ -698,7 +706,6 @@ class LauncherMainFrame(wx.Frame):
 
         with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
             turboVncConfig.write(turboVncPreferencesFileObject)
-
 
     def onCut(self, event):
         textCtrl = self.FindFocus()
@@ -768,6 +775,14 @@ If this account is shared by a number of people then passwords are preferable
             return int(rv)
         else:
             self.queryAuthMode()
+    def loginComplete(self,lp,jobParams):
+        print "in LoginComplete"
+        self.loginProcess.remove(lp)
+        print jobParams
+    def loginCancel(self,lp,jobParams):
+        print "in LoginCance"
+        self.loginProcess.remove(lp)
+        print jobParams
 
     def onLogin(self, event):
         MASSIVE_TAB_INDEX = 0
@@ -811,7 +826,7 @@ If this account is shared by a number of people then passwords are preferable
 
             logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
 
-        self.logWindow.Show(True)
+        self.logWindow.Show(self.FindWindowByName('debugCheckBox').GetValue())
 
 
         userCanAbort=True
@@ -849,17 +864,13 @@ If this account is shared by a number of people then passwords are preferable
         else:
             logger.debug("launcherMainFrame.onLogin: using a permanent Key pair")
             launcherMainFrame.keyModel=KeyModel(temporaryKey=False)
-            removeKeyOnExit = False
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit)
-        self.loginProcess.doLogin()
-
-
-        def initializeProgressDialog():
-            CancelCallback=self.loginProcess.cancel
-            self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, 'Connecting to {configName}...'.format(**jobParams), "", maximumProgressBarValue, userCanAbort,CancelCallback)
-
-#        wx.CallAfter(initializeProgressDialog)
-
+        jobParams=self.buildJobParams(self)
+        jobParams['wallseconds']=int(jobParams['hours'])*60*60
+        lp=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.keyModel,siteConfig=sites[self.configName],displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
+        lp.setCallback(lambda jobParams: self.loginComplete(lp,jobParams))
+        lp.setCancelCallback(lambda jobParams: self.loginCancel(lp,jobParams))
+        self.loginProcess.append(lp)
+        lp.doLogin()
 
 
 class siteConfig():
@@ -970,8 +981,6 @@ def buildSiteConfigCmdRegExDict(configName):
 
         # Chris trying to avoid using the intermediate port:
         #cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {execHost}:{remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
-
-        #cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -T -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         regex='tunnel_hello'
         siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
