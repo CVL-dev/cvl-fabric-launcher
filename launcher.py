@@ -147,9 +147,24 @@ class LauncherMainFrame(wx.Frame):
         if (site != None):
             for item in window.GetChildren():
                 if isinstance(item,wx.Control):
-                    print "control name %s"%item.GetName()
+                    if prefs.has_section(site,item.GetName()):
+                        item.SetValue(prefs.get(site,item.GetName()))
                 else:
-                    print "Recusring"
+                    self.loadPrefs(prefs,item,site)
+
+    def savePrefs(self,prefs,window,site=None):
+        if (site==None):
+            if prefs.has_option("siteConfigDefault"):
+                siteConfigDefault = prefs.get("siteConfigDefault")
+                if siteConfigDefault in configChoices:
+                    siteConfigComboBox.SetValue(siteConfigDefault)
+                    site=siteConfigDefault
+        if (site != None):
+            for item in window.GetChildren():
+                if isinstance(item,wx.Control):
+                    if prefs.has_section(site,item.GetName()):
+                        item.SetValue(prefs.get(site,item.GetName()))
+                else:
                     self.loadPrefs(prefs,item,site)
 #                   if prefs.has_section(site,'projects'):
 #                       self.projects = prefs.get(site,projects)
