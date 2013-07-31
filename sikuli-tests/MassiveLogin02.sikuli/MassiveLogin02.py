@@ -1,3 +1,28 @@
+"""
+This test basically replicates the following manual test on the wiki:
+
+    Launcher kills visnode jobs if the user hits cancel
+
+    ssh to m2, run
+
+    watch -n 1 "qstat -u username"
+
+    to watch your queue.
+
+    Run the launcher, connect to m2, and as soon as a job appears in the queue, hit cancel.
+
+    The job should be canceled in a few seconds, and the logs should say something like:
+
+    2013-07-26 10:00:31,053 - launcher - Logger - debug - 65 - DEBUG - loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL 
+    2013-07-26 10:00:31,053 - launcher - Logger - debug - 65 - DEBUG - loginProcessEvent: cancel: trying to stop the job on MASSIVE/CVL but since we are already in a cancel state, we will not try to be to graceful about it 
+    2013-07-26 10:00:31,054 - launcher - Logger - debug - 65 - DEBUG - loginProcessEvent: cancel: attempting to format the stop command <'qdel -a {jobid}'> using parameters: {'username': u'carlo', 'hours': '4', 'jobidNumber': '6285727', 'vnc': '/opt/TurboVNC/bin/vncviewer', 'configName': u'm2-login2.massive.org.au', 'wallseconds': 14400, 'launcher_version_number': '0.4.3', 'jobid': '6285727.m2-m', 'project': u'Desc002', 'sshBinary': '/usr/bin/ssh', 'cipher': u'arcfour128', 'loginHost': u'm2-login2.massive.org.au', 'vncOptionsString': '-encodings "tight copyrect"', 'group': 'Desc004', 'nodes': '1', 'resolution': u'1024x768', 'turboVncFlavour': 'X11'} 
+    2013-07-26 10:00:31,054 - launcher - Logger - debug - 65 - DEBUG - loginProcessEvent: cancel: formatted stopCmd: 'qdel -a 6285727.m2-m'
+
+
+NOTE THAT WE BEGIN FROM AN EMPTY LOCAL CONFIG: no .ssh and no Massive Launcher configuration.
+
+"""
+
 import credentials
 import os
 import time
