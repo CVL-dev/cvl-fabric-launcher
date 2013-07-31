@@ -1205,6 +1205,7 @@ class LoginProcess():
 #                    logger.dump_log(event.loginprocess.notify_window,submit_log=False)
 #                else:
 #                    logger.dump_log(event.loginprocess.notify_window,submit_log=True)
+                event.loginprocess.cancelCallback(event.loginprocess.jobParams)
             else:
                 event.Skip()
 
@@ -1528,6 +1529,10 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.unmountWebDav)
 
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
+    def setCallback(self,callback):
+        self.completeCallback=callback
+    def setCancelCallback(self,callback):
+        self.cancelCallback=callback
 
     def timeRemaining(self):
         # The time fields returned by qstat can either contain HH:MM or --. -- occurs if the job has only just started etc
