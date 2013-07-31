@@ -125,8 +125,11 @@ def buildSiteConfigDict(configName):
         siteConfig['otpCmd']= '"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"'
         siteConfig['otpRegEx']='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
         siteConfig['directConnect']=False
-        siteConfig['webDavIntermediateEphemeralPortCmd']='/usr/local/desktop/get_ephemeral_port.py'
-        siteConfig['webDavIntermediateEphemeralPortRegEx']='^(?P<webDavIntermediateEphemeralPortNumber>.*)$'
+        siteConfig['webDavIntermediatePortCmd']='/usr/local/desktop/get_ephemeral_port.py'
+        siteConfig['webDavIntermediatePortRegEx']='^(?P<intermediateWebDavPortNumber>[0-9]+)$'
+        siteConfig['webDavRemotePortCmd']='"/usr/bin/ssh {execHost} \'/usr/local/desktop/get_ephemeral_port.py\'"'
+        siteConfig['webDavRemotePortRegEx']='^(?P<remoteWebDavPortNumber>[0-9]+)$'
+        '(?P<port1>.*)\n(?P<port2>.*)'
         siteConfig['openWebDavShareInRemoteFileBrowserCmd']='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\'"'
         displayWebDavInfoDialogOnRemoteDesktop = False
         if displayWebDavInfoDialogOnRemoteDesktop:
@@ -195,17 +198,17 @@ def buildSiteConfigDict(configName):
         #siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
         siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
         siteConfig['webDavTunnelRegEx']='tunnel_hello'
-        cmd='\"/usr/bin/ssh {execHost} /usr/local/bin/get_ephemeral_port.py\"'
-        regex='^(?P<remoteWebDavPortNumber>[0-9]+)$'
-        siteConfig['webDavIntermediateEphemeralPortCmd']=cmd
-        siteConfig['webDavIntermediateEphemeralPortRegEx']=regex
+        siteConfig['webDavIntermediatePortCmd']='echo hello'
+        siteConfig['webDavIntermediatePortRegEx']='hello'
+        siteConfig['webDavRemotePortCmd']='"/usr/bin/ssh {execHost} \'/usr/local/bin/get_ephemeral_port.py\'"'
+        siteConfig['webDavRemotePortRegEx']='^(?P<remoteWebDavPortNumber>[0-9]+)$'
     else:
         siteConfig['agentCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"'
         siteConfig['agentRegEx']='agent_hello'
         siteConfig['tunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
         siteConfig['tunnelRegEx']='tunnel_hello'
-        #siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -T -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
-        siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+        #siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -T -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+        siteConfig['webDavTunnelCmd']='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         siteConfig['webDavTunnelRegEx']='tunnel_hello'
     return siteConfig
     
