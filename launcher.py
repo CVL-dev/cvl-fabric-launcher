@@ -1445,7 +1445,7 @@ def buildSiteConfigCmdRegExDict(configName):
         #siteConfig['displayWebDavAccessInfoInRemoteDialog']=siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"')
         cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {webDavIntermediateEphemeralPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{webDavIntermediateEphemeralPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         regex='tunnel_hello'
-        siteConfig['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
+        siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
 
 
 
