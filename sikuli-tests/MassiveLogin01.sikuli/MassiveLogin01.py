@@ -1,3 +1,16 @@
+"""
+This test replicates the following manual test on the wiki. Note: run this after MassiveLogin02.sikuli
+
+    Existing User
+    An existing user should be able to see the desktop session start without issue 
+
+    start desktop session with Launcher
+
+and also:
+
+
+"""
+
 import credentials
 import os
 import time
