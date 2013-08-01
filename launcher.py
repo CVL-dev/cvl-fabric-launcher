@@ -137,57 +137,90 @@ class LauncherMainFrame(wx.Frame):
     PERM_SSH_KEY=0
     TEMP_SSH_KEY=1
 
-    def loadPrefs(self,prefs,window,site=None):
-        if (site==None):
-            if prefs.has_option("siteConfigDefault"):
-                siteConfigDefault = prefs.get("siteConfigDefault")
-                if siteConfigDefault in configChoices:
-                    siteConfigComboBox.SetValue(siteConfigDefault)
-                    site=siteConfigDefault
-        if (site != None):
-            for item in window.GetChildren():
-                if isinstance(item,wx.Control):
-                    if prefs.has_section(site,item.GetName()):
-                        item.SetValue(prefs.get(site,item.GetName()))
-                else:
-                    self.loadPrefs(prefs,item,site)
 
-    def savePrefs(self,prefs,window,site=None):
+    def shouldSave(self,item):
+        # I should be able to use a python iterator here
+        shouldSave=False
+        for ctrl in self.savedControls:
+            if isinstance(item,ctrl):
+                shouldSave=True
+        return shouldSave
+
+    
+    def loadPrefs(self,window=None,site=None):
+        if (self.prefs==None):
+            self.prefs=ConfigParser.RawConfigParser(allow_no_value=True)
+            if (os.path.exists(launcherPreferencesFilePath)):
+                with open(launcherPreferencesFilePath,'r') as o:
+                    self.prefs.readfp(o)
+        if window==None:
+            window=self
         if (site==None):
-            if prefs.has_option("siteConfigDefault"):
-                siteConfigDefault = prefs.get("siteConfigDefault")
-                if siteConfigDefault in configChoices:
-                    siteConfigComboBox.SetValue(siteConfigDefault)
-                    site=siteConfigDefault
+            siteConfigComboBox=self.FindWindowByName('jobParams_configName')
+            site=siteConfigComboBox.GetValue()
+            if (site==None or site==""):
+                if self.prefs.has_option("Launcher Config","siteConfigDefault"):
+                    siteConfigDefault = self.prefs.get("Launcher Config","siteConfigDefault")
+                    if siteConfigDefault in self.sites.keys():
+                        siteConfigComboBox.SetValue(siteConfigDefault)
+                        site=siteConfigDefault
+                        self.loadPrefs(window=self,site=site)
+                        print "in load prefs, updating visibilty"
+                        self.updateVisibility()
         if (site != None):
+            if self.prefs.has_section(site):
+                for item in window.GetChildren():
+                    if self.shouldSave(item):
+                        name=item.GetName()
+                        if self.prefs.has_option(site,name):
+                            val=self.prefs.get(site,name)
+                            try: # Most wx Controls expect a string in SetValue, but at least SpinCtrl expects an int.
+                                item.SetValue(val)
+                            except TypeError:
+                                item.SetValue(int(val))
+                    else:
+                        self.loadPrefs(window=item,site=site)
+
+    def savePrefsEventHandler(self,event):
+        self.savePrefs()
+        
+    def savePrefs(self,prefs=None,window=None,site=None):
+        write=False
+        # If we called savePrefs without a window specified, its the root of recussion
+        if (window==None):
+            write=True
+            window=self
+        if (site==None):
+            configName=self.FindWindowByName('jobParams_configName').GetValue()
+            if (configName!=None):
+                if (not self.prefs.has_section("Launcher Config")):
+                    self.prefs.add_section("Launcher Config")
+                self.prefs.set("Launcher Config","siteConfigDefault",configName)
+                self.savePrefs(prefs=prefs,site=configName)
+        elif (site!=None):
+            if (not self.prefs.has_section(site)):
+                self.prefs.add_section(site)
             for item in window.GetChildren():
-                if isinstance(item,wx.Control):
-                    if prefs.has_section(site,item.GetName()):
-                        item.SetValue(prefs.get(site,item.GetName()))
+                if self.shouldSave(item):
+                    self.prefs.set(site,item.GetName(),item.GetValue())
                 else:
-                    self.loadPrefs(prefs,item,site)
-#                   if prefs.has_section(site,'projects'):
-#                       self.projects = prefs.get(site,projects)
-#                   if prefs.has_section(site,'defaultProject'):
-#                       project=prefs.get(site,'defaltProject')
-#                       if project in self.projects:
-#                           self.projectComboBox.SetSelection(project)
-#                   if prefs.has_section(site,'hours'):
-#                        self.hoursField.setvalue(prefs.get(site,'hours')
-#                   if prefs.has_section(site,'nodes'):
-#                        self.hoursField.setvalue(prefs.get(site,'nodes')
-       # 
-       # def savePrefs(prefs):
-       #     if (prefsFilePath!=None):
-       #         with(open(prefsFilePath,'wx') as prefsFileObject:
-       #             prefs.write(prefsFileObject)
+                    self.savePrefs(prefs=prefs,site=site,window=item)
+        if (write):
+            with open(launcherPreferencesFilePath,'w') as o:
+                self.prefs.write(o)
 
 
     def __init__(self, parent, id, title):
 
 #        global launcherMainFrame
 #        launcherMainFrame = self
+        # List all the types of control that should be saved explicitly since apparently StaticText et al inherit from wx.Control
+        self.savedControls=[]
+        self.savedControls.append(wx.TextCtrl)
+        self.savedControls.append(wx.ComboBox)
+        self.savedControls.append(wx.SpinCtrl)
 
+        self.prefs=None
         self.loginProcess=[]
         self.logWindow = None
         self.progressDialog = None
@@ -278,8 +311,10 @@ class LauncherMainFrame(wx.Frame):
 
         self.SetMenuBar(self.menu_bar)
 
-        self.SetAutoLayout(1)
+        self.AUTOLAYOUT=1
+        self.SetAutoLayout(self.AUTOLAYOUT)
         self.loginDialogPanel = wx.Panel(self, wx.ID_ANY)
+        self.loginDialogPanel.SetAutoLayout(self.AUTOLAYOUT)
         #self.loginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=15, hgap=5)
         self.loginDialogPanelSizer = wx.BoxSizer(wx.VERTICAL)
         self.loginDialogPanel.SetSizer(self.loginDialogPanelSizer)
@@ -289,6 +324,7 @@ class LauncherMainFrame(wx.Frame):
 
         #self.loginFieldsPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
         self.loginFieldsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
+        self.loginFieldsPanel.SetAutoLayout(self.AUTOLAYOUT)
         #self.loginFieldsPanelSizer = wx.FlexGridSizer(rows=7, cols=2, vgap=3, hgap=5)
         self.loginFieldsPanelSizer = wx.BoxSizer(wx.VERTICAL)
         self.loginFieldsPanel.SetSizer(self.loginFieldsPanelSizer)
@@ -330,6 +366,7 @@ class LauncherMainFrame(wx.Frame):
         self.sites['Huygens on the CVL']  = siteConfig(buildSiteConfigCmdRegExDict("Huygens"),cvlvisible)
 
         self.siteConfigPanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
+        self.siteConfigPanel.SetAutoLayout(self.AUTOLAYOUT)
         self.siteConfigPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.configLabel = wx.StaticText(self.siteConfigPanel, wx.ID_ANY, 'Site')
         self.siteConfigPanel.GetSizer().Add(self.configLabel, proportion=0, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND, border=5)
@@ -340,6 +377,7 @@ class LauncherMainFrame(wx.Frame):
         self.loginFieldsPanel.GetSizer().Add(self.siteConfigPanel,proportion=0,flag=wx.EXPAND)
 
         self.usernamePanel=wx.Panel(self.loginFieldsPanel,name='usernamePanel')
+        self.usernamePanel.SetAutoLayout(self.AUTOLAYOUT)
         self.usernamePanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.usernameLabel = wx.StaticText(self.usernamePanel, wx.ID_ANY, 'Username',name='label_username')
         self.usernamePanel.GetSizer().Add(self.usernameLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -352,6 +390,7 @@ class LauncherMainFrame(wx.Frame):
         #loadPrefs(prefs)
         self.projectPanel = wx.Panel(self.loginFieldsPanel,wx.ID_ANY,name="projectPanel")
         self.projectPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+        self.projectPanel.SetAutoLayout(self.AUTOLAYOUT)
         self.projectLabel = wx.StaticText(self.projectPanel, wx.ID_ANY, 'Project')
         self.projectPanel.GetSizer().Add(self.projectLabel, proportion=1, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, border=5)
 
@@ -365,6 +404,7 @@ class LauncherMainFrame(wx.Frame):
 
 
         self.resourcePanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY,name="resourcePanel")
+        self.resourcePanel.SetAutoLayout(self.AUTOLAYOUT)
         self.resourcePanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
 
         self.hoursLabel = wx.StaticText(self.resourcePanel, wx.ID_ANY, 'Hours requested')
@@ -382,6 +422,7 @@ class LauncherMainFrame(wx.Frame):
 
 
         self.resolutionPanel = wx.Panel(self.loginFieldsPanel,name="resolutionPanel")
+        self.resolutionPanel.SetAutoLayout(self.AUTOLAYOUT)
         self.resolutionPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.resolutionLabel = wx.StaticText(self.resolutionPanel, wx.ID_ANY, 'Resolution',name='label_resolution')
         self.resolutionPanel.GetSizer().Add(self.resolutionLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -405,6 +446,7 @@ class LauncherMainFrame(wx.Frame):
 
         
         self.cipherPanel = wx.Panel(self.loginFieldsPanel,name="cipherPanel")
+        self.cipherPanel.SetAutoLayout(self.AUTOLAYOUT)
         self.cipherPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.sshTunnelCipherLabel = wx.StaticText(self.cipherPanel, wx.ID_ANY, 'SSH tunnel cipher',name='label_cipher')
         self.cipherPanel.GetSizer().Add(self.sshTunnelCipherLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -422,9 +464,11 @@ class LauncherMainFrame(wx.Frame):
 
 
         self.checkBoxPanel = wx.Panel(self.loginFieldsPanel,name="checkBoxPanel")
+        self.checkBoxPanel.SetAutoLayout(self.AUTOLAYOUT)
         self.checkBoxPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         
         p = wx.Panel(self.checkBoxPanel,name="debugCheckBoxPanel")
+        p.SetAutoLayout(self.AUTOLAYOUT)
         p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         l = wx.StaticText(p, wx.ID_ANY, 'Show debug window')
         c = wx.CheckBox(p, wx.ID_ANY, "",name='debugCheckBox')
@@ -438,6 +482,7 @@ class LauncherMainFrame(wx.Frame):
         self.checkBoxPanel.GetSizer().Add(t,proportion=1,flag=wx.EXPAND)
   
         p = wx.Panel(self.checkBoxPanel,name="advancedCheckBoxPanel")
+        p.SetAutoLayout(self.AUTOLAYOUT)
         p.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         l = wx.StaticText(p, wx.ID_ANY, 'Show Advanced Options')
         c = wx.CheckBox(p, wx.ID_ANY, "",name='advancedCheckBox')
@@ -451,7 +496,6 @@ class LauncherMainFrame(wx.Frame):
         self.loginFieldsPanel.GetSizer().Add(self.checkBoxPanel,flag=wx.ALIGN_BOTTOM)
 
         #self.tabbedView.AddPage(self.loginFieldsPanel, "Login")
-        #self.loadPrefs(None,self.loginFieldsPanel)
 
         #self.loginDialogPanelSizer.Add(self.tabbedView, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
         self.loginFieldsPanel.Fit()
@@ -463,12 +507,21 @@ class LauncherMainFrame(wx.Frame):
         # Buttons Panel
 
         self.buttonsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
-        self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=10)
+        self.buttonsPanel.SetAutoLayout(self.AUTOLAYOUT)
+        self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=4, vgap=5, hgap=10)
         self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
 
         self.preferencesButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Preferences')
         self.buttonsPanelSizer.Add(self.preferencesButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
         self.Bind(wx.EVT_BUTTON, self.onOptions, id=self.preferencesButton.GetId())
+
+        self.saveButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Save Preferences')
+        self.buttonsPanel.GetSizer().Add(self.saveButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
+        self.saveButton.Bind(wx.EVT_BUTTON, self.savePrefsEventHandler)
+
+        self.optionsButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'VNC Options')
+        self.buttonsPanel.GetSizer().Add(self.optionsButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
+        self.optionsButton.Bind(wx.EVT_BUTTON, self.onOptions)
 
         self.exitButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Exit')
         self.buttonsPanelSizer.Add(self.exitButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
@@ -530,6 +583,7 @@ class LauncherMainFrame(wx.Frame):
         logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
         self.updateVisibility(noneVisible)
         self.contacted_massive_website = False
+        self.loadPrefs()
 #        self.checkVersionNumber()
 
 
@@ -610,8 +664,7 @@ class LauncherMainFrame(wx.Frame):
         return jobParams
 
     def onSiteConfigChanged(self,event):
-        self.configName=event.GetEventObject().GetValue()
-        #self.loadPrefs(configName)
+        self.loadPrefs(site=event.GetEventObject().GetValue())
         self.updateVisibility()
 
     def onAdvancedVisibilityStateChanged(self, event):
@@ -625,12 +678,13 @@ class LauncherMainFrame(wx.Frame):
         window.Show()
 
     def updateVisibility(self,visible=None):
+        print "updating visibility"
         self.showAll()
         advanced=self.FindWindowByName('advancedCheckBox').GetValue()
         if visible==None:
             try:
-                visible = self.sites[self.configName].visibility
-            except:
+                visible = self.sites[self.FindWindowByName('jobParams_configName').GetValue()].visibility
+            except Exception as e:
                 visible={}
         for key in visible.keys():
             try:
@@ -1107,6 +1161,14 @@ class MyApp(wx.App):
         appUserDataDir = os.path.join(appUserDataDir,"")
         if not os.path.exists(appUserDataDir):
             os.makedirs(appUserDataDir)
+
+        global launcherConfig
+#        launcherConfig=ConfigParser.RawConfigParser(allow_no_value=True)
+        global launcherPreferencesFilePath 
+        launcherPreferencesFilePath = os.path.join(appUserDataDir,"Launcher Preferences.cfg")
+#        if (os.path.exists(launcherPreferencesFilePath)):
+#            launcherConfig.read(launcherPreferencesFilePath)
+        
 
         global massiveLauncherConfig
         massiveLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
