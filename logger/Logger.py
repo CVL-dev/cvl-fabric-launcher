@@ -101,8 +101,8 @@ class Logger():
                 yes_no()
             else:
                 wx.CallAfter(yes_no)
-            while not launcherMainFrame.yes_no_completed:
-                time.sleep(0.1)
+                while not launcherMainFrame.yes_no_completed:
+                    time.sleep(0.1)
 
         if submit_log and launcherMainFrame.submit_log:
             self.debug('about to send debug log')
