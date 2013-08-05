@@ -1211,8 +1211,16 @@ class LoginProcess():
                 if (event.loginprocess.skd!=None):
                     logger.debug('loginProcessEvent.shutdownKeyDist: calling skd.shutdown()')
                     event.loginprocess.skd.shutdown()
+                    count=0
+                    while not event.loginprocess.skd.complete():
+                        count = count + 1
+                        logger.debug("loginProcessEvent.shutdownKeyDist: Waiting for sshKeyDist to shut down...")
+                        sleep(0.5)
+                        if count > 10:
+                            logger.error("sshKeyDist failed to shut down in 5 seconds.")
+                            break
                 else:
-                    logger.debug('loginProcessEvent.checkRunningServer: Not calling skd.shutdown(), because event.loginprocess.skd is None.')
+                    logger.debug('loginProcessEvent.shutdownKeyDist: Not calling skd.shutdown(), because event.loginprocess.skd is None.')
                 event.loginprocess.skd = None # SSH key distribution is complete at this point.
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                 logger.debug('loginProcessEvent: shutdownKeyDist: posting EVT_LOGINPROCESS_SHUTDOWN')
