@@ -1364,7 +1364,7 @@ class LoginProcess():
         self.jobParams = jobParams
         self.vncOptions=vncOptions
         self.contacted_massive_website=contacted_massive_website
-        self.notify_window=wx.Window(parent=None)
+        self.notify_window=wx.Window(parent=self.parentWindow)
         #self.notify_window.Hide()
         self.notify_window.Center()
         try:
