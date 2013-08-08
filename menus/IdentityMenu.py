@@ -15,7 +15,6 @@ from cvlsshutils.KeyModel import KeyModel
 
 from logger.Logger import logger
 
-from cvlsshutils.sshKeyDist import sshpaths
 
 class IdentityMenu(wx.Menu):
 
@@ -75,9 +74,7 @@ class IdentityMenu(wx.Menu):
             with open(self.massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
 
-        (self.privateKeyDirectory, self.privateKeyFileName) = os.path.split(self.privateKeyFilePath)
-        # cvlsshutils.sshKeyDist.sshpaths currently assumes that private key is in ~/.ssh
-        self.sshPathsObject = sshpaths(self.privateKeyFileName)
+        #self.sshPathsObject = sshpaths
 
         return os.path.exists(self.privateKeyFilePath)
 
@@ -172,7 +169,7 @@ class IdentityMenu(wx.Menu):
             else:
                 return
 
-        inspectKeyDialog = InspectKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Key Properties', self.privateKeyFilePath)
+        inspectKeyDialog = InspectKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Key Properties', self.launcherMainFrame.sshpaths)
         inspectKeyDialog.Center()
         inspectKeyDialog.ShowModal()
 
@@ -180,7 +177,7 @@ class IdentityMenu(wx.Menu):
     def onChangePassphrase(self,event):
 
         if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
-            changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Change Key Passphrase', self.privateKeyFilePath)
+            changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Change Key Passphrase', self.launcherMainFrame.sshpaths)
             if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
                 dlg = wx.MessageDialog(self.launcherMainFrame,
                     "Passphrase changed successfully!",

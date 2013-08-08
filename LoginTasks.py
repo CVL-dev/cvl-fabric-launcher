@@ -727,7 +727,7 @@ class LoginProcess():
                     displayStrings = sshKeyDistDisplayStringsCVL()
                 else:
                     displayStrings = sshKeyDistDisplayStringsMASSIVE()
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.sshpaths,displayStrings)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      event.loginprocess.cancel)
@@ -1344,11 +1344,11 @@ class LoginProcess():
 
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,parentWindow,jobParams,sshpaths,siteConfig=None,autoExit=False,completeCallback=None,vncOptions=None,contacted_massive_website=False):
+    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,autoExit=False,completeCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False):
         self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
-        self.sshpaths=sshpaths
+        self.keyModel=keyModel
         self.threads=[]
         self._canceled=threading.Event()
         self.autoExit = autoExit
@@ -1364,6 +1364,7 @@ class LoginProcess():
         self.jobParams = jobParams
         self.vncOptions=vncOptions
         self.contacted_massive_website=contacted_massive_website
+        self.removeKeyOnExit=removeKeyOnExit
         self.notify_window=wx.Window(parent=self.parentWindow)
         #self.notify_window.Hide()
         self.notify_window.Center()
@@ -1378,7 +1379,7 @@ class LoginProcess():
         self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.notify_window, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
 
         update={}
-        update['sshBinary']=sshpaths.sshBinary
+        update['sshBinary']=self.keyModel.getsshBinary()
         update['launcher_version_number']=launcher_version_number.version_number
         self.jobParams.update(update)
 

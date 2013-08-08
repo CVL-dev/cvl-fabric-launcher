@@ -111,9 +111,11 @@ import logging
 import LoginTasks
 from utilityFunctions import *
 import cvlsshutils.sshKeyDist
+import cvlsshutils
 import launcher_progress_dialog
-from menus.IdentityMenu import IdentityMenu
+#from menus.IdentityMenu import IdentityMenu
 import tempfile
+from cvlsshutils.KeyModel import KeyModel
 
 from logger.Logger import logger
 
@@ -196,9 +198,9 @@ class LauncherMainFrame(wx.Frame):
             self.Bind(wx.EVT_MENU, self.onSelectAll, id=wx.ID_SELECTALL)
             self.menu_bar.Append(self.edit_menu, "&Edit")
 
-        self.identity_menu = IdentityMenu()
-        self.identity_menu.initialize(self, massiveLauncherConfig, massiveLauncherPreferencesFilePath)
-        self.menu_bar.Append(self.identity_menu, "&Identity")
+        #self.identity_menu = IdentityMenu()
+        #self.identity_menu.initialize(self, massiveLauncherConfig, massiveLauncherPreferencesFilePath)
+        #self.menu_bar.Append(self.identity_menu, "&Identity")
 
         self.help_menu = wx.Menu()
         helpContentsMenuItemID = wx.NewId()
@@ -1202,12 +1204,13 @@ class LauncherMainFrame(wx.Frame):
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
-        if launcherMainFrame.massiveTabSelected:
-            self.logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
-            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseMassiveDebugWindow)
-        else:
-            self.logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
-            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseCvlDebugWindow)
+        if self.logWindow == None:
+            if launcherMainFrame.massiveTabSelected:
+                self.logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
+                self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseMassiveDebugWindow)
+            else:
+                self.logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
+                self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseCvlDebugWindow)
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -1266,7 +1269,6 @@ class LauncherMainFrame(wx.Frame):
             logger.debug(traceback.format_exc())
             pass
 
-        self.sshpaths = cvlsshutils.sshKeyDist.sshpaths('MassiveLauncherKey',massiveLauncherConfig,massiveLauncherPreferencesFilePath)
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         jobParams={}
         jobParams['username']=username
@@ -1281,7 +1283,7 @@ class LauncherMainFrame(wx.Frame):
         configName=host
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.sshpaths,siteConfig=siteConfigObj,autoExit=autoExit,vncOptions=self.vncOptions)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.keyModel,siteConfig=siteConfigObj,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
         if sys.platform.startswith("win"):
             cvlsshutils.sshKeyDist.start_pageant()
             if 'HOME' not in os.environ:
@@ -1567,6 +1569,13 @@ class MyApp(wx.App):
                 usingPrivateKeyForTheFirstTime()
         else:
             usingPrivateKeyForTheFirstTime()
+
+        launcherMainFrame.keyModel=KeyModel(temporaryKey=launcherMainFrame.vncOptions['public_mode'])
+        if massiveLauncherConfig is not None:
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", launcherMainFrame.keyModel.getsshKeyPath())
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+
 
         return True
 
