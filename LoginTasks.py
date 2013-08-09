@@ -33,6 +33,8 @@ class LoginProcess():
         def stop(self):
             if self.process!=None:
                 self.process.stdin.write("exit\n")
+                self.process.kill()
+                self.process=None
             self._stop.set()
         
         def stopped(self):
@@ -112,7 +114,6 @@ class LoginProcess():
             if (self.cmdRegex.cmd!= None):
                 logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
             self._stop.set()
-            self.process.kill()
         
         def stopped(self):
             return self._stop.isSet()
@@ -352,7 +353,6 @@ class LoginProcess():
         def stop(self):
             logger.debug("runLoopServerCommandThread: stopping")
             self._stop.set()
-            self.process.kill()
         
         def stopped(self):
             return self._stop.isSet()
@@ -1313,7 +1313,7 @@ class LoginProcess():
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS,event.loginprocess)
                 else:
                     logger.debug("caught an EVT_LOGINPROCESS_KILL_SERVER")
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST,event.loginprocess)
                 if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
                     t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopForRestart,nextevent,"")
                 else:
