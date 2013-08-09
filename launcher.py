@@ -111,9 +111,11 @@ import logging
 import LoginTasks
 from utilityFunctions import *
 import cvlsshutils.sshKeyDist
+import cvlsshutils
 import launcher_progress_dialog
 from menus.IdentityMenu import IdentityMenu
 import tempfile
+from cvlsshutils.KeyModel import KeyModel
 
 from logger.Logger import logger
 
@@ -669,7 +671,7 @@ class LauncherMainFrame(wx.Frame):
         self.cvlLoginHost = ""
         cvlLoginHosts = ["login.cvl.massive.org.au","Huygens on the CVL"]
         defaultCvlHost = "login.cvl.massive.org.au"
-        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_READONLY)
+        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1))
         self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
@@ -907,6 +909,12 @@ class LauncherMainFrame(wx.Frame):
         import commit_def
         logger.debug('launcher commit hash: ' + commit_def.LATEST_COMMIT)
         logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
+        MASSIVE_TAB_INDEX = 0
+        CVL_TAB_INDEX =1
+        if self.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+            self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
+        if self.tabbedView.GetSelection()==CVL_TAB_INDEX:
+            self.displayStrings = sshKeyDistDisplayStringsCVL()
 
         # Check for the latest version of the launcher:
         try:
@@ -950,6 +958,12 @@ class LauncherMainFrame(wx.Frame):
                 launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
             else:
                 launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
+        MASSIVE_TAB_INDEX = 0
+        CVL_TAB_INDEX =1
+        if self.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+            self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
+        if self.tabbedView.GetSelection()==CVL_TAB_INDEX:
+            self.displayStrings = sshKeyDistDisplayStringsCVL()
 
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()
@@ -1202,12 +1216,13 @@ class LauncherMainFrame(wx.Frame):
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
-        if launcherMainFrame.massiveTabSelected:
-            self.logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
-            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseMassiveDebugWindow)
-        else:
-            self.logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
-            self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseCvlDebugWindow)
+        if self.logWindow == None:
+            if launcherMainFrame.massiveTabSelected:
+                self.logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
+                self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseMassiveDebugWindow)
+            else:
+                self.logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
+                self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseCvlDebugWindow)
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -1266,7 +1281,6 @@ class LauncherMainFrame(wx.Frame):
             logger.debug(traceback.format_exc())
             pass
 
-        self.sshpaths = cvlsshutils.sshKeyDist.sshpaths('MassiveLauncherKey',massiveLauncherConfig,massiveLauncherPreferencesFilePath)
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         jobParams={}
         jobParams['username']=username
@@ -1279,9 +1293,9 @@ class LauncherMainFrame(wx.Frame):
         jobParams['nodes']=nodes
         jobParams['wallseconds']=int(hours)*60*60
         configName=host
-        siteConfigDict = buildSiteConfigDict(configName) #eventually this will be loaded from json downloaded from a website
+        siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,self,jobParams,self.sshpaths,siteConfig=siteConfigObj,autoExit=autoExit)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.keyModel,siteConfig=siteConfigObj,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
         if sys.platform.startswith("win"):
             cvlsshutils.sshKeyDist.start_pageant()
             if 'HOME' not in os.environ:
@@ -1298,13 +1312,196 @@ class LauncherMainFrame(wx.Frame):
                 CancelCallback=self.loginProcess.cancel
                 self.progressDialog = launcher_progress_dialog.LauncherProgressDialog(self, wx.ID_ANY, "Connecting to CVL...", "", maximumProgressBarValue, userCanAbort,CancelCallback)
 
-        wx.CallAfter(initializeProgressDialog)
+#        wx.CallAfter(initializeProgressDialog)
 
 
 
 class siteConfig():
+    class cmdRegEx():
+        def __init__(self,cmd=None,regex=None,requireMatch=True,loop=False,async=False,host='login'):
+
+            self.cmd=cmd
+            if (not isinstance(regex,list)):
+                self.regex=[regex]
+            else:
+                self.regex=regex
+            self.loop=loop
+            self.async=async
+            self.requireMatch=requireMatch
+            if regex==None:
+                self.requireMatch=False
+            self.host=host
+            if (self.async):
+                self.host='local'
+
+        def getCmd(self,jobParam={}):
+            if ('exec' in self.host):
+                sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=no -l {username} {execHost} '
+            elif ('local' in self.host):
+                sshCmd = ''
+            else:
+                sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
+            string=sshCmd.format(**jobParam)+self.cmd.format(**jobParam)
+            return string
+            
+        
     def __init__(self,siteConfigDict):
+        self.listAll=siteConfig.cmdRegEx()
+        self.running=siteConfig.cmdRegEx()
+        self.stop=siteConfig.cmdRegEx()
+        self.stopForRestart=siteConfig.cmdRegEx()
+        self.execHost=siteConfig.cmdRegEx()
+        self.startServer=siteConfig.cmdRegEx()
+        self.runSanityCheck=siteConfig.cmdRegEx()
+        self.setDisplayResolution=siteConfig.cmdRegEx()
+        self.getProjects=siteConfig.cmdRegEx()
+        self.showStart=siteConfig.cmdRegEx()
+        self.vncDisplay=siteConfig.cmdRegEx()
+        self.otp=siteConfig.cmdRegEx()
+        self.directConnect=siteConfig.cmdRegEx()
+        self.messageRegeexs=siteConfig.cmdRegEx()
+        self.webDavIntermediatePort=siteConfig.cmdRegEx()
+        self.webDavRemotePort=siteConfig.cmdRegEx()
+        self.openWebDavShareInRemoteFileBrowser=siteConfig.cmdRegEx()
+        self.displayWebDavInfoDialogOnRemoteDesktop=siteConfig.cmdRegEx()
+        self.webDavTunnel=siteConfig.cmdRegEx()
         self.__dict__.update(siteConfigDict)
+
+def buildSiteConfigCmdRegExDict(configName):
+    import re
+    if sys.platform.startswith("win"):
+        lt = "^<"
+        gt = "^>"
+        pipe = "^|"
+    else:
+        lt = "<"
+        gt = ">"
+        pipe = "|"
+    siteConfigDict={}
+    siteConfigDict['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
+    if ("m1" in configName or "m2" in configName):
+        siteConfigDict['listAll']=siteConfig.cmdRegEx('qstat -u {username}','^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$',requireMatch=False)
+        siteConfigDict['running']=siteConfig.cmdRegEx('qstat -u {username}','^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$')
+        siteConfigDict['stop']=siteConfig.cmdRegEx('\'qdel -a {jobid}\'')
+        siteConfigDict['stopForRestart']=siteConfig.cmdRegEx('qdel {jobid} ; sleep 5\'')
+        siteConfigDict['execHost']=siteConfig.cmdRegEx('qpeek {jobidNumber}','\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$')
+        siteConfigDict['startServer']=siteConfig.cmdRegEx("\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'","^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$")
+        siteConfigDict['runSanityCheck']=siteConfig.cmdRegEx("\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'")
+        siteConfigDict['setDisplayResolution']=siteConfig.cmdRegEx("\'/usr/local/desktop/set_display_resolution.sh {resolution}\'")
+        siteConfigDict['getProjects']=siteConfig.cmdRegEx('\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"','^(?P<group>\S+)\s+.*$')
+        siteConfigDict['showStart']=siteConfig.cmdRegEx("showstart {jobid}","Estimated Rsv based start .*?on (?P<estimatedStart>.*)")
+        siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"','^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$')
+        siteConfigDict['otp']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
+        siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"','agent_hello',async=True)
+        siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
+
+        cmd='\"/usr/local/desktop/get_ephemeral_port.py\"'
+        regex='^(?P<intermediateWebDavPortNumber>[0-9]+)$'
+        siteConfigDict['webDavIntermediatePort']=siteConfig.cmdRegEx(cmd,regex)
+
+        cmd='\"/usr/bin/ssh {execHost} /usr/local/desktop/get_ephemeral_port.py\"'
+        regex='^(?P<remoteWebDavPortNumber>[0-9]+)$'
+        siteConfigDict['webDavRemotePort']=siteConfig.cmdRegEx(cmd,regex)
+
+        cmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\'"'
+        siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
+
+#        cmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 2; DISPLAY={vncDisplay} kdialog --title \\"MASSIVE/CVL Launcher\\" --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"' % (lt,gt,lt,gt)
+        cmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;\'"'
+        siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop'] = siteConfig.cmdRegEx(cmd)
+
+        # Chris trying to avoid using the intermediate port:
+        #cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {execHost}:{remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
+
+        #cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -T -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -T -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+        cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+        regex='tunnel_hello'
+        siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
+
+        cmd='echo hello;exit'
+        regex='hello'
+
+    elif ('cvl' in configName or 'CVL' in configName or 'Huygens' in configName):
+        siteConfigDict['directConnect']=True
+        cmd='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
+        regex='^\s*execHost (?P<execHost>\S+)\s*$'
+        siteConfigDict['execHost'] = siteConfig.cmdRegEx(cmd,regex)
+        cmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
+        regex='^\s*(?P<group>\S+)\s*$'
+        siteConfigDict['getProjects'] = siteConfig.cmdRegEx(cmd,regex)
+        cmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
+        regex='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
+        siteConfigDict['listAll']=siteConfig.cmdRegEx(cmd,regex,requireMatch=False)
+        cmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
+        regex='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
+        siteConfigDict['running']=siteConfig.cmdRegEx(cmd,regex)
+        if ("Hugyens" in configName):
+            cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -q huygens -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
+        else:
+            cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
+        regex="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
+        siteConfigDict['startServer']=siteConfig.cmdRegEx(cmd,regex)
+        siteConfigDict['stop']=siteConfig.cmdRegEx('\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"')
+        #siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('" /usr/bin/ssh {execHost} \' cat /var/spool/torque/spool/{jobidNumber}.*\'"' ,'^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
+        siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('\"cat /var/spool/torque/spool/{jobidNumber}.*\"' ,'^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$',host='exec')
+        cmd= '\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\"'
+        regex='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
+        siteConfigDict['otp']=siteConfig.cmdRegEx(cmd,regex,host='exec')
+        siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "','agent_hello',async=True)
+        siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
+
+        cmd='\"/usr/local/bin/get_ephemeral_port.py\"'
+        regex='^(?P<intermediateWebDavPortNumber>[0-9]+)$'
+        siteConfigDict['webDavIntermediatePort']=siteConfig.cmdRegEx(cmd,regex,host='exec')
+
+        cmd='\"/usr/local/bin/get_ephemeral_port.py\"'
+        regex='^(?P<remoteWebDavPortNumber>[0-9]+)$'
+        siteConfigDict['webDavRemotePort']=siteConfig.cmdRegEx(cmd,regex,host='exec')
+
+        # Below, I initially tried to respect the user's Nautilus setting of always_use_location_entry and change it back after launching Nautilus,
+        # but doing so changes this setting in already-running Nautilus windows, and I want the user to see Nautilus's location bar when showing 
+        # them the WebDav share.  So now, I just brutally change the user's Nautilus location-bar setting to always_use_location_entry.
+        # Note that we might end up mounting WebDAV in a completely different way (e.g. using wdfs), but for now I'm trying to make the user
+        # experience similar on MASSIVE and the CVL.  On MASSIVE, users are not automatically added to the "fuse" group, but they can still 
+        # access a WebDAV share within Konqueror.  The method below for the CVL/Nautilus does require fuse membership, but it ends up looking
+        # similar to MASSIVE/Konqueror from the user's point of view.  Note that getting drag and drop working nicely depends on patching
+        # gtk2 (see CVLFAB-622 on JIRA).
+        cmd="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
+        siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
+
+        #cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
+        cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt\'"'
+        siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop']=siteConfig.cmdRegEx(cmd)
+
+        cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
+        regex='tunnel_hello'
+        siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
+    else:
+        siteConfigDict['listAll']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
+        siteConfigDict['startServer']=siteConfig.cmdRegEx('\"/usr/local/bin/vncsession --vnc turbovnc --geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
+        siteConfigDict['stop']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -kill {vncDisplay}\'')
+        siteConfigDict['otp']= siteConfig.cmdRegEx('\'module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
+        siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {loginHost} "echo agent_hello; bash "','agent_hello',async=True)
+        siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
+        cmd="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
+        siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
+
+        #cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
+        cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt\'"'
+        siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop']=siteConfig.cmdRegEx(cmd)
+
+        cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+        regex='tunnel_hello'
+        siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
+
+
+
+
+
+
+
+
+    return siteConfigDict
 
 class LauncherStatusBar(wx.StatusBar):
     def __init__(self, parent):
@@ -1417,6 +1614,13 @@ class MyApp(wx.App):
                 usingPrivateKeyForTheFirstTime()
         else:
             usingPrivateKeyForTheFirstTime()
+
+        launcherMainFrame.keyModel=KeyModel(temporaryKey=launcherMainFrame.vncOptions['public_mode'])
+        if massiveLauncherConfig is not None:
+            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", launcherMainFrame.keyModel.getsshKeyPath())
+            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+
 
         return True
 
