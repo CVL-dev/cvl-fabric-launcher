@@ -822,7 +822,7 @@ class LoginProcess():
                             logger.debug("trying to format the startServerCmd, project is not necessary")
                             showDialog=False
                         except KeyError as e:
-                            if (e.str()=='project'):
+                            if (e.__str__()=='project'):
                                 logger.debug("trying to format the startServerCmd, project is necessary")
                                 showDialog=True
                             else:

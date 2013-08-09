@@ -1296,10 +1296,6 @@ class LauncherMainFrame(wx.Frame):
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
         self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.keyModel,siteConfig=siteConfigObj,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
-        if sys.platform.startswith("win"):
-            cvlsshutils.sshKeyDist.start_pageant()
-            if 'HOME' not in os.environ:
-                os.environ['HOME'] = os.path.expanduser('~')
         self.loginProcess.doLogin()
 
 
