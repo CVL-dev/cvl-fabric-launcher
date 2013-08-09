@@ -57,8 +57,9 @@ class IdentityMenu(wx.Menu):
         self.launcherMainFrame.Bind(wx.EVT_MENU, self.onHelpAboutKeys, id=helpAboutKeysMenuItem)
 
 
-    def privateKeyExists(self, warnIfNotFoundInLocalSettings):
+    def privateKeyExists(self,warnIfNotFoundInLocalSettings=False):
 
+        exists=self.launcherMainFrame.keyModel.privateKeyExists()
         self.privateKeyFilePath = os.path.join(os.path.expanduser('~'), '.ssh', "MassiveLauncherKey")
         if self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path"):
             self.privateKeyFilePath = self.massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
@@ -76,8 +77,7 @@ class IdentityMenu(wx.Menu):
 
         #self.sshPathsObject = sshpaths
 
-        return os.path.exists(self.privateKeyFilePath)
-
+        return self.launcherMainFrame.keyModel.privateKeyExists()
 
     def offerToCreateKey(self):
 
@@ -92,10 +92,16 @@ class IdentityMenu(wx.Menu):
 
     def createKey(self):
 
-        createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
+        createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key',self.launcherMainFrame.keyModel,self.launcherMainFrame.displayStrings)
         createNewKeyDialog.Center()
         if createNewKeyDialog.ShowModal()==wx.ID_OK:
             logger.debug("User pressed OK from CreateNewKeyDialog.")
+            password = createNewKeyDialog.getPassphrase()
+            def success():
+                pass
+            def failure():
+                pass
+            self.launcherMainFrame.keyModel.generateNewKey(password,success,failure,failure)
             createdKey = True
         else:
             logger.debug("User canceled from CreateNewKeyDialog.")
@@ -106,8 +112,8 @@ class IdentityMenu(wx.Menu):
 
     def deleteKey(self):
 
-        keyModelObject = KeyModel(self.privateKeyFilePath)
-        success = keyModelObject.deleteKeyAndRemoveFromAgent()
+        success = self.launcherMainFrame.keyModel.deleteKey()
+        success = success and self.launcherMainFrame.keyModel.removeKeyFromAgent()
         if success:
             message = "Launcher key was successfully deleted!"
             logger.debug(message)
@@ -123,7 +129,7 @@ class IdentityMenu(wx.Menu):
 
     def onCreateNewKey(self,event):
 
-        if self.privateKeyExists(warnIfNotFoundInLocalSettings=False):
+        if self.privateKeyExists():
             dlg = wx.MessageDialog(self.launcherMainFrame,
                             "You already have a MASSIVE Launcher key.\n\n" +
                             "Do you want to delete your existing key and create a new one?",
@@ -139,14 +145,7 @@ class IdentityMenu(wx.Menu):
             else:
                 return
 
-        createNewKeyDialog = CreateNewKeyDialog(self.launcherMainFrame, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key')
-        createNewKeyDialog.Center()
-        if createNewKeyDialog.ShowModal()==wx.ID_OK:
-            logger.debug("User pressed OK from CreateNewKeyDialog.")
-        else:
-            logger.debug("User canceled from CreateNewKeyDialog.")
-            return False
-
+        return self.createKey()
 
     def keyIsInAgent(self):
 
@@ -169,7 +168,7 @@ class IdentityMenu(wx.Menu):
             else:
                 return
 
-        inspectKeyDialog = InspectKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Key Properties', self.launcherMainFrame.sshpaths)
+        inspectKeyDialog = InspectKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Key Properties', self.launcherMainFrame.keyModel)
         inspectKeyDialog.Center()
         inspectKeyDialog.ShowModal()
 

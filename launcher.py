@@ -113,7 +113,7 @@ from utilityFunctions import *
 import cvlsshutils.sshKeyDist
 import cvlsshutils
 import launcher_progress_dialog
-#from menus.IdentityMenu import IdentityMenu
+from menus.IdentityMenu import IdentityMenu
 import tempfile
 from cvlsshutils.KeyModel import KeyModel
 
@@ -198,9 +198,9 @@ class LauncherMainFrame(wx.Frame):
             self.Bind(wx.EVT_MENU, self.onSelectAll, id=wx.ID_SELECTALL)
             self.menu_bar.Append(self.edit_menu, "&Edit")
 
-        #self.identity_menu = IdentityMenu()
-        #self.identity_menu.initialize(self, massiveLauncherConfig, massiveLauncherPreferencesFilePath)
-        #self.menu_bar.Append(self.identity_menu, "&Identity")
+        self.identity_menu = IdentityMenu()
+        self.identity_menu.initialize(self, massiveLauncherConfig, massiveLauncherPreferencesFilePath)
+        self.menu_bar.Append(self.identity_menu, "&Identity")
 
         self.help_menu = wx.Menu()
         helpContentsMenuItemID = wx.NewId()
@@ -909,6 +909,12 @@ class LauncherMainFrame(wx.Frame):
         import commit_def
         logger.debug('launcher commit hash: ' + commit_def.LATEST_COMMIT)
         logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
+        MASSIVE_TAB_INDEX = 0
+        CVL_TAB_INDEX =1
+        if self.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+            self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
+        if self.tabbedView.GetSelection()==CVL_TAB_INDEX:
+            self.displayStrings = sshKeyDistDisplayStringsCVL()
 
         # Check for the latest version of the launcher:
         try:
@@ -952,6 +958,12 @@ class LauncherMainFrame(wx.Frame):
                 launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
             else:
                 launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
+        MASSIVE_TAB_INDEX = 0
+        CVL_TAB_INDEX =1
+        if self.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+            self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
+        if self.tabbedView.GetSelection()==CVL_TAB_INDEX:
+            self.displayStrings = sshKeyDistDisplayStringsCVL()
 
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()

@@ -112,6 +112,7 @@ class LoginProcess():
             if (self.cmdRegex.cmd!= None):
                 logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
             self._stop.set()
+            self.process.kill()
         
         def stopped(self):
             return self._stop.isSet()
@@ -349,8 +350,9 @@ class LoginProcess():
                 logger.debug('runLoopServerCommandThread properties: %s = %s' % (str(k), str(v),))
     
         def stop(self):
-            logger.debug("runLoopServerCommandThread: stopping the thread that determines the execution host")
+            logger.debug("runLoopServerCommandThread: stopping")
             self._stop.set()
+            self.process.kill()
         
         def stopped(self):
             return self._stop.isSet()
