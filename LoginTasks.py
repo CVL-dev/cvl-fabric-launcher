@@ -1124,11 +1124,11 @@ class LoginProcess():
             else:
                 event.Skip()
 
-        def displayWebDavAccessInfoInRemoteDialog(event):
+        def displayWebDavInfoDialogOnRemoteDesktop(event):
             """
             This function may actually just write the WebDAV access info
             to a file, instead of displaying it in a dialog, depending on:
-            siteConfig.displayWebDavAccessInfoInRemoteDialogCmd
+            siteConfig.displayWebDavInfoDialogOnRemoteDesktop
             """
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
@@ -1136,7 +1136,7 @@ class LoginProcess():
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
 
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.displayWebDavAccessInfoInRemoteDialog, None, '', requireMatch=False)
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.displayWebDavInfoDialogOnRemoteDesktop, None, '', requireMatch=False)
                 t.setDaemon(True)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1490,7 +1490,7 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getWebDavRemotePort)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startWebDavTunnel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.openWebDavShareInRemoteFileBrowser)
-        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.displayWebDavAccessInfoInRemoteDialog)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.displayWebDavInfoDialogOnRemoteDesktop)
 
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
 
