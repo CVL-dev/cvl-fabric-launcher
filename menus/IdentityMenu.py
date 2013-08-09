@@ -176,7 +176,7 @@ class IdentityMenu(wx.Menu):
     def onChangePassphrase(self,event):
 
         if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
-            changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Change Key Passphrase', self.launcherMainFrame.sshpaths)
+            changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Change Key Passphrase', self.launcherMainFrame.keyModel)
             if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
                 dlg = wx.MessageDialog(self.launcherMainFrame,
                     "Passphrase changed successfully!",
