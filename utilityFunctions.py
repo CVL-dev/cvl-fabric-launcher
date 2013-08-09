@@ -96,7 +96,6 @@ authentication for the launcher."""
         self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
 
-
 def parseMessages(regexs,stdout,stderr):
     # compare each line of output against a list of regular expressions and build up a dictionary of messages to give the user
     messages={}
