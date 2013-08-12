@@ -31,11 +31,11 @@ class LoginProcess():
             self.process=None
     
         def stop(self):
+            self._stop.set()
             if self.process!=None:
                 self.process.stdin.write("exit\n")
                 self.process.kill()
                 self.process=None
-            self._stop.set()
         
         def stopped(self):
             return self._stop.isSet()
@@ -74,7 +74,8 @@ class LoginProcess():
                         exceptionMessage = "Process exited prematurely:\n\n" + " ".join(cmd)
                         if lastNonEmptyLine is not None:
                             exceptionMessage = exceptionMessage + "\n\n" + lastNonEmptyLine
-                        raise Exception(exceptionMessage)
+                        if (not self.stopped()):
+                            raise Exception(exceptionMessage)
                     time.sleep(0.1)
                     line = self.process.stdout.readline()
                     if (line != None):
@@ -1219,9 +1220,10 @@ class LoginProcess():
                     event.loginprocess.skd.shutdown()
                     count=0
                     while not event.loginprocess.skd.complete():
+                        import time
                         count = count + 1
                         logger.debug("loginProcessEvent.shutdownKeyDist: Waiting for sshKeyDist to shut down...")
-                        sleep(0.5)
+                        time.sleep(0.5)
                         if count > 10:
                             logger.error("sshKeyDist failed to shut down in 5 seconds.")
                             break
