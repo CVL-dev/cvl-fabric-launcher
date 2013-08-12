@@ -29,6 +29,8 @@ os.system('mkdir dist\\launcher\\help\\helpfiles')
 os.system('copy /Y help\\helpfiles\\*.* dist\\launcher\\help\\helpfiles\\')
 os.system('copy /Y help\\README.txt dist\\launcher\\help\\')
 
+os.system('copy /Y kill-charade-processes.bat dist\\launcher\\')
+
 os.system("signtool sign -f \"" + code_signing_certificate + "\" -p " + code_signing_certificate_password + " dist\launcher\*.exe")
 os.system("signtool sign -f \"" + code_signing_certificate + "\" -p " + code_signing_certificate_password + " dist\launcher\*.dll")
 
