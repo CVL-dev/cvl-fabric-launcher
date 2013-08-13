@@ -34,14 +34,22 @@ class sshKeyDistDisplayStrings(object):
         self.newPassphrase="new passphrase for new key"
         self.newPassphraseTitle="Please enter a new passphrase"
         self.temporaryKey="""
-Would you like to use the launchers old behaviour (entering a password every time you start a new desktop)\n
-Or try the new behaviour (creating an ssh key pair and entering a passphrase the first time you use the launcher after reboot.)\n
-Passwords are recomended if this is a shared user account\n
-SSH Keys are recommended if you are the only person who uses this account\n
+Would you like to use the launchers old behaviour (entering a password every time you start a new desktop) or try the new behaviour (creating an ssh key pair and entering a passphrase the first time you use the launcher after reboot.)
+
+Passwords are recomended if this is a shared user account.
+
+SSH Keys are recommended if you are the only person who uses this account.
+
 This option can be changed from the Identity menu.
 """
         self.temporaryKeyYes="Use my password every time"
         self.temporaryKeyNo="Use my SSH Key"
+        self.qdelQueuedJob="""
+It looks like you've been waiting for a job to start.
+Do you want me to delete the job or leave it in the queue so you can reconnect latter?"
+"""
+        self.qdelQueuedJobQdel="Delete the job"
+        self.qdelQueuedJobNOOP="Leave it in the queue (I'll reconnect latter)"
 
 class sshKeyDistDisplayStringsCVL(sshKeyDistDisplayStrings):
     def __init__(self):

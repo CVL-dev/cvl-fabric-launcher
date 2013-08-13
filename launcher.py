@@ -1300,7 +1300,7 @@ class LauncherMainFrame(wx.Frame):
         #tempKey=queryTemporaryKey()
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.keyModel,siteConfig=siteConfigObj,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
         self.loginProcess.doLogin()
 
 
