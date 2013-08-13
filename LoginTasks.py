@@ -726,11 +726,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISTRIBUTE_KEY')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
-                if ('CVL' in event.loginprocess.jobParams['configName'] or 'cvl' in event.loginprocess.jobParams['configName']):
-                    displayStrings = sshKeyDistDisplayStringsCVL()
-                else:
-                    displayStrings = sshKeyDistDisplayStringsMASSIVE()
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,event.loginprocess.displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      event.loginprocess.cancel)
@@ -862,8 +858,8 @@ class LoginProcess():
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER,event.loginprocess)
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.startServer,nextevent,"Error starting the VNC server. This could occur")
                 t.setDaemon(False)
-                logger.debug('setting started_job so that we will qdel in the event of a cancel event')
-                event.loginprocess.started_job.set()
+                logger.debug('setting queued_job so that we can ask about qdel in the event of a cancel event')
+                event.loginprocess.queued_job.set()
                 t.start()
                 event.loginprocess.threads.append(t)
             else:
@@ -871,6 +867,7 @@ class LoginProcess():
 
         def waitForServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER):
+                event.loginprocess.queued_job.set()
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_WAIT_FOR_SERVER')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Waiting for the VNC server to start")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_EXECUTION_HOST,event.loginprocess)
@@ -913,6 +910,7 @@ class LoginProcess():
 
         def getExecutionHost(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_EXECUTION_HOST):
+                event.loginprocess.started_job.set()
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_EXECUTION_HOST')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting execution host")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_VNCDISPLAY,event.loginprocess)
@@ -1164,32 +1162,10 @@ class LoginProcess():
 
         def cancel(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CANCEL):
-                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL')
-                if event.loginprocess.started_job.isSet():
-                    logger.debug('loginProcessEvent: cancel: trying to stop the job on MASSIVE/CVL but since we are already in a cancel state, we will not try to be to graceful about it')
-                    nextevent=None
-                    # Cancelation during the startup process is tricky. It conceivable although unlikely that we will have set the event to say the job is started, but not succesfully submitted a job.
-                    # Therefore test if the stopCmd can actually be formated before attempting to execute it.
-                    try:
-                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (event.loginprocess.siteConfig.stop.cmd, event.loginprocess.jobParams,))
-                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + event.loginprocess.siteConfig.stop.cmd.format(**event.loginprocess.jobParams))
-                        event.loginprocess.siteConfig.stop.cmd.format(**event.loginprocess.jobParams)
-                        t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stop,nextevent,"")
-                        t.setDaemon(True)
-                        t.start()
-                        event.loginprocess.threads.append(t)
-                    except:
-                        logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
-                        pass
- 
-                if (event.loginprocess.skd!=None): 
-                        logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
-                        event.loginprocess.skd.cancel()
+                event.loginprocess.shutdownReal()
                 #newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                 #logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN')
-                newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST,event.loginprocess)
-                logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN_KEYDIST')
-                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
+                #wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
                 if (event.string!=""):
                     if not sys.platform.startswith("darwin"):
                         dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
@@ -1212,46 +1188,9 @@ class LoginProcess():
             else:
                 event.Skip()
 
-        def shutdownKeyDist(event):
-            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST):
-                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHUTDOWN_KEYDIST')
-                if (event.loginprocess.skd!=None):
-                    logger.debug('loginProcessEvent.shutdownKeyDist: calling skd.shutdown()')
-                    event.loginprocess.skd.shutdown()
-                    count=0
-                    while not event.loginprocess.skd.complete():
-                        import time
-                        count = count + 1
-                        logger.debug("loginProcessEvent.shutdownKeyDist: Waiting for sshKeyDist to shut down...")
-                        time.sleep(0.5)
-                        if count > 10:
-                            logger.error("sshKeyDist failed to shut down in 5 seconds.")
-                            break
-                else:
-                    logger.debug('loginProcessEvent.shutdownKeyDist: Not calling skd.shutdown(), because event.loginprocess.skd is None.')
-                event.loginprocess.skd = None # SSH key distribution is complete at this point.
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
-                logger.debug('loginProcessEvent: shutdownKeyDist: posting EVT_LOGINPROCESS_SHUTDOWN')
-                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
-            else:
-                event.Skip()
-
         def shutdown(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SHUTDOWN):
-                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHUTDOWN')
-                for t in event.loginprocess.threads:
-                    try:
-                        logger.debug('loginProcessEvent: shutdown: attempting to stop thread ' + str(t))
-                        t.stop()
-                    except:
-                        logger.debug('exception: ' + str(traceback.format_exc()))
-                # Throw away the thread references. We've done all we can to ask them to stop at this point.
-                event.loginprocess.threads=[]
-                if (event.loginprocess.progressDialog != None):
-                    wx.CallAfter(event.loginprocess.progressDialog.Hide)
-                    wx.CallAfter(event.loginprocess.progressDialog.Show, False)
-                    wx.CallAfter(event.loginprocess.progressDialog.Destroy)
-                    event.loginprocess.progressDialog = None
+                event.loginprocess.shutdownReal()
                 logger.debug('loginProcessEvent: shutdown: all threads stopped and joined')
                 if event.loginprocess.autoExit:
                     if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds'):
@@ -1295,7 +1234,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
                 KillCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_KILL_SERVER,event.loginprocess))
-                ShutdownKeyDistCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST,event.loginprocess))
+                ShutdownCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
                 dialog = None
                 if (len(event.loginprocess.matchlist)>0):
                     logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)>0")
@@ -1315,7 +1254,7 @@ class LoginProcess():
                             timestring = "%s minute"%minutes
                         else:
                             timestring = "%s minutes"%minutes
-                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,ShutdownKeyDistCallback)
+                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
                     elif ("m1" not in event.loginprocess.jobParams['loginHost'] and "m2" not in event.loginprocess.jobParams['loginHost']):
                         dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownKeyDistCallback)
                     else:
@@ -1340,12 +1279,10 @@ class LoginProcess():
                 if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
                     logger.debug("caught an EVT_LOGINPROCESS_RESTART_SERVER")
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS,event.loginprocess)
-                else:
-                    logger.debug("caught an EVT_LOGINPROCESS_KILL_SERVER")
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST,event.loginprocess)
-                if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
                     t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stopForRestart,nextevent,"")
                 else:
+                    logger.debug("caught an EVT_LOGINPROCESS_KILL_SERVER")
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                     t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.stop,nextevent,"")
                 t.setDaemon(False)
                 t.start()
@@ -1373,9 +1310,58 @@ class LoginProcess():
             else:
                 event.Skip()
 
+    def shutdownReal(self):
+        # First stop all the threads, then (optionally) create a new thread to qdel the job. Finally shutdown the sshKeyDist object (which may shutdown the agent)
+        logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHUTDOWN')
+        for t in self.threads:
+            try:
+                logger.debug('loginProcessEvent: shutdown: attempting to stop thread ' + str(t))
+                t.stop()
+            except:
+                logger.debug('exception: ' + str(traceback.format_exc()))
+        # Throw away the thread references. We've done all we can to ask them to stop at this point.
+        self.threads=[]
+        logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL')
+        if self.queued_job.isSet():
+            def qdelCallback():
+                try:
+                    logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
+                    logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
+                    self.siteConfig.stop.cmd.format(**self.jobParams)
+                    t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
+                    t.setDaemon(True)
+                    t.start()
+                    t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
+                    #event.loginprocess.threads.append(t)
+                except:
+                    logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
+                    pass
+            def noopCallback():
+                logger.debug("Leaveing a job in the queue after cancel")
+
+            dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
+            dialog.ShowModal()
+
+        if (self.skd!=None): 
+                logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
+                self.skd.shutdown()
+                while not self.skd.complete():
+                    import time
+                    count = count + 1
+                    logger.debug("loginProcessEvent.shutdownKeyDist: Waiting for sshKeyDist to shut down...")
+                    time.sleep(0.5)
+                    if count > 10:
+                        logger.error("sshKeyDist failed to shut down in 5 seconds.")
+                        break
+        if (self.progressDialog != None):
+            wx.CallAfter(self.progressDialog.Hide)
+            wx.CallAfter(self.progressDialog.Show, False)
+            wx.CallAfter(self.progressDialog.Destroy)
+            self.progressDialog = None
+
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,autoExit=False,completeCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False):
+    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False):
         self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
@@ -1388,6 +1374,7 @@ class LoginProcess():
         self.sshAgentProcess=None
         self.joblist=[]
         self.started_job=threading.Event()
+        self.queued_job=threading.Event()
         self.skd=None
         self.passwdPrompt=None
         self.completeCallback=completeCallback
@@ -1397,6 +1384,7 @@ class LoginProcess():
         self.contacted_massive_website=contacted_massive_website
         self.removeKeyOnExit=removeKeyOnExit
         self.notify_window=wx.Window(parent=self.parentWindow)
+        self.displayStrings=displayStrings
         #self.notify_window.Hide()
         self.notify_window.Center()
         try:
@@ -1442,7 +1430,6 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_COMPLETE = wx.NewId()
-        LoginProcess.EVT_LOGINPROCESS_SHUTDOWN_KEYDIST = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHUTDOWN = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHOW_MESSAGE = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHOW_WARNING = wx.NewId()
@@ -1475,7 +1462,6 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getVNCPassword)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startViewer)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showKillServerDialog)
-        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.shutdownKeyDist)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.shutdown)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.normalTermination)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.complete)

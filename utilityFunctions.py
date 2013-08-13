@@ -22,7 +22,7 @@ LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massiv
 global TURBOVNC_BASE_URL
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
 
-class sshKeyDistDisplayStrings():
+class sshKeyDistDisplayStrings(object):
     def __init__(self):
         self.passwdPrompt="enter passwd"
         self.passwdPromptIncorrect="passwd incorrect. reenter"
@@ -33,9 +33,27 @@ class sshKeyDistDisplayStrings():
         self.newPassphraseMismatch="passphrases don't match. enter new passphrases"
         self.newPassphrase="new passphrase for new key"
         self.newPassphraseTitle="Please enter a new passphrase"
+        self.temporaryKey="""
+Would you like to use the launchers old behaviour (entering a password every time you start a new desktop) or try the new behaviour (creating an ssh key pair and entering a passphrase the first time you use the launcher after reboot.)
 
-class sshKeyDistDisplayStringsCVL():
+Passwords are recomended if this is a shared user account.
+
+SSH Keys are recommended if you are the only person who uses this account.
+
+This option can be changed from the Identity menu.
+"""
+        self.temporaryKeyYes="Use my password every time"
+        self.temporaryKeyNo="Use my SSH Key"
+        self.qdelQueuedJob="""
+It looks like you've been waiting for a job to start.
+Do you want me to delete the job or leave it in the queue so you can reconnect latter?"
+"""
+        self.qdelQueuedJobQdel="Delete the job"
+        self.qdelQueuedJobNOOP="Leave it in the queue (I'll reconnect latter)"
+
+class sshKeyDistDisplayStringsCVL(sshKeyDistDisplayStrings):
     def __init__(self):
+        super(sshKeyDistDisplayStringsCVL, self).__init__()
         self.passwdPrompt="""Please enter the password for your CVL account.
 This is the password you entered when you requested an account
 at the website https://web.cvl.massive.org.au/users"""
@@ -68,8 +86,9 @@ launching remote HPC jobs."""
         self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
 
-class sshKeyDistDisplayStringsMASSIVE():
+class sshKeyDistDisplayStringsMASSIVE(sshKeyDistDisplayStrings):
     def __init__(self):
+        super(sshKeyDistDisplayStringsMASSIVE, self).__init__()
         self.passwdPrompt="""Please enter the password for your MASSIVE account."""
         self.passwdPromptIncorrect="Sorry, that password was incorrect.\n"+self.passwdPrompt
         self.passphrasePrompt="Please enter the passphrase for your SSH key"
@@ -95,6 +114,8 @@ authentication for the launcher."""
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
         self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
+
+
 
 def parseMessages(regexs,stdout,stderr):
     # compare each line of output against a list of regular expressions and build up a dictionary of messages to give the user

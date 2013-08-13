@@ -92,7 +92,7 @@ class IdentityMenu(wx.Menu):
 
     def createKey(self):
 
-        createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key',self.launcherMainFrame.keyModel,self.launcherMainFrame.displayStrings)
+        createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key',self.launcherMainFrame.keyModel.getPrivateKeyFilePath(),self.launcherMainFrame.displayStrings)
         createNewKeyDialog.Center()
         if createNewKeyDialog.ShowModal()==wx.ID_OK:
             logger.debug("User pressed OK from CreateNewKeyDialog.")

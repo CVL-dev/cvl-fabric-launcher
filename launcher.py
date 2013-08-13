@@ -1293,9 +1293,14 @@ class LauncherMainFrame(wx.Frame):
         jobParams['nodes']=nodes
         jobParams['wallseconds']=int(hours)*60*60
         configName=host
+        def queryTemporaryKey():
+            from MacMessageDialog import MacMessageDialog
+            dlg=MacMessageDialog(launcherMainFrame,self.displayStrings.temporaryKey,"")
+            return dlg.ShowModal()
+        #tempKey=queryTemporaryKey()
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.keyModel,siteConfig=siteConfigObj,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
         self.loginProcess.doLogin()
 
 
@@ -1552,6 +1557,7 @@ class MyApp(wx.App):
         global launcherMainFrame
         launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
         launcherMainFrame.Show(True)
+
 
         def usingPrivatePublicModeForTheFirstTime():
             import getpass
