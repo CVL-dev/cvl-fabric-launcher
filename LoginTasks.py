@@ -1344,7 +1344,7 @@ class LoginProcess():
 
         if (self.skd!=None): 
                 logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
-                self.skd.shutdown()
+                self.skd.shutdownReal()
                 count = 0
                 while not self.skd.complete():
                     import time
