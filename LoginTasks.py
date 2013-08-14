@@ -1256,7 +1256,7 @@ class LoginProcess():
                             timestring = "%s minutes"%minutes
                         dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
                     elif ("m1" not in event.loginprocess.jobParams['loginHost'] and "m2" not in event.loginprocess.jobParams['loginHost']):
-                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownKeyDistCallback)
+                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
                     else:
                         logger.debug("showKillServerDialog: timeRemaining is None and ('m1' or 'm2' is in loginHost)")
                     if dialog:
