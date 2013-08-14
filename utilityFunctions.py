@@ -44,8 +44,7 @@ This option can be changed from the Identity menu.
 """
         self.temporaryKeyYes="Use my password every time"
         self.temporaryKeyNo="Use my SSH Key"
-        self.qdelQueuedJob="""
-It looks like you've been waiting for a job to start.
+        self.qdelQueuedJob="""It looks like you've been waiting for a job to start.
 Do you want me to delete the job or leave it in the queue so you can reconnect later?"
 """
         self.qdelQueuedJobQdel="Delete the job"
