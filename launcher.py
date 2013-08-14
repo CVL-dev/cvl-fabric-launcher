@@ -117,6 +117,7 @@ from menus.IdentityMenu import IdentityMenu
 import tempfile
 from cvlsshutils.KeyModel import KeyModel
 
+from MacMessageDialog import LauncherMessageDialog
 from logger.Logger import logger
 
 global launcherMainFrame
@@ -224,6 +225,7 @@ class LauncherMainFrame(wx.Frame):
         self.loginProcess=[]
         self.logWindow = None
         self.progressDialog = None
+        self.displayStrings=sshKeyDistDisplayStrings()
 
         if sys.platform.startswith("darwin"):
             wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
@@ -666,6 +668,12 @@ class LauncherMainFrame(wx.Frame):
     def onSiteConfigChanged(self,event):
         self.loadPrefs(site=event.GetEventObject().GetValue())
         self.updateVisibility()
+        configName=self.FindWindowByName('jobParams_configName').GetValue()
+
+        if 'm1' in configName or 'm2' in configName:
+            self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
+        if 'CVL' in configName or 'cvl' in configName:
+            self.displayStrings = sshKeyDistDisplayStringsCVL()
 
     def onAdvancedVisibilityStateChanged(self, event):
         self.updateVisibility()
@@ -856,12 +864,17 @@ If this account is shared by a number of people then passwords are preferable
     def onLogin(self, event):
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
+        configName=self.FindWindowByName('jobParams_configName').GetValue()
+        if configName=="" or configName==None:
+            dlg=LauncherMessageDialog(self,"Please select a site to log into first","Please select a site")
+            dlg.ShowModal()
+            return
         jobParams={}
         jobParams = self.buildJobParams(self)
         if jobParams['username'] == "":
-            dlg = wx.MessageDialog(launcherMainFrame,
+            dlg = LauncherMessageDialog(launcherMainFrame,
                     "Please enter your username.",
-                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    "MASSIVE/CVL Launcher", flags=wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             usernamefield = self.FindWindowByName('jobParams_username')
             usernamefield.SetFocus()
