@@ -10,8 +10,7 @@ import re
 import urllib2
 import datetime
 import os
-from MacMessageDialog import MacMessageDialog
-import time
+from MacMessageDialog import LauncherMessageDialog
 
 from logger.Logger import logger
 
@@ -159,7 +158,7 @@ class LoginProcess():
                     sizer.Add(text,0,wx.ALL,15)
                     dlg.addPanel(panel)
                 else:
-                    dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
+                    dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                 wx.CallAfter(dlg.Show)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
                 for regex in self.cmdRegex.regex:
@@ -1196,7 +1195,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
+                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                     dlg.ShowModal()
 #                if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds') and event.loginprocess.turboVncElapsedTimeInSeconds > 3:
 #                    logger.debug("TurboVNC's elapsed time was greater than 3 seconds, " +
@@ -1290,6 +1289,7 @@ class LoginProcess():
                         wx.CallAfter(dialog.ShowModal)
                     else:
                         logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
+                        wx.CallAfter(ShutdownCallback)
                 else:
                     logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)=0")
                     if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
@@ -1355,32 +1355,25 @@ class LoginProcess():
         # Throw away the thread references. We've done all we can to ask them to stop at this point.
         self.threads=[]
         logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL')
-        if self.queued_job.isSet() and not hasattr(self, 'turboVncElapsedTimeInSeconds'):
-            self.askUserIfTheyWantToDeleteQueuedJobCompleted = False
-            def askUserIfTheyWantToDeleteQueuedJob():
-                def qdelCallback():
-                    try:
-                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
-                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
-                        self.siteConfig.stop.cmd.format(**self.jobParams)
-                        t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
-                        t.setDaemon(True)
-                        t.start()
-                        t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
-                        #event.loginprocess.threads.append(t)
-                    except:
-                        logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
-                        pass
-                def noopCallback():
-                    logger.debug("Leaving a job in the queue after cancel")
+        if self.queued_job.isSet() and not self.started_job.isSet():
+            def qdelCallback():
+                try:
+                    logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
+                    logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
+                    self.siteConfig.stop.cmd.format(**self.jobParams)
+                    t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
+                    t.setDaemon(True)
+                    t.start()
+                    t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
+                    #event.loginprocess.threads.append(t)
+                except:
+                    logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
+                    pass
+            def noopCallback():
+                logger.debug("Leaveing a job in the queue after cancel")
 
-                dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"MASSIVE/CVL Launcher",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
-                logger.debug("threading.current_thread().name = " + threading.current_thread().name)
-                dialog.ShowModal()
-                self.askUserIfTheyWantToDeleteQueuedJobCompleted = True
-            wx.CallAfter(askUserIfTheyWantToDeleteQueuedJob)
-            while self.askUserIfTheyWantToDeleteQueuedJobCompleted==False:
-                time.sleep(0.1)
+            dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
+            dialog.ShowModal()
 
         if (self.skd!=None): 
                 #logger.debug('loginProcessEvent: cancel: calling skd.cancel()')

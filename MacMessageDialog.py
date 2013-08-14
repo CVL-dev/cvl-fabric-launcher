@@ -2,7 +2,7 @@ import wx
 
 import IconPys.MASSIVElogoTransparent64x64
 
-class MacMessageDialog(wx.Dialog):
+class LauncherMessageDialog(wx.Dialog):
     def __init__(self, parent, message, title, **kw):
         wx.Dialog.__init__(self, parent, style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP, **kw)
        
