@@ -1322,7 +1322,7 @@ class LoginProcess():
         # Throw away the thread references. We've done all we can to ask them to stop at this point.
         self.threads=[]
         logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL')
-        if self.queued_job.isSet():
+        if self.queued_job.isSet() and not hasattr(self, 'turboVncElapsedTimeInSeconds'):
             def qdelCallback():
                 try:
                     logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
