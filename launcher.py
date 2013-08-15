@@ -906,6 +906,34 @@ class LauncherMainFrame(wx.Frame):
 
         self.Centre()
 
+        import getpass
+        logger.debug('getpass.getuser(): ' + getpass.getuser())
+
+        logger.debug('sys.platform: ' + sys.platform)
+
+        import platform
+
+        logger.debug('platform.architecture: '  + str(platform.architecture()))
+        logger.debug('platform.machine: '       + str(platform.machine()))
+        logger.debug('platform.node: '          + str(platform.node()))
+        logger.debug('platform.platform: '      + str(platform.platform()))
+        logger.debug('platform.processor: '     + str(platform.processor()))
+        logger.debug('platform.release: '       + str(platform.release()))
+        logger.debug('platform.system: '        + str(platform.system()))
+        logger.debug('platform.version: '       + str(platform.version()))
+        logger.debug('platform.uname: '         + str(platform.uname()))
+
+        if sys.platform.startswith("win"):
+            logger.debug('platform.win32_ver: ' + str(platform.win32_ver()))
+
+        if sys.platform.startswith("darwin"):
+            logger.debug('platform.mac_ver: ' + str(platform.mac_ver()))
+
+        if sys.platform.startswith("linux"):
+            logger.debug('platform.linux_distribution: ' + str(platform.linux_distribution()))
+            logger.debug('platform.libc_ver: ' + str(platform.libc_ver()))
+
+        logger.debug('launcher_version_number.version_number: ' + launcher_version_number.version_number)
         import commit_def
         logger.debug('launcher commit hash: ' + commit_def.LATEST_COMMIT)
         logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
