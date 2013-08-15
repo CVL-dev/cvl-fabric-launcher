@@ -57,7 +57,7 @@ class LoginProcess():
                 
                 try:
                     startupinfo = subprocess.STARTUPINFO()
-                    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                    startupinfo.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
                     startupinfo.wShowWindow = subprocess.SW_HIDE
                 except:
                     # On non-Windows systems the previous block will die with 
