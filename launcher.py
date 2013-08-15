@@ -149,6 +149,7 @@ class LauncherMainFrame(wx.Frame):
 
     
     def loadPrefs(self,window=None,site=None):
+        print "in loadPrefs"
         if (self.prefs==None):
             self.prefs=ConfigParser.RawConfigParser(allow_no_value=True)
             if (os.path.exists(launcherPreferencesFilePath)):
@@ -183,7 +184,8 @@ class LauncherMainFrame(wx.Frame):
                         self.loadPrefs(window=item,site=site)
 
     def savePrefsEventHandler(self,event):
-        self.savePrefs()
+        threading.Thread(target=self.savePrefs).start()
+        event.Skip()
         
     def savePrefs(self,prefs=None,window=None,site=None):
         write=False
@@ -227,12 +229,28 @@ class LauncherMainFrame(wx.Frame):
         self.progressDialog = None
         self.displayStrings=sshKeyDistDisplayStrings()
 
+
         if sys.platform.startswith("darwin"):
             wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         else:
             wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
         self.vncOptions = {}
+        import optionsDialog
+        if len(self.vncOptions)==0:
+            if turboVncConfig.has_section("TurboVNC Preferences"):
+                savedTurboVncOptions =  turboVncConfig.items("TurboVNC Preferences")
+                for option in savedTurboVncOptions:
+                    key = option[0]
+                    value = option[1]
+                    if value=='True':
+                        value = True
+                    if value=='False':
+                        value = False
+                    self.vncOptions[key] = value
+
+        self.launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(self, wx.ID_ANY, "VNC Options", self.vncOptions, 0)
+        self.launcherOptionsDialog.Show(False)
 
         if turboVncConfig.has_section("TurboVNC Preferences"):
             savedTurboVncOptions =  turboVncConfig.items("TurboVNC Preferences")
@@ -346,6 +364,7 @@ class LauncherMainFrame(wx.Frame):
         massivevisible['cipherPanel']='Advanced'
         massivevisible['debugCheckBoxPanel']='Advanced'
         massivevisible['advancedCheckBoxPanel']=True
+        massivevisible['optionsDialog']=False
         cvlvisible={}
         cvlvisible['usernamePanel']=True
         cvlvisible['projectPanel']=False
@@ -354,6 +373,7 @@ class LauncherMainFrame(wx.Frame):
         cvlvisible['cipherPanel']='Advanced'
         cvlvisible['debugCheckBoxPanel']='Advanced'
         cvlvisible['advancedCheckBoxPanel']=True
+        cvlvisible['optionsDialog']=False
         noneVisible={}
         noneVisible['usernamePanel']=False
         noneVisible['projectPanel']=False
@@ -362,6 +382,7 @@ class LauncherMainFrame(wx.Frame):
         noneVisible['cipherPanel']=False
         noneVisible['debugCheckBoxPanel']=False
         noneVisible['advancedCheckBoxPanel']=False
+        noneVisible['optionsDialog']=False
         self.sites['Desktop on m1.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m1"),massivevisible)
         self.sites['Desktop on m2.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m2"),massivevisible)
         self.sites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("cvl"),cvlvisible)
@@ -388,8 +409,6 @@ class LauncherMainFrame(wx.Frame):
         self.usernamePanel.Fit()
         self.loginFieldsPanel.GetSizer().Add(self.usernamePanel,proportion=0,flag=wx.EXPAND)
 
-        # load the default site from the users preferences
-        #loadPrefs(prefs)
         self.projectPanel = wx.Panel(self.loginFieldsPanel,wx.ID_ANY,name="projectPanel")
         self.projectPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.projectPanel.SetAutoLayout(self.AUTOLAYOUT)
@@ -521,17 +540,15 @@ class LauncherMainFrame(wx.Frame):
         self.buttonsPanel.GetSizer().Add(self.saveButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
         self.saveButton.Bind(wx.EVT_BUTTON, self.savePrefsEventHandler)
 
-        self.optionsButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'VNC Options')
-        self.buttonsPanel.GetSizer().Add(self.optionsButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
-        self.optionsButton.Bind(wx.EVT_BUTTON, self.onOptions)
-
         self.exitButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Exit')
         self.buttonsPanelSizer.Add(self.exitButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
         self.Bind(wx.EVT_BUTTON, self.onExit,  id=self.exitButton.GetId())
 
         self.loginButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Login')
-        self.buttonsPanelSizer.Add(self.loginButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
-        self.Bind(wx.EVT_BUTTON, self.onLogin,   id=self.loginButton.GetId())
+        self.buttonsPanel.GetSizer().Add(self.loginButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
+        self.loginButton.Bind(wx.EVT_BUTTON, self.savePrefsEventHandler)
+        self.loginButton.Bind(wx.EVT_BUTTON, self.onLogin)
+        self.loginButton.SetDefault()
 
         self.buttonsPanel.SetSizerAndFit(self.buttonsPanelSizer)
 
@@ -686,7 +703,6 @@ class LauncherMainFrame(wx.Frame):
         window.Show()
 
     def updateVisibility(self,visible=None):
-        print "updating visibility"
         self.showAll()
         advanced=self.FindWindowByName('advancedCheckBox').GetValue()
         if visible==None:
@@ -695,6 +711,7 @@ class LauncherMainFrame(wx.Frame):
             except Exception as e:
                 visible={}
         for key in visible.keys():
+            print "altering vis on %s"%key
             try:
                 window=self.FindWindowByName(key) #Panels and controls are all subclasses of windows
                 if visible[key]==False:
@@ -768,6 +785,7 @@ class LauncherMainFrame(wx.Frame):
 
 
     def onOptions(self, event, tabIndex=0):
+        print "in onOptions"
 
         self.launcherOptionsDialog.tabbedView.SetSelection(tabIndex)
         rv = self.launcherOptionsDialog.ShowModal()
@@ -857,7 +875,7 @@ If this account is shared by a number of people then passwords are preferable
         self.loginProcess.remove(lp)
         print jobParams
     def loginCancel(self,lp,jobParams):
-        print "in LoginCance"
+        print "in LoginCancel"
         self.loginProcess.remove(lp)
         print jobParams
 
@@ -949,6 +967,7 @@ If this account is shared by a number of people then passwords are preferable
         lp.setCancelCallback(lambda jobParams: self.loginCancel(lp,jobParams))
         self.loginProcess.append(lp)
         lp.doLogin()
+        event.Skip()
 
 
 class siteConfig():

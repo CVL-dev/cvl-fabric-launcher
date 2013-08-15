@@ -50,7 +50,7 @@ LAUNCHER_VNC_OPTIONS_SHARING_TAB_INDEX = 3
 class LauncherOptionsDialog(wx.Dialog):
     def __init__(self, parent, id, title, vncOptions, tabIndex):
         wx.Dialog.__init__(self, parent, id, title, 
-            style=wx.DEFAULT_DIALOG_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
+            style=wx.DEFAULT_DIALOG_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX),name="optionsDialog")
 
         self.vncOptions = vncOptions
         self.tabIndex = tabIndex
@@ -1100,9 +1100,6 @@ If you use a password to authenticate, a new keypair will be generated each time
             self.vncOptions['logfile'] = self.vncViewerLogFilenameTextField.GetValue()
         self.vncOptions['share_local_home_directory_on_remote_desktop'] = self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.GetValue()
         self.vncOptions['auth_mode']=self.FindWindowByName('auth_mode').GetSelection()
-        #self.vncOptions['private_mode'] = self.privateModeRadioButton.GetValue()
-        #self.vncOptions['public_mode'] = self.publicModeRadioButton.GetValue()
-        #self.Close(True)
         self.Show(False)
         self.EndModal(wx.OK)
       
