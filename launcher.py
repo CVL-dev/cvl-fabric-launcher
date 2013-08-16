@@ -166,7 +166,7 @@ class LauncherMainFrame(wx.Frame):
                     value = False
                 self.vncOptions[key] = value
         import optionsDialog
-        self.launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "VNC Options", self.vncOptions, 0)
+        self.launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "Preferences", self.vncOptions, 0)
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -879,7 +879,7 @@ class LauncherMainFrame(wx.Frame):
         self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
 
         OPTIONS_BUTTON_ID = 1
-        self.optionsButton = wx.Button(self.buttonsPanel, OPTIONS_BUTTON_ID, 'VNC Options')
+        self.optionsButton = wx.Button(self.buttonsPanel, OPTIONS_BUTTON_ID, 'Preferences')
         self.buttonsPanelSizer.Add(self.optionsButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
         self.Bind(wx.EVT_BUTTON, self.onOptions, id=OPTIONS_BUTTON_ID)
 
@@ -1072,7 +1072,6 @@ class LauncherMainFrame(wx.Frame):
 
     def onOptions(self, event, tabIndex=0):
 
-        print "onOptions setting tabIndex %s"%tabIndex
         self.launcherOptionsDialog.tabbedView.SetSelection(tabIndex)
         rv = self.launcherOptionsDialog.ShowModal()
 
@@ -1619,7 +1618,7 @@ If this account is shared by a number of people then passwords are preferable
 #                    "You are currently logged onto this computer as \"" + localUsername + "\". " +
 #                    "Is this a private account (only accessible by you) ?\n\n" +
 #                    "(You can change this setting later, by opening the Privacy tab " +
-#                    "of the VNC Options dialog.)",
+#                    "of the Preferences dialog.)",
 #                    "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
 #            if dlg.ShowModal()==wx.ID_YES:
 #                launcherMainFrame.vncOptions['private_mode'] = True
@@ -1635,7 +1634,7 @@ If this account is shared by a number of people then passwords are preferable
             with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
                 turboVncConfig.write(turboVncPreferencesFileObject)
 
-        # The VNC Options are saved in "TurboVNC Preferences.cfg" for historical reasons.
+        # The Preferences are saved in "TurboVNC Preferences.cfg" for historical reasons.
         if turboVncConfig.has_section("TurboVNC Preferences"):
             if turboVncConfig.has_option("TurboVNC Preferences", "public_mode"):
                 logger.debug("Found public_mode in local settings.")

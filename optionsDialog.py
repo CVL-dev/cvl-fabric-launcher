@@ -870,6 +870,8 @@ class LauncherOptionsDialog(wx.Dialog):
         self.authPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.authPanel.Fit()
         choices=["Use my SSH Key Pair","Use my password"]
+        if sys.platform.startswith("darwin"):
+            self.authPanel.SetWindowVariant(wx.WINDOW_VARIANT_SMALL)
         rb=wx.RadioBox(self.authPanel,wx.ID_ANY,majorDimension=1,name="auth_mode",label="Authentication Mode",choices=choices)
         self.authPanel.GetSizer().Add(rb,flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT,border=15)
 #        explanation = "The Launcher's preferred mode of operating (\"private mode\") involves creating a \"~/.ssh/MassiveLauncherKey\" private key file within your home directory, " + \
@@ -878,11 +880,11 @@ class LauncherOptionsDialog(wx.Dialog):
 #                        "If you are running the Launcher on a shared computer (e.g. if you are using a \"Guest\") account, then you should use \"public mode\". " + \
 #                        "When running in \"public mode\", you will need to enter your password every time you run the Launcher.\n\n"
         explanation = """
-When we communicate with the desktop we use a cryptographic token called and RSA Key Pair. You can either generate a permenant key pair, and store it on your computer, or use your password to generate a keypair each time you use the launcher.
+When we communicate with the desktop we use a cryptographic token called an RSA Key Pair. You can either generate a permanent key pair, and store it on your computer, or use your password to generate a temporary keypair each time you use the launcher.
 
-If you use an SSH key pair you will be asked to unlock your keys the first time you use the launcher after a reboot. Thereafter you won't be asked for a password. This method is advisable if you are the only person who uses this account to log into your computer.
+If you use a permanent SSH key pair, you will be asked to unlock your keys the first time you use the Launcher after a reboot. Thereafter you won't be asked for a password. This method is advisable if you are the only person who uses this account to log into your computer.
 
-If you use a password to authenticate, a new keypair will be generated each time you use the launcher, and you will need to reenter your password each time you connect. This method is advisable if multiple people share this computer (as in a computer lab)
+If you use a password to authenticate, a new keypair will be generated each time you use the launcher, and you will need to re-enter your password each time you connect. This method is advisable if multiple people share this computer (as in a computer lab).
 """
 
 
@@ -1197,7 +1199,7 @@ class turboVncOptions(wx.App):
         frame.Show(True)
         vncOptions = {}
         #dialog = LauncherOptionsDialog(frame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
-        dialog = LauncherOptionsDialog(frame, wx.ID_ANY, "VNC Options", vncOptions)
+        dialog = LauncherOptionsDialog(frame, wx.ID_ANY, "Preferences", vncOptions)
         dialog.ShowModal()
         return True
 
