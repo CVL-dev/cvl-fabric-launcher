@@ -1068,18 +1068,20 @@ class LauncherMainFrame(wx.Frame):
 
     def onOptions(self, event, tabIndex=0):
 
-        print "onOptions setting tabIndex %s"%tabIndex
         self.launcherOptionsDialog.tabbedView.SetSelection(tabIndex)
         rv = self.launcherOptionsDialog.ShowModal()
 
         if rv == wx.OK:
             self.vncOptions = self.launcherOptionsDialog.getVncOptions()
+            self.saveGlobalOptions()
+    
+    def saveGlobalOptions(self):
 
-            for key in self.vncOptions:
-                turboVncConfig.set("TurboVNC Preferences", key, self.vncOptions[key])
+        for key in self.vncOptions:
+            turboVncConfig.set("TurboVNC Preferences", key, self.vncOptions[key])
 
-            with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
-                turboVncConfig.write(turboVncPreferencesFileObject)
+        with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
+            turboVncConfig.write(turboVncPreferencesFileObject)
 
     def onCancel(self, event):
         # Clean-up (including qdel if necessary) is now done in LoginTasks.py
@@ -1141,6 +1143,24 @@ class LauncherMainFrame(wx.Frame):
             self.progressDialog.SetCursor(cursor)
 
         super(LauncherMainFrame, self).SetCursor(cursor)
+
+    def queryAuthMode(self):
+        import LauncherOptionsDialog
+        var='auth_mode'
+        auth_mode=self.launcherOptionsDialog.FindWindowByName(var)
+        choices=[]
+        for i in range(auth_mode.GetCount()):
+            choices.append(auth_mode.GetString(i))
+        dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,"""
+Would you like to use an SSH Key pair or your password to authenticate yourself?
+Most of the time, an SSH Key pair is preferable.
+If this account is shared by a number of people then passwords are preferable
+""",title="MASSIVE/CVL Launcher",ButtonLabels=choices)
+        rv=dlg.ShowModal()
+        if rv in range(auth_mode.GetCount()):
+            return int(rv)
+        else:
+            self.queryAuthMode()
 
     def onLogin(self, event):
         MASSIVE_TAB_INDEX = 0
@@ -1312,16 +1332,19 @@ class LauncherMainFrame(wx.Frame):
         jobParams['nodes']=nodes
         jobParams['wallseconds']=int(hours)*60*60
         configName=host
-        def queryTemporaryKey():
-            from MacMessageDialog import MacMessageDialog
-            dlg=MacMessageDialog(launcherMainFrame,self.displayStrings.temporaryKey,"")
-            return dlg.ShowModal()
-        #tempKey=queryTemporaryKey()
+        if not self.vncOptions.has_key('auth_mode'):
+            mode=self.queryAuthMode()
+            self.vncOptions['auth_mode']=mode
+            self.launcherOptionsDialog.FindWindowByName('auth_mode').SetSelection(mode)
+            self.identity_menu.disableItems()
+            self.saveGlobalOptions()
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
         if launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
+            logger.debug("launherMainFrame.onLogin: using a temporary Key pair")
             launcherMainFrame.keyModel=KeyModel(temporaryKey=True)
         else:
+            logger.debug("launherMainFrame.onLogin: using a permenant Key pair")
             launcherMainFrame.keyModel=KeyModel(temporaryKey=False)
         self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
         self.loginProcess.doLogin()
@@ -1582,80 +1605,16 @@ class MyApp(wx.App):
         launcherMainFrame.Show(True)
 
 
-        def usingPrivatePublicModeForTheFirstTime():
-            import LauncherOptionsDialog
-            var='auth_mode'
-            auth_mode=self.optionsDialog.FindWindowByName(var)
-            choices=[]
-            for i in range(auth_mode.GetCount()):
-                choices.append(auth_mode.GetString(i))
-            dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,"""
-Would you like to use an SSH Key pair or your password to authenticate yourself?
-Most of the time, an SSH Key pair is preferable.
-If this account is shared by a number of people then passwords are preferable
-""",title="MASSIVE/CVL Launcher",ButtonLabels=choices)
-            retval = dlg.ShowModal()
-            if retval>=0:
-                launcherMainFrame.vncOptions[var]=retval
-                auth_mode.SetSelection(retval)
-                turboVncConfig.set("TurboVNC Preferences", "auth_mode", retval)
-#            import getpass
-#            localUsername = getpass.getuser()
-#            
-#            dlg = wx.MessageDialog(launcherMainFrame,
-#                    "You are currently logged onto this computer as \"" + localUsername + "\". " +
-#                    "Is this a private account (only accessible by you) ?\n\n" +
-#                    "(You can change this setting later, by opening the Privacy tab " +
-#                    "of the VNC Options dialog.)",
-#                    "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
-#            if dlg.ShowModal()==wx.ID_YES:
-#                launcherMainFrame.vncOptions['private_mode'] = True
-#                turboVncConfig.set("TurboVNC Preferences", "private_mode", True)
-#                launcherMainFrame.vncOptions['public_mode'] = False
-#                turboVncConfig.set("TurboVNC Preferences", "public_mode", False)
+
+#        # The VNC Options are saved in "TurboVNC Preferences.cfg" for historical reasons.
+#        if turboVncConfig.has_section("TurboVNC Preferences"):
+#            if turboVncConfig.has_option("TurboVNC Preferences", "auth_mode"):
+#                logger.debug("Found public_mode in local settings.")
 #            else:
-#                launcherMainFrame.vncOptions['public_mode'] = True
-#                turboVncConfig.set("TurboVNC Preferences", "public_mode", True)
-#                launcherMainFrame.vncOptions['private_mode'] = False
-#                turboVncConfig.set("TurboVNC Preferences", "private_mode", False)
+#                usingPrivatePublicModeForTheFirstTime()
+#        else:
+#            usingPrivatePublicModeForTheFirstTime()
 
-            with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
-                turboVncConfig.write(turboVncPreferencesFileObject)
-
-        # The VNC Options are saved in "TurboVNC Preferences.cfg" for historical reasons.
-        if turboVncConfig.has_section("TurboVNC Preferences"):
-            if turboVncConfig.has_option("TurboVNC Preferences", "public_mode"):
-                logger.debug("Found public_mode in local settings.")
-            else:
-                usingPrivatePublicModeForTheFirstTime()
-        else:
-            usingPrivatePublicModeForTheFirstTime()
-
-        def usingPrivateKeyForTheFirstTime():
-            dlg = wx.MessageDialog(launcherMainFrame,
-                    "It looks like this is the first time you've used " +
-                    "this version of the Launcher, which requires you to " +
-                    "use a private key, instead of a password.\n\n" +
-                    "Would you like to view the Launcher's help on this topic?\n\n" +
-                    "(Alternatively, you can access the help later from the Help menu or from the Identity menu.)",
-                    "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
-            if dlg.ShowModal()==wx.ID_YES:
-                from help.HelpController import helpController
-                if helpController is not None and helpController.initializationSucceeded:
-                    helpController.Display("New Authentication Method")
-                else:
-                    wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
-                                  "Error", wx.OK|wx.ICON_EXCLAMATION)
-            else:
-                logger.debug('exception: ' + str(traceback.format_exc()))
-
-        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path"):
-                logger.debug("Found massive_launcher_private_key_path in local settings.")
-            else:
-                usingPrivateKeyForTheFirstTime()
-        else:
-            usingPrivateKeyForTheFirstTime()
 
 #        if massiveLauncherConfig is not None:
 #            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", launcherMainFrame.keyModel.getsshKeyPath())
