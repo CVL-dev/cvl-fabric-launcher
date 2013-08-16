@@ -180,7 +180,7 @@ class LauncherMainFrame(wx.Frame):
 
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
             self.file_menu = wx.Menu()
-            self.file_menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window and exit program.")
+            self.file_menu.Append(wx.ID_EXIT, "E&xit", "Close window and exit program.")
             self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
             self.menu_bar.Append(self.file_menu, "&File")
 
@@ -211,7 +211,10 @@ class LauncherMainFrame(wx.Frame):
         self.edit_menu.Append(wx.ID_SELECTALL, "Select &All")
         self.Bind(wx.EVT_MENU, self.onSelectAll, id=wx.ID_SELECTALL)
         self.edit_menu.AppendSeparator()
-        self.edit_menu.Append(wx.ID_PREFERENCES, "&Preferences")
+        if sys.platform.startswith("win") or sys.platform.startswith("linux"):
+            self.edit_menu.Append(wx.ID_PREFERENCES, "P&references\tCtrl-P")
+        else:
+            self.edit_menu.Append(wx.ID_PREFERENCES, "&Preferences")
         self.Bind(wx.EVT_MENU, self.onOptions, id=wx.ID_PREFERENCES)
         self.menu_bar.Append(self.edit_menu, "&Edit")
 
@@ -891,22 +894,21 @@ class LauncherMainFrame(wx.Frame):
         self.buttonsPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=5, hgap=10)
         self.buttonsPanel.SetSizer(self.buttonsPanelSizer)
 
-        OPTIONS_BUTTON_ID = 1
-        self.optionsButton = wx.Button(self.buttonsPanel, OPTIONS_BUTTON_ID, 'Preferences')
-        self.buttonsPanelSizer.Add(self.optionsButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
-        self.Bind(wx.EVT_BUTTON, self.onOptions, id=OPTIONS_BUTTON_ID)
+        self.preferencesButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Preferences')
+        self.buttonsPanelSizer.Add(self.preferencesButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
+        self.Bind(wx.EVT_BUTTON, self.onOptions, id=self.preferencesButton.GetId())
 
-        CANCEL_BUTTON_ID = 2
-        self.cancelButton = wx.Button(self.buttonsPanel, CANCEL_BUTTON_ID, 'Cancel')
-        self.buttonsPanelSizer.Add(self.cancelButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
-        self.Bind(wx.EVT_BUTTON, self.onCancel,  id=CANCEL_BUTTON_ID)
+        self.exitButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Exit')
+        self.buttonsPanelSizer.Add(self.exitButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
+        self.Bind(wx.EVT_BUTTON, self.onExit,  id=self.exitButton.GetId())
 
-        LOGIN_BUTTON_ID = 3
-        self.loginButton = wx.Button(self.buttonsPanel, LOGIN_BUTTON_ID, 'Login')
+        self.loginButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Login')
         self.buttonsPanelSizer.Add(self.loginButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
-        self.Bind(wx.EVT_BUTTON, self.onLogin,   id=LOGIN_BUTTON_ID)
+        self.Bind(wx.EVT_BUTTON, self.onLogin,   id=self.loginButton.GetId())
 
         self.buttonsPanel.SetSizerAndFit(self.buttonsPanelSizer)
+
+        self.preferencesButton.Show(False)
 
         self.loginDialogPanelSizer.Add(self.buttonsPanel, flag=wx.ALIGN_RIGHT|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=15)
 
@@ -1100,15 +1102,6 @@ class LauncherMainFrame(wx.Frame):
         with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
             turboVncConfig.write(turboVncPreferencesFileObject)
 
-    def onCancel(self, event):
-        # Clean-up (including qdel if necessary) is now done in LoginTasks.py
-        # No longer using temporary private key file, 
-        # so there's no need to delete it as part of clean-up.
-
-        try:
-            logger.dump_log(launcherMainFrame)
-        finally:
-            os._exit(0)
 
     def onCut(self, event):
         textCtrl = self.FindFocus()
@@ -1152,8 +1145,8 @@ class LauncherMainFrame(wx.Frame):
         self.cvlSshTunnelCipherComboBox.SetCursor(cursor)
 
         self.buttonsPanel.SetCursor(cursor)
-        self.optionsButton.SetCursor(cursor)
-        self.cancelButton.SetCursor(cursor)
+        self.preferencesButton.SetCursor(cursor)
+        self.exitButton.SetCursor(cursor)
         self.loginButton.SetCursor(cursor)
 
         if self.progressDialog!=None:
