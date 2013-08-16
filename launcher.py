@@ -184,23 +184,36 @@ class LauncherMainFrame(wx.Frame):
             self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
             self.menu_bar.Append(self.file_menu, "&File")
 
-        if sys.platform.startswith("darwin"):
-            # Only do this for Mac OS X, because other platforms have
-            # a right-click pop-up menu for wx.TextCtrl with Copy,
-            # Select All etc. Plus, the menu doesn't look that good on
-            # the MASSIVE Launcher main dialog, and doesn't work for
-            # non Mac platforms, because of FindFocus() will always
-            # find the window/dialog which contains the menu.
-            self.edit_menu = wx.Menu()
-            self.edit_menu.Append(wx.ID_CUT, "Cut", "Cut the selected text")
-            self.Bind(wx.EVT_MENU, self.onCut, id=wx.ID_CUT)
-            self.edit_menu.Append(wx.ID_COPY, "Copy", "Copy the selected text")
-            self.Bind(wx.EVT_MENU, self.onCopy, id=wx.ID_COPY)
-            self.edit_menu.Append(wx.ID_PASTE, "Paste", "Paste text from the clipboard")
-            self.Bind(wx.EVT_MENU, self.onPaste, id=wx.ID_PASTE)
-            self.edit_menu.Append(wx.ID_SELECTALL, "Select All")
-            self.Bind(wx.EVT_MENU, self.onSelectAll, id=wx.ID_SELECTALL)
-            self.menu_bar.Append(self.edit_menu, "&Edit")
+        #if sys.platform.startswith("darwin"):
+            ## Only do this for Mac OS X, because other platforms have
+            ## a right-click pop-up menu for wx.TextCtrl with Copy,
+            ## Select All etc. Plus, the menu doesn't look that good on
+            ## the MASSIVE Launcher main dialog, and doesn't work for
+            ## non Mac platforms, because FindFocus() will always
+            ## find the window/dialog which contains the menu.
+            #self.edit_menu = wx.Menu()
+            #self.edit_menu.Append(wx.ID_CUT, "Cut", "Cut the selected text")
+            #self.Bind(wx.EVT_MENU, self.onCut, id=wx.ID_CUT)
+            #self.edit_menu.Append(wx.ID_COPY, "Copy", "Copy the selected text")
+            #self.Bind(wx.EVT_MENU, self.onCopy, id=wx.ID_COPY)
+            #self.edit_menu.Append(wx.ID_PASTE, "Paste", "Paste text from the clipboard")
+            #self.Bind(wx.EVT_MENU, self.onPaste, id=wx.ID_PASTE)
+            #self.edit_menu.Append(wx.ID_SELECTALL, "Select All")
+            #self.Bind(wx.EVT_MENU, self.onSelectAll, id=wx.ID_SELECTALL)
+            #self.menu_bar.Append(self.edit_menu, "&Edit")
+        self.edit_menu = wx.Menu()
+        self.edit_menu.Append(wx.ID_CUT, "Cu&t", "Cut the selected text")
+        self.Bind(wx.EVT_MENU, self.onCut, id=wx.ID_CUT)
+        self.edit_menu.Append(wx.ID_COPY, "&Copy", "Copy the selected text")
+        self.Bind(wx.EVT_MENU, self.onCopy, id=wx.ID_COPY)
+        self.edit_menu.Append(wx.ID_PASTE, "&Paste", "Paste text from the clipboard")
+        self.Bind(wx.EVT_MENU, self.onPaste, id=wx.ID_PASTE)
+        self.edit_menu.Append(wx.ID_SELECTALL, "Select &All")
+        self.Bind(wx.EVT_MENU, self.onSelectAll, id=wx.ID_SELECTALL)
+        self.edit_menu.AppendSeparator()
+        self.edit_menu.Append(wx.ID_PREFERENCES, "&Preferences")
+        self.Bind(wx.EVT_MENU, self.onOptions, id=wx.ID_PREFERENCES)
+        self.menu_bar.Append(self.edit_menu, "&Edit")
 
         self.identity_menu = IdentityMenu()
         self.identity_menu.initialize(self, massiveLauncherConfig, massiveLauncherPreferencesFilePath)
