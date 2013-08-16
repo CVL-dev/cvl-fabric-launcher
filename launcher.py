@@ -223,7 +223,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.tabbedView = wx.Notebook(self.loginDialogPanel, wx.ID_ANY, style=(wx.NB_TOP))
 
-        self.tabbedView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,  self.onTabbedViewChanged)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,  self.onTabbedViewChanged, id=self.tabbedView.GetId())
 
         # MASSIVE tab
 
@@ -944,8 +944,10 @@ class LauncherMainFrame(wx.Frame):
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
         if self.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+            logger.debug("Using MASSIVE display strings.")
             self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
         if self.tabbedView.GetSelection()==CVL_TAB_INDEX:
+            logger.debug("Using CVL display strings.")
             self.displayStrings = sshKeyDistDisplayStringsCVL()
 
         # Check for the latest version of the launcher:
@@ -993,8 +995,10 @@ class LauncherMainFrame(wx.Frame):
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
         if self.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+            logger.debug( "Using MASSIVE display strings.")
             self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
         if self.tabbedView.GetSelection()==CVL_TAB_INDEX:
+            logger.debug("Using CVL display strings.")
             self.displayStrings = sshKeyDistDisplayStringsCVL()
 
     def onMassiveLoginHostNameChanged(self, event):
