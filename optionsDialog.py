@@ -1,4 +1,5 @@
 # MASSIVE/CVL Launcher - easy secure login for the MASSIVE Desktop and the CVL
+
 # Copyright (c) 2012-2013, Monash e-Research Centre (Monash University, Australia)
 # All rights reserved.
 # 
@@ -43,7 +44,7 @@ import wx
 
 LAUNCHER_VNC_OPTIONS_CONNECTION_TAB_INDEX = 0
 LAUNCHER_VNC_OPTIONS_GLOBALS_TAB_INDEX = 1 
-LAUNCHER_VNC_OPTIONS_PRIVACY_TAB_INDEX = 2
+LAUNCHER_VNC_OPTIONS_AUTHENTICATION_TAB_INDEX = 2
 LAUNCHER_VNC_OPTIONS_SHARING_TAB_INDEX = 3
 
 class LauncherOptionsDialog(wx.Dialog):
@@ -865,68 +866,110 @@ class LauncherOptionsDialog(wx.Dialog):
 
         # Privacy tab
 
-        self.privacyPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
-        self.privacyPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=15, hgap=25)
+        self.authPanel = wx.Panel(self.tabbedView,wx.ID_ANY)
+        self.authPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
+        self.authPanel.Fit()
+        choices=["Use my SSH Key Pair","Use my password"]
+        rb=wx.RadioBox(self.authPanel,wx.ID_ANY,majorDimension=1,name="auth_mode",label="Authentication Mode",choices=choices)
+        self.authPanel.GetSizer().Add(rb,flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT,border=15)
+#        explanation = "The Launcher's preferred mode of operating (\"private mode\") involves creating a \"~/.ssh/MassiveLauncherKey\" private key file within your home directory, " + \
+#                        "and using an SSH Agent (e.g. PuTTY's Pageant) to load the private key into memory, so that you don't need to enter your password " + \
+#                        "every time you run the Launcher.\n\n" + \
+#                        "If you are running the Launcher on a shared computer (e.g. if you are using a \"Guest\") account, then you should use \"public mode\". " + \
+#                        "When running in \"public mode\", you will need to enter your password every time you run the Launcher.\n\n"
+        explanation = """
+When we communicate with the desktop we use a cryptographic token called and RSA Key Pair. You can either generate a permenant key pair, and store it on your computer, or use your password to generate a keypair each time you use the launcher.
 
-        self.privacyLeftBorderPanel = wx.Panel(self.privacyPanel, wx.ID_ANY)
-        self.privacyPanelSizer.Add(self.privacyLeftBorderPanel)
+If you use an SSH key pair you will be asked to unlock your keys the first time you use the launcher after a reboot. Thereafter you won't be asked for a password. This method is advisable if you are the only person who uses this account to log into your computer.
 
-        self.privacyMainPanel = wx.Panel(self.privacyPanel, wx.ID_ANY)
-        self.privacyPanelSizer.Add(self.privacyMainPanel, flag=wx.EXPAND|wx.TOP, border=15)
-        self.privacyMainPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
+If you use a password to authenticate, a new keypair will be generated each time you use the launcher, and you will need to reenter your password each time you connect. This method is advisable if multiple people share this computer (as in a computer lab)
+"""
 
-        self.privacyRightBorderPanel = wx.Panel(self.privacyPanel, wx.ID_ANY)
-        self.privacyPanelSizer.Add(self.privacyRightBorderPanel)
 
-        # Private Public Mode group box
-
-        self.privatePublicModePanel = wx.Panel(self.privacyMainPanel, wx.ID_ANY)
-        self.privacyMainPanelSizer.Add(self.privatePublicModePanel, flag=wx.EXPAND)
-
-        self.privatePublicModeGroupBox = wx.StaticBox(self.privatePublicModePanel, wx.ID_ANY, label="Privacy Options")
-        self.privatePublicModeGroupBox.SetFont(self.smallFont)
-        self.privatePublicModeGroupBoxSizer = wx.StaticBoxSizer(self.privatePublicModeGroupBox, wx.VERTICAL)
-        self.privatePublicModePanel.SetSizer(self.privatePublicModeGroupBoxSizer)
-
-        self.innerPrivatePublicModePanel = wx.Panel(self.privatePublicModePanel, wx.ID_ANY)
-        self.innerPrivatePublicModePanelSizer = wx.FlexGridSizer(rows=3, cols = 1, vgap=5,hgap=5)
-        self.innerPrivatePublicModePanel.SetSizer(self.innerPrivatePublicModePanelSizer)
-
-        self.privateModeRadioButton = wx.RadioButton(self.innerPrivatePublicModePanel, wx.ID_ANY, "Private mode (a passphrase-protected private key file will remain on this computer after the Launcher exits)")
-        self.privateModeRadioButton.SetValue(True)
-        if 'private_mode' in vncOptions:
-            self.privateModeRadioButton.SetValue(vncOptions['private_mode'])
-        self.innerPrivatePublicModePanelSizer.Add(self.privateModeRadioButton)
-        self.privateModeRadioButton.SetFont(self.smallFont)
-
-        self.publicModeRadioButton = wx.RadioButton(self.innerPrivatePublicModePanel, wx.ID_ANY, "Public mode (to be used when running the Launcher from a shared \"Guest\" account)")
-        self.publicModeRadioButton.SetValue(False)
-        if 'public_mode' in vncOptions:
-            self.publicModeRadioButton.SetValue(vncOptions['public_mode'])
-        self.innerPrivatePublicModePanelSizer.Add(self.publicModeRadioButton)
-        self.publicModeRadioButton.SetFont(self.smallFont)
-
-        explanation = "The Launcher's preferred mode of operating (\"private mode\") involves creating a \"~/.ssh/MassiveLauncherKey\" private key file within your home directory, " + \
-                        "and using an SSH Agent (e.g. PuTTY's Pageant) to load the private key into memory, so that you don't need to enter your password " + \
-                        "every time you run the Launcher.\n\n" + \
-                        "If you are running the Launcher on a shared computer (e.g. if you are using a \"Guest\") account, then you should use \"public mode\". " + \
-                        "When running in \"public mode\", you will need to enter your password every time you run the Launcher.\n\n"
+ #       explanation = "The Launcher's preferred mode of operating (\"private mode\") involves creating a \"~/.ssh/MassiveLauncherKey\" private key file within your home directory, and using an SSH Agent (e.g. PuTTY's Pageant) to load the private key into memory, so that you don't need to enter your password every time you run the Launcher.\nIf you are running the Launcher on a shared computer (e.g. if you are using a \"Guest\") account, then you should use \"public mode\". When running in \"public mode\", you will need to enter your password every time you run the Launcher."
                         #"Future versions of the Launcher may have the ability to manage multiple private key files from within a single " + \
                         #"\"Guest\" account, so it may then be possible to run the Launcher in \"private mode\" from within a \"Guest\" " + \
                         #"account."
-        self.privatePublicModeExplanationLabel = wx.StaticText(self.innerPrivatePublicModePanel, wx.ID_ANY, explanation)
-        width = self.privateModeRadioButton.GetSize().width
-        self.privatePublicModeExplanationLabel.Wrap(width)
-        self.innerPrivatePublicModePanelSizer.Add(self.privatePublicModeExplanationLabel, flag=wx.TOP, border=15)
-        self.privatePublicModeExplanationLabel.SetFont(self.smallFont)
-       
-        self.innerPrivatePublicModePanel.SetSizerAndFit(self.innerPrivatePublicModePanelSizer)
-        self.privatePublicModeGroupBoxSizer.Add(self.innerPrivatePublicModePanel, flag=wx.EXPAND)
-        self.privatePublicModePanel.SetSizerAndFit(self.privatePublicModeGroupBoxSizer)
+        self.authModeExplanation = wx.StaticText(self.authPanel, wx.ID_ANY, explanation)
+        self.authModeExplanation.SetFont(self.smallFont)
+        # Here we hint that the size of the Static Text will not be included in calculating the size of the optionsDialog.
+        # The Static text will expand and wrap anyway
+        self.authModeExplanation.SetMinSize(wx.Size(1,1))
+        self.authPanel.GetSizer().Add(self.authModeExplanation, proportion=1,flag=wx.EXPAND|wx.ALL, border=15)
+        self.authPanel.Layout()
+        var='auth_mode'
+        if var in vncOptions:
+            auth_mode = self.FindWindowByName(var)
+            auth_mode.SetSelection(int(vncOptions[var]))
+            # Fire the event manually, as this will control enabled/disabled of some menu items
+            nextevent = wx.CommandEvent(wx.wxEVT_COMMAND_RADIOBOX_SELECTED, auth_mode.GetId())
+            nextevent.SetEventObject(auth_mode)
+            wx.PostEvent(auth_mode.GetEventHandler(),nextevent)
 
-        self.privacyMainPanel.SetSizerAndFit(self.privacyMainPanelSizer)
-        self.privacyPanel.SetSizerAndFit(self.privacyPanelSizer)
-        self.privacyPanel.Layout()
+#        self.privacyPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
+#        self.privacyPanelSizer = wx.FlexGridSizer(rows=1, cols=3, vgap=15, hgap=25)
+#
+#        self.privacyLeftBorderPanel = wx.Panel(self.privacyPanel, wx.ID_ANY)
+#        self.privacyPanelSizer.Add(self.privacyLeftBorderPanel)
+#
+#        self.privacyMainPanel = wx.Panel(self.privacyPanel, wx.ID_ANY)
+#        self.privacyPanelSizer.Add(self.privacyMainPanel, flag=wx.EXPAND|wx.TOP, border=15)
+#        self.privacyMainPanelSizer = wx.FlexGridSizer(rows=1, cols=1, vgap=5, hgap=5)
+#
+#        self.privacyRightBorderPanel = wx.Panel(self.privacyPanel, wx.ID_ANY)
+#        self.privacyPanelSizer.Add(self.privacyRightBorderPanel)
+#
+#        # Private Public Mode group box
+#
+#        #choices=["Private mode (a passphrase-protected private key file will remain on this computer after the Launcher exits)","Public mode (to be used when running the Launcher from a shared \"Guest\" account)"]
+#        #self.temporaryKeyRadioBox=wx.RadioBox(self.privacyMainPanel,wx.ID_ANY,majorDimension=1,name="auth_mode",label="Privacy Options",choices=choices)
+#        self.privatePublicModePanel = wx.Panel(self.privacyMainPanel, wx.ID_ANY)
+#        self.privacyMainPanelSizer.Add(self.privatePublicModePanel, flag=wx.EXPAND)
+#
+#        self.privatePublicModeGroupBox = wx.StaticBox(self.privatePublicModePanel, wx.ID_ANY, label="Privacy Options")
+#        self.privatePublicModeGroupBox.SetFont(self.smallFont)
+#        self.privatePublicModeGroupBoxSizer = wx.StaticBoxSizer(self.privatePublicModeGroupBox, wx.VERTICAL)
+#        self.privatePublicModePanel.SetSizer(self.privatePublicModeGroupBoxSizer)
+#
+#        self.innerPrivatePublicModePanel = wx.Panel(self.privatePublicModePanel, wx.ID_ANY)
+#        self.innerPrivatePublicModePanelSizer = wx.FlexGridSizer(rows=3, cols = 1, vgap=5,hgap=5)
+#        self.innerPrivatePublicModePanel.SetSizer(self.innerPrivatePublicModePanelSizer)
+#
+#        self.privateModeRadioButton = wx.RadioButton(self.innerPrivatePublicModePanel, wx.ID_ANY, "Private mode (a passphrase-protected private key file will remain on this computer after the Launcher exits)")
+#        self.privateModeRadioButton.SetValue(True)
+#        if 'private_mode' in vncOptions:
+#            self.privateModeRadioButton.SetValue(vncOptions['private_mode'])
+#        self.innerPrivatePublicModePanelSizer.Add(self.privateModeRadioButton)
+#        self.privateModeRadioButton.SetFont(self.smallFont)
+#
+#        self.publicModeRadioButton = wx.RadioButton(self.innerPrivatePublicModePanel, wx.ID_ANY, "Public mode (to be used when running the Launcher from a shared \"Guest\" account)")
+#        self.publicModeRadioButton.SetValue(False)
+#        if 'public_mode' in vncOptions:
+#            self.publicModeRadioButton.SetValue(vncOptions['public_mode'])
+#        self.innerPrivatePublicModePanelSizer.Add(self.publicModeRadioButton)
+#        self.publicModeRadioButton.SetFont(self.smallFont)
+#
+#        explanation = "The Launcher's preferred mode of operating (\"private mode\") involves creating a \"~/.ssh/MassiveLauncherKey\" private key file within your home directory, " + \
+#                        "and using an SSH Agent (e.g. PuTTY's Pageant) to load the private key into memory, so that you don't need to enter your password " + \
+#                        "every time you run the Launcher.\n\n" + \
+#                        "If you are running the Launcher on a shared computer (e.g. if you are using a \"Guest\") account, then you should use \"public mode\". " + \
+#                        "When running in \"public mode\", you will need to enter your password every time you run the Launcher.\n\n"
+#                        #"Future versions of the Launcher may have the ability to manage multiple private key files from within a single " + \
+#                        #"\"Guest\" account, so it may then be possible to run the Launcher in \"private mode\" from within a \"Guest\" " + \
+#                        #"account."
+#        self.privatePublicModeExplanationLabel = wx.StaticText(self.innerPrivatePublicModePanel, wx.ID_ANY, explanation)
+#        width = self.privateModeRadioButton.GetSize().width
+#        self.privatePublicModeExplanationLabel.Wrap(width)
+#        self.innerPrivatePublicModePanelSizer.Add(self.privatePublicModeExplanationLabel, flag=wx.TOP, border=15)
+#        self.privatePublicModeExplanationLabel.SetFont(self.smallFont)
+#       
+#        self.innerPrivatePublicModePanel.SetSizerAndFit(self.innerPrivatePublicModePanelSizer)
+#        self.privatePublicModeGroupBoxSizer.Add(self.innerPrivatePublicModePanel, flag=wx.EXPAND)
+#        self.privatePublicModePanel.SetSizerAndFit(self.privatePublicModeGroupBoxSizer)
+#
+#        self.privacyMainPanel.SetSizerAndFit(self.privacyMainPanelSizer)
+#        self.privacyPanel.SetSizerAndFit(self.privacyPanelSizer)
+#        self.privacyPanel.Layout()
 
         # Sharing tab
 
@@ -977,7 +1020,7 @@ class LauncherOptionsDialog(wx.Dialog):
         # Adding Connection tab and Globals tab to tabbed view
         self.tabbedView.AddPage(self.connectionPanel, "Connection")
         self.tabbedView.AddPage(self.globalsPanel, "Globals")
-        self.tabbedView.AddPage(self.privacyPanel, "Privacy")
+        self.tabbedView.AddPage(self.authPanel, "Authentication")
         self.tabbedView.AddPage(self.fileSharingPanel, "Sharing")
 
         self.tabbedView.SetSelection(self.tabIndex)
@@ -1004,14 +1047,23 @@ class LauncherOptionsDialog(wx.Dialog):
         self.notebookContainerPanel.SetSizerAndFit(notebookContainerPanelSizer)
 
         self.Fit()
+        #width=self.tabbedView.GetSize().width
+        #print "rewrapping to width %s"%width
+        #self.authModeExplanation.Wrap(width)
+        self.Fit()
         self.Layout()
 
     def getVncOptions(self):
         return self.vncOptions
 
+    def setVncOptions(self):
+        return
+
     def onCancel(self, event):
         self.okClicked = False
-        self.Close(True)
+        #self.Close(True)
+        self.Show(False)
+        self.EndModal(wx.CANCEL)
 
     def onOK(self, event):
         self.okClicked = True
@@ -1045,9 +1097,12 @@ class LauncherOptionsDialog(wx.Dialog):
             self.vncOptions['loglevel'] = str(self.verbosityLevelSpinCtrl.GetValue())
             self.vncOptions['logfile'] = self.vncViewerLogFilenameTextField.GetValue()
         self.vncOptions['share_local_home_directory_on_remote_desktop'] = self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.GetValue()
-        self.vncOptions['private_mode'] = self.privateModeRadioButton.GetValue()
-        self.vncOptions['public_mode'] = self.publicModeRadioButton.GetValue()
-        self.Close(True)
+        self.vncOptions['auth_mode']=self.FindWindowByName('auth_mode').GetSelection()
+        #self.vncOptions['private_mode'] = self.privateModeRadioButton.GetValue()
+        #self.vncOptions['public_mode'] = self.publicModeRadioButton.GetValue()
+        #self.Close(True)
+        self.Show(False)
+        self.EndModal(wx.OK)
       
     def enableZlibCompressionLevelWidgets(self):
         self.zlibCompressionLevelLabel.Enable()

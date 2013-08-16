@@ -728,8 +728,8 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
                 event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.progressDialog,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,event.loginprocess.displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
-                event.loginprocess.skd.distributeKey(lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
-                                                     event.loginprocess.cancel)
+                event.loginprocess.skd.distributeKey(callback_success=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
+                                                     callback_fail=event.loginprocess.cancel)
             else:
                 event.Skip()
 
@@ -1162,7 +1162,9 @@ class LoginProcess():
 
         def cancel(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CANCEL):
-                event.loginprocess.shutdownReal()
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
+                event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
+                event.loginprocess.shutdownThread.start()
                 #newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                 #logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN')
                 #wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
@@ -1178,24 +1180,21 @@ class LoginProcess():
                     else:
                         dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                     dlg.ShowModal()
-                if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds') and event.loginprocess.turboVncElapsedTimeInSeconds > 3:
-                    logger.debug("TurboVNC's elapsed time was greater than 3 seconds, " +
-                        "so presumably user stopped VNC session, so no need to ask " +
-                        "if they want to submit a debug log to cvl.massive.org.au")
-                    logger.dump_log(event.loginprocess.notify_window,submit_log=False)
-                else:
-                    logger.dump_log(event.loginprocess.notify_window,submit_log=True)
+#                if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds') and event.loginprocess.turboVncElapsedTimeInSeconds > 3:
+#                    logger.debug("TurboVNC's elapsed time was greater than 3 seconds, " +
+#                        "so presumably user stopped VNC session, so no need to ask " +
+#                        "if they want to submit a debug log to cvl.massive.org.au")
+#                    logger.dump_log(event.loginprocess.notify_window,submit_log=False)
+#                else:
+#                    logger.dump_log(event.loginprocess.notify_window,submit_log=True)
             else:
                 event.Skip()
 
         def shutdown(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SHUTDOWN):
-                event.loginprocess.shutdownReal()
-                logger.debug('loginProcessEvent: shutdown: all threads stopped and joined')
-                if event.loginprocess.autoExit:
-                    if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds'):
-                        if event.loginprocess.turboVncElapsedTimeInSeconds > 3:
-                            os._exit(0)
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
+                event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
+                event.loginprocess.shutdownThread.start()
             else:
                 event.Skip()
 
@@ -1294,12 +1293,16 @@ class LoginProcess():
             # This event is generated if we shutdown the VNC server upon exit. Its basically a no-op, and moves onto processing the shutdown sequence of events
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_NORMAL_TERMINATION):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_NORMAL_TERMINATION')
-                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess))
+                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
             else:
                 event.Skip()
 
         def complete(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_COMPLETE):
+                event.loginprocess.shutdownThread.join() #These events aren't processed until the thread is complete anyway.
+                if (event.loginprocess.canceled()):
+                    logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if the want to dump the log")
+                    logger.dump_log(event.loginprocess.notify_window,submit_log=True)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
                 if event.loginprocess.completeCallback!=None:
                     event.loginprocess.completeCallback(self.loginprocess.jobParams)
@@ -1310,7 +1313,7 @@ class LoginProcess():
             else:
                 event.Skip()
 
-    def shutdownReal(self):
+    def shutdownReal(self,nextevent=None):
         # First stop all the threads, then (optionally) create a new thread to qdel the job. Finally shutdown the sshKeyDist object (which may shutdown the agent)
         logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHUTDOWN')
         for t in self.threads:
@@ -1344,7 +1347,7 @@ class LoginProcess():
 
         if (self.skd!=None): 
                 logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
-                self.skd.shutdownReal()
+                self.skd.shutdown()
                 count = 0
                 while not self.skd.complete():
                     import time
@@ -1359,6 +1362,8 @@ class LoginProcess():
             wx.CallAfter(self.progressDialog.Show, False)
             wx.CallAfter(self.progressDialog.Destroy)
             self.progressDialog = None
+        if nextevent!=None:
+            wx.PostEvent(self.notify_window.GetEventHandler(),nextevent)
 
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
@@ -1431,6 +1436,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_COMPLETE = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_CANCEL_COMPLETE = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHUTDOWN = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHOW_MESSAGE = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SHOW_WARNING = wx.NewId()
@@ -1528,7 +1534,10 @@ class LoginProcess():
     def cancel(self,error=""):
         if (not self._canceled.isSet()):
             self._canceled.set()
-            logger.debug("LoginProcess.cancel: " + error)
+            if error != None:
+                logger.debug("LoginProcess.cancel: " + error)
+            else:
+                logger.debug("LoginProcess.cancel: no error specified")
             event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CANCEL,self,error)
             wx.PostEvent(self.notify_window.GetEventHandler(),event)
 
