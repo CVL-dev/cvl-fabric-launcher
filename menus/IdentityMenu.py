@@ -46,16 +46,61 @@ class IdentityMenu(wx.Menu):
 
         self.AppendSeparator()
 
-        privacyOptionsMenuItemId = wx.NewId()
-        self.Append(privacyOptionsMenuItemId, "&Privacy options")
-        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onPrivacyOptions, id=privacyOptionsMenuItemId)
+        #privacyOptionsMenuItemId = wx.NewId()
+        self.authOpts=wx.MenuItem(self,wx.ID_ANY,"&Authentication options")
+        self.AppendItem(self.authOpts)
+        self.launcherMainFrame.Bind(wx.EVT_MENU, self.onAuthenticationOptions, id=self.authOpts.GetId())
+        
+        self.usePassword = wx.MenuItem(self,wx.ID_ANY,"Use a password for authentication",kind=wx.ITEM_RADIO)
+        self.launcherMainFrame.Bind(wx.EVT_MENU,self.onUsePassword,id=self.usePassword.GetId())
+        self.AppendItem(self.usePassword)
+        self.useSSHKey = wx.MenuItem(self,wx.ID_ANY,"Use an SSH Key ",kind=wx.ITEM_RADIO)
+        self.launcherMainFrame.Bind(wx.EVT_MENU,self.onSSHKey,id=self.useSSHKey.GetId())
+        self.AppendItem(self.useSSHKey)
+        
 
         self.AppendSeparator()
 
         helpAboutKeysMenuItem = wx.NewId()
         self.Append(helpAboutKeysMenuItem, "&Help about keys")
         self.launcherMainFrame.Bind(wx.EVT_MENU, self.onHelpAboutKeys, id=helpAboutKeysMenuItem)
+        self.setRadio()
+        self.disableItems()
 
+    def onUsePassword(self,event):
+        auth_mode=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode')
+        auth_mode.SetSelection(self.launcherMainFrame.TEMP_SSH_KEY)
+        self.disableItems()
+
+    def onSSHKey(self,event):
+        auth_mode=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode')
+        auth_mode.SetSelection(self.launcherMainFrame.PERM_SSH_KEY)
+        self.disableItems()
+
+
+    def setRadio(self):
+        state=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()
+        if state == self.launcherMainFrame.PERM_SSH_KEY:
+            self.useSSHKey.Check(True)
+            self.usePassword.Check(False)
+        else:
+            self.useSSHKey.Check(False)
+            self.usePassword.Check(True)
+    
+    def disableItems(self):
+        print "toggling items"
+        state=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()
+        print state
+        if state == self.launcherMainFrame.PERM_SSH_KEY:
+            enable=True
+        else:
+            enable=False
+        iditems = self.GetMenuItems()
+        for item in iditems:
+            item.Enable(enable)
+        self.authOpts.Enable(True)
+        self.usePassword.Enable(True)
+        self.useSSHKey.Enable(True)
 
     def privateKeyExists(self,warnIfNotFoundInLocalSettings=False):
 
@@ -221,9 +266,9 @@ class IdentityMenu(wx.Menu):
             dlg.ShowModal()
 
 
-    def onPrivacyOptions(self,event):
-        from optionsDialog import LAUNCHER_VNC_OPTIONS_PRIVACY_TAB_INDEX
-        self.launcherMainFrame.onOptions(event, tabIndex=LAUNCHER_VNC_OPTIONS_PRIVACY_TAB_INDEX)
+    def onAuthenticationOptions(self,event):
+        from optionsDialog import LAUNCHER_VNC_OPTIONS_AUTHENTICATION_TAB_INDEX
+        self.launcherMainFrame.onOptions(event, tabIndex=LAUNCHER_VNC_OPTIONS_AUTHENTICATION_TAB_INDEX)
 
     def onHelpAboutKeys(self,event):
         from help.HelpController import helpController

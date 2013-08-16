@@ -137,6 +137,8 @@ global turboVncLatestVersion
 turboVncLatestVersion = None
 
 class LauncherMainFrame(wx.Frame):
+    PERM_SSH_KEY=0
+    TEMP_SSH_KEY=1
 
     def __init__(self, parent, id, title):
 
@@ -163,6 +165,8 @@ class LauncherMainFrame(wx.Frame):
                 if value=='False':
                     value = False
                 self.vncOptions[key] = value
+        import optionsDialog
+        self.launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "VNC Options", self.vncOptions, 0)
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -1064,24 +1068,11 @@ class LauncherMainFrame(wx.Frame):
 
     def onOptions(self, event, tabIndex=0):
 
-        import optionsDialog
+        print "onOptions setting tabIndex %s"%tabIndex
+        self.launcherOptionsDialog.tabbedView.SetSelection(tabIndex)
+        rv = self.launcherOptionsDialog.ShowModal()
 
-        if len(self.vncOptions)==0:
-            if turboVncConfig.has_section("TurboVNC Preferences"):
-                savedTurboVncOptions =  turboVncConfig.items("TurboVNC Preferences")
-                for option in savedTurboVncOptions:
-                    key = option[0]
-                    value = option[1]
-                    if value=='True':
-                        value = True
-                    if value=='False':
-                        value = False
-                    self.vncOptions[key] = value
-
-        self.launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "VNC Options", self.vncOptions, tabIndex)
-        self.launcherOptionsDialog.ShowModal()
-
-        if self.launcherOptionsDialog.okClicked:
+        if rv == wx.OK:
             self.vncOptions = self.launcherOptionsDialog.getVncOptions()
 
             for key in self.vncOptions:
@@ -1328,7 +1319,11 @@ class LauncherMainFrame(wx.Frame):
         #tempKey=queryTemporaryKey()
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,self.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
+        if launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
+            launcherMainFrame.keyModel=KeyModel(temporaryKey=True)
+        else:
+            launcherMainFrame.keyModel=KeyModel(temporaryKey=False)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
         self.loginProcess.doLogin()
 
 
@@ -1597,24 +1592,41 @@ class MyApp(wx.App):
 
 
         def usingPrivatePublicModeForTheFirstTime():
-            import getpass
-            localUsername = getpass.getuser()
-            dlg = wx.MessageDialog(launcherMainFrame,
-                    "You are currently logged onto this computer as \"" + localUsername + "\". " +
-                    "Is this a private account (only accessible by you) ?\n\n" +
-                    "(You can change this setting later, by opening the Privacy tab " +
-                    "of the VNC Options dialog.)",
-                    "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
-            if dlg.ShowModal()==wx.ID_YES:
-                launcherMainFrame.vncOptions['private_mode'] = True
-                turboVncConfig.set("TurboVNC Preferences", "private_mode", True)
-                launcherMainFrame.vncOptions['public_mode'] = False
-                turboVncConfig.set("TurboVNC Preferences", "public_mode", False)
-            else:
-                launcherMainFrame.vncOptions['public_mode'] = True
-                turboVncConfig.set("TurboVNC Preferences", "public_mode", True)
-                launcherMainFrame.vncOptions['private_mode'] = False
-                turboVncConfig.set("TurboVNC Preferences", "private_mode", False)
+            import LauncherOptionsDialog
+            var='auth_mode'
+            auth_mode=self.optionsDialog.FindWindowByName(var)
+            choices=[]
+            for i in range(auth_mode.GetCount()):
+                choices.append(auth_mode.GetString(i))
+            dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,"""
+Would you like to use an SSH Key pair or your password to authenticate yourself?
+Most of the time, an SSH Key pair is preferable.
+If this account is shared by a number of people then passwords are preferable
+""",title="MASSIVE/CVL Launcher",ButtonLabels=choices)
+            retval = dlg.ShowModal()
+            if retval>=0:
+                launcherMainFrame.vncOptions[var]=retval
+                auth_mode.SetSelection(retval)
+                turboVncConfig.set("TurboVNC Preferences", "auth_mode", retval)
+#            import getpass
+#            localUsername = getpass.getuser()
+#            
+#            dlg = wx.MessageDialog(launcherMainFrame,
+#                    "You are currently logged onto this computer as \"" + localUsername + "\". " +
+#                    "Is this a private account (only accessible by you) ?\n\n" +
+#                    "(You can change this setting later, by opening the Privacy tab " +
+#                    "of the VNC Options dialog.)",
+#                    "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
+#            if dlg.ShowModal()==wx.ID_YES:
+#                launcherMainFrame.vncOptions['private_mode'] = True
+#                turboVncConfig.set("TurboVNC Preferences", "private_mode", True)
+#                launcherMainFrame.vncOptions['public_mode'] = False
+#                turboVncConfig.set("TurboVNC Preferences", "public_mode", False)
+#            else:
+#                launcherMainFrame.vncOptions['public_mode'] = True
+#                turboVncConfig.set("TurboVNC Preferences", "public_mode", True)
+#                launcherMainFrame.vncOptions['private_mode'] = False
+#                turboVncConfig.set("TurboVNC Preferences", "private_mode", False)
 
             with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
                 turboVncConfig.write(turboVncPreferencesFileObject)
@@ -1654,11 +1666,10 @@ class MyApp(wx.App):
         else:
             usingPrivateKeyForTheFirstTime()
 
-        launcherMainFrame.keyModel=KeyModel(temporaryKey=launcherMainFrame.vncOptions['public_mode'])
-        if massiveLauncherConfig is not None:
-            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", launcherMainFrame.keyModel.getsshKeyPath())
-            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+#        if massiveLauncherConfig is not None:
+#            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", launcherMainFrame.keyModel.getsshKeyPath())
+#            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+#                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
 
 
         return True
