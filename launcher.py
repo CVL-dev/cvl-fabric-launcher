@@ -1394,6 +1394,7 @@ class siteConfig():
         self.openWebDavShareInRemoteFileBrowser=siteConfig.cmdRegEx()
         self.displayWebDavInfoDialogOnRemoteDesktop=siteConfig.cmdRegEx()
         self.webDavTunnel=siteConfig.cmdRegEx()
+        self.webDavUnmount=siteConfig.cmdRegEx()
         self.__dict__.update(siteConfigDict)
 
 def buildSiteConfigCmdRegExDict(configName):
@@ -1432,8 +1433,9 @@ def buildSiteConfigCmdRegExDict(configName):
         regex='^(?P<remoteWebDavPortNumber>[0-9]+)$'
         siteConfigDict['webDavRemotePort']=siteConfig.cmdRegEx(cmd,regex)
 
-        cmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\'"'
-        siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
+        cmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName} && /usr/local/desktop/get_pid_of_active_window.sh\'"'
+        regex='^(?P<webDavKonquerorWindowPid>[0-9]+)$'
+        siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd,regex)
 
 #        cmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 2; DISPLAY={vncDisplay} kdialog --title \\"MASSIVE/CVL Launcher\\" --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"' % (lt,gt,lt,gt)
         cmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;\'"'
@@ -1446,6 +1448,9 @@ def buildSiteConfigCmdRegExDict(configName):
         cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         regex='tunnel_hello'
         siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
+
+        cmd = '"/usr/bin/ssh {execHost} \'kill {webDavKonquerorWindowPid}\'"'
+        siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
 
         cmd='echo hello;exit'
         regex='hello'
@@ -1522,6 +1527,10 @@ def buildSiteConfigCmdRegExDict(configName):
         cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         regex='tunnel_hello'
         siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
+
+        # Due to a bug in gvfs-mount, I'm using &, so it doesn't matter if "gvfs-mount -u" doesn't exit cleanly.
+        cmd = '"/usr/bin/ssh {execHost} \'wmctrl -F -c \\"{homeDirectoryWebDavShareName} - File Browser\\"; gvfs-mount -u \\"~/.gvfs/WebDAV on localhost\\" &\'"'
+        siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
 
 
 
