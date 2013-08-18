@@ -1547,8 +1547,8 @@ def buildSiteConfigCmdRegExDict(configName):
         regex='tunnel_hello'
         siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
 
-        # Due to a bug in gvfs-mount, I'm using &, so it doesn't matter if "gvfs-mount -u" doesn't exit cleanly.
-        cmd = '"/usr/bin/ssh {execHost} \'wmctrl -F -c \\"{homeDirectoryWebDavShareName} - File Browser\\"; gvfs-mount -u \\"~/.gvfs/WebDAV on localhost\\" &\'"'
+        # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
+        cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; timeout 3 gvfs-mount -u \"\\$HOME/.gvfs/WebDAV on localhost\"\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
     else:
         siteConfigDict['listAll']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
@@ -1568,8 +1568,8 @@ def buildSiteConfigCmdRegExDict(configName):
         regex='tunnel_hello'
         siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
 
-        # Due to a bug in gvfs-mount, I'm using &, so it doesn't matter if "gvfs-mount -u" doesn't exit cleanly.
-        cmd = '"/usr/bin/ssh {execHost} \'wmctrl -F -c \\"{homeDirectoryWebDavShareName} - File Browser\\"; gvfs-mount -u \\"~/.gvfs/WebDAV on localhost\\" &\'"'
+        # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
+        cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; timeout 3 gvfs-mount -u \"\\$HOME/.gvfs/WebDAV on localhost\"\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
 
 
