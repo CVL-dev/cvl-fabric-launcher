@@ -1329,7 +1329,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_COMPLETE):
                 event.loginprocess.shutdownThread.join() #These events aren't processed until the thread is complete anyway.
                 if (event.loginprocess.canceled()):
-                    logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if the want to dump the log")
+                    logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to dump the log")
                     logger.dump_log(event.loginprocess.notify_window,submit_log=True)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
                 if event.loginprocess.completeCallback!=None:
@@ -1381,8 +1381,11 @@ class LoginProcess():
                 time.sleep(0.1)
 
         if (self.skd!=None): 
-                logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
-                self.skd.shutdown()
+                #logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
+                #self.skd.shutdown()
+                # Calling shutdown() doesn't seem to work - shutdownReal never gets called.
+                logger.debug('loginProcessEvent: shutdownReal: calling skd.shutdownReal()')
+                self.skd.shutdownReal()
                 count = 0
                 while not self.skd.complete():
                     count = count + 1
