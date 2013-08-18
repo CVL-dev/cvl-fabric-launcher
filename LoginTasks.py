@@ -11,6 +11,7 @@ import urllib2
 import datetime
 import os
 from MacMessageDialog import MacMessageDialog
+import time
 
 from logger.Logger import logger
 
@@ -772,9 +773,9 @@ class LoginProcess():
                         timestring = "%s minute"%minutes
                     else:
                         timestring = "%s minutes"%minutes
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found. It has %s remaining. Would you like to reconnect or kill it and start a new desktop"%timestring,"Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found. It has %s remaining. Would you like to reconnect or kill it and start a new desktop?"%timestring,"Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
                 else:
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found, would you like to reconnect or kill it and start a new desktop","Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found, would you like to reconnect or kill it and start a new desktop?","Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
                 wx.CallAfter(dialog.ShowModal)
             else:
                 event.Skip()
@@ -1145,6 +1146,23 @@ class LoginProcess():
             else:
                 event.Skip()
 
+        def unmountWebDav(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_UNMOUNT_WEBDAV')
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_SHUTDOWN')
+
+                logger.debug("unmountWebDav: event.loginprocess.siteConfig.webDavUnmount.cmd = " + event.loginprocess.siteConfig.webDavUnmount.cmd)
+
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavUnmount, None, '', requireMatch=False)
+                t.setDaemon(True)
+                t.start()
+                event.loginprocess.threads.append(t)
+
+                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
+
+            else:
+                event.Skip()
 
         def startViewer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_VIEWER):
@@ -1234,6 +1252,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
                 KillCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_KILL_SERVER,event.loginprocess))
                 ShutdownCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
+                UnmountWebDavCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV,event.loginprocess))
                 dialog = None
                 if (len(event.loginprocess.matchlist)>0):
                     logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)>0")
@@ -1253,9 +1272,15 @@ class LoginProcess():
                             timestring = "%s minute"%minutes
                         else:
                             timestring = "%s minutes"%minutes
-                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
+                        if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
+                            dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,UnmountWebDavCallback)
+                        else:
+                            dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?\nIt has %s remaining."%timestring,"Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
                     elif ("m1" not in event.loginprocess.jobParams['loginHost'] and "m2" not in event.loginprocess.jobParams['loginHost']):
-                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
+                        if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
+                            dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,UnmountWebDavCallback)
+                        else:
+                            dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
                     else:
                         logger.debug("showKillServerDialog: timeRemaining is None and ('m1' or 'm2' is in loginHost)")
                     if dialog:
@@ -1265,7 +1290,10 @@ class LoginProcess():
                         logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
                 else:
                     logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)=0")
-                    wx.CallAfter(ShutdownCallback)
+                    if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
+                        wx.CallAfter(UnmountWebDavCallback)
+                    else:
+                        wx.CallAfter(ShutdownCallback)
             else:
                 event.Skip()
 
@@ -1326,31 +1354,37 @@ class LoginProcess():
         self.threads=[]
         logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL')
         if self.queued_job.isSet() and not hasattr(self, 'turboVncElapsedTimeInSeconds'):
-            def qdelCallback():
-                try:
-                    logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
-                    logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
-                    self.siteConfig.stop.cmd.format(**self.jobParams)
-                    t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
-                    t.setDaemon(True)
-                    t.start()
-                    t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
-                    #event.loginprocess.threads.append(t)
-                except:
-                    logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
-                    pass
-            def noopCallback():
-                logger.debug("Leaveing a job in the queue after cancel")
+            self.askUserIfTheyWantToDeleteQueuedJobCompleted = False
+            def askUserIfTheyWantToDeleteQueuedJob():
+                def qdelCallback():
+                    try:
+                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
+                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
+                        self.siteConfig.stop.cmd.format(**self.jobParams)
+                        t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
+                        t.setDaemon(True)
+                        t.start()
+                        t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
+                        #event.loginprocess.threads.append(t)
+                    except:
+                        logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
+                        pass
+                def noopCallback():
+                    logger.debug("Leaving a job in the queue after cancel")
 
-            dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
-            dialog.ShowModal()
+                dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"MASSIVE/CVL Launcher",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
+                logger.debug("threading.current_thread().name = " + threading.current_thread().name)
+                dialog.ShowModal()
+                self.askUserIfTheyWantToDeleteQueuedJobCompleted = True
+            wx.CallAfter(askUserIfTheyWantToDeleteQueuedJob)
+            while self.askUserIfTheyWantToDeleteQueuedJobCompleted==False:
+                time.sleep(0.1)
 
         if (self.skd!=None): 
                 logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
                 self.skd.shutdown()
                 count = 0
                 while not self.skd.complete():
-                    import time
                     count = count + 1
                     logger.debug("loginProcessEvent.shutdownKeyDist: Waiting for sshKeyDist to shut down...")
                     time.sleep(0.5)
@@ -1453,6 +1487,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV = wx.NewId()
 
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.cancel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.distributeKey)
@@ -1485,6 +1520,7 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startWebDavTunnel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.openWebDavShareInRemoteFileBrowser)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.displayWebDavInfoDialogOnRemoteDesktop)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.unmountWebDav)
 
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
 
