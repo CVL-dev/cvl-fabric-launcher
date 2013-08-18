@@ -1356,7 +1356,10 @@ If this account is shared by a number of people then passwords are preferable
         else:
             logger.debug("launherMainFrame.onLogin: using a permenant Key pair")
             launcherMainFrame.keyModel=KeyModel(temporaryKey=False)
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=launcherMainFrame.vncOptions['public_mode'])
+        AUTH_MODE_KEYPAIR = "0 "
+        AUTH_MODE_PASSWORD = "1"
+        removeKeyOnExit = (launcherMainFrame.vncOptions['auth_mode']==AUTH_MODE_PASSWORD)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit)
         self.loginProcess.doLogin()
 
 
