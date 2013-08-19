@@ -544,10 +544,6 @@ class LauncherMainFrame(wx.Frame):
         self.buttonsPanelSizer.Add(self.preferencesButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
         self.Bind(wx.EVT_BUTTON, self.onOptions, id=self.preferencesButton.GetId())
 
-        self.saveButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Save Preferences')
-        self.buttonsPanel.GetSizer().Add(self.saveButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
-        self.saveButton.Bind(wx.EVT_BUTTON, self.savePrefsEventHandler)
-
         self.exitButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Exit')
         self.buttonsPanelSizer.Add(self.exitButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
         self.Bind(wx.EVT_BUTTON, self.onExit,  id=self.exitButton.GetId())
@@ -1194,7 +1190,7 @@ def buildSiteConfigCmdRegExDict(configName):
 
 #        cmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 2; DISPLAY={vncDisplay} kdialog --title \\"MASSIVE/CVL Launcher\\" --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"' % (lt,gt,lt,gt)
         cmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;\'"'
-        siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop'] = siteConfig.cmdRegEx(cmd)
+        siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop'] = cmdRegEx(cmd)
 
         # Chris trying to avoid using the intermediate port:
         #cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {execHost}:{remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
@@ -1206,7 +1202,7 @@ def buildSiteConfigCmdRegExDict(configName):
         # Maybe call server-side script to do something like this:
         #for konq in `dcop konqueror-*`; do KONQPID=`echo $konq | tr '-' '\n' | tail -1`; if [ "`dcop $konq konqueror-mainwindow#1 currentTitle`" == 'webdav://wettenhj@localhost:56865/wettenhj' ]; then kill $KONQPID; fi; done
 
-        siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
+        siteConfigDict['webDavUnmount']=cmdRegEx(cmd)
 
         cmd='echo hello;exit'
         regex='hello'
@@ -1288,7 +1284,7 @@ def buildSiteConfigCmdRegExDict(configName):
 
         # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
         cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; timeout 3 gvfs-mount -u \"\\$HOME/.gvfs/WebDAV on localhost\"\'"'
-        siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
+        siteConfigDict['webDavUnmount']=cmdRegEx(cmd)
 
 
 
