@@ -1586,8 +1586,23 @@ class LoginProcess():
 
 
     def getSharedSession(self):
-        newConfig = self.siteConfig
-        # Add in commands to hard code the execHost, an a otp
+        noneVisible={}
+        noneVisible['usernamePanel']=False
+        noneVisible['projectPanel']=False
+        noneVisible['resourcePanel']=False
+        noneVisible['resolutionPanel']=False
+        noneVisible['cipherPanel']=False
+        noneVisible['debugCheckBoxPanel']=False
+        noneVisible['advancedCheckBoxPanel']=False
+        noneVisible['optionsDialog']=False
+        siteConfigDict['loginHost']=self.siteConfig['loginHost']
+        siteConfigDict['execHost']=cmdRegEx('echo %s'%self.jobParams('execHost'),'(?P<execHost>.*)$',host='local')
+        siteConfigDict['vncDisplay']=cmdRegEx('echo %s'%self.jobParams('vncDisplay'),'(?P<vncDisplay>.*)$',host='local')
+        siteConfigDict['otp']= cmdRegEx(None,None)
+        siteConfigDict['agent']=cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"','agent_hello',async=True)
+        siteConfigDict['tunnel']=cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
+        newConfig = LauncherMainFrame.siteConfig(siteConfigDict,noneVisible)
+
         return newConfig
    
     def cancel(self,error=""):
