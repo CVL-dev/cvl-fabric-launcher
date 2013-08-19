@@ -14,6 +14,7 @@ from MacMessageDialog import LauncherMessageDialog
 
 from logger.Logger import logger
 
+
 class LoginProcess():
     """LoginProcess Class."""
             
