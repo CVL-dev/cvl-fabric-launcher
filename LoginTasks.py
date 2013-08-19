@@ -294,6 +294,8 @@ class LoginProcess():
         def stop(self):
             logger.debug("stopping the thread that starts the VNC Viewer")
             self._stop.set()
+            print "stopping turboVNC process"
+            self.loginprocess.turobVncProcess.exit()
         
         def stopped(self):
             return self._stop.isSet()
@@ -1210,6 +1212,7 @@ class LoginProcess():
 
         def shutdown(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SHUTDOWN):
+                print "starting shutdownThread"
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
                 event.loginprocess.shutdownThread.start()
@@ -1334,8 +1337,9 @@ class LoginProcess():
                     logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to dump the log")
                     logger.dump_log(event.loginprocess.notify_window,submit_log=True)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
+                event.loginprocess._complete.set()
                 if event.loginprocess.completeCallback!=None:
-                    event.loginprocess.completeCallback(self.loginprocess.jobParams)
+                    event.loginprocess.completeCallback(event.loginprocess.jobParams)
                 if event.loginprocess.autoExit:
                     if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds'):
                         if event.loginprocess.turboVncElapsedTimeInSeconds > 3:
@@ -1345,7 +1349,8 @@ class LoginProcess():
 
     def shutdownReal(self,nextevent=None):
         # First stop all the threads, then (optionally) create a new thread to qdel the job. Finally shutdown the sshKeyDist object (which may shutdown the agent)
-        logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHUTDOWN')
+        logger.debug('LoginProcess.shutdownReal: sending stop to all threads')
+        print "sending stop to all threads"
         for t in self.threads:
             try:
                 logger.debug('loginProcessEvent: shutdown: attempting to stop thread ' + str(t))
@@ -1397,6 +1402,9 @@ class LoginProcess():
         if nextevent!=None:
             wx.PostEvent(self.notify_window.GetEventHandler(),nextevent)
 
+
+    def complete(self):
+        return self._complete.isSet()
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
     def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False):
@@ -1413,6 +1421,7 @@ class LoginProcess():
         self.joblist=[]
         self.started_job=threading.Event()
         self.queued_job=threading.Event()
+        self._complete=threading.Event()
         self.skd=None
         self.passwdPrompt=None
         self.completeCallback=completeCallback
@@ -1569,6 +1578,17 @@ class LoginProcess():
     def doLogin(self):
         event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_VNC_VER,self)
         wx.PostEvent(self.notify_window.GetEventHandler(),event)
+
+    def shutdown(self):
+        print "posting shutdown event"
+        event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,self)
+        wx.PostEvent(self.notify_window.GetEventHandler(),event)
+
+
+    def getSharedSession(self):
+        newConfig = self.siteConfig
+        # Add in commands to hard code the execHost, an a otp
+        return newConfig
    
     def cancel(self,error=""):
         if (not self._canceled.isSet()):

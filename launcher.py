@@ -275,11 +275,23 @@ class LauncherMainFrame(wx.Frame):
 
         self.menu_bar  = wx.MenuBar()
 
+        self.file_menu = wx.Menu()
+        self.menu_bar.Append(self.file_menu, "&File")
+        shareDesktop=wx.MenuItem(self.file_menu,wx.ID_ANY,"&Share my Desktop")
+        self.file_menu.AppendItem(shareDesktop)
+        self.Bind(wx.EVT_MENU, self.saveSessionEvent, id=shareDesktop.GetId())
+        loadSession=wx.MenuItem(self.file_menu,wx.ID_ANY,"&Load a saved Session")
+        self.file_menu.AppendItem(loadSession)
+        self.Bind(wx.EVT_MENU, self.loadSessionEvent, id=loadSession.GetId())
+        loadDefaultSessions=wx.MenuItem(self.file_menu,wx.ID_ANY,"&Load default sessions")
+        self.file_menu.AppendItem(loadDefaultSessions)
+        self.Bind(wx.EVT_MENU, self.loadDefaultSessionsEvent, id=loadDefaultSessions.GetId())
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
             self.file_menu = wx.Menu()
             self.file_menu.Append(wx.ID_EXIT, "E&xit", "Close window and exit program.")
             self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
-            self.menu_bar.Append(self.file_menu, "&File")
+           
+            
 
         #if sys.platform.startswith("darwin"):
             ## Only do this for Mac OS X, because other platforms have
@@ -335,17 +347,11 @@ class LauncherMainFrame(wx.Frame):
         self.SetAutoLayout(self.AUTOLAYOUT)
         self.loginDialogPanel = wx.Panel(self, wx.ID_ANY)
         self.loginDialogPanel.SetAutoLayout(self.AUTOLAYOUT)
-        #self.loginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=15, hgap=5)
         self.loginDialogPanelSizer = wx.BoxSizer(wx.VERTICAL)
         self.loginDialogPanel.SetSizer(self.loginDialogPanelSizer)
 
-        #self.tabbedView = wx.Notebook(self.loginDialogPanel, wx.ID_ANY, style=(wx.NB_TOP))
-        #self.tabbedView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,  self.onTabbedViewChanged)
-
-        #self.loginFieldsPanel = wx.Panel(self.tabbedView, wx.ID_ANY)
         self.loginFieldsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
         self.loginFieldsPanel.SetAutoLayout(self.AUTOLAYOUT)
-        #self.loginFieldsPanelSizer = wx.FlexGridSizer(rows=7, cols=2, vgap=3, hgap=5)
         self.loginFieldsPanelSizer = wx.BoxSizer(wx.VERTICAL)
         self.loginFieldsPanel.SetSizer(self.loginFieldsPanelSizer)
 
@@ -355,7 +361,7 @@ class LauncherMainFrame(wx.Frame):
             widgetWidth2 = widgetWidth2 + 25
         widgetWidth3 = 75
 
-        self.sites={}
+        self.defaultSites={}
         massivevisible={}
         massivevisible['usernamePanel']=True
         massivevisible['projectPanel']=True
@@ -374,19 +380,21 @@ class LauncherMainFrame(wx.Frame):
         cvlvisible['debugCheckBoxPanel']='Advanced'
         cvlvisible['advancedCheckBoxPanel']=True
         cvlvisible['optionsDialog']=False
-        noneVisible={}
-        noneVisible['usernamePanel']=False
-        noneVisible['projectPanel']=False
-        noneVisible['resourcePanel']=False
-        noneVisible['resolutionPanel']=False
-        noneVisible['cipherPanel']=False
-        noneVisible['debugCheckBoxPanel']=False
-        noneVisible['advancedCheckBoxPanel']=False
-        noneVisible['optionsDialog']=False
-        self.sites['Desktop on m1.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m1"),massivevisible)
-        self.sites['Desktop on m2.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m2"),massivevisible)
-        self.sites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("cvl"),cvlvisible)
-        self.sites['Huygens on the CVL']  = siteConfig(buildSiteConfigCmdRegExDict("Huygens"),cvlvisible)
+        self.noneVisible={}
+        self.noneVisible['usernamePanel']=False
+        self.noneVisible['projectPanel']=False
+        self.noneVisible['resourcePanel']=False
+        self.noneVisible['resolutionPanel']=False
+        self.noneVisible['cipherPanel']=False
+        self.noneVisible['debugCheckBoxPanel']=False
+        self.noneVisible['advancedCheckBoxPanel']=False
+        self.noneVisible['optionsDialog']=False
+        self.defaultSites['Desktop on m1.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m1"),massivevisible)
+        self.defaultSites['Desktop on m2.massive.org.au']  = siteConfig(buildSiteConfigCmdRegExDict("m2"),massivevisible)
+        self.defaultSites['CVL Desktop']  = siteConfig(buildSiteConfigCmdRegExDict("cvl"),cvlvisible)
+        self.defaultSites['Huygens on the CVL']  = siteConfig(buildSiteConfigCmdRegExDict("Huygens"),cvlvisible)
+
+        self.sites=self.defaultSites.copy()
 
         self.siteConfigPanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
         self.siteConfigPanel.SetAutoLayout(self.AUTOLAYOUT)
@@ -600,11 +608,92 @@ class LauncherMainFrame(wx.Frame):
         import commit_def
         logger.debug('launcher commit hash: ' + commit_def.LATEST_COMMIT)
         logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
-        self.updateVisibility(noneVisible)
+        self.updateVisibility(self.noneVisible)
         self.contacted_massive_website = False
         self.loadPrefs()
 #        self.checkVersionNumber()
 
+
+    def loadSessionEvent(self,event):
+        dlg=wx.FileDialog(launcherMainFrame,"Load a session",style=wx.FD_OPEN)
+        status=dlg.ShowModal()
+        if status==wx.ID_CANCEL:
+            logger.debug('loadSession cancled')
+        f=open(dlg.GetPath(),'r')
+        self.loadSession(f)
+        f.close()
+
+    def loadSession(self,f):
+        import pickle
+        u=pickle.Unpickler(f)
+        saved=u.load()
+        self.sites=saved
+        cb=self.FindWindowByName('jobParams_configName')
+        cbid=cb.GetId()
+        size=cb.GetSize()
+        pos=cb.GetPosition()
+        si=self.siteConfigPanel.GetSizer().GetItem(cb)
+        si.DeleteWindows()
+        cb = wx.ComboBox(self.siteConfigPanel, cbid, choices=self.sites.keys(), value=self.sites.keys()[0], style=wx.CB_READONLY,name='jobParams_configName')
+        cb.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
+        cb.SetSize(size)
+        cb.SetPosition(pos)
+        si.SetWindow(cb)
+        self.updateVisibility()
+
+    def loadDefaultSessions(self):
+        self.sites=self.defaultSites.copy()
+        cb=self.FindWindowByName('jobParams_configName')
+        cbid=cb.GetId()
+        size=cb.GetSize()
+        pos=cb.GetPosition()
+        si=self.siteConfigPanel.GetSizer().GetItem(cb)
+        si.DeleteWindows()
+        cb = wx.ComboBox(self.siteConfigPanel, cbid, choices=self.sites.keys(), value='', style=wx.CB_READONLY,name='jobParams_configName')
+        cb.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
+        cb.SetSize(size)
+        cb.SetPosition(pos)
+        si.SetWindow(cb)
+        self.updateVisibility(self.noneVisible)
+
+    def loadDefaultSessionsEvent(self,event):
+        self.loadDefaultSessions()
+
+    def saveSessionEvent(self,event):
+        self.saveSession()
+
+    def saveSession(self,f=None,siteConfig=None):
+        if siteConfig==None:
+            try:
+                siteConfig=self.loginProcess[0].getSharedSession()
+            except:
+                logger.debug("Tried to save while no session was running. This menu itme should be disabled")
+                return
+        if f==None:
+            dlg=wx.FileDialog(launcherMainFrame,"Save your desktop session",style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+            status=dlg.ShowModal()
+            if status==wx.ID_CANCEL:
+                logger.debug('saveSession canceled')
+                return
+            filename=dlg.GetPath()
+            logger.debug('saving session to file %s'%filename)
+            try:
+                f=open(filename,'w')
+                logger.debug('opened file %s to save the session to'%filename)
+            except Exception as e:
+                logger.debug('error opening file for saving')
+                raise e
+        if siteConfig==None:
+            siteConfig=self.loginProcess[0].getSharedSession()
+            logger.debug('retrieved the session configuration from the loginProcess')
+        print "dumping siteConfig"
+        print siteConfig
+        import pickle
+        mydict={}
+        mydict['Saved Session']=siteConfig
+        p=pickle.Pickler(f)
+        p.dump(mydict)
+        f.close()
 
     def checkVersionNumber(self):
         # Check for the latest version of the launcher:
@@ -709,9 +798,12 @@ class LauncherMainFrame(wx.Frame):
             try:
                 visible = self.sites[self.FindWindowByName('jobParams_configName').GetValue()].visibility
             except Exception as e:
+                logger.debug('updateVisibility: no visibility information associated with the siteConfig configName: %s'%self.FindWindowByName('jobParams_configName').GetValue())
+                print 'updateVisibility: no visibility information associated with the siteConfig configName: %s'%self.FindWindowByName('jobParams_configName').GetValue()
                 visible={}
+        print visible
         for key in visible.keys():
-            print "altering vis on %s"%key
+            print "altering vis on %s %s"%(key,visible[key])
             try:
                 window=self.FindWindowByName(key) #Panels and controls are all subclasses of windows
                 if visible[key]==False:
@@ -726,6 +818,9 @@ class LauncherMainFrame(wx.Frame):
                 pass # a value in the dictionary didn't correspond to a named component of the panel. Fail silently.
         self.Fit()
         self.Layout()
+        if self.logWindow != None:
+            print "showing logWindow"
+            self.logWindow.Show(self.FindWindowByName('debugCheckBox').GetValue())
 
     def onDebugWindowCheckBoxStateChanged(self, event):
         if launcherMainFrame.logWindow!=None:
@@ -776,7 +871,11 @@ class LauncherMainFrame(wx.Frame):
         # No longer using temporary private key file, 
         # so there's no need to delete it as part of clean-up.
         for lp in self.loginProcess:
-            lp.cancel()
+            logger.debug("LauncherMainFrame.onExit: calling shutdown on a loginprocess")
+            lp.shutdown()
+#        for lp in self.loginProcess:
+#            while not lp.complete():
+#                time.sleep(0.5)
 
         try:
             logger.dump_log(launcherMainFrame)
@@ -872,7 +971,13 @@ If this account is shared by a number of people then passwords are preferable
             self.queryAuthMode()
     def loginComplete(self,lp,jobParams):
         print "in LoginComplete"
-        self.loginProcess.remove(lp)
+        try:
+            self.loginProcess.remove(lp)
+        except:
+            print "couldn't remove the login process lp"
+            logger.debug("launcher: Couldn't remove the loginprocess")
+            print lp
+            print self.loginProcess
         print jobParams
     def loginCancel(self,lp,jobParams):
         print "in LoginCancel"
@@ -926,6 +1031,8 @@ If this account is shared by a number of people then passwords are preferable
 
             logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
 
+        dcb=self.FindWindowByName('debugCheckBox').GetValue()
+        print dcb
         self.logWindow.Show(self.FindWindowByName('debugCheckBox').GetValue())
 
 
@@ -939,18 +1046,15 @@ If this account is shared by a number of people then passwords are preferable
             pass
 
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
-        configName=host
+        configName=self.FindWindowByName('jobParams_configName').GetValue()
         if not self.vncOptions.has_key('auth_mode'):
             mode=self.queryAuthMode()
             self.vncOptions['auth_mode']=mode
             self.launcherOptionsDialog.FindWindowByName('auth_mode').SetSelection(mode)
             self.identity_menu.disableItems()
             self.saveGlobalOptions()
-        siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         jobParams=self.buildJobParams(self)
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
-        siteConfigDict = buildSiteConfigDict(configName) #eventually this will be loaded from json downloaded from a website
-        siteConfigObj = siteConfig(siteConfigDict)
         if launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launherMainFrame.onLogin: using a temporary Key pair")
             launcherMainFrame.keyModel=KeyModel(temporaryKey=True)
@@ -969,58 +1073,79 @@ If this account is shared by a number of people then passwords are preferable
         lp.doLogin()
         event.Skip()
 
+class cmdRegEx():
+    def __init__(self,cmd=None,regex=None,requireMatch=True,loop=False,async=False,host='login'):
+
+        self.cmd=cmd
+        if (not isinstance(regex,list)):
+            self.regex=[regex]
+        else:
+            self.regex=regex
+        self.loop=loop
+        self.async=async
+        self.requireMatch=requireMatch
+        if regex==None:
+            self.requireMatch=False
+        self.host=host
+        if (self.async):
+            self.host='local'
+
+    def getCmd(self,jobParam={}):
+        if ('exec' in self.host):
+            sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=no -l {username} {execHost} '
+        elif ('local' in self.host):
+            sshCmd = ''
+        else:
+            sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
+        string=sshCmd.format(**jobParam)+self.cmd.format(**jobParam)
+        return string
 
 class siteConfig():
-    class cmdRegEx():
-        def __init__(self,cmd=None,regex=None,requireMatch=True,loop=False,async=False,host='login'):
-
-            self.cmd=cmd
-            if (not isinstance(regex,list)):
-                self.regex=[regex]
-            else:
-                self.regex=regex
-            self.loop=loop
-            self.async=async
-            self.requireMatch=requireMatch
-            if regex==None:
-                self.requireMatch=False
-            self.host=host
-            if (self.async):
-                self.host='local'
-
-        def getCmd(self,jobParam={}):
-            if ('exec' in self.host):
-                sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=no -l {username} {execHost} '
-            elif ('local' in self.host):
-                sshCmd = ''
-            else:
-                sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
-            string=sshCmd.format(**jobParam)+self.cmd.format(**jobParam)
-            return string
             
         
     def __init__(self,siteConfigDict,visibilityDict):
         self.loginHost=None
-        self.listAll=siteConfig.cmdRegEx()
-        self.running=siteConfig.cmdRegEx()
-        self.stop=siteConfig.cmdRegEx()
-        self.stopForRestart=siteConfig.cmdRegEx()
-        self.execHost=siteConfig.cmdRegEx()
-        self.startServer=siteConfig.cmdRegEx()
-        self.runSanityCheck=siteConfig.cmdRegEx()
-        self.setDisplayResolution=siteConfig.cmdRegEx()
-        self.getProjects=siteConfig.cmdRegEx()
-        self.showStart=siteConfig.cmdRegEx()
-        self.vncDisplay=siteConfig.cmdRegEx()
-        self.otp=siteConfig.cmdRegEx()
-        self.directConnect=siteConfig.cmdRegEx()
-        self.messageRegeexs=siteConfig.cmdRegEx()
-        self.webDavIntermediatePort=siteConfig.cmdRegEx()
-        self.webDavRemotePort=siteConfig.cmdRegEx()
-        self.openWebDavShareInRemoteFileBrowser=siteConfig.cmdRegEx()
-        self.displayWebDavInfoDialogOnRemoteDesktop=siteConfig.cmdRegEx()
-        self.webDavTunnel=siteConfig.cmdRegEx()
-        self.webDavUnmount=siteConfig.cmdRegEx()
+#        self.listAll=siteConfig.cmdRegEx()
+#        self.running=siteConfig.cmdRegEx()
+#        self.stop=siteConfig.cmdRegEx()
+#        self.stopForRestart=siteConfig.cmdRegEx()
+#        self.execHost=siteConfig.cmdRegEx()
+#        self.startServer=siteConfig.cmdRegEx()
+#        self.runSanityCheck=siteConfig.cmdRegEx()
+#        self.setDisplayResolution=siteConfig.cmdRegEx()
+#        self.getProjects=siteConfig.cmdRegEx()
+#        self.showStart=siteConfig.cmdRegEx()
+#        self.vncDisplay=siteConfig.cmdRegEx()
+#        self.otp=siteConfig.cmdRegEx()
+#        self.directConnect=siteConfig.cmdRegEx()
+#        self.messageRegeexs=siteConfig.cmdRegEx()
+#        self.webDavIntermediatePort=siteConfig.cmdRegEx()
+#        self.webDavRemotePort=siteConfig.cmdRegEx()
+#        self.openWebDavShareInRemoteFileBrowser=siteConfig.cmdRegEx()
+#        self.displayWebDavInfoDialogOnRemoteDesktop=siteConfig.cmdRegEx()
+#        self.webDavTunnel=siteConfig.cmdRegEx()
+#        self.__dict__.update(siteConfigDict)
+#        self.visibility=visibilityDict
+
+        self.listAll=cmdRegEx()
+        self.running=cmdRegEx()
+        self.stop=cmdRegEx()
+        self.stopForRestart=cmdRegEx()
+        self.execHost=cmdRegEx()
+        self.startServer=cmdRegEx()
+        self.runSanityCheck=cmdRegEx()
+        self.setDisplayResolution=cmdRegEx()
+        self.getProjects=cmdRegEx()
+        self.showStart=cmdRegEx()
+        self.vncDisplay=cmdRegEx()
+        self.otp=cmdRegEx()
+        self.directConnect=cmdRegEx()
+        self.messageRegeexs=cmdRegEx()
+        self.webDavIntermediatePort=cmdRegEx()
+        self.webDavRemotePort=cmdRegEx()
+        self.openWebDavShareInRemoteFileBrowser=cmdRegEx()
+        self.displayWebDavInfoDialogOnRemoteDesktop=cmdRegEx()
+        self.webDavTunnel=cmdRegEx()
         self.__dict__.update(siteConfigDict)
         self.visibility=visibilityDict
 
@@ -1038,34 +1163,34 @@ def buildSiteConfigCmdRegExDict(configName):
     siteConfigDict['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
     if ("m1" in configName or "m2" in configName):
         siteConfigDict['loginHost']="%s.massive.org.au"%configName
-        siteConfigDict['listAll']=siteConfig.cmdRegEx('qstat -u {username}','^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$',requireMatch=False)
-        siteConfigDict['running']=siteConfig.cmdRegEx('qstat -u {username}','^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$')
-        siteConfigDict['stop']=siteConfig.cmdRegEx('\'qdel -a {jobid}\'')
-        siteConfigDict['stopForRestart']=siteConfig.cmdRegEx('qdel {jobid} ; sleep 5\'')
-        siteConfigDict['execHost']=siteConfig.cmdRegEx('qpeek {jobidNumber}','\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$')
-        siteConfigDict['startServer']=siteConfig.cmdRegEx("\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'","^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$")
-        siteConfigDict['runSanityCheck']=siteConfig.cmdRegEx("\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'")
-        siteConfigDict['setDisplayResolution']=siteConfig.cmdRegEx("\'/usr/local/desktop/set_display_resolution.sh {resolution}\'")
-        siteConfigDict['getProjects']=siteConfig.cmdRegEx('\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"','^(?P<group>\S+)\s+.*$')
-        siteConfigDict['showStart']=siteConfig.cmdRegEx("showstart {jobid}","Estimated Rsv based start .*?on (?P<estimatedStart>.*)")
-        siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"','^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$')
-        siteConfigDict['otp']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
-        siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"','agent_hello',async=True)
-        siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
+        siteConfigDict['listAll']=cmdRegEx('qstat -u {username}','^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$',requireMatch=False)
+        siteConfigDict['running']=cmdRegEx('qstat -u {username}','^\s*(?P<jobid>{jobid})\s+{username}\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$')
+        siteConfigDict['stop']=cmdRegEx('\'qdel -a {jobid}\'')
+        siteConfigDict['stopForRestart']=cmdRegEx('qdel {jobid} ; sleep 5\'')
+        siteConfigDict['execHost']=cmdRegEx('qpeek {jobidNumber}','\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$')
+        siteConfigDict['startServer']=cmdRegEx("\'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False\'","^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$")
+        siteConfigDict['runSanityCheck']=cmdRegEx("\'/usr/local/desktop/sanity_check.sh {launcher_version_number}\'")
+        siteConfigDict['setDisplayResolution']=cmdRegEx("\'/usr/local/desktop/set_display_resolution.sh {resolution}\'")
+        siteConfigDict['getProjects']=cmdRegEx('\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s\' \"','^(?P<group>\S+)\s+.*$')
+        siteConfigDict['showStart']=cmdRegEx("showstart {jobid}","Estimated Rsv based start .*?on (?P<estimatedStart>.*)")
+        siteConfigDict['vncDisplay']= cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"','^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$')
+        siteConfigDict['otp']= cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
+        siteConfigDict['agent']=cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"','agent_hello',async=True)
+        siteConfigDict['tunnel']=cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
 
         cmd='\"/usr/local/desktop/get_ephemeral_port.py\"'
         regex='^(?P<intermediateWebDavPortNumber>[0-9]+)$'
-        siteConfigDict['webDavIntermediatePort']=siteConfig.cmdRegEx(cmd,regex)
+        siteConfigDict['webDavIntermediatePort']=cmdRegEx(cmd,regex)
 
         cmd='\"/usr/bin/ssh {execHost} /usr/local/desktop/get_ephemeral_port.py\"'
         regex='^(?P<remoteWebDavPortNumber>[0-9]+)$'
-        siteConfigDict['webDavRemotePort']=siteConfig.cmdRegEx(cmd,regex)
+        siteConfigDict['webDavRemotePort']=cmdRegEx(cmd,regex)
 
         #cmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName} && /usr/local/desktop/get_pid_of_active_window.sh\'"'
         #regex='^(?P<webDavKonquerorWindowPid>[0-9]+)$'
         #siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd,regex)
         cmd='"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\'"'
-        siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
+        siteConfigDict['openWebDavShareInRemoteFileBrowser']=cmdRegEx(cmd)
 
 #        cmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt; sleep 2; DISPLAY={vncDisplay} kdialog --title \\"MASSIVE/CVL Launcher\\" --textbox ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt 490 150\'"' % (lt,gt,lt,gt)
         cmd='"/usr/bin/ssh {execHost} \'echo -e \\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;\'"'
@@ -1075,7 +1200,7 @@ def buildSiteConfigCmdRegExDict(configName):
         #cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {execHost}:{remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"'
         cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         regex='tunnel_hello'
-        siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
+        siteConfigDict['webDavTunnel']=cmdRegEx(cmd,regex,async=True)
 
         cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\'"'
         # Maybe call server-side script to do something like this:
@@ -1091,38 +1216,38 @@ def buildSiteConfigCmdRegExDict(configName):
         siteConfigDict['directConnect']=True
         cmd='\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed \'s/\ \ */\ /g\' | cut -f 4 -d \' \' | cut -f 1 -d \'/\' | xargs -iname hostn name | grep address | sed \'s/\ \ */\ /g\' | cut -f 3 -d \' \' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"'
         regex='^\s*execHost (?P<execHost>\S+)\s*$'
-        siteConfigDict['execHost'] = siteConfig.cmdRegEx(cmd,regex)
+        siteConfigDict['execHost'] = cmdRegEx(cmd,regex)
         cmd='\"groups | sed \'s@ @\\n@g\'\"' # '\'groups | sed \'s\/\\\\ \/\\\\\\\\n\/g\'\''
         regex='^\s*(?P<group>\S+)\s*$'
-        siteConfigDict['getProjects'] = siteConfig.cmdRegEx(cmd,regex)
+        siteConfigDict['getProjects'] = cmdRegEx(cmd,regex)
         cmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
         regex='^\s*(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
-        siteConfigDict['listAll']=siteConfig.cmdRegEx(cmd,regex,requireMatch=False)
+        siteConfigDict['listAll']=cmdRegEx(cmd,regex,requireMatch=False)
         cmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
         regex='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+{username}\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
-        siteConfigDict['running']=siteConfig.cmdRegEx(cmd,regex)
+        siteConfigDict['running']=cmdRegEx(cmd,regex)
         if ("Hugyens" in configName):
             cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -q huygens -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
         else:
             cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
         regex="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
-        siteConfigDict['startServer']=siteConfig.cmdRegEx(cmd,regex)
-        siteConfigDict['stop']=siteConfig.cmdRegEx('\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"')
-        #siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('" /usr/bin/ssh {execHost} \' cat /var/spool/torque/spool/{jobidNumber}.*\'"' ,'^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
-        siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('\"cat /var/spool/torque/spool/{jobidNumber}.*\"' ,'^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$',host='exec')
+        siteConfigDict['startServer']=cmdRegEx(cmd,regex)
+        siteConfigDict['stop']=cmdRegEx('\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"')
+        #siteConfigDict['vncDisplay']= cmdRegEx('" /usr/bin/ssh {execHost} \' cat /var/spool/torque/spool/{jobidNumber}.*\'"' ,'^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
+        siteConfigDict['vncDisplay']= cmdRegEx('\"cat /var/spool/torque/spool/{jobidNumber}.*\"' ,'^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$',host='exec')
         cmd= '\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\"'
         regex='^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$'
-        siteConfigDict['otp']=siteConfig.cmdRegEx(cmd,regex,host='exec')
-        siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "','agent_hello',async=True)
-        siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
+        siteConfigDict['otp']=cmdRegEx(cmd,regex,host='exec')
+        siteConfigDict['agent']=cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "','agent_hello',async=True)
+        siteConfigDict['tunnel']=cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
 
         cmd='\"/usr/local/bin/get_ephemeral_port.py\"'
         regex='^(?P<intermediateWebDavPortNumber>[0-9]+)$'
-        siteConfigDict['webDavIntermediatePort']=siteConfig.cmdRegEx(cmd,regex,host='exec')
+        siteConfigDict['webDavIntermediatePort']=cmdRegEx(cmd,regex,host='exec')
 
         cmd='\"/usr/local/bin/get_ephemeral_port.py\"'
         regex='^(?P<remoteWebDavPortNumber>[0-9]+)$'
-        siteConfigDict['webDavRemotePort']=siteConfig.cmdRegEx(cmd,regex,host='exec')
+        siteConfigDict['webDavRemotePort']=cmdRegEx(cmd,regex,host='exec')
 
         # Below, I initially tried to respect the user's Nautilus setting of always_use_location_entry and change it back after launching Nautilus,
         # but doing so changes this setting in already-running Nautilus windows, and I want the user to see Nautilus's location bar when showing 
@@ -1132,38 +1257,34 @@ def buildSiteConfigCmdRegExDict(configName):
         # access a WebDAV share within Konqueror.  The method below for the CVL/Nautilus does require fuse membership, but it ends up looking
         # similar to MASSIVE/Konqueror from the user's point of view.  Note that getting drag and drop working nicely depends on patching
         # gtk2 (see CVLFAB-622 on JIRA).
-        cmd="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
-        siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
+        cmd="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
+        siteConfigDict['openWebDavShareInRemoteFileBrowser']=cmdRegEx(cmd)
 
-        #cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
-        cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt\'"'
-        siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop']=siteConfig.cmdRegEx(cmd)
+        #cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
+        cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt\'"'
+        siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop']=cmdRegEx(cmd)
 
         cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} "echo tunnel_hello; bash"'
         regex='tunnel_hello'
-        siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
-
-        # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
-        cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; timeout 3 gvfs-mount -u \"\\$HOME/.gvfs/WebDAV on localhost\"\'"'
-        siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
+        siteConfigDict['webDavTunnel']=cmdRegEx(cmd,regex,async=True)
     else:
         siteConfigDict['loginHost']=configName
-        siteConfigDict['listAll']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
-        siteConfigDict['startServer']=siteConfig.cmdRegEx('\"/usr/local/bin/vncsession --vnc turbovnc --geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
-        siteConfigDict['stop']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -kill {vncDisplay}\'')
-        siteConfigDict['otp']= siteConfig.cmdRegEx('\'module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
-        siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {loginHost} "echo agent_hello; bash "','agent_hello',async=True)
-        siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
-        cmd="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
-        siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
+        siteConfigDict['listAll']=cmdRegEx('\'module load turbovnc ; vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
+        siteConfigDict['startServer']=cmdRegEx('\"/usr/local/bin/vncsession --vnc turbovnc --geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
+        siteConfigDict['stop']=cmdRegEx('\'module load turbovnc ; vncserver -kill {vncDisplay}\'')
+        siteConfigDict['otp']= cmdRegEx('\'module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
+        siteConfigDict['agent']=cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {loginHost} "echo agent_hello; bash "','agent_hello',async=True)
+        siteConfigDict['tunnel']=cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
+        cmd="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus dav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
+        siteConfigDict['openWebDavShareInRemoteFileBrowser']=cmdRegEx(cmd)
 
-        #cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
-        cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt\'"'
-        siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop']=siteConfig.cmdRegEx(cmd)
+        #cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
+        cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt\'"'
+        siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop']=cmdRegEx(cmd)
 
         cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
         regex='tunnel_hello'
-        siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
+        siteConfigDict['webDavTunnel']=cmdRegEx(cmd,regex,async=True)
 
         # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
         cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; timeout 3 gvfs-mount -u \"\\$HOME/.gvfs/WebDAV on localhost\"\'"'
