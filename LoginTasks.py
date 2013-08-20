@@ -1249,7 +1249,6 @@ class LoginProcess():
 
         def shutdown(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SHUTDOWN):
-                print "starting shutdownThread"
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
                 event.loginprocess.shutdownThread.start()
@@ -1375,8 +1374,7 @@ class LoginProcess():
 
     def shutdownReal(self,nextevent=None):
         # First stop all the threads, then (optionally) create a new thread to qdel the job. Finally shutdown the sshKeyDist object (which may shutdown the agent)
-        logger.debug('LoginProcess.shutdownReal: sending stop to all threads')
-        print "sending stop to all threads"
+        logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHUTDOWN')
         for t in self.threads:
             try:
                 logger.debug('loginProcessEvent: shutdown: attempting to stop thread ' + str(t))
