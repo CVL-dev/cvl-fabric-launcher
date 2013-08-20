@@ -48,8 +48,9 @@ class LoginProcess():
 
                 # Not 100% sure if this is necessary on Windows vs Linux. Seems to break the
                 # Windows version of the launcher, but leaving in for Linux/OSX.
+                logger.debug("runAsyncServerCommandThread: self.cmdRegex.cmd = " + self.cmdRegex.cmd)
                 cmd=self.cmdRegex.cmd.format(**self.loginprocess.jobParams)
-                logger.debug("running %s"%cmd)
+                logger.debug("runAsyncServerCommandThread: running %s"%cmd)
                 if sys.platform.startswith("win"):
                     pass
                 else:
@@ -98,7 +99,7 @@ class LoginProcess():
                 pass
             except Exception as e:
                 error_message = "%s"%e
-                logger.error('async server command failure: %s for command %s'%(error_message,self.cmdRegex.cmd))
+                logger.error('async server command failure: '+ error_message)
                 self.loginprocess.cancel(error_message)
                 return
 
@@ -298,7 +299,6 @@ class LoginProcess():
         def stop(self):
             logger.debug("stopping the thread that starts the VNC Viewer")
             self._stop.set()
-            print "stopping turboVNC process"
             try:
                 self.loginprocess.turboVncProcess.kill()
             except:
@@ -1103,7 +1103,7 @@ class LoginProcess():
                 #event.loginprocess.jobParams['remoteWebDavPortNumber'] = 8080 # FIXME: Hard-coded remote WebDAV port number for now!
                 # remoteWebDavPortNumber is now determined using /usr/local/desktop/get_ephemeral_port_number.py on MASSIVE
                 # and from /usr/local/bin/get_ephemeral_port_number.py on the CVL.
-                logger.debug('loginProcessEvent: startWebDavTunnel: set remoteWebDavPortNumber to ' + str(event.loginprocess.jobParams['remoteWebDavPortNumber']))
+                #logger.debug('loginProcessEvent: startWebDavTunnel: set remoteWebDavPortNumber to ' + str(event.loginprocess.jobParams['remoteWebDavPortNumber']))
 
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER')
@@ -1220,7 +1220,6 @@ class LoginProcess():
 
         def shutdown(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SHUTDOWN):
-                print "starting shutdownThread"
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
                 event.loginprocess.shutdownThread.start()
@@ -1293,8 +1292,8 @@ class LoginProcess():
                         else:
                             dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
                     else:
+                        logger.debug("showKillServerDialog: timeRemaining is None and ('m1' or 'm2' is in loginHost)")
                         dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
-                        logger.debug("showKillServerDialog: timeRemaining is None")
                     if dialog:
                         logger.debug("showKillServerDialog: Showing the 'Stop the desktop' question dialog.")
                         wx.CallAfter(dialog.ShowModal)
@@ -1357,8 +1356,7 @@ class LoginProcess():
 
     def shutdownReal(self,nextevent=None):
         # First stop all the threads, then (optionally) create a new thread to qdel the job. Finally shutdown the sshKeyDist object (which may shutdown the agent)
-        logger.debug('LoginProcess.shutdownReal: sending stop to all threads')
-        print "sending stop to all threads"
+        logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHUTDOWN')
         for t in self.threads:
             try:
                 logger.debug('loginProcessEvent: shutdown: attempting to stop thread ' + str(t))
@@ -1369,24 +1367,31 @@ class LoginProcess():
         self.threads=[]
         logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL')
         if self.queued_job.isSet() and not self.started_job.isSet():
-            def qdelCallback():
-                try:
-                    logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
-                    logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
-                    self.siteConfig.stop.cmd.format(**self.jobParams)
-                    t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
-                    t.setDaemon(True)
-                    t.start()
-                    t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
-                    #event.loginprocess.threads.append(t)
-                except:
-                    logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
-                    pass
-            def noopCallback():
-                logger.debug("Leaveing a job in the queue after cancel")
+            self.askUserIfTheyWantToDeleteQueuedJobCompleted = False
+            def askUserIfTheyWantToDeleteQueuedJob():
+                def qdelCallback():
+                    try:
+                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
+                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
+                        self.siteConfig.stop.cmd.format(**self.jobParams)
+                        t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
+                        t.setDaemon(True)
+                        t.start()
+                        t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
+                        #event.loginprocess.threads.append(t)
+                    except:
+                        logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
+                        pass
+                def noopCallback():
+                    logger.debug("Leaving a job in the queue after cancel")
 
-            dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
-            dialog.ShowModal()
+                dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"MASSIVE/CVL Launcher",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
+                logger.debug("threading.current_thread().name = " + threading.current_thread().name)
+                dialog.ShowModal()
+                self.askUserIfTheyWantToDeleteQueuedJobCompleted = True
+            wx.CallAfter(askUserIfTheyWantToDeleteQueuedJob)
+            while self.askUserIfTheyWantToDeleteQueuedJobCompleted==False:
+                time.sleep(0.1)
 
         if (self.skd!=None): 
                 #logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
