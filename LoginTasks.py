@@ -49,8 +49,9 @@ class LoginProcess():
 
                 # Not 100% sure if this is necessary on Windows vs Linux. Seems to break the
                 # Windows version of the launcher, but leaving in for Linux/OSX.
+                logger.debug("runAsyncServerCommandThread: self.cmdRegex.cmd = " + self.cmdRegex.cmd)
                 cmd=self.cmdRegex.cmd.format(**self.loginprocess.jobParams)
-                logger.debug("running %s"%cmd)
+                logger.debug("runAsyncServerCommandThread: running %s"%cmd)
                 if sys.platform.startswith("win"):
                     pass
                 else:
@@ -1094,7 +1095,7 @@ class LoginProcess():
                 #event.loginprocess.jobParams['remoteWebDavPortNumber'] = 8080 # FIXME: Hard-coded remote WebDAV port number for now!
                 # remoteWebDavPortNumber is now determined using /usr/local/desktop/get_ephemeral_port_number.py on MASSIVE
                 # and from /usr/local/bin/get_ephemeral_port_number.py on the CVL.
-                logger.debug('loginProcessEvent: startWebDavTunnel: set remoteWebDavPortNumber to ' + str(event.loginprocess.jobParams['remoteWebDavPortNumber']))
+                #logger.debug('loginProcessEvent: startWebDavTunnel: set remoteWebDavPortNumber to ' + str(event.loginprocess.jobParams['remoteWebDavPortNumber']))
 
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER')
