@@ -606,6 +606,12 @@ class LauncherMainFrame(wx.Frame):
         if self.massiveUsername.strip()!="":
             self.massiveUsernameTextField.SelectAll()
 
+        self.massivePasswordLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Password')
+        self.massiveLoginFieldsPanelSizer.Add(self.massivePasswordLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.massivePasswordField = wx.TextCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, "", size=(widgetWidth1, -1), style=wx.TE_PASSWORD)
+        self.massiveLoginFieldsPanelSizer.Add(self.massivePasswordField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
+
 
         self.massiveUsernameTextField.SetFocus()
 
@@ -616,6 +622,7 @@ class LauncherMainFrame(wx.Frame):
         self.massiveVncDisplayResolutionComboBox.MoveAfterInTabOrder(self.massiveHoursAndVisNodesPanel)
         self.massiveSshTunnelCipherComboBox.MoveAfterInTabOrder(self.massiveVncDisplayResolutionComboBox)
         self.massiveUsernameTextField.MoveAfterInTabOrder(self.massiveSshTunnelCipherComboBox)
+        self.massivePasswordField.MoveAfterInTabOrder(self.massiveUsernameTextField)
 
         self.massiveShowDebugWindowLabel = wx.StaticText(self.massiveLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
         self.massiveLoginFieldsPanelSizer.Add(self.massiveShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -1138,6 +1145,7 @@ class LauncherMainFrame(wx.Frame):
         self.massiveProjectComboBox.SetCursor(cursor)
         self.massiveHoursField.SetCursor(cursor)
         self.massiveUsernameTextField.SetCursor(cursor)
+        self.massivePasswordField.SetCursor(cursor)
 
         self.cvlLoginHostComboBox.SetCursor(cursor)
         self.cvlUsernameTextField.SetCursor(cursor)
@@ -1187,6 +1195,7 @@ If this account is shared by a number of people then passwords are preferable
         if launcherMainFrame.massiveTabSelected:
             self.massiveLoginHost = self.massiveLoginHostComboBox.GetValue()
             self.massiveUsername = self.massiveUsernameTextField.GetValue()
+            self.massivePassword = self.massivePasswordField.GetValue()
             self.massiveVncDisplayResolution = self.massiveVncDisplayResolutionComboBox.GetValue()
             self.massiveSshTunnelCipher = self.massiveSshTunnelCipherComboBox.GetValue()
             self.massiveAutomaticallyExit = self.massiveAutomaticallyExitCheckBox.GetValue()
@@ -1197,6 +1206,14 @@ If this account is shared by a number of people then passwords are preferable
                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
                 self.massiveUsernameTextField.SetFocus()
+                return
+
+            if self.massivePassword.strip()=="":
+                dlg = wx.MessageDialog(launcherMainFrame,
+                        "Please enter your MASSIVE password.",
+                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                self.massivePasswordField.SetFocus()
                 return
         else:
             self.cvlLoginHost = self.cvlLoginHostComboBox.GetValue()
@@ -1304,6 +1321,7 @@ If this account is shared by a number of people then passwords are preferable
             resolution = self.massiveVncDisplayResolution
             cipher     = self.massiveSshTunnelCipher
             username   = self.massiveUsername
+            password   = self.massivePassword
             autoExit   = self.massiveAutomaticallyExit
             hours      = self.massiveHoursRequested
             nodes      = self.massiveVisNodesRequested
@@ -1312,6 +1330,7 @@ If this account is shared by a number of people then passwords are preferable
             resolution = self.cvlVncDisplayResolution
             cipher     = self.cvlSshTunnelCipher
             username   = self.cvlUsername
+            password   = None
             autoExit   = self.cvlAutomaticallyExit
             hours      = 298261 # maximum number of hours its possible to request without overflowing a signed int32 when converted to seconds.
             nodes      = 1
@@ -1320,6 +1339,8 @@ If this account is shared by a number of people then passwords are preferable
         resolution = resolution.lstrip().rstrip()
         cipher     = cipher.lstrip().rstrip()
         username   = username.lstrip().rstrip()
+        if password is not None:
+            password   = password.lstrip().rstrip()
 
         userCanAbort=True
         maximumProgressBarValue = 10
@@ -1333,6 +1354,7 @@ If this account is shared by a number of people then passwords are preferable
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         jobParams={}
         jobParams['username']=username
+        jobParams['password']=password
         jobParams['loginHost']=host
         jobParams['configName']=host
         jobParams['resolution']=resolution
@@ -1358,6 +1380,11 @@ If this account is shared by a number of people then passwords are preferable
             logger.debug("launcherMainFrame.onLogin: using a permanent Key pair")
             launcherMainFrame.keyModel=KeyModel(temporaryKey=False)
             removeKeyOnExit = False
+        # FIXME: Using MASSIVE tab forces user to authenticate with a password for now: 
+        if self.massiveTabSelected:
+            logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
+            launcherMainFrame.keyModel=KeyModel(temporaryKey=True)
+            removeKeyOnExit = True
         self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit)
         self.loginProcess.doLogin()
 
