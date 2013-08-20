@@ -10,7 +10,7 @@ import re
 import urllib2
 import datetime
 import os
-from MacMessageDialog import MacMessageDialog
+from MacMessageDialog import LauncherMessageDialog
 import time
 
 from logger.Logger import logger
@@ -164,7 +164,7 @@ class LoginProcess():
                     sizer.Add(text,0,wx.ALL,15)
                     dlg.addPanel(panel)
                 else:
-                    dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
+                    dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                 wx.CallAfter(dlg.Show)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
                 for regex in self.cmdRegex.regex:
@@ -1207,7 +1207,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
+                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                     dlg.ShowModal()
 #                if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds') and event.loginprocess.turboVncElapsedTimeInSeconds > 3:
 #                    logger.debug("TurboVNC's elapsed time was greater than 3 seconds, " +

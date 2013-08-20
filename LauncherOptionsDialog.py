@@ -84,7 +84,7 @@ class LauncherOptionsDialog(wx.Dialog):
 class MyApp(wx.App):
     def OnInit(self):
         message = "You have requested 2880 CPU hours, but you only have 455.0 CPU hours remaining in your quota for project \"Desc002\"."
-        dialog = MacMessageDialog(parent=None, message=message, title="MASSIVE/CVL Launcher")
+        dialog = LauncherMessageDialog(parent=None, message=message, title="MASSIVE/CVL Launcher")
         dialog.ShowModal()
         return True
 
@@ -174,7 +174,7 @@ class LauncherMessageDialog(wx.Dialog):
 class MyApp(wx.App):
     def OnInit(self):
         message = "You have requested 2880 CPU hours, but you only have 455.0 CPU hours remaining in your quota for project \"Desc002\"."
-        dialog = MacMessageDialog(parent=None, message=message, title="MASSIVE/CVL Launcher")
+        dialog = LauncherMessageDialog(parent=None, message=message, title="MASSIVE/CVL Launcher")
         dialog.ShowModal()
         return True
 
