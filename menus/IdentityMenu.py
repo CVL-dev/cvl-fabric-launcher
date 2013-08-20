@@ -71,11 +71,15 @@ class IdentityMenu(wx.Menu):
         auth_mode=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode')
         auth_mode.SetSelection(self.launcherMainFrame.TEMP_SSH_KEY)
         self.disableItems()
+        self.launcherMainFrame.vncOptions['auth_mode']=self.launcherMainFrame.TEMP_SSH_KEY
+        self.launcherMainFrame.saveGlobalOptions()
 
     def onSSHKey(self,event):
         auth_mode=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode')
         auth_mode.SetSelection(self.launcherMainFrame.PERM_SSH_KEY)
         self.disableItems()
+        self.launcherMainFrame.vncOptions['auth_mode']=self.launcherMainFrame.PERM_SSH_KEY
+        self.launcherMainFrame.saveGlobalOptions()
 
         dlg = wx.MessageDialog(None,
                     "Warning: Authentication mode only affects CVL usage for now.\n\n" +
