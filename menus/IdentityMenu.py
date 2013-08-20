@@ -88,9 +88,9 @@ class IdentityMenu(wx.Menu):
             self.usePassword.Check(True)
     
     def disableItems(self):
-        print "toggling items"
+        #print "toggling items"
         state=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()
-        print state
+        #print state
         if state == self.launcherMainFrame.PERM_SSH_KEY:
             enable=True
         else:
