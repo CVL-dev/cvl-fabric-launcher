@@ -1351,14 +1351,13 @@ If this account is shared by a number of people then passwords are preferable
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
         if launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
-            logger.debug("launherMainFrame.onLogin: using a temporary Key pair")
+            logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
             launcherMainFrame.keyModel=KeyModel(temporaryKey=True)
+            removeKeyOnExit = True
         else:
-            logger.debug("launherMainFrame.onLogin: using a permenant Key pair")
+            logger.debug("launcherMainFrame.onLogin: using a permanent Key pair")
             launcherMainFrame.keyModel=KeyModel(temporaryKey=False)
-        AUTH_MODE_KEYPAIR = "0 "
-        AUTH_MODE_PASSWORD = "1"
-        removeKeyOnExit = (launcherMainFrame.vncOptions['auth_mode']==AUTH_MODE_PASSWORD)
+            removeKeyOnExit = False
         self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit)
         self.loginProcess.doLogin()
 
