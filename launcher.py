@@ -658,38 +658,40 @@ class LauncherMainFrame(wx.Frame):
     def saveSessionEvent(self,event):
         self.saveSession()
 
-    def saveSession(self,f=None,siteConfig=None):
-        if siteConfig==None:
-            try:
-                siteConfig=self.loginProcess[0].getSharedSession()
-            except:
-                logger.debug("Tried to save while no session was running. This menu itme should be disabled")
-                return
-        if f==None:
-            dlg=wx.FileDialog(launcherMainFrame,"Save your desktop session",style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-            status=dlg.ShowModal()
-            if status==wx.ID_CANCEL:
-                logger.debug('saveSession canceled')
-                return
-            filename=dlg.GetPath()
-            logger.debug('saving session to file %s'%filename)
+    def saveSessionThreadTarget(self,q):
+        filename = q.get(block=True)
+        siteConfig = q.get(block=True)
+        if siteConfig!=None and filename!=None:
             try:
                 f=open(filename,'w')
                 logger.debug('opened file %s to save the session to'%filename)
             except Exception as e:
                 logger.debug('error opening file for saving')
                 raise e
-        if siteConfig==None:
-            siteConfig=self.loginProcess[0].getSharedSession()
-            logger.debug('retrieved the session configuration from the loginProcess')
-        print "dumping siteConfig"
-        print siteConfig
-        import pickle
-        mydict={}
-        mydict['Saved Session']=siteConfig
-        p=pickle.Pickler(f)
-        p.dump(mydict)
-        f.close()
+            import pickle
+            mydict={}
+            mydict['Saved Session']=siteConfig
+            p=pickle.Pickler(f)
+            p.dump(mydict)
+            f.close()
+
+
+    def saveSession(self):
+        print "in Savesession"
+        import Queue
+        q=Queue.Queue()
+        dlg=wx.FileDialog(launcherMainFrame,"Save your desktop session",style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        status=dlg.ShowModal()
+        if status==wx.ID_CANCEL:
+            logger.debug('saveSession canceled')
+            return
+        filename=dlg.GetPath()
+        q.put(filename)
+        # Abuse of queue.get as a flow control mechanism.
+        t=threading.Thread(target=self.loginProcess[0].getSharedSession,args=[q])
+        t.start()
+        t=threading.Thread(target=self.saveSessionThreadTarget,args=[q])
+        t.start()
 
     def checkVersionNumber(self):
         # Check for the latest version of the launcher:
@@ -1142,8 +1144,11 @@ class siteConfig():
         self.openWebDavShareInRemoteFileBrowser=cmdRegEx()
         self.displayWebDavInfoDialogOnRemoteDesktop=cmdRegEx()
         self.webDavTunnel=cmdRegEx()
+        print "initiliased siteconfig"
         self.__dict__.update(siteConfigDict)
+        print "updated siteconfig"
         self.visibility=visibilityDict
+        print "set vis"
 
 def buildSiteConfigCmdRegExDict(configName):
     import re
