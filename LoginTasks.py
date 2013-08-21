@@ -10,7 +10,7 @@ import re
 import urllib2
 import datetime
 import os
-from MacMessageDialog import MacMessageDialog
+from MacMessageDialog import LauncherMessageDialog
 import time
 
 from logger.Logger import logger
@@ -95,6 +95,9 @@ class LoginProcess():
                             self.loginprocess.cancel(errormessage)
                     if self.stopped():
                         return
+            except AttributeError:
+                # Attribute errors occur if we try to read stdout after the process has completed.
+                pass
             except Exception as e:
                 error_message = "%s"%e
                 logger.error('async server command failure: '+ error_message)
@@ -112,6 +115,7 @@ class LoginProcess():
             self.requireMatch=requireMatch
             if (self.cmdRegex.regex==None or self.cmdRegex.regex[0]==None or self.cmdRegex.requireMatch==False):
                 self.requireMatch=False
+                self.loginprocess.matchlist=[]
     
         def stop(self):
             if (self.cmdRegex.cmd!= None):
@@ -160,7 +164,7 @@ class LoginProcess():
                     sizer.Add(text,0,wx.ALL,15)
                     dlg.addPanel(panel)
                 else:
-                    dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
+                    dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                 wx.CallAfter(dlg.Show)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
                 for regex in self.cmdRegex.regex:
@@ -296,6 +300,10 @@ class LoginProcess():
         def stop(self):
             logger.debug("stopping the thread that starts the VNC Viewer")
             self._stop.set()
+            try:
+                self.loginprocess.turboVncProcess.kill()
+            except:
+                pass
         
         def stopped(self):
             return self._stop.isSet()
@@ -629,7 +637,7 @@ class LoginProcess():
                     logger.debug("Exception while checking TurboVNC version number: " + str(e))
 
                     def error_dialog():
-                        dlg = wx.MessageDialog(self.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
+                        dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
                                                 "The launcher cannot continue.\n",
                                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                         dlg.ShowModal()
@@ -728,7 +736,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISTRIBUTE_KEY')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.progressDialog,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['password'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,event.loginprocess.displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.progressDialog,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,event.loginprocess.displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(callback_success=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      callback_fail=event.loginprocess.cancel)
@@ -809,32 +817,33 @@ class LoginProcess():
                 
                 logger.debug('selectProject: groups = ' + str(groups))
 
-                try:
-                    event.loginprocess.siteConfig.startServer.cmd.format(**event.loginprocess.jobParams) # check if we actually need the project to format the startServerCmd
-                    if (event.loginprocess.jobParams.has_key('project') and not (event.loginprocess.jobParams['project'] in grouplist)):
-                        logger.debug("we have a value for project, but the user is not a member of that project")
-                        msg='You don\'t appear to be a member of the project {project}.\n\nPlease select from one of the following:'.format(**event.loginprocess.jobParams)
-                        event.loginprocess.jobParams.pop('project',None)
-                        try: # check again if we really need the project field.
-                            logger.debug("trying to format the startServerCmd")
-                            event.loginprocess.siteConfig.startServer.cmd.format(**event.loginprocess.jobParams)
-                            logger.debug("trying to format the startServerCmd, project is not necessary")
-                            showDialog=False
-                        except KeyError as e:
-                            if (e.__str__()=='project'):
-                                logger.debug("trying to format the startServerCmd, project is necessary")
-                                showDialog=True
-                            else:
-                                logger.debug("trying to format the startServerCmd, some other key is missing %s"%e)
-                    elif (event.loginprocess.jobParams.has_key('project') and (event.loginprocess.jobParams['project'] in grouplist)):
-                        logger.debug("we have a value for project, and the user is a member of that project")
-                    else:
-                        logger.debug("we don't have a value for project, but it isn't needed to start the VNC server")
-                except KeyError as e:
-                    if e.args == 'project':
-                        logger.debug("we need a value for project but it isn't set yet")
-                        msg="Please select your project"
-                        showDialog=True
+                if event.loginprocess.siteConfig.startServer.cmd!=None:
+                    try:
+                        event.loginprocess.siteConfig.startServer.cmd.format(**event.loginprocess.jobParams) # check if we actually need the project to format the startServerCmd
+                        if (event.loginprocess.jobParams.has_key('project') and not (event.loginprocess.jobParams['project'] in grouplist)):
+                            logger.debug("we have a value for project, but the user is not a member of that project")
+                            msg='You don\'t appear to be a member of the project {project}.\n\nPlease select from one of the following:'.format(**event.loginprocess.jobParams)
+                            event.loginprocess.jobParams.pop('project',None)
+                            try: # check again if we really need the project field.
+                                logger.debug("trying to format the startServerCmd")
+                                event.loginprocess.siteConfig.startServer.cmd.format(**event.loginprocess.jobParams)
+                                logger.debug("trying to format the startServerCmd, project is not necessary")
+                                showDialog=False
+                            except KeyError as e:
+                                if (e.__str__()=='project'):
+                                    logger.debug("trying to format the startServerCmd, project is necessary")
+                                    showDialog=True
+                                else:
+                                    logger.debug("trying to format the startServerCmd, some other key is missing %s"%e)
+                        elif (event.loginprocess.jobParams.has_key('project') and (event.loginprocess.jobParams['project'] in grouplist)):
+                            logger.debug("we have a value for project, and the user is a member of that project")
+                        else:
+                            logger.debug("we don't have a value for project, but it isn't needed to start the VNC server")
+                    except KeyError as e:
+                        if e.args == 'project':
+                            logger.debug("we need a value for project but it isn't set yet")
+                            msg="Please select your project"
+                            showDialog=True
                 if (not showDialog):
                     logger.debug("don't need to show the dialog, either the project was set correctly, or it was not set, but also not required")
                 else:
@@ -1197,7 +1206,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = MacMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
+                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
                     dlg.ShowModal()
 #                if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds') and event.loginprocess.turboVncElapsedTimeInSeconds > 3:
 #                    logger.debug("TurboVNC's elapsed time was greater than 3 seconds, " +

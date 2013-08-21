@@ -2,7 +2,7 @@ import wx
 
 import IconPys.MASSIVElogoTransparent64x64
 
-class MacMessageDialog(wx.Dialog):
+class LauncherMessageDialog(wx.Dialog):
     def __init__(self, parent, message, title, **kw):
         wx.Dialog.__init__(self, parent, style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP, **kw)
        
@@ -64,7 +64,7 @@ class MacMessageDialog(wx.Dialog):
 class MyApp(wx.App):
     def OnInit(self):
         message = "You have requested 2880 CPU hours, but you only have 455.0 CPU hours remaining in your quota for project \"Desc002\"."
-        dialog = MacMessageDialog(parent=None, message=message, title="MASSIVE/CVL Launcher")
+        dialog = LauncherMessageDialog(parent=None, message=message, title="MASSIVE/CVL Launcher")
         dialog.ShowModal()
         return True
 
