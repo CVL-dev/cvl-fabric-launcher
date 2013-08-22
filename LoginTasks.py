@@ -536,16 +536,27 @@ class LoginProcess():
         def getTurboVncVersionNumber(self,vnc):
             self.turboVncVersionNumber = "0.0"
 
-            turboVncVersionNumberCommandString = vnc + " -help"
-            proc = subprocess.Popen(turboVncVersionNumberCommandString,
-                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                universal_newlines=True)
-            turboVncStdout, turboVncStderr = proc.communicate(input="\n")
-            if turboVncStderr != None:
-                logger.debug("turboVncStderr: " + turboVncStderr)
-            turboVncVersionNumberComponents = turboVncStdout.split(" v")
-            turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
-            turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
+            if sys.platform.startswith("darwin"):
+                turboVncVersionNumberCommandString = "pkgutil --pkg-info com.virtualgl.turbovnc | grep version"
+                proc = subprocess.Popen(turboVncVersionNumberCommandString,
+                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                    universal_newlines=True)
+                turboVncStdout, turboVncStderr = proc.communicate(input="\n")
+                if turboVncStderr != None:
+                    logger.debug("turboVncStderr: " + turboVncStderr)
+                turboVncVersionNumberComponents = turboVncStdout.split(" ")
+                turboVncVersionNumber = turboVncVersionNumberComponents[1].strip()
+            else:
+                turboVncVersionNumberCommandString = vnc + " -help"
+                proc = subprocess.Popen(turboVncVersionNumberCommandString,
+                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                    universal_newlines=True)
+                turboVncStdout, turboVncStderr = proc.communicate(input="\n")
+                if turboVncStderr != None:
+                    logger.debug("turboVncStderr: " + turboVncStderr)
+                turboVncVersionNumberComponents = turboVncStdout.split(" v")
+                turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
+                turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
 
             # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
             turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"
