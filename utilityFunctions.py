@@ -49,6 +49,9 @@ Do you want me to delete the job or leave it in the queue so you can reconnect l
 """
         self.qdelQueuedJobQdel="Delete the job"
         self.qdelQueuedJobNOOP="Leave it in the queue (I'll reconnect later)"
+        self.persistentMessage="Would you like to leave your current session running so that you can reconnect later?\nIt has {time} remaining."
+        self.persistentMessageStop="Stop the desktop"
+        self.persistentMessagePersist="Leave it running"
 
 class sshKeyDistDisplayStringsCVL(sshKeyDistDisplayStrings):
     def __init__(self):
@@ -84,6 +87,7 @@ launching remote HPC jobs."""
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
         self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
+        self.persistentMessage="Would you like to leave your current session running so that you can reconnect later?"
 
 class sshKeyDistDisplayStringsMASSIVE(sshKeyDistDisplayStrings):
     def __init__(self):
