@@ -11,7 +11,6 @@ import urllib2
 import datetime
 import os
 from MacMessageDialog import LauncherMessageDialog
-import time
 
 from logger.Logger import logger
 
@@ -973,7 +972,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: startTunnel: set remotePortNumber to ' + str(event.loginprocess.jobParams['remotePortNumber']))
 
 
-                if ("m1" in event.loginprocess.jobParams['loginHost'] or "m2" in event.loginprocess.jobParams['loginHost']):
+                if ("m1" in event.loginprocess.siteConfig.loginHost or "m2" in event.loginprocess.siteConfig.loginHost):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION,event.loginprocess)
                 else:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
@@ -1215,6 +1214,7 @@ class LoginProcess():
 #                    logger.dump_log(event.loginprocess.notify_window,submit_log=False)
 #                else:
 #                    logger.dump_log(event.loginprocess.notify_window,submit_log=True)
+                event.loginprocess.cancelCallback(event.loginprocess.jobParams)
             else:
                 event.Skip()
 
@@ -1293,11 +1293,13 @@ class LoginProcess():
                             dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
                     else:
                         logger.debug("showKillServerDialog: timeRemaining is None and ('m1' or 'm2' is in loginHost)")
+                        dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?","Would you like to leave your current session running so that you can reconnect later?","Stop the desktop","Leave it running",KillCallback,ShutdownCallback)
                     if dialog:
                         logger.debug("showKillServerDialog: Showing the 'Stop the desktop' question dialog.")
                         wx.CallAfter(dialog.ShowModal)
                     else:
                         logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
+                        wx.CallAfter(ShutdownCallback)
                 else:
                     logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)=0")
                     if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
@@ -1342,8 +1344,9 @@ class LoginProcess():
                     logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to dump the log")
                     logger.dump_log(event.loginprocess.notify_window,submit_log=True)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
+                event.loginprocess._complete.set()
                 if event.loginprocess.completeCallback!=None:
-                    event.loginprocess.completeCallback(self.loginprocess.jobParams)
+                    event.loginprocess.completeCallback(event.loginprocess.jobParams)
                 if event.loginprocess.autoExit:
                     if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds'):
                         if event.loginprocess.turboVncElapsedTimeInSeconds > 3:
@@ -1363,7 +1366,7 @@ class LoginProcess():
         # Throw away the thread references. We've done all we can to ask them to stop at this point.
         self.threads=[]
         logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL')
-        if self.queued_job.isSet() and not hasattr(self, 'turboVncElapsedTimeInSeconds'):
+        if self.queued_job.isSet() and not self.started_job.isSet():
             self.askUserIfTheyWantToDeleteQueuedJobCompleted = False
             def askUserIfTheyWantToDeleteQueuedJob():
                 def qdelCallback():
@@ -1412,6 +1415,9 @@ class LoginProcess():
         if nextevent!=None:
             wx.PostEvent(self.notify_window.GetEventHandler(),nextevent)
 
+
+    def complete(self):
+        return self._complete.isSet()
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
     def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False):
@@ -1428,6 +1434,7 @@ class LoginProcess():
         self.joblist=[]
         self.started_job=threading.Event()
         self.queued_job=threading.Event()
+        self._complete=threading.Event()
         self.skd=None
         self.passwdPrompt=None
         self.completeCallback=completeCallback
@@ -1453,6 +1460,7 @@ class LoginProcess():
         update={}
         update['sshBinary']=self.keyModel.getsshBinary()
         update['launcher_version_number']=launcher_version_number.version_number
+        update['loginHost']=self.siteConfig.loginHost
         self.jobParams.update(update)
 
         for k, v in self.__dict__.iteritems():
@@ -1536,6 +1544,10 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.unmountWebDav)
 
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
+    def setCallback(self,callback):
+        self.completeCallback=callback
+    def setCancelCallback(self,callback):
+        self.cancelCallback=callback
 
     def timeRemaining(self):
         # The time fields returned by qstat can either contain HH:MM or --. -- occurs if the job has only just started etc
@@ -1579,6 +1591,42 @@ class LoginProcess():
     def doLogin(self):
         event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_VNC_VER,self)
         wx.PostEvent(self.notify_window.GetEventHandler(),event)
+
+    def shutdown(self):
+        print "posting shutdown event"
+        event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,self)
+        wx.PostEvent(self.notify_window.GetEventHandler(),event)
+
+
+    def getSharedSession(self,queue):
+        from launcher import cmdRegEx
+        from launcher import siteConfig
+        print "in get shared session"
+        t = LoginProcess.runServerCommandThread(self,self.siteConfig.otp,None,"Unable to determine the one-time password for the VNC session")
+        t.start()
+        print "waiting for the new otp"
+        t.join()
+        print "new otp generated"
+        Visible={}
+        Visible['usernamePanel']=True
+        Visible['projectPanel']=False
+        Visible['resourcePanel']=False
+        Visible['resolutionPanel']=False
+        Visible['cipherPanel']=False
+        Visible['debugCheckBoxPanel']='Advanced'
+        Visible['advancedCheckBoxPanel']=True
+        Visible['optionsDialog']=False
+        siteConfigDict={}
+        siteConfigDict['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
+        siteConfigDict['loginHost']=self.siteConfig.loginHost
+        siteConfigDict['execHost']=cmdRegEx('echo %s'%self.jobParams['execHost'],'(?P<execHost>.*)$',host='local')
+        siteConfigDict['vncDisplay']=cmdRegEx('echo %s'%self.jobParams['vncDisplay'],'(?P<vncDisplay>.*)$',host='local')
+        siteConfigDict['otp']= cmdRegEx('echo %s'%self.jobParams['vncPasswd'],'(?P<vncPasswd>.*)$',host='local')
+        siteConfigDict['agent']=self.siteConfig.agent
+        siteConfigDict['tunnel']=self.siteConfig.tunnel
+        newConfig = siteConfig(siteConfigDict,Visible)
+        queue.put(newConfig)
+        #return newConfig
    
     def cancel(self,error=""):
         if (not self._canceled.isSet()):
