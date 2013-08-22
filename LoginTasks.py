@@ -1292,9 +1292,12 @@ class LoginProcess():
                         timestring=" unknown"
 
 
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?",self.loginprocess.displayStrings.persistentMessage.format(timestring),self.loginprocess.displayStrings.persistentMessageStop,self.loginprocess.displayStrings.persistentMessagePersist,KillCallback,persistCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?",event.loginprocess.displayStrings.persistentMessage.format(timestring),event.loginprocess.displayStrings.persistentMessageStop,event.loginprocess.displayStrings.persistentMessagePersist,KillCallback,persistCallback)
+                if dialog:
+                    logger.debug("showKillServerDialog: Showing the 'Stop the desktop' question dialog.")
+                    wx.CallAfter(dialog.ShowModal)
                 else:
-                    logger.debug("showKillServerDialog: There does not appear to be a running server. Moving to the next step in the shutdown procedure.")
+                    logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
                     persistCallback()
             else:
                 event.Skip()
