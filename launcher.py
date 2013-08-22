@@ -269,8 +269,6 @@ class LauncherMainFrame(wx.Frame):
         if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
             if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_login_host"):
                 self.massiveLoginHost = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_login_host")
-            elif massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "host"):
-                self.massiveLoginHost = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "host")
             else:
                 massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_login_host","")
                 with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
@@ -676,7 +674,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.cvlLoginDialogPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
 
-        # Simple login fields: host, username, password, advanced settings checkbox
+        # Simple login fields: connection profile, username, advanced settings checkbox
         self.cvlSimpleLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
         self.cvlSimpleLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
         self.cvlSimpleLoginFieldsPanel.SetSizer(self.cvlSimpleLoginFieldsPanelSizer)
@@ -685,42 +683,41 @@ class LauncherMainFrame(wx.Frame):
         self.cvlAdvancedLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
         self.cvlAdvancedLoginFieldsPanel.SetSizer(self.cvlAdvancedLoginFieldsPanelSizer)
 
-        self.cvlLoginHostLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Host')
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlConnectionProfileLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Connection')
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlConnectionProfileLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
-        self.cvlLoginHost = ""
-        cvlLoginHosts = ["login.cvl.massive.org.au","Huygens on the CVL"]
-        defaultCvlHost = "login.cvl.massive.org.au"
-        self.cvlLoginHostComboBox = wx.ComboBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, value=defaultCvlHost, choices=cvlLoginHosts, size=(widgetWidth2, -1), style=wx.CB_READONLY)
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlConnectionProfile = ""
+        cvlConnectionProfiles = ["login.cvl.massive.org.au","Huygens on the CVL"]
+        defaultCvlConnectionProfile = "login.cvl.massive.org.au"
+        self.cvlConnectionProfileComboBox = wx.ComboBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, value=defaultCvlConnectionProfile, choices=cvlConnectionProfiles, size=(widgetWidth2, -1), style=wx.CB_READONLY)
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlConnectionProfileComboBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
-            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
-                self.cvlLoginHost = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_login_host")
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_connection_profile"):
+                self.cvlConnectionProfile = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_connection_profile")
 
-                # If the user has a setting for cvl_login_host that is not in our approved list, just take
-                # the first known CVL login host.
-                if self.cvlLoginHost not in cvlLoginHosts:
-                    self.cvlLoginHost = cvlLoginHosts[0]
+                # If the user has a setting for cvl_connection_profile that is not in our approved list, just take
+                # the first known CVL connection profile.
+                if self.cvlConnectionProfile not in cvlConnectionProfiles:
+                    self.cvlConnectionProfile = cvlConnectionProfiles[0]
 
-                    cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
+                    cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_connection_profile", self.cvlConnectionProfile)
                     with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                         cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
             else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host","")
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_connection_profile","")
                 with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                     cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
         else:
             cvlLauncherConfig.add_section("CVL Launcher Preferences")
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        self.cvlLoginHost = self.cvlLoginHost.strip()
-        if self.cvlLoginHost!="":
-            if self.cvlLoginHost in cvlLoginHosts:
-                self.cvlLoginHostComboBox.SetSelection(cvlLoginHosts.index(self.cvlLoginHost))
+        self.cvlConnectionProfile = self.cvlConnectionProfile.strip()
+        if self.cvlConnectionProfile!="":
+            if self.cvlConnectionProfile in cvlConnectionProfiles:
+                self.cvlConnectionProfileComboBox.SetSelection(cvlConnectionProfiles.index(self.cvlConnectionProfile))
             else:
-                # Hostname was not found in combo-box.
-                self.cvlLoginHostComboBox.SetSelection(-1)
-            self.cvlLoginHostComboBox.SetValue(self.cvlLoginHost)
+                # Connection profile was not found in combo-box.
+                self.cvlConnectionProfileComboBox.SetSelection(0)
 
 
         self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Resolution')
@@ -1139,7 +1136,7 @@ class LauncherMainFrame(wx.Frame):
         self.massiveHoursField.SetCursor(cursor)
         self.massiveUsernameTextField.SetCursor(cursor)
 
-        self.cvlLoginHostComboBox.SetCursor(cursor)
+        self.cvlConnectionProfileComboBox.SetCursor(cursor)
         self.cvlUsernameTextField.SetCursor(cursor)
         self.cvlVncDisplayResolutionComboBox.SetCursor(cursor)
         self.cvlSshTunnelCipherComboBox.SetCursor(cursor)
@@ -1199,7 +1196,7 @@ If this account is shared by a number of people then passwords are preferable
                 self.massiveUsernameTextField.SetFocus()
                 return
         else:
-            self.cvlLoginHost = self.cvlLoginHostComboBox.GetValue()
+            self.cvlConnectionProfile = self.cvlConnectionProfileComboBox.GetValue()
             self.cvlUsername = self.cvlUsernameTextField.GetValue()
             self.cvlVncDisplayResolution = self.cvlVncDisplayResolutionComboBox.GetValue()
             self.cvlSshTunnelCipher = self.cvlSshTunnelCipherComboBox.GetValue()
@@ -1247,7 +1244,7 @@ If this account is shared by a number of people then passwords are preferable
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_ssh_tunnel_cipher", self.massiveSshTunnelCipher)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_automatically_exit", self.massiveAutomaticallyExit)
         else:
-            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host", self.cvlLoginHost)
+            cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_connection_profile", self.cvlConnectionProfile)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username", self.cvlUsername)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_vnc_display_resolution", self.cvlVncDisplayResolution)
             cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_ssh_tunnel_cipher", self.cvlSshTunnelCipher)
@@ -1300,7 +1297,7 @@ If this account is shared by a number of people then passwords are preferable
 
 
         if launcherMainFrame.massiveTabSelected:
-            host       = self.massiveLoginHost
+            configName = self.massiveLoginHost
             resolution = self.massiveVncDisplayResolution
             cipher     = self.massiveSshTunnelCipher
             username   = self.massiveUsername
@@ -1308,7 +1305,7 @@ If this account is shared by a number of people then passwords are preferable
             hours      = self.massiveHoursRequested
             nodes      = self.massiveVisNodesRequested
         else:
-            host       = self.cvlLoginHost
+            configName = self.cvlConnectionProfile
             resolution = self.cvlVncDisplayResolution
             cipher     = self.cvlSshTunnelCipher
             username   = self.cvlUsername
@@ -1316,7 +1313,7 @@ If this account is shared by a number of people then passwords are preferable
             hours      = 298261 # maximum number of hours its possible to request without overflowing a signed int32 when converted to seconds.
             nodes      = 1
 
-        host       = host.lstrip().rstrip()
+        configName = configName.lstrip().rstrip()
         resolution = resolution.lstrip().rstrip()
         cipher     = cipher.lstrip().rstrip()
         username   = username.lstrip().rstrip()
@@ -1333,15 +1330,14 @@ If this account is shared by a number of people then passwords are preferable
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         jobParams={}
         jobParams['username']=username
-        jobParams['loginHost']=host
-        jobParams['configName']=host
+        jobParams['loginHost']=configName
+        jobParams['configName']=configName
         jobParams['resolution']=resolution
         jobParams['cipher']=cipher
         jobParams['project']=self.massiveProject
         jobParams['hours']=hours
         jobParams['nodes']=nodes
         jobParams['wallseconds']=int(hours)*60*60
-        configName=host
         if not self.vncOptions.has_key('auth_mode'):
             mode=self.queryAuthMode()
             self.vncOptions['auth_mode']=mode
