@@ -1553,10 +1553,7 @@ def buildSiteConfigCmdRegExDict(configName):
         siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
 
         # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
-        # FIXME: The "gvfs-mount -u" isn't working yet.  It
-        # needs the DBUS_SESSION_BUS_ADDRESS environment variable set,
-        # and possibly other environment variables.
-        cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"\\$HOME/.gvfs/WebDAV on localhost\"\'"'
+        cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"$HOME/.gvfs/WebDAV on localhost\"\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
     else:
         siteConfigDict['listAll']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
@@ -1582,10 +1579,7 @@ def buildSiteConfigCmdRegExDict(configName):
         siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop']=siteConfig.cmdRegEx(cmd)
 
         # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
-        # FIXME: The "gvfs-mount -u" isn't working yet.  It
-        # needs the DBUS_SESSION_BUS_ADDRESS environment variable set,
-        # and possibly other environment variables.
-        cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"\\$HOME/.gvfs/WebDAV on localhost\"\'"'
+        cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"$HOME/.gvfs/WebDAV on localhost\"\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
 
 
