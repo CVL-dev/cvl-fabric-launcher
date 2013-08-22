@@ -1032,9 +1032,10 @@ class LoginProcess():
                 #if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
                 if event.loginprocess.shareHomeDir:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
+                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_SERVER')
                 else:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
-                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_SERVER')
+                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.otp,nextevent,"Unable to determine the one-time password for the VNC session")
                 t.setDaemon(False)
                 t.start()
@@ -1046,8 +1047,8 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_SERVER')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT,event.loginprocess)
-                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT')
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS')
 
                 if (not event.loginprocess.jobParams.has_key('localWebDavPortNumber')):
                     event.loginprocess.jobParams['localWebDavPortNumber']="0"
@@ -1061,6 +1062,19 @@ class LoginProcess():
 
                 t = LoginProcess.startWebDavServerThread(event.loginprocess,nextevent)
                 t.setDaemon(True)
+                t.start()
+                event.loginprocess.threads.append(t)
+            else:
+                event.Skip()
+
+        def getDbusSessionAddress(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS')
+                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT')
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.dbusSessionBusAddress,nextevent,"Unable to determine the DBUS_SESSION_BUS_ADDRESS for the VNC session")
+                t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
             else:
@@ -1501,6 +1515,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL = wx.NewId()
@@ -1534,6 +1549,7 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.setDesktopResolution)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.runSanityCheck)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startWebDavServer)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getDbusSessionAddress)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getWebDavIntermediatePort)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getWebDavRemotePort)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startWebDavTunnel)

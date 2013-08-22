@@ -1415,6 +1415,7 @@ class siteConfig():
         self.otp=siteConfig.cmdRegEx()
         self.directConnect=siteConfig.cmdRegEx()
         self.messageRegeexs=siteConfig.cmdRegEx()
+        self.dbusSessionBusAddress=siteConfig.cmdRegEx()
         self.webDavIntermediatePort=siteConfig.cmdRegEx()
         self.webDavRemotePort=siteConfig.cmdRegEx()
         self.openWebDavShareInRemoteFileBrowser=siteConfig.cmdRegEx()
@@ -1451,6 +1452,10 @@ def buildSiteConfigCmdRegExDict(configName):
         siteConfigDict['otp']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
         siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"','agent_hello',async=True)
         siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
+
+        cmd='"echo DBUS_SESSION_BUS_ADDRESS=dummy_dbus_session_bus_address"'
+        regex='^DBUS_SESSION_BUS_ADDRESS=(?P<dbusSessionBusAddress>.*)$'
+        siteConfigDict['dbusSessionBusAddress']=siteConfig.cmdRegEx(cmd,regex)
 
         cmd='\"/usr/local/desktop/get_ephemeral_port.py\"'
         regex='^(?P<intermediateWebDavPortNumber>[0-9]+)$'
@@ -1517,6 +1522,10 @@ def buildSiteConfigCmdRegExDict(configName):
         siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} "echo agent_hello; bash "','agent_hello',async=True)
         siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
 
+        cmd='"/usr/bin/ssh {execHost} \'MACHINE_ID=\\$(cat /var/lib/dbus/machine-id); cat ~/.dbus/session-bus/\\$MACHINE_ID-\\$(echo {vncDisplay} | tr -d \\":\\" | tr -d \\".0\\")\'"'
+        regex='^DBUS_SESSION_BUS_ADDRESS=(?P<dbusSessionBusAddress>.*)$'
+        siteConfigDict['dbusSessionBusAddress']=siteConfig.cmdRegEx(cmd,regex)
+
         cmd='\"/usr/local/bin/get_ephemeral_port.py\"'
         regex='^(?P<intermediateWebDavPortNumber>[0-9]+)$'
         siteConfigDict['webDavIntermediatePort']=siteConfig.cmdRegEx(cmd,regex,host='exec')
@@ -1531,9 +1540,8 @@ def buildSiteConfigCmdRegExDict(configName):
         # Note that we might end up mounting WebDAV in a completely different way (e.g. using wdfs), but for now I'm trying to make the user
         # experience similar on MASSIVE and the CVL.  On MASSIVE, users are not automatically added to the "fuse" group, but they can still 
         # access a WebDAV share within Konqueror.  The method below for the CVL/Nautilus does require fuse membership, but it ends up looking
-        # similar to MASSIVE/Konqueror from the user's point of view.  Note that getting drag and drop working nicely depends on patching
-        # gtk2 (see CVLFAB-622 on JIRA).
-        cmd="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
+        # similar to MASSIVE/Konqueror from the user's point of view.  
+        cmd="\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS='{dbusSessionBusAddress}';echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
         siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
 
         #cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
@@ -1546,7 +1554,7 @@ def buildSiteConfigCmdRegExDict(configName):
 
         # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
         # FIXME: The "gvfs-mount -u" isn't working yet.  It
-        # needs the DBUS_SESSION_ADDRESS environment variable set,
+        # needs the DBUS_SESSION_BUS_ADDRESS environment variable set,
         # and possibly other environment variables.
         cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"\\$HOME/.gvfs/WebDAV on localhost\"\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
@@ -1557,20 +1565,25 @@ def buildSiteConfigCmdRegExDict(configName):
         siteConfigDict['otp']= siteConfig.cmdRegEx('\'module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
         siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {loginHost} "echo agent_hello; bash "','agent_hello',async=True)
         siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
-        cmd="\"/usr/bin/ssh {execHost} \\\". \\\\\\\"\\$HOME/.dbus/session-bus/\\$(cat /var/lib/dbus/machine-id)-`echo {vncDisplay} | tr -d ':' | tr -d '.0'`\\\\\\\"; export DBUS_SESSION_BUS_ADDRESS;echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
+
+        cmd='"/usr/bin/ssh {execHost} \'MACHINE_ID=\\$(cat /var/lib/dbus/machine-id); cat ~/.dbus/session-bus/\\$MACHINE_ID-\\$(echo {vncDisplay} | tr -d \\":\\" | tr -d \\".0\\")\'"'
+        regex='^DBUS_SESSION_BUS_ADDRESS=(?P<dbusSessionBusAddress>.*)$'
+        siteConfigDict['dbusSessionBusAddress']=siteConfig.cmdRegEx(cmd,regex)
+
+        cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
+        regex='tunnel_hello'
+        siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
+
+        cmd="\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"" % (pipe)
         siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd)
 
         #cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" | DISPLAY={vncDisplay} zenity --title \\"MASSIVE/CVL Launcher\\" --text-info --width 490 --height 175\'"'
         cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt\'"'
         siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop']=siteConfig.cmdRegEx(cmd)
 
-        cmd='{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} "ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} \'echo tunnel_hello; bash\'"'
-        regex='tunnel_hello'
-        siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
-
         # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
         # FIXME: The "gvfs-mount -u" isn't working yet.  It
-        # needs the DBUS_SESSION_ADDRESS environment variable set,
+        # needs the DBUS_SESSION_BUS_ADDRESS environment variable set,
         # and possibly other environment variables.
         cmd = '"/usr/bin/ssh {execHost} \'DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"\\$HOME/.gvfs/WebDAV on localhost\"\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
