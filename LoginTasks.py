@@ -1182,7 +1182,6 @@ class LoginProcess():
         def unmountWebDav(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV):
                 if event.loginprocess.webdavMounted.isSet():
-                #if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
                     logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_UNMOUNT_WEBDAV')
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_SHUTDOWN')
@@ -1291,9 +1290,9 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
                 KillCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_KILL_SERVER,event.loginprocess))
                 if event.loginprocess.webdavMounted.isSet():
-                    persistCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
-                else:
                     persistCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV,event.loginprocess))
+                else:
+                    persistCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
                 dialog = None
                 if (len(event.loginprocess.matchlist)>0):
                     logger.debug("showKillServerDialog: len(event.loginprocess.matchlist)>0")
