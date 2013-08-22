@@ -1552,8 +1552,18 @@ def buildSiteConfigCmdRegExDict(configName):
         regex='tunnel_hello'
         siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
 
-        # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
-        cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"$HOME/.gvfs/WebDAV on localhost\"\'"'
+        # 1. Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
+        # 2. I'm using gvfs-mount --unmount-scheme dav for now, to unmount all GVFS WebDAV mounts,
+        #    because otherwise it's too painful to refer to the specific mount point at "$HOME/.gvfs/WebDAV on localhost",
+        #    because the $HOME environment variable could be evaluated in the wrong shell.
+        # 3. The wmctrl command to close the Nautilus window doesn't seem to work from the Launcher,
+        #    even though it seems to work fine when I run paste the command used by the Launcher's
+        #    subprocess into a Terminal window.  Maybe I should use the same method I'm using for
+        #    Konqueror instead (which is a server-side script).
+        # 4. Occassionally the DBUS_SESSION_BUS_ADDRESS environment variable gets out of sync with
+        #    ~/.dbus/session-bus/$MACHINE_ID-$DISPLAY which causes gvfs-mount etc. to fail.
+        #cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"$HOME/.gvfs/WebDAV on localhost\"\'"'
+        cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
     else:
         siteConfigDict['listAll']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
@@ -1578,8 +1588,18 @@ def buildSiteConfigCmdRegExDict(configName):
         cmd = '"/usr/bin/ssh {execHost} \'sleep 2;echo -e \\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt\'"'
         siteConfigDict['displayWebDavInfoDialogOnRemoteDesktop']=siteConfig.cmdRegEx(cmd)
 
-        # Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
-        cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"$HOME/.gvfs/WebDAV on localhost\"\'"'
+        # 1. Due to a bug in gvfs-mount, I'm using timeout, so it doesn't matter if "gvfs-mount -u" never exits.
+        # 2. I'm using gvfs-mount --unmount-scheme dav for now, to unmount all GVFS WebDAV mounts,
+        #    because otherwise it's too painful to refer to the specific mount point at "$HOME/.gvfs/WebDAV on localhost",
+        #    because the $HOME environment variable could be evaluated in the wrong shell.
+        # 3. The wmctrl command to close the Nautilus window doesn't seem to work from the Launcher,
+        #    even though it seems to work fine when I run paste the command used by the Launcher's
+        #    subprocess into a Terminal window.  Maybe I should use the same method I'm using for
+        #    Konqueror instead (which is a server-side script).
+        # 4. Occassionally the DBUS_SESSION_BUS_ADDRESS environment variable gets out of sync with
+        #    ~/.dbus/session-bus/$MACHINE_ID-$DISPLAY which causes gvfs-mount etc. to fail.
+        #cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"$HOME/.gvfs/WebDAV on localhost\"\'"'
+        cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
 
 
