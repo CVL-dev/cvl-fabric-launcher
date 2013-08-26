@@ -14,6 +14,11 @@ from MacMessageDialog import LauncherMessageDialog
 
 from logger.Logger import logger
 
+def showModal(dialog):
+    wx.EndBusyCursor()
+    dialog.ShowModal()
+    wx.BeginBusyCursor()
+
 class LoginProcess():
     """LoginProcess Class."""
             
@@ -623,7 +628,7 @@ class LoginProcess():
 
             turboVncNotFoundDialog.addPanel(turboVncNotFoundPanel)
             turboVncNotFoundDialog.Centre()
-            turboVncNotFoundDialog.ShowModal()
+            showModal(turboVncNotFoundDialog)
 
             self.loginprocess.cancel()
     
@@ -657,7 +662,7 @@ class LoginProcess():
                         dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
                                                 "The launcher cannot continue.\n",
                                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                        dlg.ShowModal()
+                        showModal(dlg)
                         dlg.Destroy()
                         # If we can't contact the MASSIVE website, it's probably because
                         # there's no active network connection, so don't try to submit
@@ -703,7 +708,7 @@ class LoginProcess():
                     dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Could not determine TurboVNC version number.\n\n" +
                                             "The launcher cannot continue.\n",
                                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                    dlg.ShowModal()
+                    showModal(dlg)
                     dlg.Destroy()
                     logger.dump_log(self.loginprocess.notify_window)
                     sys.exit(1)
@@ -802,7 +807,7 @@ class LoginProcess():
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found. It has %s remaining. Would you like to reconnect or kill it and start a new desktop?"%timestring,"Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
                 else:
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found, would you like to reconnect or kill it and start a new desktop?","Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
-                wx.CallAfter(dialog.ShowModal)
+                wx.CallAfter(showModal,dialog)
             else:
                 event.Skip()
 
@@ -872,7 +877,7 @@ class LoginProcess():
                         parentWindow = event.loginprocess.notify_window
                     cancelCallback=lambda x: event.loginprocess.cancel(x)
                     dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE)
-                    dlg.ShowModal()
+                    wx.CallAfter(showModal,dlg)
                 if (not event.loginprocess.canceled()):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
                     wx.PostEvent(event.loginprocess.notify_window,nextevent)
@@ -1242,6 +1247,7 @@ class LoginProcess():
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Starting the VNC viewer")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_STAT_RUNNING_JOB')
+                wx.EndBusyCursor()
                 t = LoginProcess.startVNCViewer(event.loginprocess,nextevent)
                 t.setDaemon(False)
                 t.start()
@@ -1266,7 +1272,7 @@ class LoginProcess():
                         dlg.addPanel(panel)
                     else:
                         dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
-                    dlg.ShowModal()
+                    wx.CallAfter(showModal,dlg)
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
                 event.loginprocess.shutdownThread.start()
@@ -1310,6 +1316,7 @@ class LoginProcess():
                             "end tell\r"])
                     logger.debug('loginProcessEvent: statRunningJob: attempting to grab focus back from TurboVNC')
                     grabFocusBackFromTurboVNC()
+                wx.BeginBusyCursor()
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER,event.loginprocess)
                 logger.debug('loginProcessEvent: statRunningJob: posting EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.listAll,nextevent,"")
@@ -1361,7 +1368,7 @@ class LoginProcess():
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?",event.loginprocess.displayStrings.persistentMessage.format(timestring=timestring),event.loginprocess.displayStrings.persistentMessageStop,event.loginprocess.displayStrings.persistentMessagePersist,KillCallback,persistCallback)
                 if dialog:
                     logger.debug("showKillServerDialog: Showing the 'Stop the desktop' question dialog.")
-                    wx.CallAfter(dialog.ShowModal)
+                    wx.CallAfter(showModal,dialog)
                 else:
                     logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
                     persistCallback()
@@ -1403,6 +1410,7 @@ class LoginProcess():
                     logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to dump the log")
                     logger.dump_log(event.loginprocess.notify_window,submit_log=True)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
+                wx.EndBusyCursor()
                 event.loginprocess._complete.set()
                 if event.loginprocess.completeCallback!=None:
                     event.loginprocess.completeCallback(event.loginprocess.jobParams)
@@ -1410,6 +1418,7 @@ class LoginProcess():
                     if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds'):
                         if event.loginprocess.turboVncElapsedTimeInSeconds > 3:
                             os._exit(0)
+                #wx.CallAfter(event.loginprocess.parentWindow.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
             else:
                 event.Skip()
 
@@ -1446,7 +1455,7 @@ class LoginProcess():
 
                 dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"MASSIVE/CVL Launcher",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
                 logger.debug("threading.current_thread().name = " + threading.current_thread().name)
-                dialog.ShowModal()
+                showModal(dialog)
                 self.askUserIfTheyWantToDeleteQueuedJobCompleted = True
             wx.CallAfter(askUserIfTheyWantToDeleteQueuedJob)
             while self.askUserIfTheyWantToDeleteQueuedJobCompleted==False:
@@ -1662,6 +1671,8 @@ class LoginProcess():
             return False
 
     def doLogin(self):
+        #wx.CallAfter(self.parentWindow.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
+        wx.BeginBusyCursor()
         event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_VNC_VER,self)
         wx.PostEvent(self.notify_window.GetEventHandler(),event)
 
