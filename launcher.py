@@ -1348,6 +1348,12 @@ If this account is shared by a number of people then passwords are preferable
         siteConfigObj = siteConfig(siteConfigDict)
         if launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
+            try:
+                del os.environ['SSH_AUTH_SOCK']
+                logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (not using the existing agent)")
+            except:
+                logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (no existing agent found)")
+                pass
             launcherMainFrame.keyModel=KeyModel(temporaryKey=True)
             removeKeyOnExit = True
         else:
