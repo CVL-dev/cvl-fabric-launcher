@@ -350,13 +350,14 @@ class LoginProcess():
 
 
     class runLoopServerCommandThread(Thread):
-        def __init__(self,loginprocess,cmdRegex,nextEvent,errorstring):
+        def __init__(self,loginprocess,cmdRegex,nextEvent,errorstring,timeout=None):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
             self.nextEvent = nextEvent
             self.cmdRegex=cmdRegex
             self.errorstring=errorstring
+            self.timeout=timeout
             for k, v in self.__dict__.iteritems():
                 logger.debug('runLoopServerCommandThread properties: %s = %s' % (str(k), str(v),))
     
@@ -417,6 +418,10 @@ class LoginProcess():
                                     matched=True
                                     for oneMatch in matchedDict.values():
                                         matched=(matched and oneMatch)
+                if (not matched and self.timeout is not None and tsleep >= self.timeout):
+                    logger.debug("runLoopServerCommandThread was called with a timeout of %d seconds, which has been reached. So giving up on matching and posting the next event." % (self.timeout))
+                    wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextEvent)
+                    return
                 if (not matched and tsleep > 15):
                     sleepperiod=15
                 if (not matched and tsleep > 15 and not self.loginprocess.canceled()):
@@ -1148,7 +1153,7 @@ class LoginProcess():
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID')
 
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.openWebDavShareInRemoteFileBrowser, None, '')
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.openWebDavShareInRemoteFileBrowser, None, '', requireMatch=True)
                     t.setDaemon(True)
                     t.start()
                     event.loginprocess.threads.append(t)
@@ -1166,7 +1171,7 @@ class LoginProcess():
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
 
-                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavWindowID,nextevent,"Failed to determine WebDAV window ID.")
+                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavWindowID,nextevent,"Failed to determine WebDAV window ID.", timeout=5)
                 t.setDaemon(True)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1199,19 +1204,41 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV):
                 if event.loginprocess.webdavMounted.isSet():
                     logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_UNMOUNT_WEBDAV')
+                    if event.loginprocess.jobParams.has_key('webDavWindowID'):
+                        logger.debug("unmountWebDav: jobParams has 'webDavWindowID' key key.")
+                        nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CLOSE_WEBDAV_WINDOW,event.loginprocess)
+                        logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_CLOSE_WEBDAV_WINDOW')
+                    else:
+                        logger.debug("unmountWebDav: jobParams doesn't have 'webDavWindowID' key.")
+                        nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
+                        logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_SHUTDOWN')
+
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavUnmount, nextevent, '', requireMatch=False)
+                    t.setDaemon(True)
+                    t.start()
+                    event.loginprocess.threads.append(t)
+
+            else:
+                event.Skip()
+
+        def closeWebDavWindow(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CLOSE_WEBDAV_WINDOW):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CLOSE_WEBDAV_WINDOW')
+                if event.loginprocess.webdavMounted.isSet():
+                    logger.debug('closeWebDavWindow: webdavMounted.isSet() is True.')
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_SHUTDOWN')
 
-                    logger.debug("unmountWebDav: event.loginprocess.siteConfig.webDavUnmount.cmd = " + event.loginprocess.siteConfig.webDavUnmount.cmd)
-
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavUnmount, None, '', requireMatch=False)
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavCloseWindow, nextevent, '', requireMatch=False)
                     t.setDaemon(True)
                     t.start()
                     event.loginprocess.threads.append(t)
                     # Technically this is a bit early to clear the event, but I don't think it really matters. -- Chris.
                     event.loginprocess.webdavMounted.clear()
+                else:
+                    logger.debug('closeWebDavWindow: webdavMounted.isSet() is False.')
 
-                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
+                #wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
 
             else:
                 event.Skip()
@@ -1549,6 +1576,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_CLOSE_WEBDAV_WINDOW = wx.NewId()
 
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.cancel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.distributeKey)
@@ -1584,6 +1612,7 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getWebDavWindowID)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.displayWebDavInfoDialogOnRemoteDesktop)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.unmountWebDav)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.closeWebDavWindow)
 
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
     def setCallback(self,callback):
@@ -1604,7 +1633,10 @@ class LoginProcess():
                         logger.debug('exception: ' + str(traceback.format_exc()))
                         return None
                     try:
-                        (ehours,emin) = job['elapTime'].split(':')
+                        if len(job['elapTime'].split(':'))==3:
+                            (ehours,emin,esec) = job['elapTime'].split(':')
+                        else:
+                            (ehours,emin) = job['elapTime'].split(':')
                     except:
                         logger.debug('exception: ' + str(traceback.format_exc()))
                         ehours=0
