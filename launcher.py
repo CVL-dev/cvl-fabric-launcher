@@ -1136,9 +1136,16 @@ class LauncherMainFrame(wx.Frame):
         self.massiveHoursField.SetCursor(cursor)
         self.massiveUsernameTextField.SetCursor(cursor)
 
+        self.cvlLoginDialogPanel.SetCursor(cursor)
+        self.cvlSimpleLoginFieldsPanel.SetCursor(cursor)
+        self.cvlAdvancedLoginFieldsPanel.SetCursor(cursor)
+        self.cvlConnectionProfileLabel.SetCursor(cursor)
         self.cvlConnectionProfileComboBox.SetCursor(cursor)
+        self.cvlUsernameLabel.SetCursor(cursor)
         self.cvlUsernameTextField.SetCursor(cursor)
+        self.cvlVncDisplayResolutionLabel.SetCursor(cursor)
         self.cvlVncDisplayResolutionComboBox.SetCursor(cursor)
+        self.cvlSshTunnelCipherLabel.SetCursor(cursor)
         self.cvlSshTunnelCipherComboBox.SetCursor(cursor)
 
         self.buttonsPanel.SetCursor(cursor)
