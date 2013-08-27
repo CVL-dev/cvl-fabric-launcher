@@ -81,13 +81,6 @@ class IdentityMenu(wx.Menu):
         self.launcherMainFrame.vncOptions['auth_mode']=self.launcherMainFrame.PERM_SSH_KEY
         self.launcherMainFrame.saveGlobalOptions()
 
-        dlg = wx.MessageDialog(None,
-                    "Warning: Authentication mode only affects CVL usage for now.\n\n" +
-                    "For now, MASSIVE users should continue to use a password for authentication.",
-                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
-
-
     def setRadio(self):
         state=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()
         if state == self.launcherMainFrame.PERM_SSH_KEY:

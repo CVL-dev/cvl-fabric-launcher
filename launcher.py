@@ -1166,9 +1166,10 @@ class LauncherMainFrame(wx.Frame):
         for i in range(auth_mode.GetCount()):
             choices.append(auth_mode.GetString(i))
         dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,"""
-Would you like to use an SSH Key pair or your password to authenticate yourself?
-Most of the time, an SSH Key pair is preferable.
-If this account is shared by a number of people then passwords are preferable
+"Would you like to use an SSH Key pair or your password to authenticate yourself?
+
+If this computer is shared by a number of people then passwords are preferable.
+If this computer is not shared then an SSH Key pair will give you advanced features for managing your access"
 """,title="MASSIVE/CVL Launcher",ButtonLabels=choices)
         rv=dlg.ShowModal()
         if rv in range(auth_mode.GetCount()):

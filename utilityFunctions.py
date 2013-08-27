@@ -52,6 +52,9 @@ Do you want me to delete the job or leave it in the queue so you can reconnect l
         self.persistentMessage="Would you like to leave your current session running so that you can reconnect later?\nIt has {timestring} remaining."
         self.persistentMessageStop="Stop the desktop"
         self.persistentMessagePersist="Leave it running"
+        self.reconnectMessage="An Existing Desktop was found. It has {timestring} remaining. Would you like to reconnect or kill it and start a new desktop?"
+        self.reconnectMessageYes="Reconnect"
+        self.reconnectMessageNo="New desktop"
 
 class sshKeyDistDisplayStringsCVL(sshKeyDistDisplayStrings):
     def __init__(self):
@@ -88,6 +91,7 @@ launching remote HPC jobs."""
         self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
         self.persistentMessage="Would you like to leave your current session running so that you can reconnect later?"
+        self.reconnectMessage="An Existing Desktop was found. Would you like to reconnect or kill it and start a new desktop?"
 
 class sshKeyDistDisplayStringsMASSIVE(sshKeyDistDisplayStrings):
     def __init__(self):
