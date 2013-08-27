@@ -1477,7 +1477,7 @@ class LoginProcess():
         return self._complete.isSet()
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,cancelCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False,shareHomeDir=False):
+    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,cancelCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False,shareHomeDir=False,startupinfo=None,creationflags=0):
         self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
@@ -1519,23 +1519,8 @@ class LoginProcess():
         #self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.parentWindow, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
         self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.notify_window, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
 
-        self.startupinfo = None
-        try:
-            self.startupinfo = subprocess.STARTUPINFO()
-            self.startupinfo.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
-            self.startupinfo.wShowWindow = subprocess.SW_HIDE
-        except:
-            # On non-Windows systems, the previous block will throw:
-            # "AttributeError: 'module' object has no attribute 'STARTUPINFO'".
-            logger.debug('exception: ' + str(traceback.format_exc()))
-
-        self.creationflags = 0
-        try:
-            import win32process
-            self.creationflags = win32process.CREATE_NO_WINDOW
-        except:
-            # On non-Windows systems, the previous block will throw an exception.
-            logger.debug('exception: ' + str(traceback.format_exc()))
+        self.startupinfo = startupinfo
+        self.creationflags = creationflags
 
         update={}
         update['sshBinary']=self.keyModel.getsshBinary()
