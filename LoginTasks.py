@@ -804,9 +804,9 @@ class LoginProcess():
                         timestring = "%s minute"%minutes
                     else:
                         timestring = "%s minutes"%minutes
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found. It has %s remaining. Would you like to reconnect or kill it and start a new desktop?"%timestring,"Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage.format(timestring=timestring),event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
                 else:
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found, would you like to reconnect or kill it and start a new desktop?","Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage,event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
                 wx.CallAfter(showModal,dialog)
             else:
                 event.Skip()
