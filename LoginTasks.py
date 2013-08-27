@@ -785,7 +785,7 @@ class LoginProcess():
                         wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS,event.loginprocess))
                     return
                 event.loginprocess.job=event.loginprocess.matchlist[0]
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 4,"Do you want to reconnect to an existing desktop?")
+                event.loginprocess.updateProgressDialog( 4,"Do you want to reconnect to an existing desktop?")
                 ReconnectCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER,event.loginprocess))
                 NewDesktopCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER,event.loginprocess))
                 timeRemaining=event.loginprocess.timeRemaining()
@@ -807,7 +807,7 @@ class LoginProcess():
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage.format(timestring=timestring),event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
                 else:
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage,event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
-                wx.CallAfter(showModal,dialog)
+                showModal(dialog)
             else:
                 event.Skip()
 
@@ -815,7 +815,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_PROJECTS')
 
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Getting a list of your valid projects")
+                event.loginprocess.updateProgressDialog( 5,"Getting a list of your valid projects")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT,event.loginprocess)
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.getProjects,nextevent,"I couldn't find any projects that you were a member of.")
                 t.setDaemon(False)
@@ -828,7 +828,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SELECT_PROJECT')
 
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Getting a list of your valid projects")
+                event.loginprocess.updateProgressDialog( 5,"Getting a list of your valid projects")
                 grouplist=[]
                 groups=[]
                 showDialog=False
@@ -877,7 +877,7 @@ class LoginProcess():
                         parentWindow = event.loginprocess.notify_window
                     cancelCallback=lambda x: event.loginprocess.cancel(x)
                     dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE)
-                    wx.CallAfter(showModal,dlg)
+                    showModal(dlg)
                 if (not event.loginprocess.canceled()):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
                     wx.PostEvent(event.loginprocess.notify_window,nextevent)
@@ -887,7 +887,7 @@ class LoginProcess():
         def startServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_SERVER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Starting a new desktop session")
+                event.loginprocess.updateProgressDialog( 5,"Starting a new desktop session")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER,event.loginprocess)
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.startServer,nextevent,"Error starting the VNC server. This could occur")
                 t.setDaemon(False)
@@ -902,7 +902,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER):
                 event.loginprocess.queued_job.set()
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_WAIT_FOR_SERVER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Waiting for the VNC server to start")
+                event.loginprocess.updateProgressDialog( 6,"Waiting for the VNC server to start")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_EXECUTION_HOST,event.loginprocess)
                 t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.running,nextevent,"")
                 t.setDaemon(False)
@@ -932,7 +932,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHOW_ESTIMATED_START')
                 try:
                     string='Estimated start : {estimatedStart}'.format(**event.loginprocess.jobParams)
-                    wx.CallAfter(event.loginprocess.updateProgressDialog, 6, string )
+                    event.loginprocess.updateProgressDialog( 6, string )
                     logger.debug('loginProcessEvent: showEstimatedStart: ' + string)
                 except Exception as e:
                     logger.debug('loginProcessEvent: showEstimatedStart: exception: ' + str(traceback.format_exc()))
@@ -945,7 +945,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_EXECUTION_HOST):
                 event.loginprocess.started_job.set()
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_EXECUTION_HOST')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting execution host")
+                event.loginprocess.updateProgressDialog( 6,"Getting execution host")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_VNCDISPLAY,event.loginprocess)
                 logger.debug('loginProcessEvent: getExecutionHost: posting EVT_LOGINPROCESS_GET_VNCDISPLAY')
                 t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.execHost,nextevent,"")
@@ -958,7 +958,7 @@ class LoginProcess():
         def getVNCDisplay(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_VNCDISPLAY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_VNCDISPLAY')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting the display number")
+                event.loginprocess.updateProgressDialog( 6,"Getting the display number")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_TUNNEL,event.loginprocess)
                 logger.debug('loginProcessEvent: getVNCDisplay: posting EVT_LOGINPROCESS_START_TUNNEL')
                 t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.vncDisplay,nextevent,"Unable to get the VNC display")
@@ -971,7 +971,7 @@ class LoginProcess():
         def startTunnel(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_TUNNEL):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_TUNNEL')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 7,"Starting the tunnel")
+                event.loginprocess.updateProgressDialog( 7,"Starting the tunnel")
                 event.loginprocess.localPortNumber = "0" # Request ephemeral port.
 
 
@@ -1007,7 +1007,7 @@ class LoginProcess():
         def setDesktopResolution(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 8, "Setting the desktop resolution")
+                event.loginprocess.updateProgressDialog( 8, "Setting the desktop resolution")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK,event.loginprocess)
 
                 logger.debug('Setting the desktop resolution.')
@@ -1021,7 +1021,7 @@ class LoginProcess():
         def runSanityCheck(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_RUN_SANITY_CHECK')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 8, "Running the sanity check script")
+                event.loginprocess.updateProgressDialog( 8, "Running the sanity check script")
                 nextevent = LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
 
                 logger.debug('Running server-side sanity check.')
@@ -1038,7 +1038,7 @@ class LoginProcess():
         def forwardAgent(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_FORWARD_AGENT')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 8,"Setting up SSH Agent forwarding")
+                event.loginprocess.updateProgressDialog( 8,"Setting up SSH Agent forwarding")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_OTP,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_OTP')
                 t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.agent,nextevent,"Unable to forward the ssh agent")
@@ -1051,7 +1051,7 @@ class LoginProcess():
         def getVNCPassword(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_OTP):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_OTP')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one-time password for the VNC server")
+                event.loginprocess.updateProgressDialog( 9,"Getting the one-time password for the VNC server")
                 #if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
                 if event.loginprocess.shareHomeDir:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
@@ -1069,7 +1069,7 @@ class LoginProcess():
         def startWebDavServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_SERVER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS')
 
@@ -1093,7 +1093,7 @@ class LoginProcess():
         def getDbusSessionAddress(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.dbusSessionBusAddress,nextevent,"Unable to determine the DBUS_SESSION_BUS_ADDRESS for the VNC session")
@@ -1106,7 +1106,7 @@ class LoginProcess():
         def getWebDavIntermediatePort(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavIntermediatePort,nextevent,"")
@@ -1119,7 +1119,7 @@ class LoginProcess():
         def getWebDavRemotePort(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavRemotePort,nextevent,"")
@@ -1132,7 +1132,7 @@ class LoginProcess():
         def startWebDavTunnel(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
 
                 #event.loginprocess.jobParams['remoteWebDavPortNumber'] = 8080 # FIXME: Hard-coded remote WebDAV port number for now!
                 # remoteWebDavPortNumber is now determined using /usr/local/desktop/get_ephemeral_port_number.py on MASSIVE
@@ -1154,7 +1154,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER):
                 if event.loginprocess.shareHomeDir:
                     logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER')
-                    wx.CallAfter(event.loginprocess.updateProgressDialog, 10, "Sharing your home directory with the remote server")
+                    event.loginprocess.updateProgressDialog( 10, "Sharing your home directory with the remote server")
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID')
 
@@ -1171,7 +1171,7 @@ class LoginProcess():
         def getWebDavWindowID(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
 
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
@@ -1191,7 +1191,7 @@ class LoginProcess():
             """
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10, "Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10, "Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
 
@@ -1244,7 +1244,7 @@ class LoginProcess():
         def startViewer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_VIEWER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_VIEWER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Starting the VNC viewer")
+                event.loginprocess.updateProgressDialog( 9,"Starting the VNC viewer")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_STAT_RUNNING_JOB')
                 wx.EndBusyCursor()
@@ -1272,7 +1272,7 @@ class LoginProcess():
                         dlg.addPanel(panel)
                     else:
                         dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
-                    wx.CallAfter(showModal,dlg)
+                    showModal(dlg)
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
                 event.loginprocess.shutdownThread.start()
@@ -1368,7 +1368,7 @@ class LoginProcess():
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?",event.loginprocess.displayStrings.persistentMessage.format(timestring=timestring),event.loginprocess.displayStrings.persistentMessageStop,event.loginprocess.displayStrings.persistentMessagePersist,KillCallback,persistCallback)
                 if dialog:
                     logger.debug("showKillServerDialog: Showing the 'Stop the desktop' question dialog.")
-                    wx.CallAfter(showModal,dialog)
+                    showModal(dialog)
                 else:
                     logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
                     persistCallback()
@@ -1380,7 +1380,7 @@ class LoginProcess():
         def killServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER or event.GetId() == LoginProcess.EVT_LOGINPROCESS_KILL_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_RESTART_SERVER or we are EVT_LOGINPROCESS_KILL_SERVER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 4,"Stopping the existing desktop session")
+                event.loginprocess.updateProgressDialog( 4,"Stopping the existing desktop session")
                 if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
                     logger.debug("caught an EVT_LOGINPROCESS_RESTART_SERVER")
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS,event.loginprocess)
