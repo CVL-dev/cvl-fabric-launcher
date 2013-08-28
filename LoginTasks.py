@@ -15,9 +15,14 @@ from MacMessageDialog import LauncherMessageDialog
 from logger.Logger import logger
 
 def showModal(dialog):
-    wx.EndBusyCursor()
+    try:
+        wx.EndBusyCursor()
+        stoppedBusyCursor = True
+    except:
+        stoppedBusyCursor = False
     dialog.ShowModal()
-    wx.BeginBusyCursor()
+    if stoppedBusyCursor:
+        wx.BeginBusyCursor()
 
 class LoginProcess():
     """LoginProcess Class."""
@@ -1231,7 +1236,11 @@ class LoginProcess():
                 event.loginprocess.updateProgressDialog( 9,"Starting the VNC viewer")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_STAT_RUNNING_JOB')
-                wx.EndBusyCursor()
+                try:
+                    wx.EndBusyCursor()
+                    stoppedBusyCursor = True
+                except:
+                    stoppedBusyCursor = False
                 t = LoginProcess.startVNCViewer(event.loginprocess,nextevent)
                 t.setDaemon(False)
                 t.start()
@@ -1394,7 +1403,11 @@ class LoginProcess():
                     logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to dump the log")
                     logger.dump_log(event.loginprocess.notify_window,submit_log=True)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
-                wx.EndBusyCursor()
+                try:
+                    wx.EndBusyCursor()
+                    stoppedBusyCursor = True
+                except:
+                    stoppedBusyCursor = False
                 event.loginprocess._complete.set()
                 if event.loginprocess.completeCallback!=None:
                     event.loginprocess.completeCallback(event.loginprocess.jobParams)
