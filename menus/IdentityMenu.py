@@ -192,17 +192,15 @@ class IdentityMenu(wx.Menu):
 
         return self.createKey()
 
-    def keyIsInAgent(self):
+    def launcherKeyIsInAgent(self):
 
         publicKeyFingerprintInAgent = ""
-        # This will give an error if no agent is running:
-        proc = subprocess.Popen([self.sshPathsObject.sshAddBinary.strip('"'),"-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        fingerprintLinesInAgent = proc.stdout.readlines()
-        for fingerprintLine in fingerprintLinesInAgent:
-            if "Launcher" in fingerprintLine:
-                sshAddOutComponents = fingerprintLine.split(" ")
-                if len(sshAddOutComponents)>1:
-                    publicKeyFingerprintInAgent = sshAddOutComponents[1]
+        key = self.launcherMainFrame.keyModel.fingerprintAgent()
+        if key != None:
+            sshAddOutComponents = key.split(" ")
+            if len(sshAddOutComponents)>1:
+                publicKeyFingerprintInAgent = sshAddOutComponents[1]
+
         return publicKeyFingerprintInAgent != ""
 
 
@@ -235,7 +233,7 @@ class IdentityMenu(wx.Menu):
     def onResetKey(self,event):
 
         if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
-            resetKeyDialog = ResetKeyDialog(self.launcherMainFrame, wx.ID_ANY, 'Reset Key', self.privateKeyFilePath, self.keyIsInAgent())
+            resetKeyDialog = ResetKeyDialog(self.launcherMainFrame, wx.ID_ANY, 'Reset Key', self.launcherMainFrame.keyModel, self.launcherKeyIsInAgent())
             resetKeyDialog.ShowModal()
         else:
             if self.offerToCreateKey()==wx.ID_YES:
