@@ -997,6 +997,30 @@ class LauncherMainFrame(wx.Frame):
             logger.dump_log(launcherMainFrame,submit_log=False)
             sys.exit(1)
 
+        self.startupinfo = None
+        try:
+            self.startupinfo = subprocess.STARTUPINFO()
+            self.startupinfo.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
+            self.startupinfo.wShowWindow = subprocess.SW_HIDE
+        except:
+            # On non-Windows systems, the previous block will throw:
+            # "AttributeError: 'module' object has no attribute 'STARTUPINFO'".
+            logger.debug('exception: ' + str(traceback.format_exc()))
+
+        self.creationflags = 0
+        try:
+            import win32process
+            self.creationflags = win32process.CREATE_NO_WINDOW
+        except:
+            # On non-Windows systems, the previous block will throw an exception.
+            logger.debug('exception: ' + str(traceback.format_exc()))
+
+        # launcherMainFrame.keyModel must be initialized before the
+        # user presses the Login button, because the user might
+        # use the Identity Menu to delete their key etc. before
+        # pressing the Login button.
+        self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags)
+
     def onTabbedViewChanged(self, event):
         event.Skip()
         if hasattr(self, 'cvlAdvancedLoginCheckBox'):
@@ -1354,6 +1378,7 @@ If this computer is not shared then an SSH Key pair will give you advanced featu
             self.saveGlobalOptions()
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
+
         if launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
             try:
@@ -1362,13 +1387,13 @@ If this computer is not shared then an SSH Key pair will give you advanced featu
             except:
                 logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (no existing agent found)")
                 pass
-            launcherMainFrame.keyModel=KeyModel(temporaryKey=True)
+            launcherMainFrame.keyModel.setUseTemporaryKey(True)
             removeKeyOnExit = True
         else:
             logger.debug("launcherMainFrame.onLogin: using a permanent Key pair")
-            launcherMainFrame.keyModel=KeyModel(temporaryKey=False)
+            launcherMainFrame.keyModel.setUseTemporaryKey(False)
             removeKeyOnExit = False
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit,startupinfo=launcherMainFrame.startupinfo,creationflags=launcherMainFrame.creationflags)
         self.loginProcess.doLogin()
 
 
@@ -1446,10 +1471,12 @@ def buildSiteConfigCmdRegExDict(configName):
         lt = "^<"
         gt = "^>"
         pipe = "^|"
+        ampersand = "^&"
     else:
         lt = "<"
         gt = ">"
         pipe = "|"
+        ampersand = "&"
     siteConfigDict={}
     siteConfigDict['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
     if ("m1" in configName or "m2" in configName):
@@ -1560,7 +1587,7 @@ def buildSiteConfigCmdRegExDict(configName):
         # access a WebDAV share within Konqueror.  The method below for the CVL/Nautilus does require fuse membership, but it ends up looking
         # similar to MASSIVE/Konqueror from the user's point of view.  
 
-        cmd="\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python && /usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true && DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName} && echo WebDavMountingDone\\\"\"" % (pipe)
+        cmd="\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python %s%s /usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true %s%s DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName} %s%s echo WebDavMountingDone\\\"\"" % (pipe,ampersand,ampersand,ampersand,ampersand,ampersand,ampersand)
         regex='^.*(?P<webDavMountingDone>WebDavMountingDone).*$'
         siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd,regex)
 
@@ -1603,7 +1630,7 @@ def buildSiteConfigCmdRegExDict(configName):
         regex='tunnel_hello'
         siteConfigDict['webDavTunnel']=siteConfig.cmdRegEx(cmd,regex,async=True)
 
-        cmd="\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python && /usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true && DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName} && echo WebDavMountingDone\\\"\"" % (pipe)
+        cmd="\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" %s python %s%s /usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true %s%s DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName} %s%s echo WebDavMountingDone\\\"\"" % (pipe,ampersand,ampersand,ampersand,ampersand,ampersand,ampersand)
         regex='^.*(?P<webDavMountingDone>WebDavMountingDone).*$'
         siteConfigDict['openWebDavShareInRemoteFileBrowser']=siteConfig.cmdRegEx(cmd,regex)
 

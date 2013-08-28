@@ -61,18 +61,7 @@ class LoginProcess():
                 else:
                     cmd = shlex.split(cmd)
                 
-                try:
-                    startupinfo = subprocess.STARTUPINFO()
-                    startupinfo.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
-                    startupinfo.wShowWindow = subprocess.SW_HIDE
-                except:
-                    # On non-Windows systems the previous block will die with 
-                    # "AttributeError: 'module' object has no attribute 'STARTUPINFO'" even though
-                    # the code is inside the 'if' block, hence the use of a dodgy try/except block.
-                    startupinfo = None
-                    logger.debug('exception: ' + str(traceback.format_exc()))
-
-                self.process = subprocess.Popen(cmd, universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, startupinfo=startupinfo)
+                self.process = subprocess.Popen(cmd, universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
                 lastNonEmptyLine = None
                 while (not self.stopped()):
                     self.process.poll()
@@ -138,7 +127,7 @@ class LoginProcess():
             logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) = " + self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
             self.loginprocess.matchlist=[]
             try:
-                (stdout, stderr) = run_command(self.cmdRegex.getCmd(self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
+                (stdout, stderr) = run_command(self.cmdRegex.getCmd(self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel, startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
                 logger.debug("runServerCommandThread: stderr = " + stderr)
                 logger.debug("runServerCommandThread: stdout = " + stdout)
             except Exception as e:
@@ -329,7 +318,7 @@ class LoginProcess():
 
                     self.loginprocess.turboVncProcess = subprocess.Popen(vncCommandString,
                         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                        universal_newlines=True)
+                        universal_newlines=True,startupinfo=self.loginprocess.startupinfo,creationflags=self.loginprocess.creationflags)
                     self.loginprocess.turboVncStdout, self.loginprocess.turboVncStderr = self.loginprocess.turboVncProcess.communicate(input=self.loginprocess.jobParams['vncPasswd'] + "\n")
 
                     self.loginprocess.turboVncFinishTime = datetime.datetime.now()
@@ -394,7 +383,7 @@ class LoginProcess():
                 if (not self.stopped()):
                     time.sleep(sleepperiod)
                 try:
-                    (stdout,stderr) = run_command(self.cmdRegex.getCmd(jobParams),ignore_errors=True)
+                    (stdout,stderr) = run_command(self.cmdRegex.getCmd(jobParams),ignore_errors=True, startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
                     logger.debug("runLoopServerCommandThread: stderr = " + stderr)
                     logger.debug("runLoopServerCommandThread: stdout = " + stdout)
                 except KeyError as e:
@@ -546,35 +535,12 @@ class LoginProcess():
             return (vnc, turboVncVersionNumber)
 
         def getTurboVncVersionNumber(self,vnc):
-            self.turboVncVersionNumber = "0.0"
-
-            if sys.platform.startswith("darwin"):
-                turboVncVersionNumberCommandString = "pkgutil --pkg-info com.virtualgl.turbovnc | grep version"
-                proc = subprocess.Popen(turboVncVersionNumberCommandString,
-                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                    universal_newlines=True)
-                turboVncStdout, turboVncStderr = proc.communicate(input="\n")
-                if turboVncStderr != None:
-                    logger.debug("turboVncStderr: " + turboVncStderr)
-                turboVncVersionNumberComponents = turboVncStdout.split(" ")
-                turboVncVersionNumber = turboVncVersionNumberComponents[1].strip()
-            else:
-                turboVncVersionNumberCommandString = vnc + " -help"
-                proc = subprocess.Popen(turboVncVersionNumberCommandString,
-                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                    universal_newlines=True)
-                turboVncStdout, turboVncStderr = proc.communicate(input="\n")
-                if turboVncStderr != None:
-                    logger.debug("turboVncStderr: " + turboVncStderr)
-                turboVncVersionNumberComponents = turboVncStdout.split(" v")
-                turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
-                turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
 
             # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
             turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"
             proc = subprocess.Popen(turboVncFlavourTestCommandString,
                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                universal_newlines=True)
+                universal_newlines=True,startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
             stdout, stderr = proc.communicate(input="\n")
             if stderr != None:
                 logger.debug('turboVncFlavour stderr: ' + stderr)
@@ -585,6 +551,24 @@ class LoginProcess():
                 logger.debug("X11 version of TurboVNC Viewer is installed.")
                 turboVncFlavour = "X11"
             
+            self.turboVncVersionNumber = "0.0"
+
+            if sys.platform.startswith("darwin") and turboVncFlavour=="Java":
+                logger.debug("Java flavour of TurboVNC Viewer detected on Mac OS X, which means TurboVNC >= 1.2.")
+                logger.debug("Assuming TurboVNC version number = 1.2 to speed up login process.")
+                return (vnc,"1.2",turboVncFlavour)
+
+            turboVncVersionNumberCommandString = vnc + " -help"
+            proc = subprocess.Popen(turboVncVersionNumberCommandString,
+                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                universal_newlines=True,startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
+            turboVncStdout, turboVncStderr = proc.communicate(input="\n")
+            if turboVncStderr != None:
+                logger.debug("turboVncStderr: " + turboVncStderr)
+            turboVncVersionNumberComponents = turboVncStdout.split(" v")
+            turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
+            turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
+
             return (vnc,turboVncVersionNumber,turboVncFlavour)
 
         def showTurboVncNotFoundMessageDialog(self,turboVncLatestVersion):
@@ -758,7 +742,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISTRIBUTE_KEY')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.progressDialog,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,event.loginprocess.displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.progressDialog,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,event.loginprocess.displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit,startupinfo=event.loginprocess.startupinfo,creationflags=event.loginprocess.creationflags)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(callback_success=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      callback_fail=event.loginprocess.cancel)
@@ -1488,7 +1472,7 @@ class LoginProcess():
         return self._complete.isSet()
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,cancelCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False,shareHomeDir=False):
+    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,cancelCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False,shareHomeDir=False,startupinfo=None,creationflags=0):
         self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
@@ -1529,6 +1513,9 @@ class LoginProcess():
         maximumProgressBarValue=10
         #self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.parentWindow, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
         self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.notify_window, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
+
+        self.startupinfo = startupinfo
+        self.creationflags = creationflags
 
         update={}
         update['sshBinary']=self.keyModel.getsshBinary()
