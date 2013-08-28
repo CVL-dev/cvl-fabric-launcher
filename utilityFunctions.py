@@ -11,6 +11,7 @@ import sys
 import itertools
 import wx.lib.mixins.listctrl as listmix
 import zipfile
+import json
 
 from logger.Logger import logger
 
@@ -22,8 +23,113 @@ LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massiv
 global TURBOVNC_BASE_URL
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
 
-class sshKeyDistDisplayStrings(object):
+class cmdRegEx():
+    def __init__(self,cmd=None,regex=None,requireMatch=True,loop=False,async=False,host='login'):
+
+        self.cmd=cmd
+        if (not isinstance(regex,list)):
+            self.regex=[regex]
+        else:
+            self.regex=regex
+        self.loop=loop
+        self.async=async
+        self.requireMatch=requireMatch
+        if regex==None:
+            self.requireMatch=False
+        self.host=host
+        if (self.async):
+            self.host='local'
+
+    def getCmd(self,jobParam={}):
+        if ('exec' in self.host):
+            sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=no -l {username} {execHost} '
+        elif ('local' in self.host):
+            sshCmd = ''
+        else:
+            sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
+        cmd=self.cmd
+        if sys.platform.startswith("win"):
+            cmd=windowsEscape(cmd)
+        string=sshCmd.format(**jobParam)+cmd.format(**jobParam)
+        return string
+
+
+class siteConfig():
+        
+    def __init__(self,**kwargs):
+        self.loginHost=None
+        self.listAll=cmdRegEx()
+        self.running=cmdRegEx()
+        self.stop=cmdRegEx()
+        self.stopForRestart=cmdRegEx()
+        self.execHost=cmdRegEx()
+        self.startServer=cmdRegEx()
+        self.runSanityCheck=cmdRegEx()
+        self.setDisplayResolution=cmdRegEx()
+        self.getProjects=cmdRegEx()
+        self.showStart=cmdRegEx()
+        self.vncDisplay=cmdRegEx()
+        self.otp=cmdRegEx()
+        self.directConnect=cmdRegEx()
+        self.messageRegeexs=cmdRegEx()
+        self.webDavIntermediatePort=cmdRegEx()
+        self.webDavRemotePort=cmdRegEx()
+        self.openWebDavShareInRemoteFileBrowser=cmdRegEx()
+        self.displayWebDavInfoDialogOnRemoteDesktop=cmdRegEx()
+        self.webDavTunnel=cmdRegEx()
+        self.agent=cmdRegEx()
+        self.tunnel=cmdRegEx()
+        self.visibility={}
+        self.displayStrings=sshKeyDistDisplayStrings()
+        for key,value in kwargs.iteritems():
+            self.__dict__[key]=value
+
+# JSON Encoder and Decoder based on
+# http://broadcast.oreilly.com/2009/05/pymotw-json.html
+# json - JavaScript Object Notation Serializer
+# By Doug Hellmann
+# May 24, 2009
+# Compiled regular expressions don't seem to conform to the "normal" pattern of having an obj.__class__.__name__ and obj.__module__
+# Thus I have added specical case handling for regular expressions -- Chris Hines
+
+class GenericJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        import re
+        if isinstance(obj,type(re.compile(''))):
+            d={'__class__':'__regex__','pattern':obj.pattern}
+        else:
+            d = { '__class__':obj.__class__.__name__, '__module__':obj.__module__, }
+            d.update(obj.__dict__)
+        return d
+
+class GenericJSONDecoder(json.JSONDecoder):
+    
     def __init__(self):
+        json.JSONDecoder.__init__(self, object_hook=self.dict_to_object)
+
+    def dict_to_object(self, d):
+        if '__class__' in d:
+            class_name = d.pop('__class__')
+            if class_name == '__regex__':
+                import re
+                pattern=d.pop('pattern')
+                return re.compile(pattern)
+            module_name = d.pop('__module__')
+            module = __import__(module_name)
+            class_ = getattr(module, class_name)
+            args = dict( (key.encode('ascii'), value) for key, value in d.items())
+            try:
+                inst = class_(**args)
+            except Exception as e:
+                print(class_name)
+                print(args)
+                raise e
+        else:
+            inst = d
+        return inst
+
+class sshKeyDistDisplayStrings(object):
+    def __init__(self,**kwargs):
         self.passwdPrompt="enter passwd"
         self.passwdPromptIncorrect="passwd incorrect. reenter"
         self.passphrasePrompt="enter key passphrase"
@@ -52,6 +158,8 @@ Do you want me to delete the job or leave it in the queue so you can reconnect l
         self.persistentMessage="Would you like to leave your current session running so that you can reconnect later?\nIt has {timestring} remaining."
         self.persistentMessageStop="Stop the desktop"
         self.persistentMessagePersist="Leave it running"
+        for key,value in kwargs.iteritems():
+            self.__dict__[key]=value
 
 class sshKeyDistDisplayStringsCVL(sshKeyDistDisplayStrings):
     def __init__(self):
