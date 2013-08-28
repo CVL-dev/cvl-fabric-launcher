@@ -1648,7 +1648,10 @@ class LoginProcess():
         siteConfigDict['otp']= cmdRegEx('echo %s'%self.jobParams['vncPasswd'],'(?P<vncPasswd>.*)$',host='local')
         siteConfigDict['agent']=self.siteConfig.agent
         siteConfigDict['tunnel']=self.siteConfig.tunnel
-        newConfig = siteConfig(siteConfigDict,Visible)
+        #newConfig = siteConfig(siteConfigDict,Visible)
+        newConfig = siteConfig()
+        newConfig.__dict__.update(siteConfigDict)
+        newConfig.visibility=Visible
         queue.put(newConfig)
         #return newConfig
    

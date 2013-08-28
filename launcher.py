@@ -603,9 +603,8 @@ class LauncherMainFrame(wx.Frame):
         f.close()
 
     def loadSession(self,f):
-        import pickle
-        u=pickle.Unpickler(f)
-        saved=u.load()
+        import json
+        saved=GenericJSONDecoder().decode(f.read())
         self.sites=saved
         cb=self.FindWindowByName('jobParams_configName')
         cbid=cb.GetId()
@@ -644,17 +643,14 @@ class LauncherMainFrame(wx.Frame):
     def saveSession(self,f=None,siteConfig=None):
         try:
             from queue import Queue
-            print("running python 3")
         except:
             from Queue import Queue
-            print("running python 2")
         q=Queue()
         if siteConfig==None:
             try:
                 self.loginProcess[0].getSharedSession(q)
             except:
-                logger.debug("Tried to save while no session was running. This menu itme should be disabled")
-                return
+                pass
         if f==None:
             dlg=wx.FileDialog(launcherMainFrame,"Save your desktop session",style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             status=dlg.ShowModal()
@@ -673,7 +669,10 @@ class LauncherMainFrame(wx.Frame):
         print("dumping siteConfig")
         if siteConfig==None:
             siteConfig=q.get()
-        print(siteConfig)
+            print "got site Config"
+        if siteConfig==None:
+            return
+        #print(siteConfig)
         #import pickle
         mydict={}
         mydict['Saved Session']=siteConfig
@@ -681,8 +680,11 @@ class LauncherMainFrame(wx.Frame):
         #p.dump(mydict)
         #f.close()
         import json
-        encoder=siteConfig.siteConfigJSONEncoder()
-        json.dump(mydict,f,cls=siteConfig.siteConfigJSONEncoder,sort_keys=True,indent=4, separators=(',', ': '))
+        s=json.dumps(mydict,f,cls=GenericJSONEncoder,sort_keys=True,indent=4,separators=(',',': '))
+        print ('got my json dump')
+        #encoder=siteConfig.siteConfigJSONEncoder()
+        #json.dump(mydict,f,cls=siteConfig.siteConfigJSONEncoder,sort_keys=True,indent=4, separators=(',', ': '))
+        f.write(s)
         f.close()
 
         
@@ -1037,9 +1039,6 @@ If this account is shared by a number of people then passwords are preferable
         self.loginProcess.append(lp)
         lp.doLogin()
         event.Skip()
-
-from utilityFunctions import siteConfig 
-
 
 
 class LauncherStatusBar(wx.StatusBar):
