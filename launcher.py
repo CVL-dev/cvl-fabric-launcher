@@ -181,10 +181,16 @@ class LauncherMainFrame(wx.Frame):
 
         self.menu_bar  = wx.MenuBar()
 
+        # Do this for all platforms, even Mac OS X.
+        # Even though we don't have a File menu with
+        # an Exit menu item on Mac OS X, the wx.ID_EXIT
+        # ID automatically gets mapped to the Quit menu
+        # item (command q) in the "MASSIVE Launcher" menu.
+        self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
+
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
             self.file_menu = wx.Menu()
             self.file_menu.Append(wx.ID_EXIT, "E&xit", "Close window and exit program.")
-            self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
             self.menu_bar.Append(self.file_menu, "&File")
 
         #if sys.platform.startswith("darwin"):
