@@ -14,6 +14,16 @@ from MacMessageDialog import LauncherMessageDialog
 
 from logger.Logger import logger
 
+def showModal(dialog):
+    try:
+        wx.EndBusyCursor()
+        stoppedBusyCursor = True
+    except:
+        stoppedBusyCursor = False
+    dialog.ShowModal()
+    if stoppedBusyCursor:
+        wx.BeginBusyCursor()
+
 class LoginProcess():
     """LoginProcess Class."""
             
@@ -56,18 +66,7 @@ class LoginProcess():
                 else:
                     cmd = shlex.split(cmd)
                 
-                try:
-                    startupinfo = subprocess.STARTUPINFO()
-                    startupinfo.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
-                    startupinfo.wShowWindow = subprocess.SW_HIDE
-                except:
-                    # On non-Windows systems the previous block will die with 
-                    # "AttributeError: 'module' object has no attribute 'STARTUPINFO'" even though
-                    # the code is inside the 'if' block, hence the use of a dodgy try/except block.
-                    startupinfo = None
-                    logger.debug('exception: ' + str(traceback.format_exc()))
-
-                self.process = subprocess.Popen(cmd, universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, startupinfo=startupinfo)
+                self.process = subprocess.Popen(cmd, universal_newlines=True,shell=False,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
                 lastNonEmptyLine = None
                 while (not self.stopped()):
                     self.process.poll()
@@ -133,7 +132,7 @@ class LoginProcess():
             logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) = " + self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
             self.loginprocess.matchlist=[]
             try:
-                (stdout, stderr) = run_command(self.cmdRegex.getCmd(self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel)
+                (stdout, stderr) = run_command(self.cmdRegex.getCmd(self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel, startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
                 logger.debug("runServerCommandThread: stderr = " + stderr)
                 logger.debug("runServerCommandThread: stdout = " + stdout)
             except Exception as e:
@@ -249,7 +248,7 @@ class LoginProcess():
             logger.debug("startWebDavServer: WsgiDAV version = " + wsgidav.version.__version__)
 
             wsgidavConfig = DEFAULT_CONFIG.copy()
-            wsgidavConfig["host"] = "0.0.0.0"
+            wsgidavConfig["host"] = "localhost"
             wsgidavConfig["port"] = int(self.loginprocess.jobParams['localWebDavPortNumber'])
             wsgidavConfig["root"] = os.path.expanduser('~')
 
@@ -324,7 +323,7 @@ class LoginProcess():
 
                     self.loginprocess.turboVncProcess = subprocess.Popen(vncCommandString,
                         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                        universal_newlines=True)
+                        universal_newlines=True,startupinfo=self.loginprocess.startupinfo,creationflags=self.loginprocess.creationflags)
                     self.loginprocess.turboVncStdout, self.loginprocess.turboVncStderr = self.loginprocess.turboVncProcess.communicate(input=self.loginprocess.jobParams['vncPasswd'] + "\n")
 
                     self.loginprocess.turboVncFinishTime = datetime.datetime.now()
@@ -350,13 +349,14 @@ class LoginProcess():
 
 
     class runLoopServerCommandThread(Thread):
-        def __init__(self,loginprocess,cmdRegex,nextEvent,errorstring):
+        def __init__(self,loginprocess,cmdRegex,nextEvent,errorstring,timeout=None):
             Thread.__init__(self)
             self.loginprocess = loginprocess
             self._stop = Event()
             self.nextEvent = nextEvent
             self.cmdRegex=cmdRegex
             self.errorstring=errorstring
+            self.timeout=timeout
             for k, v in self.__dict__.iteritems():
                 logger.debug('runLoopServerCommandThread properties: %s = %s' % (str(k), str(v),))
     
@@ -388,7 +388,7 @@ class LoginProcess():
                 if (not self.stopped()):
                     time.sleep(sleepperiod)
                 try:
-                    (stdout,stderr) = run_command(self.cmdRegex.getCmd(jobParams),ignore_errors=True)
+                    (stdout,stderr) = run_command(self.cmdRegex.getCmd(jobParams),ignore_errors=True, startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
                     logger.debug("runLoopServerCommandThread: stderr = " + stderr)
                     logger.debug("runLoopServerCommandThread: stdout = " + stdout)
                 except KeyError as e:
@@ -409,12 +409,18 @@ class LoginProcess():
                                     return
                                 match = re.search(regex,line)
                                 if (match):
+                                    logger.debug("runLoopServerCommandThread: Found match in line: " + line)
+                                    logger.debug("runLoopServerCommandThread: match.groupdict() = " + str(match.groupdict()))
                                     self.loginprocess.jobParams.update(match.groupdict())
                                     self.loginprocess.matchlist.append(match.groupdict())
                                     matchedDict[regexUnformatted]=True
                                     matched=True
                                     for oneMatch in matchedDict.values():
                                         matched=(matched and oneMatch)
+                if (not matched and self.timeout is not None and tsleep >= self.timeout):
+                    logger.debug("runLoopServerCommandThread was called with a timeout of %d seconds, which has been reached. So giving up on matching and posting the next event." % (self.timeout))
+                    wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextEvent)
+                    return
                 if (not matched and tsleep > 15):
                     sleepperiod=15
                 if (not matched and tsleep > 15 and not self.loginprocess.canceled()):
@@ -534,35 +540,12 @@ class LoginProcess():
             return (vnc, turboVncVersionNumber)
 
         def getTurboVncVersionNumber(self,vnc):
-            self.turboVncVersionNumber = "0.0"
-
-            if sys.platform.startswith("darwin"):
-                turboVncVersionNumberCommandString = "pkgutil --pkg-info com.virtualgl.turbovnc | grep version"
-                proc = subprocess.Popen(turboVncVersionNumberCommandString,
-                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                    universal_newlines=True)
-                turboVncStdout, turboVncStderr = proc.communicate(input="\n")
-                if turboVncStderr != None:
-                    logger.debug("turboVncStderr: " + turboVncStderr)
-                turboVncVersionNumberComponents = turboVncStdout.split(" ")
-                turboVncVersionNumber = turboVncVersionNumberComponents[1].strip()
-            else:
-                turboVncVersionNumberCommandString = vnc + " -help"
-                proc = subprocess.Popen(turboVncVersionNumberCommandString,
-                    stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                    universal_newlines=True)
-                turboVncStdout, turboVncStderr = proc.communicate(input="\n")
-                if turboVncStderr != None:
-                    logger.debug("turboVncStderr: " + turboVncStderr)
-                turboVncVersionNumberComponents = turboVncStdout.split(" v")
-                turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
-                turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
 
             # Check TurboVNC flavour (X11 or Java) for non-Windows platforms:
             turboVncFlavourTestCommandString = "file /opt/TurboVNC/bin/vncviewer | grep -q ASCII"
             proc = subprocess.Popen(turboVncFlavourTestCommandString,
                 stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
-                universal_newlines=True)
+                universal_newlines=True,startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
             stdout, stderr = proc.communicate(input="\n")
             if stderr != None:
                 logger.debug('turboVncFlavour stderr: ' + stderr)
@@ -573,6 +556,24 @@ class LoginProcess():
                 logger.debug("X11 version of TurboVNC Viewer is installed.")
                 turboVncFlavour = "X11"
             
+            self.turboVncVersionNumber = "0.0"
+
+            if sys.platform.startswith("darwin") and turboVncFlavour=="Java":
+                logger.debug("Java flavour of TurboVNC Viewer detected on Mac OS X, which means TurboVNC >= 1.2.")
+                logger.debug("Assuming TurboVNC version number = 1.2 to speed up login process.")
+                return (vnc,"1.2",turboVncFlavour)
+
+            turboVncVersionNumberCommandString = vnc + " -help"
+            proc = subprocess.Popen(turboVncVersionNumberCommandString,
+                stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
+                universal_newlines=True,startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
+            turboVncStdout, turboVncStderr = proc.communicate(input="\n")
+            if turboVncStderr != None:
+                logger.debug("turboVncStderr: " + turboVncStderr)
+            turboVncVersionNumberComponents = turboVncStdout.split(" v")
+            turboVncVersionNumberComponents = turboVncVersionNumberComponents[1].split(" (build")
+            turboVncVersionNumber = turboVncVersionNumberComponents[0].strip()
+
             return (vnc,turboVncVersionNumber,turboVncFlavour)
 
         def showTurboVncNotFoundMessageDialog(self,turboVncLatestVersion):
@@ -616,7 +617,7 @@ class LoginProcess():
 
             turboVncNotFoundDialog.addPanel(turboVncNotFoundPanel)
             turboVncNotFoundDialog.Centre()
-            turboVncNotFoundDialog.ShowModal()
+            showModal(turboVncNotFoundDialog)
 
             self.loginprocess.cancel()
     
@@ -650,7 +651,7 @@ class LoginProcess():
                         dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
                                                 "The launcher cannot continue.\n",
                                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                        dlg.ShowModal()
+                        showModal(dlg)
                         dlg.Destroy()
                         # If we can't contact the MASSIVE website, it's probably because
                         # there's no active network connection, so don't try to submit
@@ -696,7 +697,7 @@ class LoginProcess():
                     dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Could not determine TurboVNC version number.\n\n" +
                                             "The launcher cannot continue.\n",
                                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                    dlg.ShowModal()
+                    showModal(dlg)
                     dlg.Destroy()
                     logger.dump_log(self.loginprocess.notify_window)
                     sys.exit(1)
@@ -746,7 +747,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISTRIBUTE_KEY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISTRIBUTE_KEY')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
-                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.progressDialog,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,event.loginprocess.displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit)
+                event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.progressDialog,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,event.loginprocess.displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit,startupinfo=event.loginprocess.startupinfo,creationflags=event.loginprocess.creationflags)
                 successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
                 event.loginprocess.skd.distributeKey(callback_success=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      callback_fail=event.loginprocess.cancel)
@@ -773,7 +774,7 @@ class LoginProcess():
                         wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS,event.loginprocess))
                     return
                 event.loginprocess.job=event.loginprocess.matchlist[0]
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 4,"Do you want to reconnect to an existing desktop?")
+                event.loginprocess.updateProgressDialog( 4,"Do you want to reconnect to an existing desktop?")
                 ReconnectCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER,event.loginprocess))
                 NewDesktopCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER,event.loginprocess))
                 timeRemaining=event.loginprocess.timeRemaining()
@@ -792,10 +793,10 @@ class LoginProcess():
                         timestring = "%s minute"%minutes
                     else:
                         timestring = "%s minutes"%minutes
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found. It has %s remaining. Would you like to reconnect or kill it and start a new desktop?"%timestring,"Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage.format(timestring=timestring),event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
                 else:
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop","An Existing Desktop was found, would you like to reconnect or kill it and start a new desktop?","Reconnect","New Desktop",ReconnectCallback,NewDesktopCallback)
-                wx.CallAfter(dialog.ShowModal)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage,event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
+                showModal(dialog)
             else:
                 event.Skip()
 
@@ -803,7 +804,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_PROJECTS')
 
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Getting a list of your valid projects")
+                event.loginprocess.updateProgressDialog( 5,"Getting a list of your valid projects")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT,event.loginprocess)
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.getProjects,nextevent,"I couldn't find any projects that you were a member of.")
                 t.setDaemon(False)
@@ -816,7 +817,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SELECT_PROJECT')
 
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Getting a list of your valid projects")
+                event.loginprocess.updateProgressDialog( 5,"Getting a list of your valid projects")
                 grouplist=[]
                 groups=[]
                 showDialog=False
@@ -865,7 +866,7 @@ class LoginProcess():
                         parentWindow = event.loginprocess.notify_window
                     cancelCallback=lambda x: event.loginprocess.cancel(x)
                     dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE)
-                    dlg.ShowModal()
+                    showModal(dlg)
                 if (not event.loginprocess.canceled()):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
                     wx.PostEvent(event.loginprocess.notify_window,nextevent)
@@ -875,7 +876,7 @@ class LoginProcess():
         def startServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_SERVER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 5,"Starting a new desktop session")
+                event.loginprocess.updateProgressDialog( 5,"Starting a new desktop session")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER,event.loginprocess)
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.startServer,nextevent,"Error starting the VNC server. This could occur")
                 t.setDaemon(False)
@@ -890,7 +891,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_WAIT_FOR_SERVER):
                 event.loginprocess.queued_job.set()
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_WAIT_FOR_SERVER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Waiting for the VNC server to start")
+                event.loginprocess.updateProgressDialog( 6,"Waiting for the VNC server to start")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_EXECUTION_HOST,event.loginprocess)
                 t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.running,nextevent,"")
                 t.setDaemon(False)
@@ -920,7 +921,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SHOW_ESTIMATED_START')
                 try:
                     string='Estimated start : {estimatedStart}'.format(**event.loginprocess.jobParams)
-                    wx.CallAfter(event.loginprocess.updateProgressDialog, 6, string )
+                    event.loginprocess.updateProgressDialog( 6, string )
                     logger.debug('loginProcessEvent: showEstimatedStart: ' + string)
                 except Exception as e:
                     logger.debug('loginProcessEvent: showEstimatedStart: exception: ' + str(traceback.format_exc()))
@@ -933,7 +934,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_EXECUTION_HOST):
                 event.loginprocess.started_job.set()
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_EXECUTION_HOST')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting execution host")
+                event.loginprocess.updateProgressDialog( 6,"Getting execution host")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_VNCDISPLAY,event.loginprocess)
                 logger.debug('loginProcessEvent: getExecutionHost: posting EVT_LOGINPROCESS_GET_VNCDISPLAY')
                 t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.execHost,nextevent,"")
@@ -946,7 +947,7 @@ class LoginProcess():
         def getVNCDisplay(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_VNCDISPLAY):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_VNCDISPLAY')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 6,"Getting the display number")
+                event.loginprocess.updateProgressDialog( 6,"Getting the display number")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_TUNNEL,event.loginprocess)
                 logger.debug('loginProcessEvent: getVNCDisplay: posting EVT_LOGINPROCESS_START_TUNNEL')
                 t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.vncDisplay,nextevent,"Unable to get the VNC display")
@@ -959,7 +960,7 @@ class LoginProcess():
         def startTunnel(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_TUNNEL):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_TUNNEL')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 7,"Starting the tunnel")
+                event.loginprocess.updateProgressDialog( 7,"Starting the tunnel")
                 event.loginprocess.localPortNumber = "0" # Request ephemeral port.
 
 
@@ -995,7 +996,7 @@ class LoginProcess():
         def setDesktopResolution(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 8, "Setting the desktop resolution")
+                event.loginprocess.updateProgressDialog( 8, "Setting the desktop resolution")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK,event.loginprocess)
 
                 logger.debug('Setting the desktop resolution.')
@@ -1009,7 +1010,7 @@ class LoginProcess():
         def runSanityCheck(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_RUN_SANITY_CHECK')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 8, "Running the sanity check script")
+                event.loginprocess.updateProgressDialog( 8, "Running the sanity check script")
                 nextevent = LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
 
                 logger.debug('Running server-side sanity check.')
@@ -1026,7 +1027,7 @@ class LoginProcess():
         def forwardAgent(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_FORWARD_AGENT')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 8,"Setting up SSH Agent forwarding")
+                event.loginprocess.updateProgressDialog( 8,"Setting up SSH Agent forwarding")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_OTP,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_OTP')
                 t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.agent,nextevent,"Unable to forward the ssh agent")
@@ -1039,7 +1040,7 @@ class LoginProcess():
         def getVNCPassword(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_OTP):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_OTP')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Getting the one-time password for the VNC server")
+                event.loginprocess.updateProgressDialog( 9,"Getting the one-time password for the VNC server")
                 #if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
                 if event.loginprocess.shareHomeDir:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
@@ -1057,7 +1058,7 @@ class LoginProcess():
         def startWebDavServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_SERVER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS')
 
@@ -1081,7 +1082,7 @@ class LoginProcess():
         def getDbusSessionAddress(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.dbusSessionBusAddress,nextevent,"Unable to determine the DBUS_SESSION_BUS_ADDRESS for the VNC session")
@@ -1094,7 +1095,7 @@ class LoginProcess():
         def getWebDavIntermediatePort(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavIntermediatePort,nextevent,"")
@@ -1107,7 +1108,7 @@ class LoginProcess():
         def getWebDavRemotePort(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavRemotePort,nextevent,"")
@@ -1120,7 +1121,7 @@ class LoginProcess():
         def startWebDavTunnel(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_TUNNEL')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10,"Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
 
                 #event.loginprocess.jobParams['remoteWebDavPortNumber'] = 8080 # FIXME: Hard-coded remote WebDAV port number for now!
                 # remoteWebDavPortNumber is now determined using /usr/local/desktop/get_ephemeral_port_number.py on MASSIVE
@@ -1142,18 +1143,32 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER):
                 if event.loginprocess.shareHomeDir:
                     logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER')
-                    wx.CallAfter(event.loginprocess.updateProgressDialog, 10, "Sharing your home directory with the remote server")
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG,event.loginprocess)
-                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
+                    event.loginprocess.updateProgressDialog( 10, "Sharing your home directory with the remote server")
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID,event.loginprocess)
+                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID')
 
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.openWebDavShareInRemoteFileBrowser, None, '', requireMatch=False)
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.openWebDavShareInRemoteFileBrowser, None, '', requireMatch=True)
                     t.setDaemon(True)
                     t.start()
                     event.loginprocess.threads.append(t)
                     event.loginprocess.webdavMounted.set()
+                    wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
 
-                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
+            else:
+                event.Skip()
 
+        def getWebDavWindowID(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID')
+                event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
+
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
+
+                t = LoginProcess.runLoopServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavWindowID,nextevent,"Failed to determine WebDAV window ID.", timeout=5)
+                t.setDaemon(True)
+                t.start()
+                event.loginprocess.threads.append(t)
             else:
                 event.Skip()
 
@@ -1165,7 +1180,7 @@ class LoginProcess():
             """
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 10, "Sharing your home directory with the remote server")
+                event.loginprocess.updateProgressDialog( 10, "Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
 
@@ -1179,6 +1194,26 @@ class LoginProcess():
             else:
                 event.Skip()
 
+        def closeWebDavWindow(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CLOSE_WEBDAV_WINDOW):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CLOSE_WEBDAV_WINDOW')
+                if event.loginprocess.webdavMounted.isSet():
+                    logger.debug('closeWebDavWindow: webdavMounted.isSet() is True.')
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV,event.loginprocess)
+                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_UNMOUNT_WEBDAV')
+
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavCloseWindow, nextevent, '', requireMatch=False)
+                    t.setDaemon(True)
+                    t.start()
+                    event.loginprocess.threads.append(t)
+                else:
+                    logger.debug('closeWebDavWindow: webdavMounted.isSet() is False.')
+
+                #wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
+
+            else:
+                event.Skip()
+
         def unmountWebDav(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV):
                 if event.loginprocess.webdavMounted.isSet():
@@ -1186,26 +1221,26 @@ class LoginProcess():
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_SHUTDOWN')
 
-                    logger.debug("unmountWebDav: event.loginprocess.siteConfig.webDavUnmount.cmd = " + event.loginprocess.siteConfig.webDavUnmount.cmd)
-
-                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavUnmount, None, '', requireMatch=False)
+                    t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavUnmount, nextevent, '', requireMatch=False)
                     t.setDaemon(True)
                     t.start()
                     event.loginprocess.threads.append(t)
                     # Technically this is a bit early to clear the event, but I don't think it really matters. -- Chris.
                     event.loginprocess.webdavMounted.clear()
-
-                wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
-
             else:
                 event.Skip()
 
         def startViewer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_VIEWER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_VIEWER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 9,"Starting the VNC viewer")
+                event.loginprocess.updateProgressDialog( 9,"Starting the VNC viewer")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_STAT_RUNNING_JOB')
+                try:
+                    wx.EndBusyCursor()
+                    stoppedBusyCursor = True
+                except:
+                    stoppedBusyCursor = False
                 t = LoginProcess.startVNCViewer(event.loginprocess,nextevent)
                 t.setDaemon(False)
                 t.start()
@@ -1216,9 +1251,6 @@ class LoginProcess():
 
         def cancel(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CANCEL):
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
-                event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
-                event.loginprocess.shutdownThread.start()
                 #newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                 #logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN')
                 #wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
@@ -1233,7 +1265,10 @@ class LoginProcess():
                         dlg.addPanel(panel)
                     else:
                         dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
-                    dlg.ShowModal()
+                    showModal(dlg)
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
+                event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
+                event.loginprocess.shutdownThread.start()
 #                if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds') and event.loginprocess.turboVncElapsedTimeInSeconds > 3:
 #                    logger.debug("TurboVNC's elapsed time was greater than 3 seconds, " +
 #                        "so presumably user stopped VNC session, so no need to ask " +
@@ -1274,6 +1309,7 @@ class LoginProcess():
                             "end tell\r"])
                     logger.debug('loginProcessEvent: statRunningJob: attempting to grab focus back from TurboVNC')
                     grabFocusBackFromTurboVNC()
+                wx.BeginBusyCursor()
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER,event.loginprocess)
                 logger.debug('loginProcessEvent: statRunningJob: posting EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.listAll,nextevent,"")
@@ -1290,7 +1326,13 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_QUESTION_KILL_SERVER')
                 KillCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_KILL_SERVER,event.loginprocess))
                 if event.loginprocess.webdavMounted.isSet():
-                    persistCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV,event.loginprocess))
+                    if event.loginprocess.jobParams.has_key('webDavWindowID'):
+                        logger.debug("showKillServerDialog: jobParams has 'webDavWindowID' key.")
+                        nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CLOSE_WEBDAV_WINDOW,event.loginprocess)
+                    else:
+                        logger.debug("showKillServerDialog: jobParams doesn't have 'webDavWindowID' key.")
+                        nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV,event.loginprocess)
+                    persistCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
                 else:
                     persistCallback=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess))
                 dialog = None
@@ -1319,7 +1361,7 @@ class LoginProcess():
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?",event.loginprocess.displayStrings.persistentMessage.format(timestring=timestring),event.loginprocess.displayStrings.persistentMessageStop,event.loginprocess.displayStrings.persistentMessagePersist,KillCallback,persistCallback)
                 if dialog:
                     logger.debug("showKillServerDialog: Showing the 'Stop the desktop' question dialog.")
-                    wx.CallAfter(dialog.ShowModal)
+                    showModal(dialog)
                 else:
                     logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
                     persistCallback()
@@ -1331,7 +1373,7 @@ class LoginProcess():
         def killServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER or event.GetId() == LoginProcess.EVT_LOGINPROCESS_KILL_SERVER):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_RESTART_SERVER or we are EVT_LOGINPROCESS_KILL_SERVER')
-                wx.CallAfter(event.loginprocess.updateProgressDialog, 4,"Stopping the existing desktop session")
+                event.loginprocess.updateProgressDialog( 4,"Stopping the existing desktop session")
                 if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RESTART_SERVER):
                     logger.debug("caught an EVT_LOGINPROCESS_RESTART_SERVER")
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS,event.loginprocess)
@@ -1361,6 +1403,11 @@ class LoginProcess():
                     logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to dump the log")
                     logger.dump_log(event.loginprocess.notify_window,submit_log=True)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
+                try:
+                    wx.EndBusyCursor()
+                    stoppedBusyCursor = True
+                except:
+                    stoppedBusyCursor = False
                 event.loginprocess._complete.set()
                 if event.loginprocess.completeCallback!=None:
                     event.loginprocess.completeCallback(event.loginprocess.jobParams)
@@ -1368,6 +1415,7 @@ class LoginProcess():
                     if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds'):
                         if event.loginprocess.turboVncElapsedTimeInSeconds > 3:
                             os._exit(0)
+                #wx.CallAfter(event.loginprocess.parentWindow.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
             else:
                 event.Skip()
 
@@ -1404,7 +1452,7 @@ class LoginProcess():
 
                 dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"MASSIVE/CVL Launcher",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
                 logger.debug("threading.current_thread().name = " + threading.current_thread().name)
-                dialog.ShowModal()
+                showModal(dialog)
                 self.askUserIfTheyWantToDeleteQueuedJobCompleted = True
             wx.CallAfter(askUserIfTheyWantToDeleteQueuedJob)
             while self.askUserIfTheyWantToDeleteQueuedJobCompleted==False:
@@ -1437,7 +1485,7 @@ class LoginProcess():
         return self._complete.isSet()
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,cancelCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False,shareHomeDir=False):
+    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,cancelCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False,shareHomeDir=False,startupinfo=None,creationflags=0):
         self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
@@ -1478,6 +1526,9 @@ class LoginProcess():
         maximumProgressBarValue=10
         #self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.parentWindow, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
         self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.notify_window, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
+
+        self.startupinfo = startupinfo
+        self.creationflags = creationflags
 
         update={}
         update['sshBinary']=self.keyModel.getsshBinary()
@@ -1530,7 +1581,9 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_REMOTE_PORT = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_TUNNEL = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_OPEN_WEBDAV_SHARE_IN_REMOTE_FILE_BROWSER = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_CLOSE_WEBDAV_WINDOW = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV = wx.NewId()
 
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.cancel)
@@ -1564,7 +1617,9 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getWebDavRemotePort)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startWebDavTunnel)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.openWebDavShareInRemoteFileBrowser)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getWebDavWindowID)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.displayWebDavInfoDialogOnRemoteDesktop)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.closeWebDavWindow)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.unmountWebDav)
 
         #self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showMessages)
@@ -1586,7 +1641,10 @@ class LoginProcess():
                         logger.debug('exception: ' + str(traceback.format_exc()))
                         return None
                     try:
-                        (ehours,emin) = job['elapTime'].split(':')
+                        if len(job['elapTime'].split(':'))==3:
+                            (ehours,emin,esec) = job['elapTime'].split(':')
+                        else:
+                            (ehours,emin) = job['elapTime'].split(':')
                     except:
                         logger.debug('exception: ' + str(traceback.format_exc()))
                         ehours=0
@@ -1613,6 +1671,8 @@ class LoginProcess():
             return False
 
     def doLogin(self):
+        #wx.CallAfter(self.parentWindow.SetCursor, wx.StockCursor(wx.CURSOR_WAIT))
+        wx.BeginBusyCursor()
         event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_VNC_VER,self)
         wx.PostEvent(self.notify_window.GetEventHandler(),event)
 

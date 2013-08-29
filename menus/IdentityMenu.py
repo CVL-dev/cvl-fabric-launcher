@@ -81,13 +81,6 @@ class IdentityMenu(wx.Menu):
         self.launcherMainFrame.vncOptions['auth_mode']=self.launcherMainFrame.PERM_SSH_KEY
         self.launcherMainFrame.saveGlobalOptions()
 
-        dlg = wx.MessageDialog(None,
-                    "Warning: Authentication mode only affects CVL usage for now.\n\n" +
-                    "For now, MASSIVE users should continue to use a password for authentication.",
-                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
-
-
     def setRadio(self):
         state=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()
         if state == self.launcherMainFrame.PERM_SSH_KEY:
@@ -147,7 +140,7 @@ class IdentityMenu(wx.Menu):
 
     def createKey(self):
 
-        createNewKeyDialog = CreateNewKeyDialog(None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key',self.launcherMainFrame.keyModel.getPrivateKeyFilePath(),self.launcherMainFrame.displayStrings)
+        createNewKeyDialog = CreateNewKeyDialog(None, None, wx.ID_ANY, 'MASSIVE/CVL Launcher Private Key',self.launcherMainFrame.keyModel.getPrivateKeyFilePath(),self.launcherMainFrame.displayStrings)
         createNewKeyDialog.Center()
         if createNewKeyDialog.ShowModal()==wx.ID_OK:
             logger.debug("User pressed OK from CreateNewKeyDialog.")
@@ -168,16 +161,13 @@ class IdentityMenu(wx.Menu):
     def deleteKey(self):
 
         success = self.launcherMainFrame.keyModel.deleteKey()
-        success = success and self.launcherMainFrame.keyModel.removeKeyFromAgent()
+        #success = success and self.launcherMainFrame.keyModel.removeKeyFromAgent()
         if success:
             message = "Launcher key was successfully deleted!"
             logger.debug(message)
         else:
             message = "An error occured while attempting to delete the existing key."
             logger.debug(message)
-            dlg = wx.MessageDialog(self.launcherMainFrame, message,
-                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-            dlg.ShowModal()
 
         return success
 
@@ -202,17 +192,15 @@ class IdentityMenu(wx.Menu):
 
         return self.createKey()
 
-    def keyIsInAgent(self):
+    def launcherKeyIsInAgent(self):
 
         publicKeyFingerprintInAgent = ""
-        # This will give an error if no agent is running:
-        proc = subprocess.Popen([self.sshPathsObject.sshAddBinary.strip('"'),"-l"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        fingerprintLinesInAgent = proc.stdout.readlines()
-        for fingerprintLine in fingerprintLinesInAgent:
-            if "Launcher" in fingerprintLine:
-                sshAddOutComponents = fingerprintLine.split(" ")
-                if len(sshAddOutComponents)>1:
-                    publicKeyFingerprintInAgent = sshAddOutComponents[1]
+        key = self.launcherMainFrame.keyModel.fingerprintAgent()
+        if key != None:
+            sshAddOutComponents = key.split(" ")
+            if len(sshAddOutComponents)>1:
+                publicKeyFingerprintInAgent = sshAddOutComponents[1]
+
         return publicKeyFingerprintInAgent != ""
 
 
@@ -245,7 +233,7 @@ class IdentityMenu(wx.Menu):
     def onResetKey(self,event):
 
         if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
-            resetKeyDialog = ResetKeyDialog(self.launcherMainFrame, wx.ID_ANY, 'Reset Key', self.privateKeyFilePath, self.keyIsInAgent())
+            resetKeyDialog = ResetKeyDialog(self.launcherMainFrame, wx.ID_ANY, 'Reset Key', self.launcherMainFrame.keyModel, self.launcherKeyIsInAgent())
             resetKeyDialog.ShowModal()
         else:
             if self.offerToCreateKey()==wx.ID_YES:

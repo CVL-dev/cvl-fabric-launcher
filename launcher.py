@@ -721,6 +721,45 @@ class LauncherMainFrame(wx.Frame):
             logger.dump_log(launcherMainFrame,submit_log=False)
             sys.exit(1)
 
+        self.startupinfo = None
+        try:
+            self.startupinfo = subprocess.STARTUPINFO()
+            self.startupinfo.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
+            self.startupinfo.wShowWindow = subprocess.SW_HIDE
+        except:
+            # On non-Windows systems, the previous block will throw:
+            # "AttributeError: 'module' object has no attribute 'STARTUPINFO'".
+            logger.debug('exception: ' + str(traceback.format_exc()))
+
+        self.creationflags = 0
+        try:
+            import win32process
+            self.creationflags = win32process.CREATE_NO_WINDOW
+        except:
+            # On non-Windows systems, the previous block will throw an exception.
+            logger.debug('exception: ' + str(traceback.format_exc()))
+
+        # launcherMainFrame.keyModel must be initialized before the
+        # user presses the Login button, because the user might
+        # use the Identity Menu to delete their key etc. before
+        # pressing the Login button.
+        self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags)
+
+    def onTabbedViewChanged(self, event):
+        event.Skip()
+        if hasattr(self, 'cvlAdvancedLoginCheckBox'):
+            if self.cvlAdvancedLoginCheckBox.GetValue():
+                launcherMainFrame.cvlAdvancedLoginFieldsPanel.Show()
+            else:
+                launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
+        MASSIVE_TAB_INDEX = 0
+        CVL_TAB_INDEX =1
+        if self.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+            logger.debug( "Using MASSIVE display strings.")
+            self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
+        if self.tabbedView.GetSelection()==CVL_TAB_INDEX:
+            logger.debug("Using CVL display strings.")
+            self.displayStrings = sshKeyDistDisplayStringsCVL()
 
     def onMassiveLoginHostNameChanged(self, event):
         event.Skip()
@@ -904,9 +943,16 @@ class LauncherMainFrame(wx.Frame):
         self.massiveHoursField.SetCursor(cursor)
         self.massiveUsernameTextField.SetCursor(cursor)
 
+        self.cvlLoginDialogPanel.SetCursor(cursor)
+        self.cvlSimpleLoginFieldsPanel.SetCursor(cursor)
+        self.cvlAdvancedLoginFieldsPanel.SetCursor(cursor)
+        self.cvlConnectionProfileLabel.SetCursor(cursor)
         self.cvlConnectionProfileComboBox.SetCursor(cursor)
+        self.cvlUsernameLabel.SetCursor(cursor)
         self.cvlUsernameTextField.SetCursor(cursor)
+        self.cvlVncDisplayResolutionLabel.SetCursor(cursor)
         self.cvlVncDisplayResolutionComboBox.SetCursor(cursor)
+        self.cvlSshTunnelCipherLabel.SetCursor(cursor)
         self.cvlSshTunnelCipherComboBox.SetCursor(cursor)
 
         self.buttonsPanel.SetCursor(cursor)
@@ -927,9 +973,10 @@ class LauncherMainFrame(wx.Frame):
         for i in range(auth_mode.GetCount()):
             choices.append(auth_mode.GetString(i))
         dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,"""
-Would you like to use an SSH Key pair or your password to authenticate yourself?
-Most of the time, an SSH Key pair is preferable.
-If this account is shared by a number of people then passwords are preferable
+"Would you like to use an SSH Key pair or your password to authenticate yourself?
+
+If this computer is shared by a number of people then passwords are preferable.
+If this computer is not shared then an SSH Key pair will give you advanced features for managing your access"
 """,title="MASSIVE/CVL Launcher",ButtonLabels=choices)
         rv=dlg.ShowModal()
         if rv in range(auth_mode.GetCount()):
@@ -1022,7 +1069,7 @@ If this account is shared by a number of people then passwords are preferable
             except:
                 logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (no existing agent found)")
                 pass
-            launcherMainFrame.keyModel=KeyModel(temporaryKey=True)
+            launcherMainFrame.keyModel.setUseTemporaryKey(True)
             removeKeyOnExit = True
         else:
             logger.debug("launcherMainFrame.onLogin: using a permanent Key pair")
@@ -1037,33 +1084,6 @@ If this account is shared by a number of people then passwords are preferable
         self.loginProcess.append(lp)
         lp.doLogin()
         event.Skip()
-
-class cmdRegEx():
-    def __init__(self,cmd=None,regex=None,requireMatch=True,loop=False,async=False,host='login'):
-
-        self.cmd=cmd
-        if (not isinstance(regex,list)):
-            self.regex=[regex]
-        else:
-            self.regex=regex
-        self.loop=loop
-        self.async=async
-        self.requireMatch=requireMatch
-        if regex==None:
-            self.requireMatch=False
-        self.host=host
-        if (self.async):
-            self.host='local'
-
-    def getCmd(self,jobParam={}):
-        if ('exec' in self.host):
-            sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=no -l {username} {execHost} '
-        elif ('local' in self.host):
-            sshCmd = ''
-        else:
-            sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
-        string=sshCmd.format(**jobParam)+self.cmd.format(**jobParam)
-        return string
 
 class LauncherStatusBar(wx.StatusBar):
     def __init__(self, parent):

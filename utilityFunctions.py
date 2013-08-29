@@ -158,6 +158,9 @@ Do you want me to delete the job or leave it in the queue so you can reconnect l
         self.persistentMessage="Would you like to leave your current session running so that you can reconnect later?\nIt has {timestring} remaining."
         self.persistentMessageStop="Stop the desktop"
         self.persistentMessagePersist="Leave it running"
+        self.reconnectMessage="An Existing Desktop was found. It has {timestring} remaining. Would you like to reconnect or kill it and start a new desktop?"
+        self.reconnectMessageYes="Reconnect"
+        self.reconnectMessageNo="New desktop"
         for key,value in kwargs.iteritems():
             self.__dict__[key]=value
 
@@ -196,6 +199,7 @@ launching remote HPC jobs."""
         self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
         self.persistentMessage="Would you like to leave your current session running so that you can reconnect later?"
+        self.reconnectMessage="An Existing Desktop was found. Would you like to reconnect or kill it and start a new desktop?"
 
 class sshKeyDistDisplayStringsMASSIVE(sshKeyDistDisplayStrings):
     def __init__(self):
@@ -674,13 +678,14 @@ def die_from_main_frame(launcherMainFrame,error_message):
     logger.dump_log(launcherMainFrame,submit_log=True)
     os._exit(1)
 
-def run_command(command,ignore_errors=False,log_output=True,callback=None):
+def run_command(command,ignore_errors=False,log_output=True,callback=None,startupinfo=None,creationflags=0):
     stdout=""
     stderr=""
     if command != None:
         logger.debug('run_command: %s' % command)
         logger.debug('   called from %s:%d' % inspect.stack()[1][1:3])
-        ssh_process=subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
+
+        ssh_process=subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True,startupinfo=startupinfo,creationflags=creationflags)
 
         #(stdout,stderr) = ssh_process.communicate(command)
         (stdout,stderr) = ssh_process.communicate()
