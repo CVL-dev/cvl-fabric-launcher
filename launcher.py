@@ -116,6 +116,7 @@ import launcher_progress_dialog
 from menus.IdentityMenu import IdentityMenu
 import tempfile
 from cvlsshutils.KeyModel import KeyModel
+import siteConfig
 
 from MacMessageDialog import LauncherMessageDialog
 from logger.Logger import logger
@@ -225,7 +226,6 @@ class LauncherMainFrame(wx.Frame):
         self.loginProcess=[]
         self.logWindow = None
         self.progressDialog = None
-        self.displayStrings=sshKeyDistDisplayStrings()
 
 
 
@@ -363,7 +363,7 @@ class LauncherMainFrame(wx.Frame):
         DEFAULT_SITES_JSON='defaultSites.json'
         self.defaultSites={}
         with open(DEFAULT_SITES_JSON,'r') as f:
-            self.defaultSites=GenericJSONDecoder().decode(f.read())
+            self.defaultSites=siteConfig.GenericJSONDecoder().decode(f.read())
         
         self.noneVisible={}
         self.noneVisible['usernamePanel']=False

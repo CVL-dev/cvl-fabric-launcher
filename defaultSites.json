@@ -1,10 +1,10 @@
 {
     "CVL Desktop": {
         "__class__": "siteConfig",
-        "__module__": "utilityFunctions",
+        "__module__": "siteConfig",
         "agent": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} \"echo agent_hello; bash \"",
             "host": "local",
@@ -16,7 +16,7 @@
         },
         "dbusSessionBusAddress": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'MACHINE_ID=\\$(cat /var/lib/dbus/machine-id); cat ~/.dbus/session-bus/\\$MACHINE_ID-\\$(echo {vncDisplay} | tr -d \\\":\\\" | tr -d \\\".0\\\")'\"",
             "host": "login",
@@ -29,7 +29,7 @@
         "directConnect": true,
         "displayStrings": {
             "__class__": "sshKeyDistDisplayStrings",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "newPassphrase": "new passphrase for new key",
             "newPassphraseEmptyForbidden": "new passphrase. empty passphrase forbidden",
             "newPassphraseMismatch": "passphrases don't match. enter new passphrases",
@@ -45,13 +45,16 @@
             "qdelQueuedJob": "It looks like you've been waiting for a job to start.\nDo you want me to delete the job or leave it in the queue so you can reconnect later?\n",
             "qdelQueuedJobNOOP": "Leave it in the queue (I'll reconnect later)",
             "qdelQueuedJobQdel": "Delete the job",
+            "reconnectMessage": "An Existing Desktop was found. It has {timestring} remaining. Would you like to reconnect or kill it and start a new desktop?",
+            "reconnectMessageNo": "New desktop",
+            "reconnectMessageYes": "Reconnect",
             "temporaryKey": "\nWould you like to use the launchers old behaviour (entering a password every time you start a new desktop) or try the new behaviour (creating an ssh key pair and entering a passphrase the first time you use the launcher after reboot.)\n\nPasswords are recomended if this is a shared user account.\n\nSSH Keys are recommended if you are the only person who uses this account.\n\nThis option can be changed from the Identity menu.\n",
             "temporaryKeyNo": "Use my SSH Key",
             "temporaryKeyYes": "Use my password every time"
         },
         "displayWebDavInfoDialogOnRemoteDesktop": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'sleep 2;echo -e \\\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt'\"",
             "host": "login",
@@ -63,7 +66,7 @@
         },
         "execHost": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed 's/\\ \\ */\\ /g' | cut -f 4 -d ' ' | cut -f 1 -d '/' | xargs -iname hostn name | grep address | sed 's/\\ \\ */\\ /g' | cut -f 3 -d ' ' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"",
             "host": "login",
@@ -75,7 +78,7 @@
         },
         "getProjects": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"groups | sed 's@ @\\n@g'\"",
             "host": "login",
@@ -87,7 +90,7 @@
         },
         "listAll": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; qstat -u {username} | tail -n +6\"",
             "host": "login",
@@ -100,7 +103,7 @@
         "loginHost": "login.cvl.massive.org.au",
         "messageRegeexs": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -126,7 +129,7 @@
         ],
         "openWebDavShareInRemoteFileBrowser": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" | python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"",
             "host": "login",
@@ -138,7 +141,7 @@
         },
         "otp": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\"",
             "host": "exec",
@@ -150,7 +153,7 @@
         },
         "runSanityCheck": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -162,7 +165,7 @@
         },
         "running": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; module load maui ; qstat | grep {username}\"",
             "host": "login",
@@ -174,7 +177,7 @@
         },
         "setDisplayResolution": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -186,7 +189,7 @@
         },
         "showStart": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -198,7 +201,7 @@
         },
         "startServer": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; module load maui ; echo 'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\"",
             "host": "login",
@@ -210,7 +213,7 @@
         },
         "stop": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
             "host": "login",
@@ -222,7 +225,7 @@
         },
         "stopForRestart": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -234,7 +237,7 @@
         },
         "tunnel": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\"",
             "host": "local",
@@ -256,7 +259,7 @@
         },
         "vncDisplay": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"cat /var/spool/torque/spool/{jobidNumber}.*\"",
             "host": "exec",
@@ -268,7 +271,7 @@
         },
         "webDavIntermediatePort": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/local/bin/get_ephemeral_port.py\"",
             "host": "exec",
@@ -280,7 +283,7 @@
         },
         "webDavRemotePort": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/local/bin/get_ephemeral_port.py\"",
             "host": "exec",
@@ -292,7 +295,7 @@
         },
         "webDavTunnel": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\"",
             "host": "local",
@@ -304,7 +307,7 @@
         },
         "webDavUnmount": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav'\"",
             "host": "login",
@@ -317,10 +320,10 @@
     },
     "Desktop on m1.massive.org.au": {
         "__class__": "siteConfig",
-        "__module__": "utilityFunctions",
+        "__module__": "siteConfig",
         "agent": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\\"echo agent_hello; bash \\\"\"",
             "host": "local",
@@ -332,7 +335,7 @@
         },
         "dbusSessionBusAddress": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"echo DBUS_SESSION_BUS_ADDRESS=dummy_dbus_session_bus_address\"",
             "host": "login",
@@ -344,7 +347,7 @@
         },
         "directConnect": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -356,7 +359,7 @@
         },
         "displayStrings": {
             "__class__": "sshKeyDistDisplayStrings",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "newPassphrase": "new passphrase for new key",
             "newPassphraseEmptyForbidden": "new passphrase. empty passphrase forbidden",
             "newPassphraseMismatch": "passphrases don't match. enter new passphrases",
@@ -372,13 +375,16 @@
             "qdelQueuedJob": "It looks like you've been waiting for a job to start.\nDo you want me to delete the job or leave it in the queue so you can reconnect later?\n",
             "qdelQueuedJobNOOP": "Leave it in the queue (I'll reconnect later)",
             "qdelQueuedJobQdel": "Delete the job",
+            "reconnectMessage": "An Existing Desktop was found. It has {timestring} remaining. Would you like to reconnect or kill it and start a new desktop?",
+            "reconnectMessageNo": "New desktop",
+            "reconnectMessageYes": "Reconnect",
             "temporaryKey": "\nWould you like to use the launchers old behaviour (entering a password every time you start a new desktop) or try the new behaviour (creating an ssh key pair and entering a passphrase the first time you use the launcher after reboot.)\n\nPasswords are recomended if this is a shared user account.\n\nSSH Keys are recommended if you are the only person who uses this account.\n\nThis option can be changed from the Identity menu.\n",
             "temporaryKeyNo": "Use my SSH Key",
             "temporaryKeyYes": "Use my password every time"
         },
         "displayWebDavInfoDialogOnRemoteDesktop": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;'\"",
             "host": "login",
@@ -390,7 +396,7 @@
         },
         "execHost": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "qpeek {jobidNumber}",
             "host": "login",
@@ -402,7 +408,7 @@
         },
         "getProjects": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"glsproject -A -q | grep ',{username},\\|\\s{username},\\|,{username}\\s' \"",
             "host": "login",
@@ -414,7 +420,7 @@
         },
         "listAll": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "qstat -u {username}",
             "host": "login",
@@ -427,7 +433,7 @@
         "loginHost": "m1.massive.org.au",
         "messageRegeexs": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -453,7 +459,7 @@
         ],
         "openWebDavShareInRemoteFileBrowser": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
             "host": "login",
@@ -465,7 +471,7 @@
         },
         "otp": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}'\"",
             "host": "login",
@@ -477,7 +483,7 @@
         },
         "runSanityCheck": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "'/usr/local/desktop/sanity_check.sh {launcher_version_number}'",
             "host": "login",
@@ -489,7 +495,7 @@
         },
         "running": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "qstat -u {username}",
             "host": "login",
@@ -501,7 +507,7 @@
         },
         "setDisplayResolution": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "'/usr/local/desktop/set_display_resolution.sh {resolution}'",
             "host": "login",
@@ -513,7 +519,7 @@
         },
         "showStart": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "showstart {jobid}",
             "host": "login",
@@ -525,7 +531,7 @@
         },
         "startServer": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False'",
             "host": "login",
@@ -537,7 +543,7 @@
         },
         "stop": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "'qdel -a {jobid}'",
             "host": "login",
@@ -549,7 +555,7 @@
         },
         "stopForRestart": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "qdel {jobid} ; sleep 5'",
             "host": "login",
@@ -561,7 +567,7 @@
         },
         "tunnel": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} \"echo tunnel_hello; bash\"",
             "host": "local",
@@ -583,7 +589,7 @@
         },
         "vncDisplay": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncserver -list'\"",
             "host": "login",
@@ -595,7 +601,7 @@
         },
         "webDavIntermediatePort": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/local/desktop/get_ephemeral_port.py\"",
             "host": "login",
@@ -607,7 +613,7 @@
         },
         "webDavRemotePort": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} /usr/local/desktop/get_ephemeral_port.py\"",
             "host": "login",
@@ -619,7 +625,7 @@
         },
         "webDavTunnel": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} \"ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} 'echo tunnel_hello; bash'\"",
             "host": "local",
@@ -631,7 +637,7 @@
         },
         "webDavUnmount": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
             "host": "login",
@@ -644,10 +650,10 @@
     },
     "Desktop on m2.massive.org.au": {
         "__class__": "siteConfig",
-        "__module__": "utilityFunctions",
+        "__module__": "siteConfig",
         "agent": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\\"echo agent_hello; bash \\\"\"",
             "host": "local",
@@ -659,7 +665,7 @@
         },
         "dbusSessionBusAddress": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"echo DBUS_SESSION_BUS_ADDRESS=dummy_dbus_session_bus_address\"",
             "host": "login",
@@ -671,7 +677,7 @@
         },
         "directConnect": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -683,7 +689,7 @@
         },
         "displayStrings": {
             "__class__": "sshKeyDistDisplayStrings",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "newPassphrase": "new passphrase for new key",
             "newPassphraseEmptyForbidden": "new passphrase. empty passphrase forbidden",
             "newPassphraseMismatch": "passphrases don't match. enter new passphrases",
@@ -699,13 +705,16 @@
             "qdelQueuedJob": "It looks like you've been waiting for a job to start.\nDo you want me to delete the job or leave it in the queue so you can reconnect later?\n",
             "qdelQueuedJobNOOP": "Leave it in the queue (I'll reconnect later)",
             "qdelQueuedJobQdel": "Delete the job",
+            "reconnectMessage": "An Existing Desktop was found. It has {timestring} remaining. Would you like to reconnect or kill it and start a new desktop?",
+            "reconnectMessageNo": "New desktop",
+            "reconnectMessageYes": "Reconnect",
             "temporaryKey": "\nWould you like to use the launchers old behaviour (entering a password every time you start a new desktop) or try the new behaviour (creating an ssh key pair and entering a passphrase the first time you use the launcher after reboot.)\n\nPasswords are recomended if this is a shared user account.\n\nSSH Keys are recommended if you are the only person who uses this account.\n\nThis option can be changed from the Identity menu.\n",
             "temporaryKeyNo": "Use my SSH Key",
             "temporaryKeyYes": "Use my password every time"
         },
         "displayWebDavInfoDialogOnRemoteDesktop": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;'\"",
             "host": "login",
@@ -717,7 +726,7 @@
         },
         "execHost": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "qpeek {jobidNumber}",
             "host": "login",
@@ -729,7 +738,7 @@
         },
         "getProjects": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"glsproject -A -q | grep ',{username},\\|\\s{username},\\|,{username}\\s' \"",
             "host": "login",
@@ -741,7 +750,7 @@
         },
         "listAll": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "qstat -u {username}",
             "host": "login",
@@ -754,7 +763,7 @@
         "loginHost": "m2.massive.org.au",
         "messageRegeexs": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -780,7 +789,7 @@
         ],
         "openWebDavShareInRemoteFileBrowser": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
             "host": "login",
@@ -792,7 +801,7 @@
         },
         "otp": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}'\"",
             "host": "login",
@@ -804,7 +813,7 @@
         },
         "runSanityCheck": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "'/usr/local/desktop/sanity_check.sh {launcher_version_number}'",
             "host": "login",
@@ -816,7 +825,7 @@
         },
         "running": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "qstat -u {username}",
             "host": "login",
@@ -828,7 +837,7 @@
         },
         "setDisplayResolution": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "'/usr/local/desktop/set_display_resolution.sh {resolution}'",
             "host": "login",
@@ -840,7 +849,7 @@
         },
         "showStart": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "showstart {jobid}",
             "host": "login",
@@ -852,7 +861,7 @@
         },
         "startServer": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False'",
             "host": "login",
@@ -864,7 +873,7 @@
         },
         "stop": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "'qdel -a {jobid}'",
             "host": "login",
@@ -876,7 +885,7 @@
         },
         "stopForRestart": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "qdel {jobid} ; sleep 5'",
             "host": "login",
@@ -888,7 +897,7 @@
         },
         "tunnel": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} \"echo tunnel_hello; bash\"",
             "host": "local",
@@ -910,7 +919,7 @@
         },
         "vncDisplay": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncserver -list'\"",
             "host": "login",
@@ -922,7 +931,7 @@
         },
         "webDavIntermediatePort": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/local/desktop/get_ephemeral_port.py\"",
             "host": "login",
@@ -934,7 +943,7 @@
         },
         "webDavRemotePort": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} /usr/local/desktop/get_ephemeral_port.py\"",
             "host": "login",
@@ -946,7 +955,7 @@
         },
         "webDavTunnel": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} \"ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} 'echo tunnel_hello; bash'\"",
             "host": "local",
@@ -958,7 +967,7 @@
         },
         "webDavUnmount": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
             "host": "login",
@@ -971,10 +980,10 @@
     },
     "Huygens on the CVL": {
         "__class__": "siteConfig",
-        "__module__": "utilityFunctions",
+        "__module__": "siteConfig",
         "agent": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} \"echo agent_hello; bash \"",
             "host": "local",
@@ -986,7 +995,7 @@
         },
         "dbusSessionBusAddress": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'MACHINE_ID=\\$(cat /var/lib/dbus/machine-id); cat ~/.dbus/session-bus/\\$MACHINE_ID-\\$(echo {vncDisplay} | tr -d \\\":\\\" | tr -d \\\".0\\\")'\"",
             "host": "login",
@@ -999,7 +1008,7 @@
         "directConnect": true,
         "displayStrings": {
             "__class__": "sshKeyDistDisplayStrings",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "newPassphrase": "new passphrase for new key",
             "newPassphraseEmptyForbidden": "new passphrase. empty passphrase forbidden",
             "newPassphraseMismatch": "passphrases don't match. enter new passphrases",
@@ -1015,13 +1024,16 @@
             "qdelQueuedJob": "It looks like you've been waiting for a job to start.\nDo you want me to delete the job or leave it in the queue so you can reconnect later?\n",
             "qdelQueuedJobNOOP": "Leave it in the queue (I'll reconnect later)",
             "qdelQueuedJobQdel": "Delete the job",
+            "reconnectMessage": "An Existing Desktop was found. It has {timestring} remaining. Would you like to reconnect or kill it and start a new desktop?",
+            "reconnectMessageNo": "New desktop",
+            "reconnectMessageYes": "Reconnect",
             "temporaryKey": "\nWould you like to use the launchers old behaviour (entering a password every time you start a new desktop) or try the new behaviour (creating an ssh key pair and entering a passphrase the first time you use the launcher after reboot.)\n\nPasswords are recomended if this is a shared user account.\n\nSSH Keys are recommended if you are the only person who uses this account.\n\nThis option can be changed from the Identity menu.\n",
             "temporaryKeyNo": "Use my SSH Key",
             "temporaryKeyYes": "Use my password every time"
         },
         "displayWebDavInfoDialogOnRemoteDesktop": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'sleep 2;echo -e \\\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt'\"",
             "host": "login",
@@ -1033,7 +1045,7 @@
         },
         "execHost": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed 's/\\ \\ */\\ /g' | cut -f 4 -d ' ' | cut -f 1 -d '/' | xargs -iname hostn name | grep address | sed 's/\\ \\ */\\ /g' | cut -f 3 -d ' ' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"",
             "host": "login",
@@ -1045,7 +1057,7 @@
         },
         "getProjects": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"groups | sed 's@ @\\n@g'\"",
             "host": "login",
@@ -1057,7 +1069,7 @@
         },
         "listAll": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; qstat -u {username} | tail -n +6\"",
             "host": "login",
@@ -1070,7 +1082,7 @@
         "loginHost": "login.cvl.massive.org.au",
         "messageRegeexs": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -1096,7 +1108,7 @@
         ],
         "openWebDavShareInRemoteFileBrowser": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" | python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"",
             "host": "login",
@@ -1108,7 +1120,7 @@
         },
         "otp": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\"",
             "host": "exec",
@@ -1120,7 +1132,7 @@
         },
         "runSanityCheck": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -1132,7 +1144,7 @@
         },
         "running": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; module load maui ; qstat | grep {username}\"",
             "host": "login",
@@ -1144,7 +1156,7 @@
         },
         "setDisplayResolution": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -1156,7 +1168,7 @@
         },
         "showStart": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -1168,7 +1180,7 @@
         },
         "startServer": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; module load maui ; echo 'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}' |  qsub -q huygens -l nodes=1:ppn=1 -N desktop_{username} -o .vnc/ -e .vnc/\"",
             "host": "login",
@@ -1180,7 +1192,7 @@
         },
         "stop": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
             "host": "login",
@@ -1192,7 +1204,7 @@
         },
         "stopForRestart": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": null,
             "host": "login",
@@ -1204,7 +1216,7 @@
         },
         "tunnel": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\"",
             "host": "local",
@@ -1226,7 +1238,7 @@
         },
         "vncDisplay": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"cat /var/spool/torque/spool/{jobidNumber}.*\"",
             "host": "exec",
@@ -1238,7 +1250,7 @@
         },
         "webDavIntermediatePort": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/local/bin/get_ephemeral_port.py\"",
             "host": "exec",
@@ -1250,7 +1262,7 @@
         },
         "webDavRemotePort": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/local/bin/get_ephemeral_port.py\"",
             "host": "exec",
@@ -1262,7 +1274,7 @@
         },
         "webDavTunnel": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": true,
             "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\"",
             "host": "local",
@@ -1274,7 +1286,7 @@
         },
         "webDavUnmount": {
             "__class__": "cmdRegEx",
-            "__module__": "utilityFunctions",
+            "__module__": "siteConfig",
             "async": false,
             "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav'\"",
             "host": "login",
