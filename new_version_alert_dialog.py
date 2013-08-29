@@ -41,6 +41,7 @@
 import sys
 import wx
 import launcher_version_number
+from utilityFunctions import LAUNCHER_URL
 
 class NewVersionAlertDialog(wx.Dialog):
 
