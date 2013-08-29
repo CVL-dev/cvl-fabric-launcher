@@ -119,22 +119,15 @@ from cvlsshutils.KeyModel import KeyModel
 
 from logger.Logger import logger
 
-global launcherMainFrame
+from utilityFunctions import LAUNCHER_URL
+
 launcherMainFrame = None
-global massiveLauncherConfig
 massiveLauncherConfig = None
-global cvlLauncherConfig
 cvlLauncherConfig = None
-global turboVncConfig
 turboVncConfig = None
-global massiveLauncherPreferencesFilePath
 massiveLauncherPreferencesFilePath = None
-global cvlLauncherPreferencesFilePath
 cvlLauncherPreferencesFilePath = None
-global turboVncPreferencesFilePath
 turboVncPreferencesFilePath = None
-global turboVncLatestVersion
-turboVncLatestVersion = None
 
 class LauncherMainFrame(wx.Frame):
     PERM_SSH_KEY=0
@@ -142,8 +135,18 @@ class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
 
-#        global launcherMainFrame
 #        launcherMainFrame = self
+
+        launcherMainFrame = sys.modules[__name__].launcherMainFrame
+
+        massiveLauncherConfig = sys.modules[__name__].massiveLauncherConfig
+        massiveLauncherPreferencesFilePath = sys.modules[__name__].massiveLauncherPreferencesFilePath
+
+        cvlLauncherConfig = sys.modules[__name__].cvlLauncherConfig
+        cvlLauncherPreferencesFilePath = sys.modules[__name__].cvlLauncherPreferencesFilePath
+
+        turboVncConfig = sys.modules[__name__].turboVncConfig
+        turboVncPreferencesFilePath = sys.modules[__name__].turboVncPreferencesFilePath
 
         self.logWindow = None
         self.progressDialog = None
@@ -1019,7 +1022,7 @@ class LauncherMainFrame(wx.Frame):
         # user presses the Login button, because the user might
         # use the Identity Menu to delete their key etc. before
         # pressing the Login button.
-        self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags)
+        self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,massiveLauncherConfig=massiveLauncherConfig,massiveLauncherPreferencesFilePath=massiveLauncherPreferencesFilePath)
 
     def onTabbedViewChanged(self, event):
         event.Skip()
@@ -1679,31 +1682,28 @@ class MyApp(wx.App):
         if not os.path.exists(appUserDataDir):
             os.makedirs(appUserDataDir)
 
-        global massiveLauncherConfig
-        massiveLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
-
-        global massiveLauncherPreferencesFilePath
-        massiveLauncherPreferencesFilePath = os.path.join(appUserDataDir,"MASSIVE Launcher Preferences.cfg")
+        sys.modules[__name__].massiveLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+        massiveLauncherConfig = sys.modules[__name__].massiveLauncherConfig
+        sys.modules[__name__].massiveLauncherPreferencesFilePath = os.path.join(appUserDataDir,"MASSIVE Launcher Preferences.cfg")
+        massiveLauncherPreferencesFilePath = sys.modules[__name__].massiveLauncherPreferencesFilePath
         if os.path.exists(massiveLauncherPreferencesFilePath):
             massiveLauncherConfig.read(massiveLauncherPreferencesFilePath)
         if not massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
             massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
 
-        global cvlLauncherConfig
-        cvlLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
-
-        global cvlLauncherPreferencesFilePath
-        cvlLauncherPreferencesFilePath = os.path.join(appUserDataDir,"CVL Launcher Preferences.cfg")
+        sys.modules[__name__].cvlLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+        cvlLauncherConfig = sys.modules[__name__].cvlLauncherConfig
+        sys.modules[__name__].cvlLauncherPreferencesFilePath = os.path.join(appUserDataDir,"CVL Launcher Preferences.cfg")
+        cvlLauncherPreferencesFilePath = sys.modules[__name__].cvlLauncherPreferencesFilePath
         if os.path.exists(cvlLauncherPreferencesFilePath):
             cvlLauncherConfig.read(cvlLauncherPreferencesFilePath)
         if not cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             cvlLauncherConfig.add_section("CVL Launcher Preferences")
 
-        global turboVncConfig
-        turboVncConfig = ConfigParser.RawConfigParser(allow_no_value=True)
-
-        global turboVncPreferencesFilePath
-        turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
+        sys.modules[__name__].turboVncConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+        turboVncConfig = sys.modules[__name__].turboVncConfig
+        sys.modules[__name__].turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
+        turboVncPreferencesFilePath = sys.modules[__name__].turboVncPreferencesFilePath
         if os.path.exists(turboVncPreferencesFilePath):
             turboVncConfig.read(turboVncPreferencesFilePath)
         if not turboVncConfig.has_section("TurboVNC Preferences"):
@@ -1711,16 +1711,9 @@ class MyApp(wx.App):
 
         if sys.platform.startswith("win"):
             os.environ['CYGWIN'] = "nodosfilewarning"
-        global launcherMainFrame
-        launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
+        sys.modules[__name__].launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
+        launcherMainFrame = sys.modules[__name__].launcherMainFrame
         launcherMainFrame.Show(True)
-
-
-#        if massiveLauncherConfig is not None:
-#            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", launcherMainFrame.keyModel.getsshKeyPath())
-#            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-#                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-
 
         return True
 
