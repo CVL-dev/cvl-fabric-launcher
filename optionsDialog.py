@@ -880,9 +880,7 @@ class LauncherOptionsDialog(wx.Dialog):
 #                        "If you are running the Launcher on a shared computer (e.g. if you are using a \"Guest\") account, then you should use \"public mode\". " + \
 #                        "When running in \"public mode\", you will need to enter your password every time you run the Launcher.\n\n"
         explanation = """
-Warning: Authentication mode only affects CVL usage for now.  For now, MASSIVE users should continue to use a password for authentication.
-
-When we communicate with the desktop we use a cryptographic token called an RSA Key Pair. You can either generate a permanent key pair, and store it on your computer, or use your password to generate a temporary keypair each time you use the launcher.
+When we communicate with the desktop, we use a cryptographic token called an RSA Key Pair. You can either generate a permanent key pair, and store it on your computer, or use your password to generate a temporary keypair each time you use the launcher.
 
 If you use a permanent SSH key pair, you will be asked to unlock your keys the first time you use the Launcher after a reboot. Thereafter you won't be asked for a password. This method is advisable if you are the only person who uses this account to log into your computer.
 
@@ -1191,7 +1189,6 @@ If you use a password to authenticate, a new keypair will be generated each time
         filters = 'TurboVNC log files (*.log)|*.log'
         saveFileDialog = wx.FileDialog ( None, message = 'TurboVNC log file...', wildcard = filters, style = wx.SAVE)
         if saveFileDialog.ShowModal() == wx.ID_OK:
-            global turboVncLogFilePath
             turboVncLogFilePath = saveFileDialog.GetPath()
             self.vncViewerLogFilenameTextField.WriteText(turboVncLogFilePath)
 
