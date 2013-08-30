@@ -18,11 +18,11 @@ from logger.Logger import logger
 
 class IdentityMenu(wx.Menu):
 
-    def initialize(self, launcherMainFrame, massiveLauncherConfig, massiveLauncherPreferencesFilePath):
+    def initialize(self, launcherMainFrame):
 
         self.launcherMainFrame = launcherMainFrame
-        self.massiveLauncherConfig = massiveLauncherConfig
-        self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
+        #self.massiveLauncherConfig = massiveLauncherConfig
+        #self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
 
         createNewKeyMenuItemId = wx.NewId()
         self.Append(createNewKeyMenuItemId, "Create &new key")
@@ -107,25 +107,26 @@ class IdentityMenu(wx.Menu):
 
     def privateKeyExists(self,warnIfNotFoundInLocalSettings=False):
 
-        exists=self.launcherMainFrame.keyModel.privateKeyExists()
-        self.privateKeyFilePath = os.path.join(os.path.expanduser('~'), '.ssh', "MassiveLauncherKey")
-        if self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path"):
-            self.privateKeyFilePath = self.massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
-        else:
-            defaultKeyPath = os.path.join(os.path.expanduser('~'), '.ssh', "MassiveLauncherKey")
-            if warnIfNotFoundInLocalSettings:
-                dlg = wx.MessageDialog(None,
-                            "Warning: Launcher key path was not found in your local settings.\n\n"
-                            "I'll assume it to be: " + defaultKeyPath,
-                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-            self.massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", defaultKeyPath)
-            with open(self.massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+        km=cvlsshutils.KeyModel()
+        #exists=self.launcherMainFrame.keyModel.privateKeyExists()
+        #self.privateKeyFilePath = os.path.join(os.path.expanduser('~'), '.ssh', "MassiveLauncherKey")
+        #if self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path"):
+        #    self.privateKeyFilePath = self.massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
+        #else:
+        #    defaultKeyPath = os.path.join(os.path.expanduser('~'), '.ssh', "MassiveLauncherKey")
+        #    if warnIfNotFoundInLocalSettings:
+        #        dlg = wx.MessageDialog(None,
+        #                    "Warning: Launcher key path was not found in your local settings.\n\n"
+        #                    "I'll assume it to be: " + defaultKeyPath,
+        #                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+        #        dlg.ShowModal()
+        #    self.massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", defaultKeyPath)
+        #    with open(self.massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+        #        self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
 
         #self.sshPathsObject = sshpaths
 
-        return self.launcherMainFrame.keyModel.privateKeyExists()
+        return km.privateKeyExists()
 
     def offerToCreateKey(self):
 

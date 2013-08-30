@@ -467,8 +467,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 64-bit Windows installation, 64-bit TurboVNC, HKEY_LOCAL_MACHINE
@@ -480,8 +478,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 32-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
@@ -493,8 +489,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 32-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
@@ -506,8 +500,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 64-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
@@ -519,8 +511,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 64-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
@@ -532,8 +522,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
             logger.debug('CheckVNCVerThread: vnc = %s, turboVncVersionNumber = %s' % (str(vnc), str(turboVncVersionNumber),))
 
