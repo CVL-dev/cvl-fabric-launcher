@@ -85,6 +85,10 @@ class Logger():
         # not allowed.
         # logging.shutdown()
 
+        if launcherMainFrame==None:
+            logger.debug("Logger.dump_log: Bailing out early, because launcherMainFrame is None.")
+            return
+
         def yes_no():
             dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'MASSIVE/CVL Launcher', wx.YES_NO | wx.ICON_QUESTION)
             try:

@@ -14,12 +14,8 @@ import zipfile
 
 from logger.Logger import logger
 
-#LAUNCHER_URL = "https://www.massive.org.au/index.php?option=com_content&view=article&id=121"
-global LAUNCHER_URL
 LAUNCHER_URL = "https://www.massive.org.au/userguide/cluster-instructions/massive-launcher"
 
-# TURBOVNC_BASE_URL = "http://www.virtualgl.org/DeveloperInfo/PreReleases"
-global TURBOVNC_BASE_URL
 TURBOVNC_BASE_URL = "http://sourceforge.net/projects/virtualgl/files/TurboVNC/"
 
 class sshKeyDistDisplayStrings(object):

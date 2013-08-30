@@ -11,7 +11,7 @@ import urllib2
 import datetime
 import os
 from MacMessageDialog import LauncherMessageDialog
-
+from utilityFunctions import LAUNCHER_URL,TURBOVNC_BASE_URL
 from logger.Logger import logger
 
 def showModal(dialog):

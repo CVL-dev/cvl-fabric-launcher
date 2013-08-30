@@ -15,6 +15,8 @@ from cvlsshutils.KeyModel import KeyModel
 
 from logger.Logger import logger
 
+# For now, the private key file path in the CreateNewKeyDialog is read-only.
+userCanModifyPrivateKeyFilePath = False
 
 class IdentityMenu(wx.Menu):
 
@@ -107,23 +109,12 @@ class IdentityMenu(wx.Menu):
 
     def privateKeyExists(self,warnIfNotFoundInLocalSettings=False):
 
-        exists=self.launcherMainFrame.keyModel.privateKeyExists()
-        self.privateKeyFilePath = os.path.join(os.path.expanduser('~'), '.ssh', "MassiveLauncherKey")
-        if self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path"):
-            self.privateKeyFilePath = self.massiveLauncherConfig.get("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")
-        else:
-            defaultKeyPath = os.path.join(os.path.expanduser('~'), '.ssh', "MassiveLauncherKey")
-            if warnIfNotFoundInLocalSettings:
-                dlg = wx.MessageDialog(None,
-                            "Warning: Launcher key path was not found in your local settings.\n\n"
-                            "I'll assume it to be: " + defaultKeyPath,
-                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-            self.massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", defaultKeyPath)
-            with open(self.massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-
-        #self.sshPathsObject = sshpaths
+        if warnIfNotFoundInLocalSettings and (not self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")):
+            dlg = wx.MessageDialog(None,
+                        "Warning: Launcher key path was not found in your local settings.\n\n"
+                        "I'll assume it to be: " + self.launcherMainFrame.keyModel.getPrivateKeyFilePath(),
+                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
 
         return self.launcherMainFrame.keyModel.privateKeyExists()
 
@@ -205,7 +196,7 @@ class IdentityMenu(wx.Menu):
 
 
     def onInspectKey(self,event):
-        if not self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
+        if not self.privateKeyExists(warnIfNotFoundInLocalSettings=userCanModifyPrivateKeyFilePath):
             if self.offerToCreateKey()==wx.ID_YES:
                 self.createKey()
             else:
@@ -218,7 +209,7 @@ class IdentityMenu(wx.Menu):
 
     def onChangePassphrase(self,event):
 
-        if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
+        if self.privateKeyExists(warnIfNotFoundInLocalSettings=userCanModifyPrivateKeyFilePath):
             changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Change Key Passphrase', self.launcherMainFrame.keyModel)
             if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
                 dlg = wx.MessageDialog(self.launcherMainFrame,
@@ -232,7 +223,7 @@ class IdentityMenu(wx.Menu):
 
     def onResetKey(self,event):
 
-        if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
+        if self.privateKeyExists(warnIfNotFoundInLocalSettings=userCanModifyPrivateKeyFilePath):
             resetKeyDialog = ResetKeyDialog(self.launcherMainFrame, wx.ID_ANY, 'Reset Key', self.launcherMainFrame.keyModel, self.launcherKeyIsInAgent())
             resetKeyDialog.ShowModal()
         else:
@@ -242,9 +233,11 @@ class IdentityMenu(wx.Menu):
 
     def onDeleteKey(self,event):
 
-        if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
+        if self.privateKeyExists(warnIfNotFoundInLocalSettings=userCanModifyPrivateKeyFilePath):
             dlg = wx.MessageDialog(self.launcherMainFrame,
-                "Are you sure you want to delete your key?",
+                "Are you sure you want to delete your key, located at:\n\n" +
+                self.launcherMainFrame.keyModel.getPrivateKeyFilePath() +
+                " ?",
                 "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
             if dlg.ShowModal()==wx.ID_YES:
                 success = self.deleteKey()
