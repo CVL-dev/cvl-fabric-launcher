@@ -211,11 +211,7 @@ class IdentityMenu(wx.Menu):
 
         if self.privateKeyExists(warnIfNotFoundInLocalSettings=userCanModifyPrivateKeyFilePath):
             changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Change Key Passphrase', self.launcherMainFrame.keyModel)
-            if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
-                dlg = wx.MessageDialog(self.launcherMainFrame,
-                    "Passphrase changed successfully!",
-                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
+            changeKeyPassphraseDialog.ShowModal()
         else:
             if self.offerToCreateKey()==wx.ID_YES:
                 self.createKey()
