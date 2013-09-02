@@ -1028,7 +1028,7 @@ class LauncherMainFrame(wx.Frame):
         # user presses the Login button, because the user might
         # use the Identity Menu to delete their key etc. before
         # pressing the Login button.
-        self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,massiveLauncherConfig=massiveLauncherConfig,massiveLauncherPreferencesFilePath=massiveLauncherPreferencesFilePath)
+        self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,temporaryKey=False)
 
     def onTabbedViewChanged(self, event):
         event.Skip()
@@ -1396,13 +1396,14 @@ If this computer is not shared then an SSH Key pair will give you advanced featu
             except:
                 logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (no existing agent found)")
                 pass
-            launcherMainFrame.keyModel.setUseTemporaryKey(True)
+            keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,temporaryKey=True)
             removeKeyOnExit = True
         else:
             logger.debug("launcherMainFrame.onLogin: using a permanent Key pair")
-            launcherMainFrame.keyModel.setUseTemporaryKey(False)
+            keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,temporaryKey=False)
+            
             removeKeyOnExit = False
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,launcherMainFrame.keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit,startupinfo=launcherMainFrame.startupinfo,creationflags=launcherMainFrame.creationflags)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit,startupinfo=launcherMainFrame.startupinfo,creationflags=launcherMainFrame.creationflags)
         self.loginProcess.doLogin()
 
 
