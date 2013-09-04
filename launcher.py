@@ -181,6 +181,8 @@ class LauncherMainFrame(wx.Frame):
 
         self.menu_bar  = wx.MenuBar()
 
+        self.Bind(wx.EVT_CLOSE, self.onExit, id=self.GetId())
+
         # Do this for all platforms, even Mac OS X.
         # Even though we don't have a File menu with
         # an Exit menu item on Mac OS X, the wx.ID_EXIT
