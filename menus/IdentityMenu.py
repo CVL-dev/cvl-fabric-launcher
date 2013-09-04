@@ -151,7 +151,7 @@ class IdentityMenu(wx.Menu):
 
     def deleteKey(self):
 
-        success = self.launcherMainFrame.keyModel.deleteKey()
+        success = self.launcherMainFrame.keyModel.deleteKey(ignoreFailureToConnectToAgent=True)
         #success = success and self.launcherMainFrame.keyModel.removeKeyFromAgent()
         if success:
             message = "Launcher key was successfully deleted!"
