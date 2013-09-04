@@ -1393,6 +1393,8 @@ If this computer is not shared then an SSH Key pair will give you advanced featu
         if launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
             try:
+                if 'SSH_AUTH_SOCK' in os.environ:
+                    os.environ['PREVIOUS_SSH_AUTH_SOCK'] = os.environ['SSH_AUTH_SOCK']
                 del os.environ['SSH_AUTH_SOCK']
                 logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (not using the existing agent)")
             except:
