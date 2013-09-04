@@ -41,7 +41,7 @@ class LauncherMessageDialog(wx.Dialog):
         self.dialogPanel.Layout()
 
         dialogPanelWidth = messageWidth + 125
-        dialogPanelHeight = max(self.messageLabel.GetPosition().y + self.messageLabel.GetSize().height + 70, 140)
+        dialogPanelHeight = max(self.messageLabel.GetSize().height + 70, 140)
 
         self.SetClientSize(wx.Size(dialogPanelWidth,dialogPanelHeight))
         self.dialogPanel.SetSize(wx.Size(dialogPanelWidth,dialogPanelHeight))
