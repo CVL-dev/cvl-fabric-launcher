@@ -10,7 +10,10 @@ import re
 import urllib2
 import datetime
 import os
-from MacMessageDialog import LauncherMessageDialog
+if sys.platform.startswith("darwin"):
+    from MacMessageDialog import LauncherMessageDialog
+if sys.platform.startswith("win"):
+    from WindowsMessageDialog import LauncherMessageDialog
 from utilityFunctions import LAUNCHER_URL,TURBOVNC_BASE_URL
 from logger.Logger import logger
 
@@ -154,7 +157,7 @@ class LoginProcess():
                 logger.error("canceling the loginprocess due to errors in the output of the command: %s %s"%(self.cmdRegex.cmd.format(**self.loginprocess.jobParams),messages))
                 self.loginprocess.cancel(concat)
             elif (messages.has_key('warn') or messages.has_key('info')):
-                if not sys.platform.startswith("darwin"):
+                if sys.platform.startswith("linux"):
                     dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                     panel=wx.Panel(dlg)
                     sizer=wx.BoxSizer()
@@ -1260,7 +1263,7 @@ class LoginProcess():
                 #logger.debug('loginProcessEvent: cancel: posting EVT_LOGINPROCESS_SHUTDOWN')
                 #wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
                 if (event.string!=""):
-                    if not sys.platform.startswith("darwin"):
+                    if sys.platform.startswith("linux"):
                         dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                         panel=wx.Panel(dlg)
                         sizer=wx.BoxSizer()
