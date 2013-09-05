@@ -1,4 +1,5 @@
 import wx
+import sys
 
 import IconPys.MASSIVElogoTransparent64x64
 
@@ -20,13 +21,26 @@ class LauncherOptionsDialog(wx.Dialog):
         self.iconBitmap = wx.StaticBitmap(self.dialogPanel, wx.ID_ANY, iconAsBitmap, pos=(25,15), size=(64,64))
 
         smallFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-        smallFont.SetPointSize(11)
+        if sys.platform.startswith("darwin"):
+            smallFont.SetPointSize(11)
 
+        self.messagePanel = wx.Panel(self.dialogPanel)
+        if sys.platform.startswith("darwin"):
+            self.messagePanel.SetSizer(wx.FlexGridSizer(cols=1,rows=2))
+            self.titleLabel = wx.StaticText(self.messagePanel, wx.ID_ANY, title)
+            titleFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+            titleFont.SetWeight(wx.BOLD)
+            titleFont.SetPointSize(13)
+            self.titleLabel.SetFont(titleFont)
+            self.messagePanel.GetSizer().Add(self.titleLabel,flag=wx.BOTTOM,border=10)
+        else:
+            self.messagePanel.SetSizer(wx.FlexGridSizer(cols=1,rows=1))
         messageWidth = 330
-        self.messageLabel = wx.StaticText(self.dialogPanel, wx.ID_ANY, message)
+        self.messageLabel = wx.StaticText(self.messagePanel, wx.ID_ANY, message)
         self.messageLabel.SetForegroundColour((0,0,0))
         self.messageLabel.SetFont(smallFont)
         self.messageLabel.Wrap(messageWidth)
+        self.messagePanel.GetSizer().Add(self.messageLabel)
 
         contactPanel = wx.Panel(self.dialogPanel)
         contactPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
@@ -56,11 +70,11 @@ class LauncherOptionsDialog(wx.Dialog):
 
         
         self.dialogPanel.GetSizer().Add(self.iconBitmap,flag=wx.ALL,border=15)
-        self.dialogPanel.GetSizer().Add(self.messageLabel,flag=wx.ALL,border=15)
+        self.dialogPanel.GetSizer().Add(self.messagePanel,flag=wx.ALL,border=15)
         self.dialogPanel.GetSizer().Add(contactPanel,flag=wx.ALL,border=15)
         self.dialogPanel.GetSizer().Add(buttonPanel,flag=wx.ALL,border=15)
 
-#        self.Bind(wx.EVT_CLOSE, self.onClose)
+        self.Bind(wx.EVT_CLOSE, self.onClose)
 
         self.dialogPanel.Fit()
 
