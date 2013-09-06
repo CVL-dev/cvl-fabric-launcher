@@ -16,6 +16,16 @@ class HelpController():
 
     def __init__(self):
 
+        # The only way I know how to detect the state of the busy cursor
+        # is to try to stop it, and see if this throws an exception.
+        try:
+            wx.EndBusyCursor()
+            self.stoppedBusyCursor = True
+        except:
+            self.stoppedBusyCursor = False
+
+        wx.BeginBusyCursor()
+
         self.wxHtmlHelpController = wx.html.HtmlHelpController(style=wx.html.HF_DEFAULT_STYLE, parentWindow=None)
 
         self.helpZipFile = None
@@ -70,6 +80,11 @@ class HelpController():
             except:
                 logger.debug(traceback.format_exc())
 
+        if not self.stoppedBusyCursor:
+            try:
+                wx.EndBusyCursor()
+            except:
+                pass
 
     def cleanUp(self):
         if self.helpZipFilePath is not None:
