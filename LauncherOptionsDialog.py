@@ -4,8 +4,8 @@ import sys
 import IconPys.MASSIVElogoTransparent64x64
 
 class LauncherOptionsDialog(wx.Dialog):
-    def __init__(self, parent, message, title, ButtonLabels=['OK'],**kw):
-        wx.Dialog.__init__(self, parent, style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP^wx.CLOSE_BOX, **kw)
+    def __init__(self, parent, message, title, ButtonLabels=['OK'],onHelp=None,**kw):
+        wx.Dialog.__init__(self, parent, style=wx.DEFAULT_DIALOG_STYLE, **kw)
        
         if parent!=None:
             self.CenterOnParent()
@@ -26,6 +26,7 @@ class LauncherOptionsDialog(wx.Dialog):
         self.dialogPanel.SetSizer(wx.FlexGridSizer(cols=2,rows=2))
         #self.dialogPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.ButtonLabels=ButtonLabels
+        self.onHelp=onHelp
 
         iconAsBitmap = IconPys.MASSIVElogoTransparent64x64.getMASSIVElogoTransparent64x64Bitmap()
         self.iconBitmap = wx.StaticBitmap(self.dialogPanel, wx.ID_ANY, iconAsBitmap, pos=(25,15), size=(64,64))
@@ -73,6 +74,10 @@ class LauncherOptionsDialog(wx.Dialog):
             b = wx.Button(buttonPanel, wx.ID_ANY, label)
             b.SetDefault()
             b.Bind(wx.EVT_BUTTON,self.onClose)
+            buttonPanel.GetSizer().Add(b,flag=wx.ALL,border=5)
+        if self.onHelp is not None:
+            b = wx.Button(buttonPanel, wx.ID_ANY, 'Help')
+            b.Bind(wx.EVT_BUTTON,self.onHelp)
             buttonPanel.GetSizer().Add(b,flag=wx.ALL,border=5)
         buttonPanel.Fit()
 
