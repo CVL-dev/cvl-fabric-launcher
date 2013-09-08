@@ -135,7 +135,7 @@ class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
 
-#        launcherMainFrame = self
+        sys.modules[__name__].launcherMainFrame = self
 
         launcherMainFrame = sys.modules[__name__].launcherMainFrame
 
