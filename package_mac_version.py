@@ -10,17 +10,19 @@ import subprocess
 # CVL's public wiki:
 # https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE-CVL+Launcher+Mac+OS+X+build+instructions
 
-# This script is for automated builds, which
-# currently do not support the nice-looking
-# DMG background image and icon layout.
-# When run in a script, some of the AppleScript
-# commands seem to fail, so they are disabled
-# by default.  When the DMG is built manually,
-# these AppleScript commands are used to set
-# the DMG's background image, and include a symbolic
-# link to the Applications folder, making it easy
-# to drag and drop the application icon into the 
-# Applications folder.
+# This script is for automated builds. In
+# order to try to support the nice-looking
+# DMG background, which involves an Apple Script
+# which can experience race conditions, some
+# "sleep" and "delay" commands are included.  
+# If the script doesn't sleep for long enough, 
+# then the layout of the icons within the 
+# DMG window can appear incorrectly.
+
+# The method for creating the DMG is loosely
+# based on the accepted answer to this
+# Stack Overflow question:
+# http://stackoverflow.com/questions/96882/how-do-i-create-a-nice-looking-dmg-for-mac-os-x-using-command-line-tools
 
 # James's code-signing certificate:
 APPLE_CODE_SIGNING_CERTIFICATE = "Developer ID Application: James Wettenhall"
@@ -33,10 +35,10 @@ APPLE_CODE_SIGNING_CERTIFICATE = "Developer ID Application: James Wettenhall"
 # So far, I haven't had any luck with using a 
 # generic (non-Apple) code-signing certificate.
 
-INCLUDE_APPLICATIONS_SYMBOLIC_LINK = False
+INCLUDE_APPLICATIONS_SYMBOLIC_LINK = True
 ATTEMPT_TO_SET_ICON_SIZE_IN_DMG = True
-ATTEMPT_TO_LAY_OUT_ICONS_ON_DMG = False
-ATTEMPT_TO_SET_BACKGROUND_IMAGE = False
+ATTEMPT_TO_LAY_OUT_ICONS_ON_DMG = True
+ATTEMPT_TO_SET_BACKGROUND_IMAGE = True
 
 if len(sys.argv) < 2:
     print "Usage: package_windows_version.py <version>"
@@ -79,6 +81,10 @@ cmd = "hdiutil attach -readwrite -noverify -noautoopen \"%s\" | egrep '^/dev/' |
 print cmd
 device = commands.getoutput(cmd)
 
+cmd = 'sleep 2'
+print cmd
+os.system(cmd)
+
 cmd = 'mkdir "/Volumes/%s/.background/"' % (title)
 print cmd
 os.system(cmd)
@@ -104,11 +110,14 @@ tell application "Finder"
 if ATTEMPT_TO_SET_ICON_SIZE_IN_DMG:
     applescript = applescript + """
            set icon size of theViewOptions to 96
+           delay 1
 """
 if ATTEMPT_TO_LAY_OUT_ICONS_ON_DMG:
     applescript = applescript + """
            set the bounds of container window to {400, 100, 885, 430}
+           delay 1
            set arrangement of theViewOptions to not arranged
+           delay 1
            set file_list to every file
            repeat with file_object in file_list
                if the name of file_object ends with ".app" then
@@ -117,22 +126,25 @@ if ATTEMPT_TO_LAY_OUT_ICONS_ON_DMG:
                    set the position of file_object to {375, 163}
                end if
            end repeat
+           delay 1
 """
 if ATTEMPT_TO_SET_BACKGROUND_IMAGE:
     applescript = applescript + """
-           set background picture of theViewOptions to file ".background:'%s'"
+           set background picture of theViewOptions to file ".background:%s"
 """ % (backgroundPictureFileName)
 applescript = applescript + """
+           delay 1
            close
            open
            update without registering applications
+           delay 5
      end tell
    end tell
 """
 print applescript
-tempAppleScriptFile=tempfile.NamedTemporaryFile(prefix=finalDmgName+"_",delete=False)
+tempAppleScriptFile=tempfile.NamedTemporaryFile(delete=False)
 tempAppleScriptFileName=tempAppleScriptFile.name
-tempAppleScriptFile.write(applescript.strip() + "\r\n")
+tempAppleScriptFile.write(applescript)
 tempAppleScriptFile.close()
 proc = subprocess.Popen(['/usr/bin/osascript',tempAppleScriptFileName], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
 stdout, stderr = proc.communicate()
