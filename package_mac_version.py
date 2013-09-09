@@ -40,8 +40,21 @@ ATTEMPT_TO_SET_ICON_SIZE_IN_DMG = True
 ATTEMPT_TO_LAY_OUT_ICONS_ON_DMG = True
 ATTEMPT_TO_SET_BACKGROUND_IMAGE = True
 
+# The python-32 below refers to the 32-bit-only Python binary
+# included within the combined 64-bit/32-bit Python 
+# distribution for Mac OS X from Python.Org.  The reason to
+# use the combined 64-bit/32-bit Python, rather than the
+# 32-bit/PPC Python is so you can use a modern version of 
+# gcc (v4.2) for building Python modules, instead of using
+# gcc v4.0 (used to build the 32-bit/PPC Python).
+#
+# For more information on why you might need to use "python-32", see:
+# http://stackoverflow.com/questions/9205317/how-do-i-install-wxpython-on-mac-os-x
+# http://stackoverflow.com/questions/4798759/cant-import-wxpython-on-mac-os-x
+
 if len(sys.argv) < 2:
-    print "Usage: package_windows_version.py <version>"
+    print "Usage: python package_mac_version.py <version>"
+    print "Or: python-32 package_mac_version.py <version>"
     sys.exit(1)
 
 version = sys.argv[1]
