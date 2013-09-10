@@ -1363,6 +1363,9 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         cipher     = cipher.lstrip().rstrip()
         username   = username.lstrip().rstrip()
 
+        logger.debug("Username: " + username)
+        logger.debug("Config: " + configName)
+
         userCanAbort=True
         maximumProgressBarValue = 10
 
