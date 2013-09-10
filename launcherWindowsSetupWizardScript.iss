@@ -52,7 +52,8 @@ DefaultGroupName={#LauncherAppName}
 UninstallDisplayIcon={app}\{#LauncherAppExeName}
 Compression=lzma2
 SolidCompression=yes
-OutputDir=C:\launcher_build\
+;OutputDir=C:\launcher_build\
+OutputDir=.
 
 [Files]
 Source: "dist\launcher\*.*"; DestDir: "{app}"; Flags: recursesubdirs
