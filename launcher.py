@@ -135,7 +135,7 @@ class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
 
-#        launcherMainFrame = self
+        sys.modules[__name__].launcherMainFrame = self
 
         launcherMainFrame = sys.modules[__name__].launcherMainFrame
 
@@ -1362,6 +1362,9 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         resolution = resolution.lstrip().rstrip()
         cipher     = cipher.lstrip().rstrip()
         username   = username.lstrip().rstrip()
+
+        logger.debug("Username: " + username)
+        logger.debug("Config: " + configName)
 
         userCanAbort=True
         maximumProgressBarValue = 10

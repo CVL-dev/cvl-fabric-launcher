@@ -84,7 +84,7 @@ class LauncherOptionsDialog(wx.Dialog):
             self.connectionPanelSizer.Add(self.connectionLeftPanel, flag=wx.EXPAND|wx.TOP, border=0)
         else:
             self.connectionPanelSizer.Add(self.connectionLeftPanel, flag=wx.EXPAND|wx.TOP, border=15)
-        self.connectionLeftPanelSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=5, hgap=5)
+        self.connectionLeftPanelSizer = wx.FlexGridSizer(rows=3, cols=1, vgap=5, hgap=5)
 
         self.connectionRightPanel = wx.Panel(self.connectionPanel, wx.ID_ANY)
         if sys.platform.startswith("darwin"):

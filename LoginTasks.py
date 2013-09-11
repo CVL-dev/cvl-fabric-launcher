@@ -1410,8 +1410,16 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_COMPLETE):
                 event.loginprocess.shutdownThread.join() #These events aren't processed until the thread is complete anyway.
                 if (event.loginprocess.canceled()):
-                    logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to dump the log")
-                    logger.dump_log(event.loginprocess.notify_window,submit_log=True)
+                    if event.loginprocess.skd.canceled():
+                        logger.debug("LoginProcess.complete: sshKeyDist was canceled.")
+                        logger.debug("Not asking user if they want to submit log, because they probably intentionally")
+                        logger.debug("clicked a Cancel button, and then had to click an OK button to acknowledge that")
+                        logger.debug("the Launcher can't continue without their passphrase, so I don't want the user")
+                        logger.debug("to have to respond to a 3rd dialog (the Submit Debug Log dialog) too.")
+                        logger.dump_log(event.loginprocess.notify_window,submit_log=False)
+                    else:
+                        logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to submit the log")
+                        logger.dump_log(event.loginprocess.notify_window,submit_log=True)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
                 try:
                     wx.EndBusyCursor()

@@ -73,6 +73,7 @@ resource_files.append(resource_file)
 
 setup(
     options=dict(py2app=dict(
+        arch='i386',
         plist=dict(
             CFBundleDevelopmentRegion="English",
             CFBundleDisplayName="MASSIVE Launcher",
@@ -81,7 +82,8 @@ setup(
             CFBundleIdentifier="au.edu.monash.MASSIVE",
             CFBundleName="MASSIVE Launcher",
             CFBundlePackageType="APPL",
-            CFBundleVersion="Version " + launcher_version_number.version_number
+            CFBundleVersion="Version " + launcher_version_number.version_number,
+            LSArchitecturePriority=["i386"]
             )
         )
     ),
