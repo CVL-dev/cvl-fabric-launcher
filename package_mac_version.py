@@ -24,16 +24,31 @@ import subprocess
 # Stack Overflow question:
 # http://stackoverflow.com/questions/96882/how-do-i-create-a-nice-looking-dmg-for-mac-os-x-using-command-line-tools
 
-# James's code-signing certificate:
-APPLE_CODE_SIGNING_CERTIFICATE = "Developer ID Application: James Wettenhall"
-# is hard-coded into the script for now. It is
-# assumed that the certificate has already been
-# installed in your Mac OS X Key Chain.  If you
-# want to obtain your own Apple code-signing 
+defaultCertificateName = "Developer ID Application: James Wettenhall"
+certificateName = defaultCertificateName
+
+# This script assumes that you only have one
+# Developer ID Application certificate in
+# your key chain.  You need to have a private
+# key attached to the certificate in your key
+# chain, so generally you will need to create
+# a certificate-signing request on the build
+# machine, upload it to the Apple Developer
+# Portal, and download a new certificate with
+# a private key attached.
+
+# If you # want to obtain your own Apple code-signing 
 # certificate, you will probably need to pay
 # $99 per year to join the Apple Developer Program.
 # So far, I haven't had any luck with using a 
 # generic (non-Apple) code-signing certificate.
+
+cmd = 'certtool y | grep "Developer ID Application"'
+print cmd
+certificateLine = commands.getoutput(cmd)
+print "certificateLine: " + certificateLine
+certificateName = certificateLine.split(": ",1)[1]
+print "certificateName: " + certificateName
 
 INCLUDE_APPLICATIONS_SYMBOLIC_LINK = True
 ATTEMPT_TO_SET_ICON_SIZE_IN_DMG = True
@@ -66,11 +81,19 @@ os.system('rm -fr dist/*')
 os.system('python create_mac_bundle.py py2app')
 
 # Digitally sign application:
+cmd = "CODESIGN_ALLOCATE=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/codesign_allocate"
+print cmd
 os.environ['CODESIGN_ALLOCATE'] = '/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/codesign_allocate'
 # The bundle identifier (au.edu.monash.MASSIVE) referenced below is set in create_mac_bundle.py:
-os.system('codesign --force -i "au.edu.monash.MASSIVE" --sign "%s" --verbose=4 dist/MASSIVE\ Launcher.app' % (APPLE_CODE_SIGNING_CERTIFICATE))
-os.system('codesign -vvvv dist/MASSIVE\ Launcher.app/')
-os.system('spctl --assess --raw --type execute --verbose=4 dist/MASSIVE\ Launcher.app/')
+cmd = 'codesign --force -i "au.edu.monash.MASSIVE" --sign "%s" --verbose=4 dist/MASSIVE\ Launcher.app' % (certificateName)
+print cmd
+os.system(cmd)
+cmd = 'codesign -vvvv dist/MASSIVE\ Launcher.app/'
+print cmd
+os.system(cmd)
+cmd = 'spctl --assess --raw --type execute --verbose=4 dist/MASSIVE\ Launcher.app/'
+print cmd
+os.system(cmd)
 
 # Build DMG (disk image) :
 
@@ -165,7 +188,7 @@ print stderr
 print stdout
 os.unlink(tempAppleScriptFileName)
 
-cmd = 'sleep 2'
+cmd = 'sleep 1'
 print cmd
 os.system(cmd)
 
@@ -177,15 +200,11 @@ cmd = 'sync'
 print cmd
 os.system(cmd)
 
-cmd = 'sync'
-print cmd
-os.system(cmd)
-
 cmd = 'hdiutil detach ' + device
 print cmd
 os.system(cmd)
 
-cmd = 'sleep 2'
+cmd = 'sleep 1'
 print cmd
 os.system(cmd)
 
