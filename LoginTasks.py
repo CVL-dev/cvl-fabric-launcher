@@ -157,17 +157,19 @@ class LoginProcess():
                 logger.error("canceling the loginprocess due to errors in the output of the command: %s %s"%(self.cmdRegex.cmd.format(**self.loginprocess.jobParams),messages))
                 self.loginprocess.cancel(concat)
             elif (messages.has_key('warn') or messages.has_key('info')):
-                if sys.platform.startswith("linux"):
-                    dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
-                    panel=wx.Panel(dlg)
-                    sizer=wx.BoxSizer()
-                    panel.SetSizer(sizer)
-                    text=wx.StaticText(panel,wx.ID_ANY,label=concat)
-                    sizer.Add(text,0,wx.ALL,15)
-                    dlg.addPanel(panel)
-                else:
-                    dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
-                wx.CallAfter(dlg.Show)
+                def showMessageWindow(concat):
+                    if sys.platform.startswith("linux"):
+                        dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                        panel=wx.Panel(dlg)
+                        sizer=wx.BoxSizer()
+                        panel.SetSizer(sizer)
+                        text=wx.StaticText(panel,wx.ID_ANY,label=concat)
+                        sizer.Add(text,0,wx.ALL,15)
+                        dlg.addPanel(panel)
+                    else:
+                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=concat)
+                    dlg.Show()
+                wx.CallAfter(showMessageWindow,concat)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
                 for regex in self.cmdRegex.regex:
                     if (regex != None):
