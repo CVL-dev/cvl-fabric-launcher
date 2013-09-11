@@ -167,7 +167,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=concat)
+                        dlg = LauncherMessageDialog(self.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=concat)
                     dlg.Show()
                 wx.CallAfter(showMessageWindow,concat)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
