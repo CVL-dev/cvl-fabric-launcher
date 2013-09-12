@@ -8,6 +8,7 @@ import time
 import subprocess
 import sys
 import requests
+from SubmitDebugReportDialog import SubmitDebugReportDialog
 
 class Logger():
 
@@ -18,6 +19,12 @@ class Logger():
         self.loggerOutput = None
         self.loggerFileHandler = None
         self.configureLogger()
+
+    def setMassiveLauncherConfig(self, massiveLauncherConfig):
+        self.massiveLauncherConfig = massiveLauncherConfig
+
+    def setMassiveLauncherPreferencesFilePath(self, massiveLauncherPreferencesFilePath):
+        self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
 
     def sendLogMessagesToDebugWindowTextControl(self, logTextCtrl):
         # Send all log messages to the debug window, which may or may not be visible.
@@ -78,7 +85,7 @@ class Logger():
         else:
             wx.CallAfter(self.loggerObject.warning, message)
 
-    def dump_log(self, launcherMainFrame, submit_log=False):
+    def dump_log(self, launcherMainFrame, submit_log=False, jobParams = None):
         # Commenting out logging.shutdown() for now,
         # because of concerns that logging could be used
         # after the call to logging.shutdown() which is
@@ -89,8 +96,8 @@ class Logger():
             logger.debug("Logger.dump_log: Bailing out early, because launcherMainFrame is None.")
             return
 
-        def yes_no():
-            dlg = wx.MessageDialog(launcherMainFrame, 'Submit error log to cvl.massive.org.au?', 'MASSIVE/CVL Launcher', wx.YES_NO | wx.ICON_QUESTION)
+        def showSubmitDebugLogDialog():
+            dlg = SubmitDebugReportDialog(None,wx.ID_ANY,'MASSIVE/CVL Launcher',self.loggerOutput.getvalue(),self.massiveLauncherConfig,self.massiveLauncherPreferencesFilePath)
             try:
                 try:
                     wx.EndBusyCursor()
@@ -100,27 +107,52 @@ class Logger():
                 result = dlg.ShowModal()
                 if stoppedBusyCursor:
                     wx.BeginBusyCursor()
-                launcherMainFrame.submit_log = result == wx.ID_YES
+                launcherMainFrame.submit_log = result == wx.ID_OK
+                if launcherMainFrame.submit_log:
+                    self.name = dlg.getName()
+                    self.email = dlg.getEmail()
+                    self.comments = dlg.getComments()
+                    self.pleaseContactMe = dlg.getPleaseContactMe()
             finally:
                 dlg.Destroy()
-                launcherMainFrame.yes_no_completed = True
+                launcherMainFrame.submitDebugLogDialogCompleted = True
 
-        launcherMainFrame.yes_no_completed = False
+        launcherMainFrame.submitDebugLogDialogCompleted = False
 
         if submit_log:
             if threading.current_thread().name=="MainThread":
-                yes_no()
+                showSubmitDebugLogDialog()
             else:
-                wx.CallAfter(yes_no)
-                while not launcherMainFrame.yes_no_completed:
+                wx.CallAfter(showSubmitDebugLogDialog)
+                while not launcherMainFrame.submitDebugLogDialogCompleted:
                     time.sleep(0.1)
 
         if submit_log and launcherMainFrame.submit_log:
             self.debug('about to send debug log')
 
             url       = 'https://cvl.massive.org.au/cgi-bin/log_drop.py'
-            #file_info = {'logfile': launcherMainFrame.loggerOutput.getvalue()}
-            file_info = {'logfile': self.loggerOutput.getvalue()}
+
+            debugLog = "\n"
+            if jobParams is not None:
+                debugLog = debugLog + "Username: " + jobParams['username'] + "\n"
+                debugLog = debugLog + "Config: " + jobParams['configName'] + "\n"
+            debugLog = debugLog + "Name: " + self.name + "\n"
+            debugLog = debugLog + "Email: " + self.email + "\n"
+            debugLog = debugLog + "Contact me? "
+            if self.pleaseContactMe:
+                debugLog = debugLog + "Yes" + "\n"
+            else:
+                debugLog = debugLog + "No"
+            debugLog = debugLog + "Comments:\n\n" + self.comments + "\n\n"
+            atLeastOneError = False
+            for line in self.loggerOutput.getvalue().splitlines(True):
+                if "ERROR" in line:
+                    atLeastOneError = True
+                    debugLog = debugLog + line
+            if atLeastOneError:
+                debugLog = debugLog + "\n"
+            debugLog =  debugLog + self.loggerOutput.getvalue()
+            file_info = {'logfile': debugLog}
 
             # If we are running in an installation then we have to use
             # our packaged cacert.pem file:

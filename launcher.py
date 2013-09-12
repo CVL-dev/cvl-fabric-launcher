@@ -1710,6 +1710,9 @@ class MyApp(wx.App):
         if not massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
             massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
 
+        logger.setMassiveLauncherConfig(massiveLauncherConfig)
+        logger.setMassiveLauncherPreferencesFilePath(massiveLauncherPreferencesFilePath)
+
         sys.modules[__name__].cvlLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
         cvlLauncherConfig = sys.modules[__name__].cvlLauncherConfig
         sys.modules[__name__].cvlLauncherPreferencesFilePath = os.path.join(appUserDataDir,"CVL Launcher Preferences.cfg")
