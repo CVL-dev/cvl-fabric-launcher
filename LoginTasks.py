@@ -1412,7 +1412,7 @@ class LoginProcess():
                         logger.debug("to have to respond to a 3rd dialog (the Submit Debug Log dialog) too.")
                         logger.dump_log(event.loginprocess.notify_window,submit_log=False)
                     else:
-                        if (event.loginprocess.userCancled.isSet() and event.loginprocess.queued_job.isSet() and not event.loginprocess.started_job.isSet()):
+                        if (event.loginprocess.userCanceled.isSet() and event.loginprocess.queued_job.isSet() and not event.loginprocess.started_job.isSet()):
                             logger.debug("LoginProcess.complete: User canceled login process between queueing the job and starting the job. System is probably busy. Not asking to submit a debug log .")
                             logger.dump_log(event.loginprocess.notify_window,submit_log=False)
                         else:
@@ -1745,7 +1745,10 @@ class LoginProcess():
 
     def userCancel(self,error=""):
         self.userCanceled.set()
-        self.progressState=self.progressDialog.getProgress()
+        try:
+            self.progressState=self.progressDialog.getProgress()
+        except:
+            self.progressState=0
         self.cancel(error)
 
     def canceled(self):
