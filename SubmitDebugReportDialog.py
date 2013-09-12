@@ -1,21 +1,19 @@
 #!/usr/bin/python
 
 import wx
-import wx.html
 import os
 import sys
-import subprocess
-import re
 import traceback
 
 if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
 
-from logger.Logger import logger
-
 class SubmitDebugReportDialog(wx.Dialog):
     def __init__(self, parent, id, title, debugLog, massiveLauncherConfig, massiveLauncherPreferencesFilePath):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
+
+        self.massiveLauncherConfig = massiveLauncherConfig
+        self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
 
         self.submitDebugReportDialogSizer = wx.FlexGridSizer(rows=1, cols=1)
         self.SetSizer(self.submitDebugReportDialogSizer)
@@ -54,9 +52,9 @@ class SubmitDebugReportDialog(wx.Dialog):
         self.innerContactDetailsPanelSizer.Add(self.nameLabel)
 
         name = ""
-        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "name"):
-                name = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "name")
+        if self.massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "name"):
+                name = self.massiveLauncherConfig.get("MASSIVE Launcher Preferences", "name")
         name = name.strip()
 
         self.nameField = wx.TextCtrl(self.innerContactDetailsPanel, wx.ID_ANY)
@@ -76,9 +74,9 @@ class SubmitDebugReportDialog(wx.Dialog):
         self.innerContactDetailsPanelSizer.Add(self.emailLabel)
 
         email = ""
-        if massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "email"):
-                email = massiveLauncherConfig.get("MASSIVE Launcher Preferences", "email")
+        if self.massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
+            if self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "email"):
+                email = self.massiveLauncherConfig.get("MASSIVE Launcher Preferences", "email")
         email = email.strip()
 
         self.emailField = wx.TextCtrl(self.innerContactDetailsPanel, wx.ID_ANY)
@@ -213,15 +211,27 @@ class SubmitDebugReportDialog(wx.Dialog):
     def onSubmit(self, event):
         print "Submitting debug report."
 
-        massiveLauncherConfig.set("MASSIVE Launcher Preferences", "name", self.nameField.GetValue().strip())
-        with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-            massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+        self.massiveLauncherConfig.set("MASSIVE Launcher Preferences", "name", self.nameField.GetValue().strip())
+        with open(self.massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+            self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
 
-        massiveLauncherConfig.set("MASSIVE Launcher Preferences", "email", self.emailField.GetValue().strip())
-        with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-            massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+        self.massiveLauncherConfig.set("MASSIVE Launcher Preferences", "email", self.emailField.GetValue().strip())
+        with open(self.massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+            self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
 
         self.EndModal(wx.ID_OK)
+
+    def getName(self):
+        return self.nameField.GetValue().strip()
+
+    def getEmail(self):
+        return self.emailField.GetValue().strip()
+
+    def getComments(self):
+        return self.commentsField.GetValue().strip()
+
+    def getPleaseContactMe(self):
+        return self.pleaseContactMeCheckBox.GetValue()
 
     def onNameOrEmailOrCommentsModified(self, event):
         if self.commentsField.GetValue().strip()!="":

@@ -1417,7 +1417,7 @@ class LoginProcess():
                             logger.dump_log(event.loginprocess.notify_window,submit_log=False)
                         else:
                             logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to submit the log")
-                            logger.dump_log(event.loginprocess.notify_window,submit_log=True)
+                            logger.dump_log(event.loginprocess.notify_window,submit_log=True,jobParams=event.loginprocess.jobParams)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
                 try:
                     wx.EndBusyCursor()
