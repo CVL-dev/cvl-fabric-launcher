@@ -132,7 +132,11 @@ class LoginProcess():
                     wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
                 return
             logger.debug("runServerCommandThread: self.cmd = " + self.cmdRegex.cmd)
-            logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) = " + self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
+            try:
+                logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) = " + self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
+            except:
+                logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) gives an exception. Why wasn't this picked up earlier?")
+    
             self.loginprocess.matchlist=[]
             try:
                 (stdout, stderr) = run_command(self.cmdRegex.getCmd(self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel, startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
@@ -473,8 +477,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 64-bit Windows installation, 64-bit TurboVNC, HKEY_LOCAL_MACHINE
@@ -486,8 +488,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 32-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
@@ -499,8 +499,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 32-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
@@ -512,8 +510,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 64-bit Windows installation, 32-bit TurboVNC, HKEY_CURRENT_USER
@@ -525,8 +521,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
                 if not foundTurboVncInRegistry:
                     try:
                         # 64-bit Windows installation, 32-bit TurboVNC, HKEY_LOCAL_MACHINE
@@ -538,8 +532,6 @@ class LoginProcess():
                         foundTurboVncInRegistry = True
                     except:
                         foundTurboVncInRegistry = False
-                        #wx.CallAfter(sys.stdout.write, "MASSIVE/CVL Launcher v" + launcher_version_number.version_number + "\n")
-                        #wx.CallAfter(sys.stdout.write, traceback.format_exc())
 
             logger.debug('CheckVNCVerThread: vnc = %s, turboVncVersionNumber = %s' % (str(vnc), str(turboVncVersionNumber),))
 
@@ -847,7 +839,7 @@ class LoginProcess():
                                 logger.debug("trying to format the startServerCmd, project is not necessary")
                                 showDialog=False
                             except KeyError as e:
-                                if (e.__str__()=='project'):
+                                if ('project' in e.__str__()):
                                     logger.debug("trying to format the startServerCmd, project is necessary")
                                     showDialog=True
                                 else:
@@ -1420,8 +1412,12 @@ class LoginProcess():
                         logger.debug("to have to respond to a 3rd dialog (the Submit Debug Log dialog) too.")
                         logger.dump_log(event.loginprocess.notify_window,submit_log=False)
                     else:
-                        logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to submit the log")
-                        logger.dump_log(event.loginprocess.notify_window,submit_log=True)
+                        if (event.loginprocess.userCanceled.isSet() and event.loginprocess.queued_job.isSet() and not event.loginprocess.started_job.isSet()):
+                            logger.debug("LoginProcess.complete: User canceled login process between queueing the job and starting the job. System is probably busy. Not asking to submit a debug log .")
+                            logger.dump_log(event.loginprocess.notify_window,submit_log=False)
+                        else:
+                            logger.debug("LoginProcess.complete: loginprocess was canceled, asking user if they want to submit the log")
+                            logger.dump_log(event.loginprocess.notify_window,submit_log=True)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_COMPLETE')
                 try:
                     wx.EndBusyCursor()
@@ -1521,6 +1517,7 @@ class LoginProcess():
         self.started_job=threading.Event()
         self.queued_job=threading.Event()
         self._complete=threading.Event()
+        self.userCanceled=threading.Event()
         self.webdavMounted=threading.Event()
         self.skd=None
         self.passwdPrompt=None
@@ -1546,7 +1543,7 @@ class LoginProcess():
         userCanAbort=True
         maximumProgressBarValue=10
         #self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.parentWindow, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
-        self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.notify_window, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.cancel)
+        self.progressDialog=launcher_progress_dialog.LauncherProgressDialog(self.notify_window, wx.ID_ANY, s, "", maximumProgressBarValue, userCanAbort,self.userCancel)
 
         self.startupinfo = startupinfo
         self.creationflags = creationflags
@@ -1729,7 +1726,10 @@ class LoginProcess():
         siteConfigDict['otp']= cmdRegEx('echo %s'%self.jobParams['vncPasswd'],'(?P<vncPasswd>.*)$',host='local')
         siteConfigDict['agent']=self.siteConfig.agent
         siteConfigDict['tunnel']=self.siteConfig.tunnel
-        newConfig = siteConfig(siteConfigDict,Visible)
+        #newConfig = siteConfig(siteConfigDict,Visible)
+        newConfig = siteConfig()
+        newConfig.__dict__.update(siteConfigDict)
+        newConfig.visibility=Visible
         queue.put(newConfig)
         #return newConfig
    
@@ -1742,6 +1742,14 @@ class LoginProcess():
                 logger.debug("LoginProcess.cancel: no error specified")
             event=self.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CANCEL,self,error)
             wx.PostEvent(self.notify_window.GetEventHandler(),event)
+
+    def userCancel(self,error=""):
+        self.userCanceled.set()
+        try:
+            self.progressState=self.progressDialog.getProgress()
+        except:
+            self.progressState=0
+        self.cancel(error)
 
     def canceled(self):
         return self._canceled.isSet()
