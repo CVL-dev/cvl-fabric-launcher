@@ -110,6 +110,9 @@ class LauncherProgressDialog(wx.Frame):
 
         return None
 
+    def getProgress(self):
+        return self.progressBar.GetValue()
+
     def shouldAbort(self):
         return self.user_requested_abort
 

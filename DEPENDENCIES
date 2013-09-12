@@ -36,6 +36,7 @@ Windows: http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi
 3.6 requests
 3.7 pexpect
 3.8 lxml
+3.9 psutil
 
 
 3.1 wx
@@ -165,6 +166,16 @@ pip install pexpect
 Used by WsgiDAV for WebDAV mounting of local home directory on remote server.
 
 https://pypi.python.org/pypi/lxml/3.2.3
+
+3.9 psutil
+
+Used to check if an agent process (with a given PID) is running:
+
+https://code.google.com/p/psutil/
+
+Windows builds are available, e.g.
+
+https://psutil.googlecode.com/files/psutil-1.0.1.win32-py2.7.exe
 
 
 4. PYTHON MODULES REQUIRED TO BUILD THE BUNDLED DISTRIBUTABLE APPLICATION

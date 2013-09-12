@@ -121,15 +121,6 @@ import siteConfig
 from MacMessageDialog import LauncherMessageDialog
 from logger.Logger import logger
 
-#global launcherMainFrame
-#launcherMainFrame = None
-#global launcherConfig
-#global turboVncConfig
-#turboVncConfig = None
-#global turboVncPreferencesFilePath
-#turboVncPreferencesFilePath = None
-#global turboVncLatestVersion
-#turboVncLatestVersion = None
 
 class LauncherMainFrame(wx.Frame):
     PERM_SSH_KEY=0
@@ -210,9 +201,6 @@ class LauncherMainFrame(wx.Frame):
 
     def __init__(self, parent, id, title):
 
-#        global launcherMainFrame
-#        launcherMainFrame = self
-        # List all the types of control that should be saved explicitly since apparently StaticText et al inherit from wx.Control
         self.savedControls=[]
         self.savedControls.append(wx.TextCtrl)
         self.savedControls.append(wx.ComboBox)
@@ -726,7 +714,7 @@ class LauncherMainFrame(wx.Frame):
         # user presses the Login button, because the user might
         # use the Identity Menu to delete their key etc. before
         # pressing the Login button.
-        self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags)
+        self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,temporaryKey=False)
 
 
     def buildJobParams(self,window):
@@ -904,12 +892,14 @@ class LauncherMainFrame(wx.Frame):
         choices=[]
         for i in range(auth_mode.GetCount()):
             choices.append(auth_mode.GetString(i))
-        dlg = LauncherOptionsDialog.LauncherOptionsDialog(self,"""
-"Would you like to use an SSH Key pair or your password to authenticate yourself?
+        message = """
+Would you like to use an SSH Key pair or your password to authenticate yourself?
 
 If this computer is shared by a number of people then passwords are preferable.
-If this computer is not shared then an SSH Key pair will give you advanced features for managing your access"
-""",title="MASSIVE/CVL Launcher",ButtonLabels=choices)
+
+If this computer is not shared, then an SSH Key pair will give you advanced features for managing your access.
+"""
+        dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices)
         rv=dlg.ShowModal()
         if rv in range(auth_mode.GetCount()):
             return int(rv)
@@ -974,6 +964,9 @@ If this computer is not shared then an SSH Key pair will give you advanced featu
         self.logWindow.Show(self.FindWindowByName('debugCheckBox').GetValue())
 
 
+        logger.debug("Username: " + jobParams['username'])
+        logger.debug("Config: " + configName)
+
         userCanAbort=True
         maximumProgressBarValue = 10
 
@@ -987,6 +980,8 @@ If this computer is not shared then an SSH Key pair will give you advanced featu
         configName=self.FindWindowByName('jobParams_configName').GetValue()
         if not self.vncOptions.has_key('auth_mode'):
             mode=self.queryAuthMode()
+            if mode==wx.ID_CANCEL:
+                return
             self.vncOptions['auth_mode']=mode
             self.launcherOptionsDialog.FindWindowByName('auth_mode').SetSelection(mode)
             self.identity_menu.disableItems()
@@ -996,6 +991,8 @@ If this computer is not shared then an SSH Key pair will give you advanced featu
         if self.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
             try:
+                if 'SSH_AUTH_SOCK' in os.environ:
+                    os.environ['PREVIOUS_SSH_AUTH_SOCK'] = os.environ['SSH_AUTH_SOCK']
                 del os.environ['SSH_AUTH_SOCK']
                 logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (not using the existing agent)")
             except:
@@ -1035,19 +1032,13 @@ class MyApp(wx.App):
         if not os.path.exists(appUserDataDir):
             os.makedirs(appUserDataDir)
 
-#        global launcherConfig
-#        launcherConfig=ConfigParser.RawConfigParser(allow_no_value=True)
         global launcherPreferencesFilePath 
         launcherPreferencesFilePath = os.path.join(appUserDataDir,"Launcher Preferences.cfg")
-#        if (os.path.exists(launcherPreferencesFilePath)):
-#            launcherConfig.read(launcherPreferencesFilePath)
-        
 
-        global turboVncConfig
-        turboVncConfig = ConfigParser.RawConfigParser(allow_no_value=True)
-
-        global turboVncPreferencesFilePath
-        turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
+        sys.modules[__name__].turboVncConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+        turboVncConfig = sys.modules[__name__].turboVncConfig
+        sys.modules[__name__].turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
+        turboVncPreferencesFilePath = sys.modules[__name__].turboVncPreferencesFilePath
         if os.path.exists(turboVncPreferencesFilePath):
             turboVncConfig.read(turboVncPreferencesFilePath)
         if not turboVncConfig.has_section("TurboVNC Preferences"):
@@ -1055,17 +1046,10 @@ class MyApp(wx.App):
 
         if sys.platform.startswith("win"):
             os.environ['CYGWIN'] = "nodosfilewarning"
-        #global launcherMainFrame
-        launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
+        sys.modules[__name__].launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
+        launcherMainFrame = sys.modules[__name__].launcherMainFrame
         launcherMainFrame.Show(True)
         launcherMainFrame.menu_bar.Show(True)
-
-
-#        if massiveLauncherConfig is not None:
-#            massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_launcher_private_key_path", launcherMainFrame.keyModel.getsshKeyPath())
-#            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-#                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-
 
         return True
 

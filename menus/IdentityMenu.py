@@ -15,6 +15,8 @@ from cvlsshutils.KeyModel import KeyModel
 
 from logger.Logger import logger
 
+# For now, the private key file path in the CreateNewKeyDialog is read-only.
+userCanModifyPrivateKeyFilePath = False
 
 class IdentityMenu(wx.Menu):
 
@@ -161,7 +163,7 @@ class IdentityMenu(wx.Menu):
 
     def deleteKey(self):
 
-        success = self.launcherMainFrame.keyModel.deleteKey()
+        success = self.launcherMainFrame.keyModel.deleteKey(ignoreFailureToConnectToAgent=True)
         #success = success and self.launcherMainFrame.keyModel.removeKeyFromAgent()
         if success:
             message = "Launcher key was successfully deleted!"
@@ -206,7 +208,7 @@ class IdentityMenu(wx.Menu):
 
 
     def onInspectKey(self,event):
-        if not self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
+        if not self.privateKeyExists(warnIfNotFoundInLocalSettings=userCanModifyPrivateKeyFilePath):
             if self.offerToCreateKey()==wx.ID_YES:
                 self.createKey()
             else:
@@ -219,13 +221,9 @@ class IdentityMenu(wx.Menu):
 
     def onChangePassphrase(self,event):
 
-        if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
+        if self.privateKeyExists(warnIfNotFoundInLocalSettings=userCanModifyPrivateKeyFilePath):
             changeKeyPassphraseDialog = ChangeKeyPassphraseDialog(self.launcherMainFrame, wx.ID_ANY, 'Change Key Passphrase', self.launcherMainFrame.keyModel)
-            if changeKeyPassphraseDialog.ShowModal()==wx.ID_OK:
-                dlg = wx.MessageDialog(self.launcherMainFrame,
-                    "Passphrase changed successfully!",
-                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
+            changeKeyPassphraseDialog.ShowModal()
         else:
             if self.offerToCreateKey()==wx.ID_YES:
                 self.createKey()
@@ -233,7 +231,7 @@ class IdentityMenu(wx.Menu):
 
     def onResetKey(self,event):
 
-        if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
+        if self.privateKeyExists(warnIfNotFoundInLocalSettings=userCanModifyPrivateKeyFilePath):
             resetKeyDialog = ResetKeyDialog(self.launcherMainFrame, wx.ID_ANY, 'Reset Key', self.launcherMainFrame.keyModel, self.launcherKeyIsInAgent())
             resetKeyDialog.ShowModal()
         else:
@@ -243,9 +241,11 @@ class IdentityMenu(wx.Menu):
 
     def onDeleteKey(self,event):
 
-        if self.privateKeyExists(warnIfNotFoundInLocalSettings=True):
+        if self.privateKeyExists(warnIfNotFoundInLocalSettings=userCanModifyPrivateKeyFilePath):
             dlg = wx.MessageDialog(self.launcherMainFrame,
-                "Are you sure you want to delete your key?",
+                "Are you sure you want to delete your key, located at:\n\n" +
+                self.launcherMainFrame.keyModel.getPrivateKeyFilePath() +
+                " ?",
                 "MASSIVE/CVL Launcher", wx.YES_NO | wx.ICON_QUESTION)
             if dlg.ShowModal()==wx.ID_YES:
                 success = self.deleteKey()
