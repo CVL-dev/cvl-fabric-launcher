@@ -142,7 +142,7 @@ class Logger():
             if self.pleaseContactMe:
                 debugLog = debugLog + "Yes" + "\n"
             else:
-                debugLog = debugLog + "No"
+                debugLog = debugLog + "No" + "\n"
             debugLog = debugLog + "Comments:\n\n" + self.comments + "\n\n"
             atLeastOneError = False
             for line in self.loggerOutput.getvalue().splitlines(True):
