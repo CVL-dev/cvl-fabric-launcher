@@ -1447,22 +1447,26 @@ class LoginProcess():
         # Throw away the thread references. We've done all we can to ask them to stop at this point.
         self.threads=[]
         logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL')
-        if self.queued_job.isSet() and not self.started_job.isSet():
+        def qdelCallback():
+            try:
+                logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
+                logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
+                self.siteConfig.stop.cmd.format(**self.jobParams)
+                t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
+                t.setDaemon(True)
+                t.start()
+                t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
+                #event.loginprocess.threads.append(t)
+            except:
+                logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
+                pass
+        if self.queued_job.isSet() and not self.started_job.isSet() and not self.userCanceled.isSet():
+           qdelCallback()
+        if self.queued_job.isSet() and self.started_job.isSet():
+           qdelCallback()
+        if self.queued_job.isSet() and not self.started_job.isSet() and self.userCanceled.isSet():
             self.askUserIfTheyWantToDeleteQueuedJobCompleted = False
             def askUserIfTheyWantToDeleteQueuedJob():
-                def qdelCallback():
-                    try:
-                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
-                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
-                        self.siteConfig.stop.cmd.format(**self.jobParams)
-                        t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
-                        t.setDaemon(True)
-                        t.start()
-                        t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
-                        #event.loginprocess.threads.append(t)
-                    except:
-                        logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
-                        pass
                 def noopCallback():
                     logger.debug("Leaving a job in the queue after cancel")
 
@@ -1473,6 +1477,7 @@ class LoginProcess():
             wx.CallAfter(askUserIfTheyWantToDeleteQueuedJob)
             while self.askUserIfTheyWantToDeleteQueuedJobCompleted==False:
                 time.sleep(0.1)
+
 
         if (self.skd!=None): 
                 #logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
