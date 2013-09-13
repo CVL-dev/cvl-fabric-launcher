@@ -496,10 +496,6 @@ class LauncherMainFrame(wx.Frame):
         self.buttonsPanelSizer.Add(self.preferencesButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
         self.Bind(wx.EVT_BUTTON, self.onOptions, id=self.preferencesButton.GetId())
 
-        self.saveButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Save Preferences')
-        self.buttonsPanel.GetSizer().Add(self.saveButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
-        self.saveButton.Bind(wx.EVT_BUTTON, self.savePrefsEventHandler)
-
         self.exitButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Exit')
         self.buttonsPanelSizer.Add(self.exitButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
         self.Bind(wx.EVT_BUTTON, self.onExit,  id=self.exitButton.GetId())
@@ -563,6 +559,8 @@ class LauncherMainFrame(wx.Frame):
         self.updateVisibility(self.noneVisible)
         self.contacted_massive_website = False
         self.loadPrefs()
+        self.Refresh()
+        self.Update()
 #        self.checkVersionNumber()
 
 
