@@ -477,6 +477,17 @@ class LauncherMainFrame(wx.Frame):
         # Maximum of 336 hours is 2 weeks:
         #self.massiveHoursField = wx.SpinCtrl(self.massiveLoginFieldsPanel, wx.ID_ANY, value=self.massiveHoursRequested, min=1,max=336)
         self.massiveHoursField = wx.SpinCtrl(self.massiveHoursAndVisNodesPanel, wx.ID_ANY, value=self.massiveHoursRequested, size=(widgetWidth3,-1), min=1,max=336)
+        self.massiveHoursField.Bind(wx.EVT_TEXT, self.onTextEnteredInIntegerField)
+
+        # Spin controls are tricky to configure event-handling for,
+        # because they contain both a TextCtrl object and a
+        # spinner button, but they don't provide a direct interface
+        # for accessing their TextCtrl object.  So we will
+        # determine the TextCtrl object of each SpinCtrl the
+        # first time it is focused, and then bind wx.EVT_KILL_FOCUS
+        # to it, so we can ensure that the field has been
+        # filled in.
+        self.Bind(wx.EVT_CHILD_FOCUS, self.onChildFocus)
 
         #self.massiveLoginFieldsPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.massiveHoursAndVisNodesPanelSizer.Add(self.massiveHoursField, flag=wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -503,6 +514,7 @@ class LauncherMainFrame(wx.Frame):
             with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
                 massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
         self.massiveVisNodesField = wx.SpinCtrl(self.massiveHoursAndVisNodesPanel, wx.ID_ANY, value=self.massiveVisNodesRequested, size=(widgetWidth3,-1), min=1,max=10)
+        self.massiveVisNodesField.Bind(wx.EVT_TEXT, self.onTextEnteredInIntegerField)
         self.massiveHoursAndVisNodesPanelSizer.Add(self.massiveVisNodesField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveHoursAndVisNodesPanel.SetSizerAndFit(self.massiveHoursAndVisNodesPanelSizer)
@@ -1429,6 +1441,55 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
 
 #        wx.CallAfter(initializeProgressDialog)
 
+    def onTextEnteredInIntegerField(self, event):
+        if event.GetString()!="":
+
+            # The code below does some validation, so for example:
+            # "2a"  will be replaced by "2".
+            # "a2"  will be replaced by "2"
+            # "1a2" will be replaced by "12" and 
+            # "a"   will be replaced with "".
+
+            # We allow the user to clear the integer field 
+            # temporarily, so they can then type in new digit(s),
+            # even though an empty value is not strictly an integer.
+
+            # If the users clears the field and then tabs away from 
+            # the field, it should revert to a numerical value, set in
+            # onIntegerFieldLostFocus.
+
+            if event.GetEventObject().GetParent()==self.massiveHoursField:
+                if event.GetString().startswith(str(self.massiveHoursField.GetValue())):
+                    event.GetEventObject().SetValue(str(self.massiveHoursField.GetValue()))
+                elif event.GetString().endswith(str(self.massiveHoursField.GetValue())):
+                    event.GetEventObject().SetValue(str(self.massiveHoursField.GetValue()))
+                elif len(event.GetString()) > len(str(self.massiveHoursField.GetValue())):
+                    event.GetEventObject().SetValue(str(self.massiveHoursField.GetValue()))
+                else:
+                    event.GetEventObject().SetValue("")
+            if event.GetEventObject().GetParent()==self.massiveVisNodesField:
+                if event.GetString().startswith(str(self.massiveVisNodesField.GetValue())):
+                    event.GetEventObject().SetValue(str(self.massiveVisNodesField.GetValue()))
+                elif event.GetString().endswith(str(self.massiveVisNodesField.GetValue())):
+                    event.GetEventObject().SetValue(str(self.massiveVisNodesField.GetValue()))
+                elif len(event.GetString()) > len(str(self.massiveHoursField.GetValue())):
+                    event.GetEventObject().SetValue(str(self.massiveVisNodesField.GetValue()))
+                else:
+                    event.GetEventObject().SetValue("")
+        event.Skip()
+
+    def onIntegerFieldLostFocus(self, event):
+        if event.GetEventObject().GetParent()==self.massiveHoursField or event.GetEventObject().GetParent()==self.massiveVisNodesField:
+            if event.GetEventObject().GetValue().strip() == "":
+                event.GetEventObject().SetValue("1")
+        event.Skip()
+
+    def onChildFocus(self, event):
+        if event.GetEventObject().GetParent()==self.massiveHoursField or event.GetEventObject().GetParent()==self.massiveVisNodesField:
+            while event.GetEventObject().Unbind(wx.EVT_KILL_FOCUS):
+                pass
+            event.GetEventObject().Bind(wx.EVT_KILL_FOCUS, self.onIntegerFieldLostFocus)
+        event.Skip()
 
 
 class siteConfig():
