@@ -383,7 +383,6 @@ class LauncherMainFrame(wx.Frame):
         self.projectPanel.Fit()
         self.loginFieldsPanel.GetSizer().Add(self.projectPanel, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
 
-
         self.resourcePanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY,name="resourcePanel")
         self.resourcePanel.SetAutoLayout(self.AUTOLAYOUT)
         self.resourcePanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))

@@ -48,6 +48,10 @@ class ListSelectionDialog(wx.Dialog):
         else:
             self.parent = None
             logger.debug("ListSelectionDialog: parent is None.")
+        if kw.has_key('progressDialog'):
+            self.progressDialog=kw.pop('progressDialog')
+        else:
+            self.progressDialog=None
         if kw.has_key('headers'):
             self.headers=kw.pop('headers')
         else:
@@ -78,11 +82,9 @@ class ListSelectionDialog(wx.Dialog):
         self.itemList=[]
        
         self.closedProgressDialog = False
-        if self.parent is not None and self.parent.__class__.__name__=="LauncherMainFrame":
-            launcherMainFrame = self.parent
-            if launcherMainFrame is not None and launcherMainFrame.progressDialog is not None:
-                launcherMainFrame.progressDialog.Show(False)
-                self.closedProgressDialog = True
+        if self.progressDialog is not None:
+            self.progressDialog.Show(False)
+            self.closedProgressDialog = True
 
         self.CenterOnParent()
 
@@ -249,10 +251,8 @@ class ListSelectionDialog(wx.Dialog):
         self.Destroy()
 
         if self.closedProgressDialog:
-            if self.parent is not None and self.parent.__class__.__name__=="LauncherMainFrame":
-                launcherMainFrame = self.parent
-                if launcherMainFrame is not None and launcherMainFrame.progressDialog is not None:
-                    launcherMainFrame.progressDialog.Show(True)
+            if self.progressDialog is not None:
+                self.progressDialog.Show(True)
 
 
 class HelpDialog(wx.Dialog):

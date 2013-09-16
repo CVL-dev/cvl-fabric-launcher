@@ -17,14 +17,14 @@ if sys.platform.startswith("win"):
 from utilityFunctions import LAUNCHER_URL,TURBOVNC_BASE_URL
 from logger.Logger import logger
 
-def showModal(dialog):
+def showModal(dialog,loginprocess):
     try:
         wx.EndBusyCursor()
         stoppedBusyCursor = True
     except:
         stoppedBusyCursor = False
     dialog.ShowModal()
-    if stoppedBusyCursor:
+    if stoppedBusyCursor and not loginprocess.canceled() and not loginprocess._shutdown.is_set():
         wx.BeginBusyCursor()
 
 class LoginProcess():
@@ -615,7 +615,7 @@ class LoginProcess():
 
             turboVncNotFoundDialog.addPanel(turboVncNotFoundPanel)
             turboVncNotFoundDialog.Centre()
-            showModal(turboVncNotFoundDialog)
+            showModal(turboVncNotFoundDialog,self.loginprocess)
 
             self.loginprocess.cancel()
     
@@ -649,7 +649,7 @@ class LoginProcess():
                         dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
                                                 "The launcher cannot continue.\n",
                                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                        showModal(dlg)
+                        showModal(dlg,self.loginprocess)
                         dlg.Destroy()
                         # If we can't contact the MASSIVE website, it's probably because
                         # there's no active network connection, so don't try to submit
@@ -695,7 +695,7 @@ class LoginProcess():
                     dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Could not determine TurboVNC version number.\n\n" +
                                             "The launcher cannot continue.\n",
                                     "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
-                    showModal(dlg)
+                    showModal(dlg,self.loginprocess)
                     dlg.Destroy()
                     logger.dump_log(self.loginprocess.notify_window)
                     sys.exit(1)
@@ -794,7 +794,7 @@ class LoginProcess():
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage.format(timestring=timestring),event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
                 else:
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage,event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
-                showModal(dialog)
+                showModal(dialog,event.loginprocess)
             else:
                 event.Skip()
 
@@ -863,8 +863,8 @@ class LoginProcess():
                         event.loginprocess.jobParams.update([('project',"%s"%project)])
                         parentWindow = event.loginprocess.notify_window
                     cancelCallback=lambda x: event.loginprocess.cancel(x)
-                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE)
-                    showModal(dlg)
+                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, progressDialog=event.loginprocess.progressDialog, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE)
+                    showModal(dlg,event.loginprocess)
                 if (not event.loginprocess.canceled()):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
                     wx.PostEvent(event.loginprocess.notify_window,nextevent)
@@ -1267,7 +1267,7 @@ class LoginProcess():
                         dlg.addPanel(panel)
                     else:
                         dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
-                    showModal(dlg)
+                    showModal(dlg,event.loginprocess)
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
                 event.loginprocess.shutdownThread.start()
@@ -1365,7 +1365,7 @@ class LoginProcess():
                     dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Stop the Desktop?",event.loginprocess.displayStrings.persistentMessage.format(timestring=timestring),event.loginprocess.displayStrings.persistentMessageStop,event.loginprocess.displayStrings.persistentMessagePersist,KillCallback,persistCallback)
                 if dialog:
                     logger.debug("showKillServerDialog: Showing the 'Stop the desktop' question dialog.")
-                    showModal(dialog)
+                    showModal(dialog,event.loginprocess)
                 else:
                     logger.debug("showKillServerDialog: Not showing the 'Stop the desktop' question dialog.")
                     persistCallback()
@@ -1431,6 +1431,7 @@ class LoginProcess():
                     if hasattr(event.loginprocess, 'turboVncElapsedTimeInSeconds'):
                         if event.loginprocess.turboVncElapsedTimeInSeconds > 3:
                             os._exit(0)
+              
                 #wx.CallAfter(event.loginprocess.parentWindow.SetCursor, wx.StockCursor(wx.CURSOR_ARROW))
             else:
                 event.Skip()
@@ -1447,32 +1448,37 @@ class LoginProcess():
         # Throw away the thread references. We've done all we can to ask them to stop at this point.
         self.threads=[]
         logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_CANCEL')
-        if self.queued_job.isSet() and not self.started_job.isSet():
+        def qdelCallback():
+            try:
+                logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
+                logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
+                self.siteConfig.stop.cmd.format(**self.jobParams)
+                t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
+                t.setDaemon(True)
+                t.start()
+                t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
+                #event.loginprocess.threads.append(t)
+            except:
+                logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
+                pass
+        if self.queued_job.isSet() and not self.started_job.isSet() and not self.userCanceled.isSet():
+           qdelCallback()
+        if self.queued_job.isSet() and self.started_job.isSet():
+           qdelCallback()
+        if self.queued_job.isSet() and not self.started_job.isSet() and self.userCanceled.isSet():
             self.askUserIfTheyWantToDeleteQueuedJobCompleted = False
             def askUserIfTheyWantToDeleteQueuedJob():
-                def qdelCallback():
-                    try:
-                        logger.debug('loginProcessEvent: cancel: attempting to format the stop command <%s> using parameters: %s' % (self.siteConfig.stop.cmd, self.jobParams,))
-                        logger.debug('loginProcessEvent: cancel: formatted stopCmd: ' + self.siteConfig.stop.cmd.format(**self.jobParams))
-                        self.siteConfig.stop.cmd.format(**self.jobParams)
-                        t = LoginProcess.runServerCommandThread(self,self.siteConfig.stop,None,"")
-                        t.setDaemon(True)
-                        t.start()
-                        t.join() # I don't like having a long wait on the event handler thread here, but we can't allow the sshKeyDist to be canceled before this thread is complete.
-                        #event.loginprocess.threads.append(t)
-                    except:
-                        logger.debug('loginProcessEvent: cancel: exception when trying to format the stop command: ' + str(traceback.format_exc()))
-                        pass
                 def noopCallback():
                     logger.debug("Leaving a job in the queue after cancel")
 
                 dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"MASSIVE/CVL Launcher",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
                 logger.debug("threading.current_thread().name = " + threading.current_thread().name)
-                showModal(dialog)
+                showModal(dialog,self)
                 self.askUserIfTheyWantToDeleteQueuedJobCompleted = True
             wx.CallAfter(askUserIfTheyWantToDeleteQueuedJob)
             while self.askUserIfTheyWantToDeleteQueuedJobCompleted==False:
                 time.sleep(0.1)
+
 
         if (self.skd!=None): 
                 #logger.debug('loginProcessEvent: cancel: calling skd.cancel()')
