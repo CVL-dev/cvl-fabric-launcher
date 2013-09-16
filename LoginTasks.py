@@ -1473,7 +1473,7 @@ class LoginProcess():
 
                 dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"MASSIVE/CVL Launcher",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
                 logger.debug("threading.current_thread().name = " + threading.current_thread().name)
-                showModal(dialog,self.loginprocess)
+                showModal(dialog,self)
                 self.askUserIfTheyWantToDeleteQueuedJobCompleted = True
             wx.CallAfter(askUserIfTheyWantToDeleteQueuedJob)
             while self.askUserIfTheyWantToDeleteQueuedJobCompleted==False:
