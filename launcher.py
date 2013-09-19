@@ -1225,7 +1225,15 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         else:
             return wx.ID_CANCEL
 
+    def onLoginProcessComplete(self, jobParams):
+        logger.debug("launcher.py: onLogin: Enabling login button.")
+        self.loginButton.Enable()
+
     def onLogin(self, event):
+
+        logger.debug("launcher.py: onLogin: Disabling login button.")
+        self.loginButton.Disable()
+
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
 
@@ -1425,7 +1433,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,temporaryKey=False)
             
             removeKeyOnExit = False
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit,startupinfo=launcherMainFrame.startupinfo,creationflags=launcherMainFrame.creationflags)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit,startupinfo=launcherMainFrame.startupinfo,creationflags=launcherMainFrame.creationflags,completeCallback=self.onLoginProcessComplete)
         self.loginProcess.doLogin()
 
 

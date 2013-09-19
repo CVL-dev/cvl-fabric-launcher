@@ -16,6 +16,7 @@ if sys.platform.startswith("win"):
     from WindowsMessageDialog import LauncherMessageDialog
 from utilityFunctions import LAUNCHER_URL,TURBOVNC_BASE_URL
 from logger.Logger import logger
+import inspect
 
 def showModal(dialog,loginprocess):
     try:
@@ -117,6 +118,13 @@ class LoginProcess():
             if (self.cmdRegex.regex==None or self.cmdRegex.regex[0]==None or self.cmdRegex.requireMatch==False):
                 self.requireMatch=False
                 self.loginprocess.matchlist=[]
+
+            if self.cmdRegex.cmd is None:
+                logger.debug("runServerCommandThread: WARNING: cmdRegex.cmd is None. Skipping server command.")
+                frameTuple = inspect.getouterframes(inspect.currentframe())[1]
+                logger.debug("runServerCommandThread: Calling function name: " + frameTuple[3])
+                logger.debug("runServerCommandThread: Calling code's line number in LoginTasks.py: " + str(frameTuple[2]))
+                logger.debug("runServerCommandThread: Line of code calling runServerCommandThread: " + "".join(frameTuple[4]))
     
         def stop(self):
             if (self.cmdRegex.cmd!= None):
