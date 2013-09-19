@@ -1013,12 +1013,8 @@ class LauncherMainFrame(wx.Frame):
             import new_version_alert_dialog
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(launcherMainFrame, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
-
-            # Tried submit_log=True, but it didn't work.
-            # Maybe the requests stuff hasn't been initialized yet.
-            logger.debug("Failed version number check.")
-            logger.dump_log(launcherMainFrame,submit_log=False)
-            sys.exit(1)
+            logger.debug('Old launcher version !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            logger.debug('launcher version: ' + str(launcher_version_number.version_number))
 
         self.startupinfo = None
         try:
