@@ -237,6 +237,18 @@ class LauncherMainFrame(wx.Frame):
         helpContentsMenuItemID = wx.NewId()
         self.help_menu.Append(helpContentsMenuItemID, "&MASSIVE/CVL Launcher Help")
         self.Bind(wx.EVT_MENU, self.onHelpContents, id=helpContentsMenuItemID)
+        self.help_menu.AppendSeparator()
+        emailHelpAtMassiveMenuItemID = wx.NewId()
+        self.help_menu.Append(emailHelpAtMassiveMenuItemID, "&Email help@massive.org.au")
+        self.Bind(wx.EVT_MENU, self.onEmailHelpAtMassive, id=emailHelpAtMassiveMenuItemID)
+        submitDebugLogMenuItemID = wx.NewId()
+        self.help_menu.Append(submitDebugLogMenuItemID, "&Submit debug log")
+        self.Bind(wx.EVT_MENU, self.onSubmitDebugLog, id=submitDebugLogMenuItemID)
+        # On Mac, the About menu item will automatically be moved from 
+        # the Help menu to the "MASSIVE Launcher" menu, so we don't
+        # need a separator.
+        if not sys.platform.startswith("darwin"):
+            self.help_menu.AppendSeparator()
         self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE/CVL Launcher")
         self.Bind(wx.EVT_MENU, self.onAbout, id=wx.ID_ABOUT)
         self.menu_bar.Append(self.help_menu, "&Help")
@@ -945,6 +957,27 @@ class LauncherMainFrame(wx.Frame):
 
         self.Centre()
 
+        self.logWindow = wx.Frame(self, title="MASSIVE/CVL Launcher Debug Log", name="MASSIVE/CVL Launcher Debug Log",pos=(200,150),size=(700,450))
+        self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
+        self.logTextCtrl = wx.TextCtrl(self.logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
+        #logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
+        logWindowSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=0, hgap=0)
+        logWindowSizer.AddGrowableRow(0)
+        logWindowSizer.AddGrowableCol(0)
+        #logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
+        logWindowSizer.Add(self.logTextCtrl, flag=wx.EXPAND)
+        self.submitDebugLogButton = wx.Button(self.logWindow, wx.ID_ANY, 'Submit debug log')
+        self.Bind(wx.EVT_BUTTON, self.onSubmitDebugLog, id=self.submitDebugLogButton.GetId())
+        logWindowSizer.Add(self.submitDebugLogButton, flag=wx.ALIGN_RIGHT|wx.TOP|wx.BOTTOM|wx.RIGHT, border=10)
+        self.logWindow.SetSizer(logWindowSizer)
+        if sys.platform.startswith("darwin"):
+            font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        else:
+            font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        self.logTextCtrl.SetFont(font)
+
+        logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
+
         import getpass
         logger.debug('getpass.getuser(): ' + getpass.getuser())
 
@@ -1024,7 +1057,8 @@ class LauncherMainFrame(wx.Frame):
         except:
             # On non-Windows systems, the previous block will throw:
             # "AttributeError: 'module' object has no attribute 'STARTUPINFO'".
-            logger.debug('exception: ' + str(traceback.format_exc()))
+            if sys.platform.startswith("win"):
+                logger.debug('exception: ' + str(traceback.format_exc()))
 
         self.creationflags = 0
         try:
@@ -1032,27 +1066,14 @@ class LauncherMainFrame(wx.Frame):
             self.creationflags = win32process.CREATE_NO_WINDOW
         except:
             # On non-Windows systems, the previous block will throw an exception.
-            logger.debug('exception: ' + str(traceback.format_exc()))
+            if sys.platform.startswith("win"):
+                logger.debug('exception: ' + str(traceback.format_exc()))
 
         # launcherMainFrame.keyModel must be initialized before the
         # user presses the Login button, because the user might
         # use the Identity Menu to delete their key etc. before
         # pressing the Login button.
         self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,temporaryKey=False)
-
-        self.logWindow = wx.Frame(self, title="MASSIVE/CVL Launcher Debug Log", name="MASSIVE/CVL Launcher Debug Log",pos=(200,150),size=(700,450))
-        self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
-        self.logTextCtrl = wx.TextCtrl(self.logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
-        logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
-        logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
-        self.logWindow.SetSizer(logWindowSizer)
-        if sys.platform.startswith("darwin"):
-            font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-        else:
-            font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-        self.logTextCtrl.SetFont(font)
-
-        logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
 
 
     def onTabbedViewChanged(self, event):
@@ -1116,6 +1137,13 @@ class LauncherMainFrame(wx.Frame):
         else:
             wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
                           "Error", wx.OK|wx.ICON_EXCLAMATION)
+
+    def onEmailHelpAtMassive(self, event):
+        import webbrowser
+        webbrowser.open("mailto:help@massive.org.au")
+
+    def onSubmitDebugLog(self, event):
+        logger.dump_log(launcherMainFrame,submit_log=True,showFailedToOpenRemoteDesktopMessage=False)
 
     def onAbout(self, event):
         import commit_def
