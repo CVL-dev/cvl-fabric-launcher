@@ -647,7 +647,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.massiveShowDebugWindowCheckBox = wx.CheckBox(self.massiveDebugAndAutoExitPanel, wx.ID_ANY, "")
         self.massiveShowDebugWindowCheckBox.SetValue(False)
-        self.massiveShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onMassiveDebugWindowCheckBoxStateChanged)
+        self.massiveShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onDebugWindowCheckBoxStateChanged)
         self.massiveDebugAndAutoExitPanelSizer.Add(self.massiveShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.massiveAutomaticallyExitLabel = wx.StaticText(self.massiveDebugAndAutoExitPanel, wx.ID_ANY, "          Automatically exit")
@@ -857,7 +857,7 @@ class LauncherMainFrame(wx.Frame):
 
         self.cvlShowDebugWindowCheckBox = wx.CheckBox(self.cvlDebugAndAutoExitPanel, wx.ID_ANY, "")
         self.cvlShowDebugWindowCheckBox.SetValue(False)
-        self.cvlShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onCvlDebugWindowCheckBoxStateChanged)
+        self.cvlShowDebugWindowCheckBox.Bind(wx.EVT_CHECKBOX, self.onDebugWindowCheckBoxStateChanged)
         self.cvlDebugAndAutoExitPanelSizer.Add(self.cvlShowDebugWindowCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
 
         self.cvlAutomaticallyExitLabel = wx.StaticText(self.cvlDebugAndAutoExitPanel, wx.ID_ANY, "          Automatically exit")
@@ -1040,6 +1040,21 @@ class LauncherMainFrame(wx.Frame):
         # pressing the Login button.
         self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,temporaryKey=False)
 
+        self.logWindow = wx.Frame(self, title="MASSIVE/CVL Launcher Debug Log", name="MASSIVE/CVL Launcher Debug Log",pos=(200,150),size=(700,450))
+        self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
+        self.logTextCtrl = wx.TextCtrl(self.logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
+        logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
+        logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
+        self.logWindow.SetSizer(logWindowSizer)
+        if sys.platform.startswith("darwin"):
+            font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        else:
+            font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        self.logTextCtrl.SetFont(font)
+
+        logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
+
+
     def onTabbedViewChanged(self, event):
         event.Skip()
         if hasattr(self, 'cvlAdvancedLoginCheckBox'):
@@ -1050,9 +1065,13 @@ class LauncherMainFrame(wx.Frame):
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
         if self.tabbedView.GetSelection()==MASSIVE_TAB_INDEX:
+            launcherMainFrame.massiveTabSelected = True
+            launcherMainFrame.cvlTabSelected = False
             logger.debug( "Using MASSIVE display strings.")
             self.displayStrings = sshKeyDistDisplayStringsMASSIVE()
         if self.tabbedView.GetSelection()==CVL_TAB_INDEX:
+            launcherMainFrame.cvlTabSelected = True
+            launcherMainFrame.massiveTabSelected = False
             logger.debug("Using CVL display strings.")
             self.displayStrings = sshKeyDistDisplayStringsCVL()
 
@@ -1069,15 +1088,14 @@ class LauncherMainFrame(wx.Frame):
         if massiveProjectTextFieldValue in launcherMainFrame.massiveProjects:
             launcherMainFrame.massiveProjectComboBox.SetSelection(launcherMainFrame.massiveProjects.index(massiveProjectTextFieldValue))
 
-    def onMassiveDebugWindowCheckBoxStateChanged(self, event):
-        if launcherMainFrame.logWindow!=None:
-            if launcherMainFrame.massiveTabSelected:
-                launcherMainFrame.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
-
-    def onCvlDebugWindowCheckBoxStateChanged(self, event):
+    def onDebugWindowCheckBoxStateChanged(self, event):
         if launcherMainFrame.logWindow!=None:
             if launcherMainFrame.cvlTabSelected:
+                self.massiveShowDebugWindowCheckBox.SetValue(self.cvlShowDebugWindowCheckBox.GetValue())
                 launcherMainFrame.logWindow.Show(self.cvlShowDebugWindowCheckBox.GetValue())
+            if launcherMainFrame.massiveTabSelected:
+                self.cvlShowDebugWindowCheckBox.SetValue(self.massiveShowDebugWindowCheckBox.GetValue())
+                launcherMainFrame.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
 
     def onCvlAdvancedLoginCheckBox(self, event):
         if self.cvlAdvancedLoginCheckBox.GetValue():
@@ -1085,15 +1103,9 @@ class LauncherMainFrame(wx.Frame):
         else:
             launcherMainFrame.cvlAdvancedLoginFieldsPanel.Hide()
 
-    def onCloseMassiveDebugWindow(self, event):
-        if launcherMainFrame.massiveTabSelected:
-            self.massiveShowDebugWindowCheckBox.SetValue(False)
-        if launcherMainFrame.logWindow!=None:
-            launcherMainFrame.logWindow.Show(False)
-
-    def onCloseCvlDebugWindow(self, event):
-        if launcherMainFrame.cvlTabSelected:
-            self.cvlShowDebugWindowCheckBox.SetValue(False)
+    def onCloseDebugWindow(self, event):
+        self.massiveShowDebugWindowCheckBox.SetValue(False)
+        self.cvlShowDebugWindowCheckBox.SetValue(False)
         if launcherMainFrame.logWindow!=None:
             launcherMainFrame.logWindow.Show(False)
 
@@ -1326,14 +1338,6 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
 
-        if self.logWindow == None:
-            if launcherMainFrame.massiveTabSelected:
-                self.logWindow = wx.Frame(self, title="MASSIVE Login", name="MASSIVE Login",pos=(200,150),size=(700,450))
-                self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseMassiveDebugWindow)
-            else:
-                self.logWindow = wx.Frame(self, title="CVL Login", name="CVL Login",pos=(200,150),size=(700,450))
-                self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseCvlDebugWindow)
-
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
             self.logWindow.SetIcon(_icon)
@@ -1341,18 +1345,6 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         if sys.platform.startswith("linux"):
             import MASSIVE_icon
             self.logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
-
-        self.logTextCtrl = wx.TextCtrl(self.logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
-        logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
-        logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
-        self.logWindow.SetSizer(logWindowSizer)
-        if sys.platform.startswith("darwin"):
-            font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-        else:
-            font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
-        self.logTextCtrl.SetFont(font)
-
-        logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
 
         if launcherMainFrame.massiveTabSelected:
             self.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
