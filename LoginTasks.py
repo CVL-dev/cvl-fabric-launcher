@@ -179,7 +179,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = LauncherMessageDialog(self.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=concat)
+                        dlg = LauncherMessageDialog(self.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=concat,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     dlg.Show()
                 wx.CallAfter(showMessageWindow,concat)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
@@ -874,7 +874,7 @@ class LoginProcess():
                         event.loginprocess.jobParams.update([('project',"%s"%project)])
                         parentWindow = event.loginprocess.notify_window
                     cancelCallback=lambda x: event.loginprocess.cancel(x)
-                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, progressDialog=event.loginprocess.progressDialog, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE)
+                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, progressDialog=event.loginprocess.progressDialog, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE, helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     showModal(dlg,event.loginprocess)
                 if (not event.loginprocess.canceled()):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
@@ -1277,7 +1277,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
+                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     showModal(dlg,event.loginprocess)
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])

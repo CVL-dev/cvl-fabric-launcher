@@ -51,6 +51,7 @@ Do you want me to delete the job or leave it in the queue so you can reconnect l
         self.reconnectMessage="An Existing Desktop was found. It has {timestring} remaining. Would you like to reconnect or kill it and start a new desktop?"
         self.reconnectMessageYes="Reconnect"
         self.reconnectMessageNo="New desktop"
+        self.helpEmailAddress="help@massive.org.au"
 
 class sshKeyDistDisplayStringsCVL(sshKeyDistDisplayStrings):
     def __init__(self):
@@ -88,6 +89,7 @@ launching remote HPC jobs."""
         self.newPassphraseTitle="Please enter a new passphrase"
         self.persistentMessage="Would you like to leave your current session running so that you can reconnect later?"
         self.reconnectMessage="An Existing Desktop was found. Would you like to reconnect or kill it and start a new desktop?"
+        self.helpEmailAddress="cvl-help@monash.edu"
 
 class sshKeyDistDisplayStringsMASSIVE(sshKeyDistDisplayStrings):
     def __init__(self):
@@ -117,6 +119,7 @@ authentication for the launcher."""
         self.newPassphraseMismatch="Sorry, the two passphrases you entered don't match.\n"+self.newPassphrase
         self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match!"
         self.newPassphraseTitle="Please enter a new passphrase"
+        self.helpEmailAddress="help@massive.org.au"
 
 
 
@@ -179,6 +182,11 @@ class ListSelectionDialog(wx.Dialog):
         else:
             logger.debug("cancelCallback set to none")
             self.cancelCallback=None
+        if kw.has_key('helpEmailAddress'):
+            self.helpEmailAddress=kw.pop('helpEmailAddress')
+        else:
+            logger.debug("helpEmailAddress set to none")
+            self.helpEmailAddress="help@massive.org.au"
         super(ListSelectionDialog, self).__init__(*args, **kw)
         self.itemList=[]
        
@@ -227,7 +235,7 @@ class ListSelectionDialog(wx.Dialog):
             font.SetPointSize(9)
         contactQueriesContactLabel.SetFont(font)
 
-        contactEmailHyperlink = wx.HyperlinkCtrl(contactPanel, id = wx.ID_ANY, label = "help@massive.org.au", url = "mailto:help@massive.org.au")
+        contactEmailHyperlink = wx.HyperlinkCtrl(contactPanel, id = wx.ID_ANY, label = self.helpEmailAddress, url = "mailto:" + self.helpEmailAddress)
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         if sys.platform.startswith("darwin"):
             font.SetPointSize(11)

@@ -1269,7 +1269,7 @@ If this computer is shared by a number of people then passwords are preferable.
 
 If this computer is not shared, then an SSH Key pair will give you advanced features for managing your access.
 """
-        dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices)
+        dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices,helpEmailAddress=self.displayStrings.helpEmailAddress)
         rv=dlg.ShowModal()
         if rv in range(auth_mode.GetCount()):
             authModeRadioBox = self.launcherOptionsDialog.FindWindowByName('auth_mode')
@@ -1434,6 +1434,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         if not self.vncOptions.has_key('auth_mode'):
             mode=self.queryAuthMode()
             if mode==wx.ID_CANCEL:
+                self.onLoginProcessComplete(None)
                 return
             self.vncOptions['auth_mode']=mode
             self.launcherOptionsDialog.FindWindowByName('auth_mode').SetSelection(mode)
