@@ -354,6 +354,7 @@ class LauncherMainFrame(wx.Frame):
         self.noneVisible={}
         self.noneVisible['usernamePanel']=False
         self.noneVisible['projectPanel']=False
+        self.noneVisible['execHostPanel']=False
         self.noneVisible['resourcePanel']=False
         self.noneVisible['resolutionPanel']=False
         self.noneVisible['cipherPanel']=False
@@ -373,6 +374,17 @@ class LauncherMainFrame(wx.Frame):
         self.siteConfigPanel.GetSizer().Add(self.siteConfigComboBox, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.siteConfigPanel.Fit()
         self.loginFieldsPanel.GetSizer().Add(self.siteConfigPanel,proportion=0,flag=wx.EXPAND)
+
+        self.loginHostPanel=wx.Panel(self.loginFieldsPanel,name='loginHostPanel')
+        self.loginHostPanel.SetAutoLayout(self.AUTOLAYOUT)
+        self.loginHostPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+        self.loginHostLabel = wx.StaticText(self.loginHostPanel, wx.ID_ANY, 'Server name or IP',name='label_loginHost')
+        self.loginHostPanel.GetSizer().Add(self.loginHostLabel, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.loginHostTextField = wx.TextCtrl(self.loginHostPanel, wx.ID_ANY, size=(widgetWidth2, -1),name='jobParams_loginHost')
+        self.loginHostPanel.GetSizer().Add(self.loginHostTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.loginHostPanel.Fit()
+        self.loginFieldsPanel.GetSizer().Add(self.loginHostPanel,proportion=0,flag=wx.EXPAND)
+
 
         self.usernamePanel=wx.Panel(self.loginFieldsPanel,name='usernamePanel')
         self.usernamePanel.SetAutoLayout(self.AUTOLAYOUT)
@@ -538,7 +550,7 @@ class LauncherMainFrame(wx.Frame):
         self.Centre()
 
         self.logWindow = wx.Frame(self, title="MASSIVE/CVL Launcher Debug Log", name="MASSIVE/CVL Launcher Debug Log",pos=(200,150),size=(700,450))
-        self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
+        #self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
         self.logWindowPanel = wx.Panel(self.logWindow)
         self.logTextCtrl = wx.TextCtrl(self.logWindowPanel, style=wx.TE_MULTILINE|wx.TE_READONLY)
         logWindowSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=0, hgap=0)

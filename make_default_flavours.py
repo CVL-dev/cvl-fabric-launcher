@@ -249,18 +249,40 @@ def buildSiteConfigCmdRegExDict(configName):
         cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
 
-
-
-
-
-
-
-
     return siteConfigDict
+
+def getOtherSession():
+
+    import re
+    Visible={}
+    Visible['usernamePanel']=True
+    Visible['projectPanel']=False
+    Visible['loginHostPanel']=True
+    Visible['resourcePanel']=False
+    Visible['resolutionPanel']=False
+    Visible['cipherPanel']='Advanced'
+    Visible['debugCheckBoxPanel']='Advanced'
+    Visible['advancedCheckBoxPanel']=True
+    Visible['optionsDialog']=False
+    siteConfigDict={}
+    siteConfigDict['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
+    siteConfigDict['listAll']=siteConfig.cmdRegEx('\'vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
+    siteConfigDict['startServer']=siteConfig.cmdRegEx('\"vncserver --vnc turbovnc --geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
+    siteConfigDict['stop']=siteConfig.cmdRegEx('\'vncserver -kill {vncDisplay}\'')
+    siteConfigDict['stopForRestart']=siteConfig.cmdRegEx('\'vncserver -kill {vncDisplay}\'')
+    siteConfigDict['otp']= siteConfig.cmdRegEx('\'vncpasswd -o -display localhost{vncDisplay}\'','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
+    siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {loginHost} "echo agent_hello; bash "','agent_hello',async=True)
+    siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
+    #newConfig = siteConfig(siteConfigDict,Visible)
+    newConfig = siteConfig.siteConfig()
+    newConfig.__dict__.update(siteConfigDict)
+    newConfig.visibility=Visible
+    return newConfig
 
 massivevisible={}
 massivevisible['usernamePanel']=True
 massivevisible['projectPanel']=True
+massivevisible['loginHostPanel']=False
 massivevisible['resourcePanel']=True
 massivevisible['resolutionPanel']='Advanced'
 massivevisible['cipherPanel']='Advanced'
@@ -268,6 +290,7 @@ massivevisible['debugCheckBoxPanel']='Advanced'
 massivevisible['advancedCheckBoxPanel']=True
 massivevisible['optionsDialog']=False
 cvlvisible={}
+cvlvisible['loginHostPanel']=False
 cvlvisible['usernamePanel']=True
 cvlvisible['projectPanel']=False
 cvlvisible['resourcePanel']='Advanced'
@@ -297,12 +320,15 @@ d=buildSiteConfigCmdRegExDict("Huygens")
 huygens.__dict__.update(d)
 huygens.visibility=cvlvisible
 
+other=getOtherSession()
+
 defaultSites={}
 
 defaultSites['Desktop on m1.massive.org.au']  = m1
 defaultSites['Desktop on m2.massive.org.au']  = m2 
 defaultSites['CVL Desktop']  = cvl
 defaultSites['Huygens on the CVL']  = huygens
+defaultSites['Other']  = other
 import utilityFunctions
 import json
 json=json.dumps(defaultSites,cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))
