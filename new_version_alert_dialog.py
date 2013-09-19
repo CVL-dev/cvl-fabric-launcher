@@ -36,7 +36,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-# Enquires: help@massive.org.au
+# Enquiries: help@massive.org.au
 
 import sys
 import wx
@@ -85,6 +85,7 @@ class NewVersionAlertDialog(wx.Dialog):
             label =
             "You are running version " + launcher_version_number.version_number + "\n\n" +
             "The latest version is " + latestVersionNumber + "\n\n" +
+            'RUNNING AN OLD VERSION OF THE LAUNCHER IS NOT RECOMMENDED!\n\n'
             "Please download a new version from:\n\n")
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         if sys.platform.startswith("darwin"):

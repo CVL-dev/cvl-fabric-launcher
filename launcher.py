@@ -37,7 +37,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Enquires: help@massive.org.au
+# Enquiries: help@massive.org.au
 
 # launcher.py
 """
@@ -305,6 +305,21 @@ class LauncherMainFrame(wx.Frame):
         helpContentsMenuItemID = wx.NewId()
         self.help_menu.Append(helpContentsMenuItemID, "&MASSIVE/CVL Launcher Help")
         self.Bind(wx.EVT_MENU, self.onHelpContents, id=helpContentsMenuItemID)
+        self.help_menu.AppendSeparator()
+        emailHelpAtMassiveMenuItemID = wx.NewId()
+        self.help_menu.Append(emailHelpAtMassiveMenuItemID, "Email &help@massive.org.au")
+        self.Bind(wx.EVT_MENU, self.onEmailHelpAtMassive, id=emailHelpAtMassiveMenuItemID)
+        emailCvlHelpAtMonashMenuItemID = wx.NewId()
+        self.help_menu.Append(emailCvlHelpAtMonashMenuItemID, "Email &cvl-help@monash.edu")
+        self.Bind(wx.EVT_MENU, self.onEmailCvlHelpAtMonash, id=emailCvlHelpAtMonashMenuItemID)
+        submitDebugLogMenuItemID = wx.NewId()
+        self.help_menu.Append(submitDebugLogMenuItemID, "&Submit debug log")
+        self.Bind(wx.EVT_MENU, self.onSubmitDebugLog, id=submitDebugLogMenuItemID)
+        # On Mac, the About menu item will automatically be moved from 
+        # the Help menu to the "MASSIVE Launcher" menu, so we don't
+        # need a separator.
+        if not sys.platform.startswith("darwin"):
+            self.help_menu.AppendSeparator()
         self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE/CVL Launcher")
         self.Bind(wx.EVT_MENU, self.onAbout, id=wx.ID_ABOUT)
         self.menu_bar.Append(self.help_menu, "&Help")
@@ -441,8 +456,6 @@ class LauncherMainFrame(wx.Frame):
         self.cipherPanel.GetSizer().Add(self.sshTunnelCipherComboBox, proportion=0,flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.cipherPanel.Fit()
         self.loginFieldsPanel.GetSizer().Add(self.cipherPanel,proportion=0,flag=wx.EXPAND)
-
-
         self.checkBoxPanel = wx.Panel(self.loginFieldsPanel,name="checkBoxPanel")
         self.checkBoxPanel.SetAutoLayout(self.AUTOLAYOUT)
         self.checkBoxPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
@@ -523,6 +536,34 @@ class LauncherMainFrame(wx.Frame):
         #self.menu_bar.Show(False)
 
         self.Centre()
+
+        self.logWindow = wx.Frame(self, title="MASSIVE/CVL Launcher Debug Log", name="MASSIVE/CVL Launcher Debug Log",pos=(200,150),size=(700,450))
+        self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
+        self.logWindowPanel = wx.Panel(self.logWindow)
+        self.logTextCtrl = wx.TextCtrl(self.logWindowPanel, style=wx.TE_MULTILINE|wx.TE_READONLY)
+        logWindowSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=0, hgap=0)
+        logWindowSizer.AddGrowableRow(0)
+        logWindowSizer.AddGrowableCol(0)
+        logWindowSizer.Add(self.logTextCtrl, flag=wx.EXPAND)
+        self.submitDebugLogButton = wx.Button(self.logWindowPanel, wx.ID_ANY, 'Submit debug log')
+        self.Bind(wx.EVT_BUTTON, self.onSubmitDebugLog, id=self.submitDebugLogButton.GetId())
+        logWindowSizer.Add(self.submitDebugLogButton, flag=wx.ALIGN_RIGHT|wx.TOP|wx.BOTTOM|wx.RIGHT, border=10)
+        self.logWindowPanel.SetSizer(logWindowSizer)
+        if sys.platform.startswith("darwin"):
+            font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        else:
+            font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
+        self.logTextCtrl.SetFont(font)
+
+        if sys.platform.startswith("win"):
+            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+            self.logWindow.SetIcon(_icon)
+
+        if sys.platform.startswith("linux"):
+            import MASSIVE_icon
+            self.logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+
+        logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
 
         import getpass
         logger.debug('getpass.getuser(): ' + getpass.getuser())
@@ -682,12 +723,8 @@ class LauncherMainFrame(wx.Frame):
             import new_version_alert_dialog
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(self, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
-
-            # Tried submit_log=True, but it didn't work.
-            # Maybe the requests stuff hasn't been initialized yet.
-            logger.debug("Failed version number check.")
-            logger.dump_log(self,submit_log=False)
-            sys.exit(1)
+            logger.debug('Old launcher version !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            logger.debug('launcher version: ' + str(launcher_version_number.version_number))
 
         self.startupinfo = None
         try:
@@ -697,7 +734,8 @@ class LauncherMainFrame(wx.Frame):
         except:
             # On non-Windows systems, the previous block will throw:
             # "AttributeError: 'module' object has no attribute 'STARTUPINFO'".
-            logger.debug('exception: ' + str(traceback.format_exc()))
+            if sys.platform.startswith("win"):
+                logger.debug('exception: ' + str(traceback.format_exc()))
 
         self.creationflags = 0
         try:
@@ -705,14 +743,14 @@ class LauncherMainFrame(wx.Frame):
             self.creationflags = win32process.CREATE_NO_WINDOW
         except:
             # On non-Windows systems, the previous block will throw an exception.
-            logger.debug('exception: ' + str(traceback.format_exc()))
+            if sys.platform.startswith("win"):
+                logger.debug('exception: ' + str(traceback.format_exc()))
 
         # launcherMainFrame.keyModel must be initialized before the
         # user presses the Login button, because the user might
         # use the Identity Menu to delete their key etc. before
         # pressing the Login button.
         self.keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,temporaryKey=False)
-
 
     def buildJobParams(self,window):
         jobParams={}
@@ -779,6 +817,17 @@ class LauncherMainFrame(wx.Frame):
         else:
             wx.MessageBox("Unable to open: " + helpController.launcherHelpUrl,
                           "Error", wx.OK|wx.ICON_EXCLAMATION)
+
+    def onEmailHelpAtMassive(self, event):
+        import webbrowser
+        webbrowser.open("mailto:help@massive.org.au")
+
+    def onEmailCvlHelpAtMonash(self, event):
+        import webbrowser
+        webbrowser.open("mailto:cvl-help@monash.edu")
+
+    def onSubmitDebugLog(self, event):
+        logger.dump_log(launcherMainFrame,submit_log=True,showFailedToOpenRemoteDesktopMessage=False)
 
     def onAbout(self, event):
         import commit_def
@@ -896,9 +945,12 @@ If this computer is shared by a number of people then passwords are preferable.
 
 If this computer is not shared, then an SSH Key pair will give you advanced features for managing your access.
 """
-        dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices)
+        dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices,helpEmailAddress=self.displayStrings.helpEmailAddress)
         rv=dlg.ShowModal()
         if rv in range(auth_mode.GetCount()):
+            authModeRadioBox = self.launcherOptionsDialog.FindWindowByName('auth_mode')
+            authModeRadioBox.SetSelection(int(rv))
+            self.identity_menu.setRadio()
             return int(rv)
         else:
             self.queryAuthMode()
@@ -910,7 +962,15 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
     def loginCancel(self,lp,jobParams):
         self.loginProcess.remove(lp)
 
+    def onLoginProcessComplete(self, jobParams):
+        logger.debug("launcher.py: onLogin: Enabling login button.")
+        self.loginButton.Enable()
+
     def onLogin(self, event):
+
+        logger.debug("launcher.py: onLogin: Disabling login button.")
+        self.loginButton.Disable()
+
         MASSIVE_TAB_INDEX = 0
         CVL_TAB_INDEX =1
         configName=self.FindWindowByName('jobParams_configName').GetValue()
@@ -978,6 +1038,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         if not self.vncOptions.has_key('auth_mode'):
             mode=self.queryAuthMode()
             if mode==wx.ID_CANCEL:
+                self.onLoginProcessComplete(None)
                 return
             self.vncOptions['auth_mode']=mode
             self.launcherOptionsDialog.FindWindowByName('auth_mode').SetSelection(mode)

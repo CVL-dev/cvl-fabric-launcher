@@ -78,6 +78,11 @@ class ListSelectionDialog(wx.Dialog):
         else:
             logger.debug("cancelCallback set to none")
             self.cancelCallback=None
+        if kw.has_key('helpEmailAddress'):
+            self.helpEmailAddress=kw.pop('helpEmailAddress')
+        else:
+            logger.debug("helpEmailAddress set to none")
+            self.helpEmailAddress="help@massive.org.au"
         super(ListSelectionDialog, self).__init__(*args, **kw)
         self.itemList=[]
        
@@ -126,7 +131,7 @@ class ListSelectionDialog(wx.Dialog):
             font.SetPointSize(9)
         contactQueriesContactLabel.SetFont(font)
 
-        contactEmailHyperlink = wx.HyperlinkCtrl(contactPanel, id = wx.ID_ANY, label = "help@massive.org.au", url = "mailto:help@massive.org.au")
+        contactEmailHyperlink = wx.HyperlinkCtrl(contactPanel, id = wx.ID_ANY, label = self.helpEmailAddress, url = "mailto:" + self.helpEmailAddress)
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         if sys.platform.startswith("darwin"):
             font.SetPointSize(11)

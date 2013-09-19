@@ -85,7 +85,7 @@ class Logger():
         else:
             wx.CallAfter(self.loggerObject.warning, message)
 
-    def dump_log(self, launcherMainFrame, submit_log=False, jobParams = None):
+    def dump_log(self, launcherMainFrame, submit_log=False, jobParams = None, showFailedToOpenRemoteDesktopMessage=True):
         # Commenting out logging.shutdown() for now,
         # because of concerns that logging could be used
         # after the call to logging.shutdown() which is
@@ -97,7 +97,7 @@ class Logger():
             return
 
         def showSubmitDebugLogDialog():
-            dlg = SubmitDebugReportDialog(None,wx.ID_ANY,'MASSIVE/CVL Launcher',self.loggerOutput.getvalue(),self.massiveLauncherConfig,self.massiveLauncherPreferencesFilePath)
+            dlg = SubmitDebugReportDialog(None,wx.ID_ANY,'MASSIVE/CVL Launcher',self.loggerOutput.getvalue(),self.massiveLauncherConfig,self.massiveLauncherPreferencesFilePath,showFailedToOpenRemoteDesktopMessage=showFailedToOpenRemoteDesktopMessage)
             try:
                 try:
                     wx.EndBusyCursor()

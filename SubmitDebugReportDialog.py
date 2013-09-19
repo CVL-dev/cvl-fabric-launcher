@@ -9,7 +9,7 @@ if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
 
 class SubmitDebugReportDialog(wx.Dialog):
-    def __init__(self, parent, id, title, debugLog, massiveLauncherConfig, massiveLauncherPreferencesFilePath):
+    def __init__(self, parent, id, title, debugLog, massiveLauncherConfig, massiveLauncherPreferencesFilePath,showFailedToOpenRemoteDesktopMessage=True):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
 
         self.massiveLauncherConfig = massiveLauncherConfig
@@ -26,9 +26,12 @@ class SubmitDebugReportDialog(wx.Dialog):
 
         # Instructions label
 
-        self.instructionsLabel = wx.StaticText(self.submitDebugReportDialogPanel, wx.ID_ANY, 
-            "The Launcher has failed to open a remote desktop.\n\n" + 
-            "You can submit a debug report to the Launcher developers.")
+        if showFailedToOpenRemoteDesktopMessage:
+            instructionsText = "The Launcher has failed to open a remote desktop.\n\n" 
+        else:
+            instructionsText = ""
+        instructionsText = instructionsText + "You can submit a debug report to the Launcher developers."
+        self.instructionsLabel = wx.StaticText(self.submitDebugReportDialogPanel, wx.ID_ANY, instructionsText)
         self.instructionsLabel.SetMinSize(wx.Size(600,-1))
         self.submitDebugReportDialogPanelSizer.Add(self.instructionsLabel, flag=wx.EXPAND|wx.BOTTOM, border=15)
 

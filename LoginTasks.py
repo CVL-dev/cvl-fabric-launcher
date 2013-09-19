@@ -16,6 +16,7 @@ if sys.platform.startswith("win"):
     from WindowsMessageDialog import LauncherMessageDialog
 from utilityFunctions import LAUNCHER_URL,TURBOVNC_BASE_URL
 from logger.Logger import logger
+import inspect
 
 def showModal(dialog,loginprocess):
     try:
@@ -117,6 +118,13 @@ class LoginProcess():
             if (self.cmdRegex.regex==None or self.cmdRegex.regex[0]==None or self.cmdRegex.requireMatch==False):
                 self.requireMatch=False
                 self.loginprocess.matchlist=[]
+
+            if self.cmdRegex.cmd is None:
+                logger.debug("runServerCommandThread: WARNING: cmdRegex.cmd is None. Skipping server command.")
+                frameTuple = inspect.getouterframes(inspect.currentframe())[1]
+                logger.debug("runServerCommandThread: Calling function name: " + frameTuple[3])
+                logger.debug("runServerCommandThread: Calling code's line number in LoginTasks.py: " + str(frameTuple[2]))
+                logger.debug("runServerCommandThread: Line of code calling runServerCommandThread: " + "".join(frameTuple[4]))
     
         def stop(self):
             if (self.cmdRegex.cmd!= None):
@@ -171,7 +179,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = LauncherMessageDialog(self.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=concat)
+                        dlg = LauncherMessageDialog(self.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=concat,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     dlg.Show()
                 wx.CallAfter(showMessageWindow,concat)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
@@ -225,11 +233,13 @@ class LoginProcess():
         def onOK(self,event):
             self.Close()
             self.Destroy()
+            logger.debug('SimpleOptionDialog, calling OK Callback')
             self.OKCallback()
 
         def onCancel(self,event):
             self.Close()
             self.Destroy()
+            logger.debug('SimpleOptionDialog, calling Cancel Callback')
             self.CancelCallback()
 
     class startWebDavServerThread(Thread):
@@ -334,6 +344,7 @@ class LoginProcess():
                     self.loginprocess.turboVncProcess = subprocess.Popen(vncCommandString,
                         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                         universal_newlines=True,startupinfo=self.loginprocess.startupinfo,creationflags=self.loginprocess.creationflags)
+                    self.loginprocess.vncviewerStarted.set()
                     self.loginprocess.turboVncStdout, self.loginprocess.turboVncStderr = self.loginprocess.turboVncProcess.communicate(input=self.loginprocess.jobParams['vncPasswd'] + "\n")
 
                     self.loginprocess.turboVncFinishTime = datetime.datetime.now()
@@ -863,7 +874,7 @@ class LoginProcess():
                         event.loginprocess.jobParams.update([('project',"%s"%project)])
                         parentWindow = event.loginprocess.notify_window
                     cancelCallback=lambda x: event.loginprocess.cancel(x)
-                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, progressDialog=event.loginprocess.progressDialog, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE)
+                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, progressDialog=event.loginprocess.progressDialog, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE, helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     showModal(dlg,event.loginprocess)
                 if (not event.loginprocess.canceled()):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
@@ -1266,7 +1277,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string)
+                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     showModal(dlg,event.loginprocess)
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
@@ -1463,7 +1474,7 @@ class LoginProcess():
                 pass
         if self.queued_job.isSet() and not self.started_job.isSet() and not self.userCanceled.isSet():
            qdelCallback()
-        if self.queued_job.isSet() and self.started_job.isSet():
+        if self.queued_job.isSet() and self.started_job.isSet() and not self.vncviewerStarted.isSet():
            qdelCallback()
         if self.queued_job.isSet() and not self.started_job.isSet() and self.userCanceled.isSet():
             self.askUserIfTheyWantToDeleteQueuedJobCompleted = False
@@ -1524,6 +1535,7 @@ class LoginProcess():
         self.queued_job=threading.Event()
         self._complete=threading.Event()
         self.userCanceled=threading.Event()
+        self.vncviewerStarted=threading.Event()
         self.webdavMounted=threading.Event()
         self.skd=None
         self.passwdPrompt=None

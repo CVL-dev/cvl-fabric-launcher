@@ -3,13 +3,15 @@ import wx
 import IconPys.MASSIVElogoTransparent64x64
 
 class LauncherMessageDialog(wx.Dialog):
-    def __init__(self, parent, message, title, **kw):
+    def __init__(self, parent, message, title, helpEmailAddress="help@massive.org.au", **kw):
         wx.Dialog.__init__(self, parent, style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP, **kw)
        
         if parent!=None:
             self.CenterOnParent()
         else:
             self.Centre()
+
+        self.helpEmailAddress = helpEmailAddress
 
         self.dialogPanel = wx.Panel(self, wx.ID_ANY)
 
@@ -51,7 +53,7 @@ class LauncherMessageDialog(wx.Dialog):
         self.contactQueriesContactLabel.SetForegroundColour(wx.Colour(0,0,0))
         self.contactQueriesContactLabel.SetPosition(wx.Point(25,okButtonPosition.y))
 
-        self.contactEmailHyperlink = wx.HyperlinkCtrl(self.dialogPanel, id = wx.ID_ANY, label = "help@massive.org.au", url = "mailto:help@massive.org.au")
+        self.contactEmailHyperlink = wx.HyperlinkCtrl(self.dialogPanel, id = wx.ID_ANY, label = self.helpEmailAddress, url = "mailto:" + self.helpEmailAddress)
         self.contactEmailHyperlink.SetFont(smallFont) # Or maybe even smaller font?
         #hyperlinkPosition = wx.Point(self.contactQueriesContactLabel.GetPosition().x+self.contactQueriesContactLabel.GetSize().width+10,okButtonPosition.y)
         hyperlinkPosition = wx.Point(self.contactQueriesContactLabel.GetPosition().x+self.contactQueriesContactLabel.GetSize().width,okButtonPosition.y)
