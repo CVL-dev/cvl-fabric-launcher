@@ -959,22 +959,29 @@ class LauncherMainFrame(wx.Frame):
 
         self.logWindow = wx.Frame(self, title="MASSIVE/CVL Launcher Debug Log", name="MASSIVE/CVL Launcher Debug Log",pos=(200,150),size=(700,450))
         self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
-        self.logTextCtrl = wx.TextCtrl(self.logWindow, style=wx.TE_MULTILINE|wx.TE_READONLY)
-        #logWindowSizer = wx.GridSizer(rows=1, cols=1, vgap=5, hgap=5)
+        self.logWindowPanel = wx.Panel(self.logWindow)
+        self.logTextCtrl = wx.TextCtrl(self.logWindowPanel, style=wx.TE_MULTILINE|wx.TE_READONLY)
         logWindowSizer = wx.FlexGridSizer(rows=2, cols=1, vgap=0, hgap=0)
         logWindowSizer.AddGrowableRow(0)
         logWindowSizer.AddGrowableCol(0)
-        #logWindowSizer.Add(self.logTextCtrl, 0, wx.EXPAND)
         logWindowSizer.Add(self.logTextCtrl, flag=wx.EXPAND)
-        self.submitDebugLogButton = wx.Button(self.logWindow, wx.ID_ANY, 'Submit debug log')
+        self.submitDebugLogButton = wx.Button(self.logWindowPanel, wx.ID_ANY, 'Submit debug log')
         self.Bind(wx.EVT_BUTTON, self.onSubmitDebugLog, id=self.submitDebugLogButton.GetId())
         logWindowSizer.Add(self.submitDebugLogButton, flag=wx.ALIGN_RIGHT|wx.TOP|wx.BOTTOM|wx.RIGHT, border=10)
-        self.logWindow.SetSizer(logWindowSizer)
+        self.logWindowPanel.SetSizer(logWindowSizer)
         if sys.platform.startswith("darwin"):
             font = wx.Font(13, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         else:
             font = wx.Font(11, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Courier New')
         self.logTextCtrl.SetFont(font)
+
+        if sys.platform.startswith("win"):
+            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
+            self.logWindow.SetIcon(_icon)
+
+        if sys.platform.startswith("linux"):
+            import MASSIVE_icon
+            self.logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
 
         logger.sendLogMessagesToDebugWindowTextControl(self.logTextCtrl)
 
@@ -1365,14 +1372,6 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         else:
             with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
                 cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-
-        if sys.platform.startswith("win"):
-            _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
-            self.logWindow.SetIcon(_icon)
-
-        if sys.platform.startswith("linux"):
-            import MASSIVE_icon
-            self.logWindow.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
 
         if launcherMainFrame.massiveTabSelected:
             self.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
