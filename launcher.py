@@ -1218,6 +1218,9 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices)
         rv=dlg.ShowModal()
         if rv in range(auth_mode.GetCount()):
+            authModeRadioBox = self.launcherOptionsDialog.FindWindowByName('auth_mode')
+            authModeRadioBox.SetSelection(int(rv))
+            self.identity_menu.setRadio()
             return int(rv)
         else:
             return wx.ID_CANCEL
