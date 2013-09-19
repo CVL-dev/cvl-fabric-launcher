@@ -227,7 +227,7 @@
             "__class__": "cmdRegEx",
             "__module__": "siteConfig",
             "async": false,
-            "cmd": null,
+            "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
             "host": "login",
             "loop": false,
             "regex": [
@@ -557,7 +557,7 @@
             "__class__": "cmdRegEx",
             "__module__": "siteConfig",
             "async": false,
-            "cmd": "qdel {jobid} ; sleep 5'",
+            "cmd": "'qdel {jobid} ; sleep 5'",
             "host": "login",
             "loop": false,
             "regex": [
@@ -887,7 +887,7 @@
             "__class__": "cmdRegEx",
             "__module__": "siteConfig",
             "async": false,
-            "cmd": "qdel {jobid} ; sleep 5'",
+            "cmd": "'qdel {jobid} ; sleep 5'",
             "host": "login",
             "loop": false,
             "regex": [
@@ -1206,7 +1206,7 @@
             "__class__": "cmdRegEx",
             "__module__": "siteConfig",
             "async": false,
-            "cmd": null,
+            "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
             "host": "login",
             "loop": false,
             "regex": [
