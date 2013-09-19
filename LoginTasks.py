@@ -225,11 +225,13 @@ class LoginProcess():
         def onOK(self,event):
             self.Close()
             self.Destroy()
+            logger.debug('SimpleOptionDialog, calling OK Callback')
             self.OKCallback()
 
         def onCancel(self,event):
             self.Close()
             self.Destroy()
+            logger.debug('SimpleOptionDialog, calling Cancel Callback')
             self.CancelCallback()
 
     class startWebDavServerThread(Thread):
@@ -334,6 +336,7 @@ class LoginProcess():
                     self.loginprocess.turboVncProcess = subprocess.Popen(vncCommandString,
                         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True,
                         universal_newlines=True,startupinfo=self.loginprocess.startupinfo,creationflags=self.loginprocess.creationflags)
+                    self.loginprocess.vncviewerStarted.set()
                     self.loginprocess.turboVncStdout, self.loginprocess.turboVncStderr = self.loginprocess.turboVncProcess.communicate(input=self.loginprocess.jobParams['vncPasswd'] + "\n")
 
                     self.loginprocess.turboVncFinishTime = datetime.datetime.now()
@@ -1463,7 +1466,7 @@ class LoginProcess():
                 pass
         if self.queued_job.isSet() and not self.started_job.isSet() and not self.userCanceled.isSet():
            qdelCallback()
-        if self.queued_job.isSet() and self.started_job.isSet():
+        if self.queued_job.isSet() and self.started_job.isSet() and not self.vncviewerStarted.isSet():
            qdelCallback()
         if self.queued_job.isSet() and not self.started_job.isSet() and self.userCanceled.isSet():
             self.askUserIfTheyWantToDeleteQueuedJobCompleted = False
@@ -1524,6 +1527,7 @@ class LoginProcess():
         self.queued_job=threading.Event()
         self._complete=threading.Event()
         self.userCanceled=threading.Event()
+        self.vncviewerStarted=threading.Event()
         self.webdavMounted=threading.Event()
         self.skd=None
         self.passwdPrompt=None
