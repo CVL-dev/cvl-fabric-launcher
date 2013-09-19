@@ -1637,6 +1637,7 @@ def buildSiteConfigCmdRegExDict(configName):
         regex="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
         siteConfigDict['startServer']=siteConfig.cmdRegEx(cmd,regex)
         siteConfigDict['stop']=siteConfig.cmdRegEx('\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"')
+        siteConfigDict['stopForRestart']=siteConfig.cmdRegEx('\"module load pbs ; module load maui ; qdel {jobid}\"')
         #siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('" /usr/bin/ssh {execHost} \' cat /var/spool/torque/spool/{jobidNumber}.*\'"' ,'^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
         siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('\"cat /var/spool/torque/spool/{jobidNumber}.*\"' ,'^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$',host='exec')
         cmd= '\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\"'
