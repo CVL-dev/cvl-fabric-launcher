@@ -42,17 +42,17 @@
         <param name="Local" value="new_authentication_method.htm">
         </OBJECT>
     <LI> <OBJECT type="text/sitemap">
-        <param name="Name" value="Privacy Options">
-        <param name="Local" value="privacy_options.htm">
+        <param name="Name" value="Using an SSH Key Pair or a Password">
+        <param name="Local" value="authentication_choice.htm">
         </OBJECT>
         <UL>
             <LI> <OBJECT type="text/sitemap">
-                <param name="Name" value="Private Mode">
-                <param name="Local" value="privacy_options.htm#PrivateMode">
+                <param name="Name" value="SSH Key Pair">
+                <param name="Local" value="authentication_choice.htm#SSHKey">
                 </OBJECT>
             <LI> <OBJECT type="text/sitemap">
-                <param name="Name" value="Public Mode">
-                <param name="Local" value="privacy_options.htm#PublicMode">
+                <param name="Name" value="Password">
+                <param name="Local" value="authentication_choice.htm#Password">
                 </OBJECT>
         </UL>
 </UL>
