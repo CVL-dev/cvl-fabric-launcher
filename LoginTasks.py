@@ -121,10 +121,14 @@ class LoginProcess():
 
             if self.cmdRegex.cmd is None:
                 logger.debug("runServerCommandThread: WARNING: cmdRegex.cmd is None. Skipping server command.")
-                frameTuple = inspect.getouterframes(inspect.currentframe())[1]
-                logger.debug("runServerCommandThread: Calling function name: " + frameTuple[3])
-                logger.debug("runServerCommandThread: Calling code's line number in LoginTasks.py: " + str(frameTuple[2]))
-                logger.debug("runServerCommandThread: Line of code calling runServerCommandThread: " + "".join(frameTuple[4]))
+                try:
+                    frameTuple = inspect.getouterframes(inspect.currentframe())[1]
+                    logger.debug("runServerCommandThread: frameTuple:" + str(frameTuple))
+                    logger.debug("runServerCommandThread: Calling function name: " + frameTuple[3])
+                    logger.debug("runServerCommandThread: Calling code's line number in LoginTasks.py: " + str(frameTuple[2]))
+                    logger.debug("runServerCommandThread: Line of code calling runServerCommandThread: " + "".join(frameTuple[4]))
+                except:
+                    logger.debug('runServerCommandThread exception: ' + str(traceback.format_exc()))
     
         def stop(self):
             if (self.cmdRegex.cmd!= None):
