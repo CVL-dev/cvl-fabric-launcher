@@ -2,6 +2,7 @@
 import siteConfig
 #from siteConfig import siteConfig,cmdRegEx
 import sys
+import collections
 
 class sshKeyDistDisplayStringsCVL(siteConfig.sshKeyDistDisplayStrings):
     def __init__(self):
@@ -279,6 +280,13 @@ def getOtherSession():
     newConfig.visibility=Visible
     return newConfig
 
+class siteList():
+    def __init__(self):
+        self.sites=collections.OrderedDict()
+
+    def add(self,siteName,siteConfig):
+        self.sites[siteName]=siteConfig
+
 massivevisible={}
 massivevisible['usernamePanel']=True
 massivevisible['projectPanel']=True
@@ -322,17 +330,35 @@ huygens.visibility=cvlvisible
 
 other=getOtherSession()
 
-defaultSites={}
-
+#import collections
+defaultSites=collections.OrderedDict()
+#defaultSites={}
 defaultSites['Desktop on m1.massive.org.au']  = m1
 defaultSites['Desktop on m2.massive.org.au']  = m2 
 defaultSites['CVL Desktop']  = cvl
 defaultSites['Huygens on the CVL']  = huygens
 defaultSites['Other']  = other
+
+#defaultSites=siteList()
+#defaultSites.add('Desktop on m1.massive.org.au'  , m1)
+#defaultSites.add('Desktop on m2.massive.org.au'  , m2 )
+#defaultSites.add('CVL Desktop'  , cvl)
+#defaultSites.add('Huygens on the CVL'  , huygens)
+#defaultSites.add('Other'  , other)
+#defaultSites=[]
+#defaultSites.append(('Desktop on m1.massive.org.au'  , m1))
+#defaultSites.append(('Desktop on m2.massive.org.au'  , m2 ))
+#defaultSites.append(('CVL Desktop'  , cvl))
+#defaultSites.append(('Huygens on the CVL'  , huygens))
+#defaultSites.append(('Other'  , other))
 import utilityFunctions
 import json
-json=json.dumps(defaultSites,cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))
+keys=defaultSites.keys()
+#jsons=json.dumps(keys,cls=siteConfig.GenericJSONEncoder,sort_keys=False,indent=4,separators=(',', ': '))
+#jsons=jsons+json.dumps([keys,defaultSites],cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))
+jsons=json.dumps([keys,defaultSites],cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))
 #json=utilityFunctions.GenericJSONEncoder().encode(defaultSites)
-print json
+print jsons
+
 
 
