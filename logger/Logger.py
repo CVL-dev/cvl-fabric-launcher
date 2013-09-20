@@ -91,6 +91,8 @@ class Logger():
         # after the call to logging.shutdown() which is
         # not allowed.
         # logging.shutdown()
+        logger.debug("Logger.dump_log: Flushing self.loggerObject.handlers[0], which is of class: " + self.loggerObject.handlers[0].__class__.__name__)
+        self.loggerObject.handlers[0].flush()
 
         if launcherMainFrame==None:
             logger.debug("Logger.dump_log: Bailing out early, because launcherMainFrame is None.")
