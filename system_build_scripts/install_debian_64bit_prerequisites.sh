@@ -114,6 +114,9 @@ pip install ssh
 pip install pycrypto
 pip install appdirs
 pip install requests
+pip install pexpect
+pip install lxml
+pip install psutil
 
 echo
 echo "Log out and log in again to load the modules environment."
