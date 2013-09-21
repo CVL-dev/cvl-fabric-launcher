@@ -1103,7 +1103,7 @@ class LoginProcess():
                 event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT,event.loginprocess)
                 logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_INTERMEDIATE_PORT')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.dbusSessionBusAddress,nextevent,"Unable to determine the DBUS_SESSION_BUS_ADDRESS for the VNC session")
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.dbusSessionBusAddress,nextevent,"Unable to determine the DBUS_SESSION_BUS_ADDRESS for the VNC session",requireMatch=False)
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
@@ -1165,6 +1165,23 @@ class LoginProcess():
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_GET_WEBDAV_WINDOW_ID')
 
+                    if '{dbusSessionBusAddress}' in event.loginprocess.siteConfig.openWebDavShareInRemoteFileBrowser.cmd and 'dbusSessionBusAddress' not in event.loginprocess.jobParams.keys():
+                        message = "Couldn't acquire DBUS_SESSION_BUS_ADDRESS, so unable to open shared home directory in remote file browser."
+                        def showMessageWindow(message):
+                            if sys.platform.startswith("linux"):
+                                dlg=HelpDialog(event.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                                panel=wx.Panel(dlg)
+                                sizer=wx.BoxSizer()
+                                panel.SetSizer(sizer)
+                                text=wx.StaticText(panel,wx.ID_ANY,label=message)
+                                sizer.Add(text,0,wx.ALL,15)
+                                dlg.addPanel(panel)
+                            else:
+                                dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=message,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
+                            dlg.Show()
+                        wx.CallAfter(showMessageWindow,message)
+                        return
+
                     #t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.openWebDavShareInRemoteFileBrowser, None, '', requireMatch=True)
                     t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.openWebDavShareInRemoteFileBrowser, nextevent, '', requireMatch=True)
                     t.setDaemon(True)
@@ -1221,6 +1238,13 @@ class LoginProcess():
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_UNMOUNT_WEBDAV')
 
+                    if '{dbusSessionBusAddress}' in event.loginprocess.siteConfig.webDavCloseWindow.cmd and 'dbusSessionBusAddress' not in event.loginprocess.jobParams.keys():
+                        event.loginprocess.webdavMounted.clear()
+                        newevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
+                        logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_SHUTDOWN')
+                        wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
+                        return
+
                     t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavCloseWindow, nextevent, '', requireMatch=False)
                     t.setDaemon(True)
                     t.start()
@@ -1239,6 +1263,11 @@ class LoginProcess():
                     logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_UNMOUNT_WEBDAV')
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_SHUTDOWN')
+
+                    if '{dbusSessionBusAddress}' in event.loginprocess.siteConfig.webDavUnmount.cmd and 'dbusSessionBusAddress' not in event.loginprocess.jobParams.keys():
+                        event.loginprocess.webdavMounted.clear()
+                        wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
+                        return
 
                     t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavUnmount, nextevent, '', requireMatch=False)
                     t.setDaemon(True)
