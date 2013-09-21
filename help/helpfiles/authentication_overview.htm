@@ -4,8 +4,8 @@
 <p>The simplest is the password, but passwords have a number of faults.</p>
 <p>The method we implementing is public/private key authentication. In this method a private key is stored on your computer (optionally protected by a passphrase incase anyone should steal your laptop), and a the public key is uploaded to a remote computer and associated with your account.</p>
 <p>The first time you use this method is the most complicated. You'll be asked to enter a new passphrase twice (to make sure you don't make any typos). You'll then be asked to enter your password for either MASSIVE or the CVL so that we can associated your public key with your account.</p>
-<p>After this, you'll be asked to enter the passphrase for your key the first time you run the Launcher after each reboot.</p>  On Windows, if you are
-not already running PuTTY's Pageant, you will be asked to enter your passphrase every time you start the Launcher.</p>
+<p>After this, you'll be asked to enter the passphrase for your key the first time you run the Launcher after each reboot.</p>
+<p>On Windows, there is no standard system SSH Agent, so the Launcher will attempt to launch PuTTY's Pageant (bundled with the Launcher), if it is not already running. The Launcher will leave Pageant running after it exits, so that you won't need to re-enter your passphrase every time you run the Launcher. If you wish, you can terminate the Pageant process spawned by the Launcher from within the Windows Task Manager. It should not be necessary to terminate the Launcher's Pageant process before installing a new version of the Launcher.</p>
 <p>See also:
 <ul>
  <li><a href="ssh_keys.htm">SSH Keys</a></li>
