@@ -1414,11 +1414,9 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         userCanAbort=True
         maximumProgressBarValue = 10
 
-        try:
-            os.mkdir(os.path.join(os.path.expanduser('~'), '.ssh'))
-        except:
-            logger.debug(traceback.format_exc())
-            pass
+        dotSshDir = os.path.join(os.path.expanduser('~'), '.ssh')
+        if not os.path.exists(dotSshDir):
+            os.makedirs(dotSshDir)
 
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         jobParams={}
