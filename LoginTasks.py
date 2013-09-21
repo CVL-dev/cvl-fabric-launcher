@@ -572,9 +572,11 @@ class LoginProcess():
             self.turboVncVersionNumber = "0.0"
 
             if sys.platform.startswith("darwin") and turboVncFlavour=="Java":
-                logger.debug("Java flavour of TurboVNC Viewer detected on Mac OS X, which means TurboVNC >= 1.2.")
-                logger.debug("Assuming TurboVNC version number = 1.2 to speed up login process.")
-                return (vnc,"1.2",turboVncFlavour)
+                import plistlib
+                turboVncInfoPlistFilePath = "/Applications/TurboVNC/TurboVNC Viewer.app/Contents/Info.plist"
+                turboVncInfoPlist = plistlib.readPlist(turboVncInfoPlistFilePath)
+                self.turboVncVersionNumber = turboVncInfoPlist['CFBundleShortVersionString']
+                return (vnc,self.turboVncVersionNumber,turboVncFlavour)
 
             turboVncVersionNumberCommandString = vnc + " -help"
             proc = subprocess.Popen(turboVncVersionNumberCommandString,
