@@ -23,7 +23,7 @@ do
     grep -q "Contact me? Yes" $filename && grep -q "^Config: Huygens" $filename && recipients="cvl-help@monash.edu,${recipients}"
     if [ $recipients == $originalRecipients ]
     then
-        recipients="help@massive.org.au,${recipients}"
+        grep -q "Contact me? Yes" $filename && recipients="help@massive.org.au,${recipients}"
     fi
     mutt -s "Launcher crash report: $filename" $recipients < $tmp
 
