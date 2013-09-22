@@ -1056,7 +1056,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_GET_OTP):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_GET_OTP')
                 event.loginprocess.updateProgressDialog( 9,"Getting the one-time password for the VNC server")
-                #if (event.loginprocess.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.vncOptions['share_local_home_directory_on_remote_desktop']):
+                #if (event.loginprocess.globalOptions.has_key('share_local_home_directory_on_remote_desktop') and event.loginprocess.globalOptions['share_local_home_directory_on_remote_desktop']):
                 if event.loginprocess.shareHomeDir:
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_SERVER')
@@ -1553,7 +1553,7 @@ class LoginProcess():
         return self._complete.isSet()
     myEVT_CUSTOM_LOGINPROCESS=None
     EVT_CUSTOM_LOGINPROCESS=None
-    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,cancelCallback=None,vncOptions=None,contacted_massive_website=False,removeKeyOnExit=False,shareHomeDir=False,startupinfo=None,creationflags=0):
+    def __init__(self,parentWindow,jobParams,keyModel,siteConfig=None,displayStrings=None,autoExit=False,completeCallback=None,cancelCallback=None,globalOptions=None,contacted_massive_website=False,removeKeyOnExit=False,shareHomeDir=False,startupinfo=None,creationflags=0):
         self.parentWindow = parentWindow
         LoginProcess.myEVT_CUSTOM_LOGINPROCESS=wx.NewEventType()
         LoginProcess.EVT_CUSTOM_LOGINPROCESS=wx.PyEventBinder(self.myEVT_CUSTOM_LOGINPROCESS,1)
@@ -1577,7 +1577,7 @@ class LoginProcess():
         self.completeCallback=completeCallback
         self.siteConfig = siteConfig
         self.jobParams = jobParams
-        self.vncOptions=vncOptions
+        self.globalOptions=globalOptions
         self.contacted_massive_website=contacted_massive_website
         self.removeKeyOnExit=removeKeyOnExit
         self.notify_window=wx.Window(parent=self.parentWindow)
@@ -1586,7 +1586,7 @@ class LoginProcess():
         self.notify_window.Center()
         self.cancelCallback=cancelCallback
         self.shareHomeDir=shareHomeDir
-        if (self.vncOptions.has_key('share_local_home_directory_on_remote_desktop') and self.vncOptions['share_local_home_directory_on_remote_desktop']):
+        if (self.globalOptions.has_key('share_local_home_directory_on_remote_desktop') and self.globalOptions['share_local_home_directory_on_remote_desktop']):
             self.shareHomeDir=True
         try:
             s = 'Connecting to {configShortName}...'.format(**jobParams)
@@ -1829,64 +1829,64 @@ class LoginProcess():
             else:
                 vncOptionsString = "-encoding \"Tight\""
 
-        if 'jpeg_compression' in self.vncOptions and self.vncOptions['jpeg_compression']==False:
+        if 'jpeg_compression' in self.globalOptions and self.globalOptions['jpeg_compression']==False:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nojpeg"
         defaultJpegChrominanceSubsampling = "1x"
-        if 'jpeg_chrominance_subsampling' in self.vncOptions and self.vncOptions['jpeg_chrominance_subsampling']!=defaultJpegChrominanceSubsampling:
-            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + self.vncOptions['jpeg_chrominance_subsampling']
+        if 'jpeg_chrominance_subsampling' in self.globalOptions and self.globalOptions['jpeg_chrominance_subsampling']!=defaultJpegChrominanceSubsampling:
+            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "samp " + self.globalOptions['jpeg_chrominance_subsampling']
         defaultJpegImageQuality = "95"
-        if 'jpeg_image_quality' in self.vncOptions and self.vncOptions['jpeg_image_quality']!=defaultJpegImageQuality:
-            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + self.vncOptions['jpeg_image_quality']
-        if 'zlib_compression_enabled' in self.vncOptions and self.vncOptions['zlib_compression_enabled']==True:
-            if 'zlib_compression_level' in self.vncOptions:
-                vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + self.vncOptions['zlib_compression_level']
-        if 'view_only' in self.vncOptions and self.vncOptions['view_only']==True:
+        if 'jpeg_image_quality' in self.globalOptions and self.globalOptions['jpeg_image_quality']!=defaultJpegImageQuality:
+            vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "quality " + self.globalOptions['jpeg_image_quality']
+        if 'zlib_compression_enabled' in self.globalOptions and self.globalOptions['zlib_compression_enabled']==True:
+            if 'zlib_compression_level' in self.globalOptions:
+                vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "compresslevel " + self.globalOptions['zlib_compression_level']
+        if 'view_only' in self.globalOptions and self.globalOptions['view_only']==True:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "viewonly"
-        if 'disable_clipboard_transfer' in self.vncOptions and self.vncOptions['disable_clipboard_transfer']==True:
+        if 'disable_clipboard_transfer' in self.globalOptions and self.globalOptions['disable_clipboard_transfer']==True:
             if sys.platform.startswith("win"):
                 vncOptionsString = vncOptionsString + " /disableclipboard"
             #else:
                 #vncOptionsString = vncOptionsString + " -noclipboardsend -noclipboardrecv"
         if sys.platform.startswith("win"):
-            if 'scale' in self.vncOptions:
-                if self.vncOptions['scale']=="Auto":
+            if 'scale' in self.globalOptions:
+                if self.globalOptions['scale']=="Auto":
                     vncOptionsString = vncOptionsString + " /fitwindow"
                 else:
-                    vncOptionsString = vncOptionsString + " /scale " + self.vncOptions['scale']
+                    vncOptionsString = vncOptionsString + " /scale " + self.globalOptions['scale']
             defaultSpanMode = 'automatic'
-            if 'span' in self.vncOptions and self.vncOptions['span']!=defaultSpanMode:
-                vncOptionsString = vncOptionsString + " /span " + self.vncOptions['span']
-        if 'double_buffering' in self.vncOptions and self.vncOptions['double_buffering']==False:
+            if 'span' in self.globalOptions and self.globalOptions['span']!=defaultSpanMode:
+                vncOptionsString = vncOptionsString + " /span " + self.globalOptions['span']
+        if 'double_buffering' in self.globalOptions and self.globalOptions['double_buffering']==False:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "singlebuffer"
-        if 'full_screen_mode' in self.vncOptions and self.vncOptions['full_screen_mode']==True:
+        if 'full_screen_mode' in self.globalOptions and self.globalOptions['full_screen_mode']==True:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "fullscreen"
-        if 'deiconify_on_remote_bell_event' in self.vncOptions and self.vncOptions['deiconify_on_remote_bell_event']==False:
+        if 'deiconify_on_remote_bell_event' in self.globalOptions and self.globalOptions['deiconify_on_remote_bell_event']==False:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noraiseonbeep"
         if sys.platform.startswith("win"):
-            if 'emulate3' in self.vncOptions and self.vncOptions['emulate3']==True:
+            if 'emulate3' in self.globalOptions and self.globalOptions['emulate3']==True:
                 vncOptionsString = vncOptionsString + " /emulate3"
-            if 'swapmouse' in self.vncOptions and self.vncOptions['swapmouse']==True:
+            if 'swapmouse' in self.globalOptions and self.globalOptions['swapmouse']==True:
                 vncOptionsString = vncOptionsString + " /swapmouse"
-        if 'dont_show_remote_cursor' in self.vncOptions and self.vncOptions['dont_show_remote_cursor']==True:
+        if 'dont_show_remote_cursor' in self.globalOptions and self.globalOptions['dont_show_remote_cursor']==True:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "nocursorshape"
-        elif 'let_remote_server_deal_with_mouse_cursor' in self.vncOptions and self.vncOptions['let_remote_server_deal_with_mouse_cursor']==True:
+        elif 'let_remote_server_deal_with_mouse_cursor' in self.globalOptions and self.globalOptions['let_remote_server_deal_with_mouse_cursor']==True:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "x11cursor"
-        if 'request_shared_session' in self.vncOptions and self.vncOptions['request_shared_session']==False:
+        if 'request_shared_session' in self.globalOptions and self.globalOptions['request_shared_session']==False:
             vncOptionsString = vncOptionsString + " " + optionPrefixCharacter + "noshared"
         if sys.platform.startswith("win"):
-            if 'toolbar' in self.vncOptions and self.vncOptions['toolbar']==False:
+            if 'toolbar' in self.globalOptions and self.globalOptions['toolbar']==False:
                 vncOptionsString = vncOptionsString + " /notoolbar"
-            if 'dotcursor' in self.vncOptions and self.vncOptions['dotcursor']==True:
+            if 'dotcursor' in self.globalOptions and self.globalOptions['dotcursor']==True:
                 vncOptionsString = vncOptionsString + " /dotcursor"
-            if 'smalldotcursor' in self.vncOptions and self.vncOptions['smalldotcursor']==True:
+            if 'smalldotcursor' in self.globalOptions and self.globalOptions['smalldotcursor']==True:
                 vncOptionsString = vncOptionsString + " /smalldotcursor"
-            if 'normalcursor' in self.vncOptions and self.vncOptions['normalcursor']==True:
+            if 'normalcursor' in self.globalOptions and self.globalOptions['normalcursor']==True:
                 vncOptionsString = vncOptionsString + " /normalcursor"
-            if 'nocursor' in self.vncOptions and self.vncOptions['nocursor']==True:
+            if 'nocursor' in self.globalOptions and self.globalOptions['nocursor']==True:
                 vncOptionsString = vncOptionsString + " /nocursor"
-            if 'writelog' in self.vncOptions and self.vncOptions['writelog']==True:
-                if 'loglevel' in self.vncOptions and self.vncOptions['loglevel']==True:
-                    vncOptionsString = vncOptionsString + " /loglevel " + self.vncOptions['loglevel']
-                if 'logfile' in self.vncOptions:
-                    vncOptionsString = vncOptionsString + " /logfile \"" + self.vncOptions['logfile'] + "\""
+            if 'writelog' in self.globalOptions and self.globalOptions['writelog']==True:
+                if 'loglevel' in self.globalOptions and self.globalOptions['loglevel']==True:
+                    vncOptionsString = vncOptionsString + " /loglevel " + self.globalOptions['loglevel']
+                if 'logfile' in self.globalOptions:
+                    vncOptionsString = vncOptionsString + " /logfile \"" + self.globalOptions['logfile'] + "\""
         return vncOptionsString

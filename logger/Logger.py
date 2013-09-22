@@ -8,7 +8,7 @@ import time
 import subprocess
 import sys
 import requests
-from SubmitDebugReportDialog import SubmitDebugReportDialog
+from logger.SubmitDebugReportDialog import SubmitDebugReportDialog
 
 class Logger():
 
@@ -20,11 +20,11 @@ class Logger():
         self.loggerFileHandler = None
         self.configureLogger()
 
-    def setMassiveLauncherConfig(self, massiveLauncherConfig):
-        self.massiveLauncherConfig = massiveLauncherConfig
+    def setGlobalLauncherConfig(self, globalLauncherConfig):
+        self.globalLauncherConfig = globalLauncherConfig
 
-    def setMassiveLauncherPreferencesFilePath(self, massiveLauncherPreferencesFilePath):
-        self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
+    def setGlobalLauncherPreferencesFilePath(self, globalLauncherPreferencesFilePath):
+        self.globalLauncherPreferencesFilePath = globalLauncherPreferencesFilePath
 
     def sendLogMessagesToDebugWindowTextControl(self, logTextCtrl):
         # Send all log messages to the debug window, which may or may not be visible.
@@ -99,7 +99,7 @@ class Logger():
             return
 
         def showSubmitDebugLogDialog():
-            dlg = SubmitDebugReportDialog(None,wx.ID_ANY,'MASSIVE/CVL Launcher',self.loggerOutput.getvalue(),self.massiveLauncherConfig,self.massiveLauncherPreferencesFilePath,showFailedToOpenRemoteDesktopMessage=showFailedToOpenRemoteDesktopMessage)
+            dlg = SubmitDebugReportDialog(None,wx.ID_ANY,'MASSIVE/CVL Launcher',self.loggerOutput.getvalue(),self.globalLauncherConfig,self.globalLauncherPreferencesFilePath,showFailedToOpenRemoteDesktopMessage=showFailedToOpenRemoteDesktopMessage)
             try:
                 try:
                     wx.EndBusyCursor()

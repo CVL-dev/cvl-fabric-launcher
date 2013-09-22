@@ -20,11 +20,11 @@ userCanModifyPrivateKeyFilePath = False
 
 class IdentityMenu(wx.Menu):
 
-    def initialize(self, launcherMainFrame, massiveLauncherConfig, massiveLauncherPreferencesFilePath):
+    def initialize(self, launcherMainFrame, globalLauncherConfig, globalLauncherPreferencesFilePath):
 
         self.launcherMainFrame = launcherMainFrame
-        self.massiveLauncherConfig = massiveLauncherConfig
-        self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
+        self.globalLauncherConfig = globalLauncherConfig
+        self.globalLauncherPreferencesFilePath = globalLauncherPreferencesFilePath
 
         createNewKeyMenuItemId = wx.NewId()
         self.Append(createNewKeyMenuItemId, "Create &new key")
@@ -70,21 +70,21 @@ class IdentityMenu(wx.Menu):
         self.disableItems()
 
     def onUsePassword(self,event):
-        auth_mode=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode')
+        auth_mode=self.launcherMainFrame.globalOptionsDialog.FindWindowByName('auth_mode')
         auth_mode.SetSelection(self.launcherMainFrame.TEMP_SSH_KEY)
         self.disableItems()
-        self.launcherMainFrame.vncOptions['auth_mode']=self.launcherMainFrame.TEMP_SSH_KEY
+        self.launcherMainFrame.globalOptions['auth_mode']=self.launcherMainFrame.TEMP_SSH_KEY
         self.launcherMainFrame.saveGlobalOptions()
 
     def onSSHKey(self,event):
-        auth_mode=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode')
+        auth_mode=self.launcherMainFrame.globalOptionsDialog.FindWindowByName('auth_mode')
         auth_mode.SetSelection(self.launcherMainFrame.PERM_SSH_KEY)
         self.disableItems()
-        self.launcherMainFrame.vncOptions['auth_mode']=self.launcherMainFrame.PERM_SSH_KEY
+        self.launcherMainFrame.globalOptions['auth_mode']=self.launcherMainFrame.PERM_SSH_KEY
         self.launcherMainFrame.saveGlobalOptions()
 
     def setRadio(self):
-        state=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()
+        state=self.launcherMainFrame.globalOptionsDialog.FindWindowByName('auth_mode').GetSelection()
         if state == self.launcherMainFrame.PERM_SSH_KEY:
             self.useSSHKey.Check(True)
             self.usePassword.Check(False)
@@ -94,7 +94,7 @@ class IdentityMenu(wx.Menu):
     
     def disableItems(self):
         #print "toggling items"
-        state=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()
+        state=self.launcherMainFrame.globalOptionsDialog.FindWindowByName('auth_mode').GetSelection()
         #print state
         if state == self.launcherMainFrame.PERM_SSH_KEY:
             enable=True
@@ -109,7 +109,7 @@ class IdentityMenu(wx.Menu):
 
     def privateKeyExists(self,warnIfNotFoundInLocalSettings=False):
 
-        if warnIfNotFoundInLocalSettings and (not self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "massive_launcher_private_key_path")):
+        if warnIfNotFoundInLocalSettings and (not self.globalLauncherConfig.has_option("Global Preferences", "massive_launcher_private_key_path")):
             dlg = wx.MessageDialog(None,
                         "Warning: Launcher key path was not found in your local settings.\n\n"
                         "I'll assume it to be: " + self.launcherMainFrame.keyModel.getPrivateKeyFilePath(),

@@ -124,10 +124,10 @@ from utilityFunctions import LAUNCHER_URL
 launcherMainFrame = None
 massiveLauncherConfig = None
 cvlLauncherConfig = None
-turboVncConfig = None
+globalLauncherConfig = None
 massiveLauncherPreferencesFilePath = None
 cvlLauncherPreferencesFilePath = None
-turboVncPreferencesFilePath = None
+globalLauncherPreferencesFilePath = None
 
 class LauncherMainFrame(wx.Frame):
     PERM_SSH_KEY=0
@@ -145,8 +145,8 @@ class LauncherMainFrame(wx.Frame):
         cvlLauncherConfig = sys.modules[__name__].cvlLauncherConfig
         cvlLauncherPreferencesFilePath = sys.modules[__name__].cvlLauncherPreferencesFilePath
 
-        turboVncConfig = sys.modules[__name__].turboVncConfig
-        turboVncPreferencesFilePath = sys.modules[__name__].turboVncPreferencesFilePath
+        globalLauncherConfig = sys.modules[__name__].globalLauncherConfig
+        globalLauncherPreferencesFilePath = sys.modules[__name__].globalLauncherPreferencesFilePath
 
         self.logWindow = None
         self.progressDialog = None
@@ -156,20 +156,20 @@ class LauncherMainFrame(wx.Frame):
         else:
             wx.Frame.__init__(self, parent, id, title, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
 
-        self.vncOptions = {}
+        self.globalOptions = {}
 
-        if turboVncConfig.has_section("TurboVNC Preferences"):
-            savedTurboVncOptions =  turboVncConfig.items("TurboVNC Preferences")
-            for option in savedTurboVncOptions:
+        if globalLauncherConfig.has_section("Global Preferences"):
+            savedGlobalLauncherOptions =  globalLauncherConfig.items("Global Preferences")
+            for option in savedGlobalLauncherOptions:
                 key = option[0]
                 value = option[1]
                 if value=='True':
                     value = True
                 if value=='False':
                     value = False
-                self.vncOptions[key] = value
+                self.globalOptions[key] = value
         import optionsDialog
-        self.launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(launcherMainFrame, wx.ID_ANY, "Preferences", self.vncOptions, 0)
+        self.globalOptionsDialog = optionsDialog.GlobalOptionsDialog(launcherMainFrame, wx.ID_ANY, "Preferences", self.globalOptions, 0)
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -230,7 +230,7 @@ class LauncherMainFrame(wx.Frame):
         self.menu_bar.Append(self.edit_menu, "&Edit")
 
         self.identity_menu = IdentityMenu()
-        self.identity_menu.initialize(self, massiveLauncherConfig, massiveLauncherPreferencesFilePath)
+        self.identity_menu.initialize(self, globalLauncherConfig, globalLauncherPreferencesFilePath)
         self.menu_bar.Append(self.identity_menu, "&Identity")
 
         self.help_menu = wx.Menu()
@@ -947,10 +947,18 @@ class LauncherMainFrame(wx.Frame):
 
         self.loginDialogPanelSizer.Add(self.tabbedView, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=10)
 
+        lastUsedTabIndexAsString = "0"
+        if globalLauncherConfig.has_section("Global Preferences"):
+            if globalLauncherConfig.has_option("Global Preferences", "last_used_tab_index"):
+                lastUsedTabIndexAsString = globalLauncherConfig.get("Global Preferences", "last_used_tab_index")
+                if lastUsedTabIndexAsString.strip() == "":
+                    lastUsedTabIndexAsString = "0"
+        lastUsedTabIndex = int(lastUsedTabIndexAsString)
         MASSIVE_TAB_INDEX = 0
-        self.tabbedView.ChangeSelection(MASSIVE_TAB_INDEX)
-        self.massiveTabSelected = True
-        self.cvlTabSelected = False
+        CVL_TAB_INDEX = 1
+        self.tabbedView.ChangeSelection(lastUsedTabIndex)
+        self.massiveTabSelected = (lastUsedTabIndex==MASSIVE_TAB_INDEX)
+        self.cvlTabSelected = (lastUsedTabIndex==CVL_TAB_INDEX)
 
         # Buttons Panel
 
@@ -1211,20 +1219,20 @@ class LauncherMainFrame(wx.Frame):
 
     def onOptions(self, event, tabIndex=0):
 
-        self.launcherOptionsDialog.tabbedView.SetSelection(tabIndex)
-        rv = self.launcherOptionsDialog.ShowModal()
+        self.globalOptionsDialog.tabbedView.SetSelection(tabIndex)
+        rv = self.globalOptionsDialog.ShowModal()
 
         if rv == wx.OK:
-            self.vncOptions = self.launcherOptionsDialog.getVncOptions()
+            self.globalOptions = self.globalOptionsDialog.getVncOptions()
             self.saveGlobalOptions()
     
     def saveGlobalOptions(self):
 
-        for key in self.vncOptions:
-            turboVncConfig.set("TurboVNC Preferences", key, self.vncOptions[key])
+        for key in self.globalOptions:
+            globalLauncherConfig.set("Global Preferences", key, self.globalOptions[key])
 
-        with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
-            turboVncConfig.write(turboVncPreferencesFileObject)
+        with open(globalLauncherPreferencesFilePath, 'wb') as globalPreferencesFileObject:
+            globalLauncherConfig.write(globalPreferencesFileObject)
 
 
     def onCut(self, event):
@@ -1288,7 +1296,7 @@ class LauncherMainFrame(wx.Frame):
     def queryAuthMode(self):
         import LauncherOptionsDialog
         var='auth_mode'
-        auth_mode=self.launcherOptionsDialog.FindWindowByName(var)
+        auth_mode=self.globalOptionsDialog.FindWindowByName(var)
         choices=[]
         for i in range(auth_mode.GetCount()):
             choices.append(auth_mode.GetString(i))
@@ -1302,7 +1310,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices,helpEmailAddress=self.displayStrings.helpEmailAddress)
         rv=dlg.ShowModal()
         if rv in range(auth_mode.GetCount()):
-            authModeRadioBox = self.launcherOptionsDialog.FindWindowByName('auth_mode')
+            authModeRadioBox = self.globalOptionsDialog.FindWindowByName('auth_mode')
             authModeRadioBox.SetSelection(int(rv))
             self.identity_menu.setRadio()
             return int(rv)
@@ -1403,12 +1411,16 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_hours_requested", self.massiveHoursRequested)
             massiveLauncherConfig.set("MASSIVE Launcher Preferences", "massive_visnodes_requested", self.massiveVisNodesRequested)
 
-        if launcherMainFrame.massiveTabSelected:
-            with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-                massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
-        else:
-            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        globalLauncherConfig.set("Global Preferences", "last_used_tab_index", str(launcherMainFrame.tabbedView.GetSelection()))
+
+        with open(massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
+            massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+
+        with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+            cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+
+        with open(globalLauncherPreferencesFilePath, 'wb') as globalLauncherPreferencesFileObject:
+            globalLauncherConfig.write(globalLauncherPreferencesFileObject)
 
         if launcherMainFrame.massiveTabSelected:
             self.logWindow.Show(self.massiveShowDebugWindowCheckBox.GetValue())
@@ -1461,19 +1473,19 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         jobParams['hours']=hours
         jobParams['nodes']=nodes
         jobParams['wallseconds']=int(hours)*60*60
-        if not self.vncOptions.has_key('auth_mode'):
+        if not self.globalOptions.has_key('auth_mode'):
             mode=self.queryAuthMode()
             if mode==wx.ID_CANCEL:
                 self.onLoginProcessComplete(None)
                 return
-            self.vncOptions['auth_mode']=mode
-            self.launcherOptionsDialog.FindWindowByName('auth_mode').SetSelection(mode)
+            self.globalOptions['auth_mode']=mode
+            self.globalOptionsDialog.FindWindowByName('auth_mode').SetSelection(mode)
             self.identity_menu.disableItems()
             self.saveGlobalOptions()
         siteConfigDict = buildSiteConfigCmdRegExDict(configName) #eventually this will be loaded from json downloaded from a website
         siteConfigObj = siteConfig(siteConfigDict)
 
-        if launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
+        if launcherMainFrame.globalOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
             try:
                 if 'SSH_AUTH_SOCK' in os.environ:
@@ -1490,7 +1502,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             keyModel = KeyModel(startupinfo=self.startupinfo,creationflags=self.creationflags,temporaryKey=False)
             
             removeKeyOnExit = False
-        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=removeKeyOnExit,startupinfo=launcherMainFrame.startupinfo,creationflags=launcherMainFrame.creationflags,completeCallback=self.onLoginProcessComplete)
+        self.loginProcess=LoginTasks.LoginProcess(launcherMainFrame,jobParams,keyModel,siteConfig=siteConfigObj,displayStrings=self.displayStrings,autoExit=autoExit,globalOptions=self.globalOptions,removeKeyOnExit=removeKeyOnExit,startupinfo=launcherMainFrame.startupinfo,creationflags=launcherMainFrame.creationflags,completeCallback=self.onLoginProcessComplete)
         self.loginProcess.doLogin()
 
 
@@ -1847,9 +1859,6 @@ class MyApp(wx.App):
         if not massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
             massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
 
-        logger.setMassiveLauncherConfig(massiveLauncherConfig)
-        logger.setMassiveLauncherPreferencesFilePath(massiveLauncherPreferencesFilePath)
-
         sys.modules[__name__].cvlLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
         cvlLauncherConfig = sys.modules[__name__].cvlLauncherConfig
         sys.modules[__name__].cvlLauncherPreferencesFilePath = os.path.join(appUserDataDir,"CVL Launcher Preferences.cfg")
@@ -1859,14 +1868,17 @@ class MyApp(wx.App):
         if not cvlLauncherConfig.has_section("CVL Launcher Preferences"):
             cvlLauncherConfig.add_section("CVL Launcher Preferences")
 
-        sys.modules[__name__].turboVncConfig = ConfigParser.RawConfigParser(allow_no_value=True)
-        turboVncConfig = sys.modules[__name__].turboVncConfig
-        sys.modules[__name__].turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
-        turboVncPreferencesFilePath = sys.modules[__name__].turboVncPreferencesFilePath
-        if os.path.exists(turboVncPreferencesFilePath):
-            turboVncConfig.read(turboVncPreferencesFilePath)
-        if not turboVncConfig.has_section("TurboVNC Preferences"):
-            turboVncConfig.add_section("TurboVNC Preferences")
+        sys.modules[__name__].globalLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+        globalLauncherConfig = sys.modules[__name__].globalLauncherConfig
+        sys.modules[__name__].globalLauncherPreferencesFilePath = os.path.join(appUserDataDir,"Global Preferences.cfg")
+        globalLauncherPreferencesFilePath = sys.modules[__name__].globalLauncherPreferencesFilePath
+        if os.path.exists(globalLauncherPreferencesFilePath):
+            globalLauncherConfig.read(globalLauncherPreferencesFilePath)
+        if not globalLauncherConfig.has_section("Global Preferences"):
+            globalLauncherConfig.add_section("Global Preferences")
+
+        logger.setGlobalLauncherConfig(globalLauncherConfig)
+        logger.setGlobalLauncherPreferencesFilePath(globalLauncherPreferencesFilePath)
 
         if sys.platform.startswith("win"):
             os.environ['CYGWIN'] = "nodosfilewarning"

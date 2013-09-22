@@ -9,11 +9,11 @@ if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
 
 class SubmitDebugReportDialog(wx.Dialog):
-    def __init__(self, parent, id, title, debugLog, massiveLauncherConfig, massiveLauncherPreferencesFilePath,showFailedToOpenRemoteDesktopMessage=True):
+    def __init__(self, parent, id, title, debugLog, globalLauncherConfig, globalLauncherPreferencesFilePath,showFailedToOpenRemoteDesktopMessage=True):
         wx.Dialog.__init__(self, parent, id, title, wx.DefaultPosition)
 
-        self.massiveLauncherConfig = massiveLauncherConfig
-        self.massiveLauncherPreferencesFilePath = massiveLauncherPreferencesFilePath
+        self.globalLauncherConfig = globalLauncherConfig
+        self.globalLauncherPreferencesFilePath = globalLauncherPreferencesFilePath
 
         self.submitDebugReportDialogSizer = wx.FlexGridSizer(rows=1, cols=1)
         self.SetSizer(self.submitDebugReportDialogSizer)
@@ -55,9 +55,9 @@ class SubmitDebugReportDialog(wx.Dialog):
         self.innerContactDetailsPanelSizer.Add(self.nameLabel)
 
         name = ""
-        if self.massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "name"):
-                name = self.massiveLauncherConfig.get("MASSIVE Launcher Preferences", "name")
+        if self.globalLauncherConfig.has_section("Global Preferences"):
+            if self.globalLauncherConfig.has_option("Global Preferences", "name"):
+                name = self.globalLauncherConfig.get("Global Preferences", "name")
         name = name.strip()
 
         self.nameField = wx.TextCtrl(self.innerContactDetailsPanel, wx.ID_ANY)
@@ -77,9 +77,9 @@ class SubmitDebugReportDialog(wx.Dialog):
         self.innerContactDetailsPanelSizer.Add(self.emailLabel)
 
         email = ""
-        if self.massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            if self.massiveLauncherConfig.has_option("MASSIVE Launcher Preferences", "email"):
-                email = self.massiveLauncherConfig.get("MASSIVE Launcher Preferences", "email")
+        if self.globalLauncherConfig.has_section("Global Preferences"):
+            if self.globalLauncherConfig.has_option("Global Preferences", "email"):
+                email = self.globalLauncherConfig.get("Global Preferences", "email")
         email = email.strip()
 
         self.emailField = wx.TextCtrl(self.innerContactDetailsPanel, wx.ID_ANY)
@@ -214,13 +214,13 @@ class SubmitDebugReportDialog(wx.Dialog):
     def onSubmit(self, event):
         print "Submitting debug report."
 
-        self.massiveLauncherConfig.set("MASSIVE Launcher Preferences", "name", self.nameField.GetValue().strip())
-        with open(self.massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-            self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+        self.globalLauncherConfig.set("Global Preferences", "name", self.nameField.GetValue().strip())
+        with open(self.globalLauncherPreferencesFilePath, 'wb') as globalLauncherPreferencesFileObject:
+            self.globalLauncherConfig.write(globalLauncherPreferencesFileObject)
 
-        self.massiveLauncherConfig.set("MASSIVE Launcher Preferences", "email", self.emailField.GetValue().strip())
-        with open(self.massiveLauncherPreferencesFilePath, 'wb') as massiveLauncherPreferencesFileObject:
-            self.massiveLauncherConfig.write(massiveLauncherPreferencesFileObject)
+        self.globalLauncherConfig.set("Global Preferences", "email", self.emailField.GetValue().strip())
+        with open(self.globalLauncherPreferencesFilePath, 'wb') as globalLauncherPreferencesFileObject:
+            self.globalLauncherConfig.write(globalLauncherPreferencesFileObject)
 
         self.EndModal(wx.ID_OK)
 
@@ -241,39 +241,4 @@ class SubmitDebugReportDialog(wx.Dialog):
             self.pleaseContactMeCheckBox.SetValue(True)
         else:
             self.pleaseContactMeCheckBox.SetValue(False)
-
-class MyApp(wx.App):
-    def OnInit(self):
-
-        import appdirs
-        import ConfigParser
-
-        appDirs = appdirs.AppDirs("MASSIVE Launcher", "Monash University")
-        appUserDataDir = appDirs.user_data_dir
-        # Add trailing slash:
-        appUserDataDir = os.path.join(appUserDataDir,"")
-        if not os.path.exists(appUserDataDir):
-            os.makedirs(appUserDataDir)
-
-        sys.modules[__name__].massiveLauncherConfig = ConfigParser.RawConfigParser(allow_no_value=True)
-        massiveLauncherConfig = sys.modules[__name__].massiveLauncherConfig
-        sys.modules[__name__].massiveLauncherPreferencesFilePath = os.path.join(appUserDataDir,"MASSIVE Launcher Preferences.cfg")
-        massiveLauncherPreferencesFilePath = sys.modules[__name__].massiveLauncherPreferencesFilePath
-        if os.path.exists(massiveLauncherPreferencesFilePath):
-            massiveLauncherConfig.read(massiveLauncherPreferencesFilePath)
-        if not massiveLauncherConfig.has_section("MASSIVE Launcher Preferences"):
-            massiveLauncherConfig.add_section("MASSIVE Launcher Preferences")
-
-        debugLog = """
-The quick brown fox jumped over the lazy dog.
-
-"""
-        dlg = SubmitDebugReportDialog(None,wx.ID_ANY,'MASSIVE/CVL Launcher',debugLog,massiveLauncherConfig,massiveLauncherPreferencesFilePath)
-        dlg.ShowModal()
-        os._exit(0)
-        return True
-
-if __name__ == '__main__':
-    app = MyApp(False)
-    app.MainLoop()
 

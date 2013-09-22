@@ -47,12 +47,12 @@ LAUNCHER_VNC_OPTIONS_GLOBALS_TAB_INDEX = 1
 LAUNCHER_VNC_OPTIONS_AUTHENTICATION_TAB_INDEX = 2
 LAUNCHER_VNC_OPTIONS_SHARING_TAB_INDEX = 3
 
-class LauncherOptionsDialog(wx.Dialog):
-    def __init__(self, parent, id, title, vncOptions, tabIndex):
+class GlobalOptionsDialog(wx.Dialog):
+    def __init__(self, parent, id, title, globalOptions, tabIndex):
         wx.Dialog.__init__(self, parent, id, title, 
             style=wx.DEFAULT_DIALOG_STYLE & ~(wx.RESIZE_BORDER | wx.RESIZE_BOX | wx.MAXIMIZE_BOX))
 
-        self.vncOptions = vncOptions
+        self.globalOptions = globalOptions
         self.tabIndex = tabIndex
 
         self.okClicked = False
@@ -190,8 +190,8 @@ class LauncherOptionsDialog(wx.Dialog):
         self.jpegCompressionCheckBox = wx.CheckBox(self.innerEncodingPanel, wx.ID_ANY, "Allow JPEG compression")
         #self.jpegCompressionCheckBox.SetValue(True)
         self.jpegCompressionCheckBox.SetValue(self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)']['jpeg_compression'])
-        if 'jpeg_compression' in vncOptions:
-            self.jpegCompressionCheckBox.SetValue(vncOptions['jpeg_compression'])
+        if 'jpeg_compression' in globalOptions:
+            self.jpegCompressionCheckBox.SetValue(globalOptions['jpeg_compression'])
         self.jpegCompressionCheckBox.SetFont(self.smallFont)
         self.innerEncodingPanelSizer.Add(self.jpegCompressionCheckBox)
 
@@ -226,9 +226,9 @@ class LauncherOptionsDialog(wx.Dialog):
         #self.jpegChrominanceSubsamplingSlider.SetValue(4)
         self.jpegChrominanceSubsamplingSlider.SetValue(self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)']['jpeg_chrominance_subsampling'])
         self.jpegChrominanceSubsamplingSlider.SetTickFreq(1)
-        if 'jpeg_chrominance_subsampling' in vncOptions:
+        if 'jpeg_chrominance_subsampling' in globalOptions:
             for jpeg_chrominance_subsampling_slider_value in range(1, 4):
-                if vncOptions['jpeg_chrominance_subsampling']==self.jpegChrominanceSubsamplingCommandLineString[jpeg_chrominance_subsampling_slider_value]:
+                if globalOptions['jpeg_chrominance_subsampling']==self.jpegChrominanceSubsamplingCommandLineString[jpeg_chrominance_subsampling_slider_value]:
                     self.jpegChrominanceSubsamplingSlider.SetValue(jpeg_chrominance_subsampling_slider_value)
             self.jpegChrominanceSubsamplingSlider.SetLabel("JPEG chrominance subsampling:    " + self.jpegChrominanceSubsamplingLevel[self.jpegChrominanceSubsamplingSlider.GetValue()])
         self.jpegChrominanceSubsamplingSlider.Bind(wx.EVT_SLIDER, self.onAdjustEncodingMethodSliders)
@@ -255,8 +255,8 @@ class LauncherOptionsDialog(wx.Dialog):
         #self.jpegImageQualitySlider.SetValue(95)
         self.jpegImageQualitySlider.SetTickFreq(10)
         self.jpegImageQualitySlider.SetValue(self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)']['jpeg_image_quality'])
-        if 'jpeg_image_quality' in vncOptions:
-            self.jpegImageQualitySlider.SetValue(int(vncOptions['jpeg_image_quality']))
+        if 'jpeg_image_quality' in globalOptions:
+            self.jpegImageQualitySlider.SetValue(int(globalOptions['jpeg_image_quality']))
             self.jpegImageQualityLabel.SetLabel("JPEG image quality:    " + str(self.jpegImageQualitySlider.GetValue()))
         self.jpegImageQualitySlider.Bind(wx.EVT_SLIDER, self.onAdjustEncodingMethodSliders)
         self.jpegImageQualityPanelSizer.Add(self.jpegImageQualitySlider)
@@ -295,8 +295,8 @@ class LauncherOptionsDialog(wx.Dialog):
         #self.zlibCompressionLevelSlider.SetValue(1)
         self.zlibCompressionLevelSlider.SetValue(self.encodingMethodsPresets['Tight + Perceptually Lossless JPEG (LAN)']['zlib_compression_level'])
         self.zlibCompressionLevelSlider.SetTickFreq(1)
-        if 'zlib_compression_level' in vncOptions:
-            self.zlibCompressionLevelSlider.SetValue(int(vncOptions['zlib_compression_level']))
+        if 'zlib_compression_level' in globalOptions:
+            self.zlibCompressionLevelSlider.SetValue(int(globalOptions['zlib_compression_level']))
             self.zlibCompressionLevelSlider.SetLabel("Zlib compression level:     " + self.zlibCompressionLevel[self.zlibCompressionLevelSlider.GetValue()])
         self.zlibCompressionLevelSlider.Bind(wx.EVT_SLIDER, self.onAdjustEncodingMethodSliders)
         self.zlibCompressionLevelSlider.Disable()
@@ -340,15 +340,15 @@ class LauncherOptionsDialog(wx.Dialog):
 
         self.viewOnlyCheckBox = wx.CheckBox(self.innerRestrictionsPanel, wx.ID_ANY, "View only (inputs ignored)")
         self.viewOnlyCheckBox.SetValue(False)
-        if 'view_only' in vncOptions:
-            self.viewOnlyCheckBox.SetValue(vncOptions['view_only'])
+        if 'view_only' in globalOptions:
+            self.viewOnlyCheckBox.SetValue(globalOptions['view_only'])
         self.innerRestrictionsPanelSizer.Add(self.viewOnlyCheckBox)
         self.viewOnlyCheckBox.SetFont(self.smallFont)
         
         self.disableClipboardTransferCheckBox = wx.CheckBox(self.innerRestrictionsPanel, wx.ID_ANY, "Disable clipboard transfer")
         self.disableClipboardTransferCheckBox.SetValue(False)
-        if 'disable_clipboard_transfer' in vncOptions:
-            self.disableClipboardTransferCheckBox.SetValue(vncOptions['disable_clipboard_transfer'])
+        if 'disable_clipboard_transfer' in globalOptions:
+            self.disableClipboardTransferCheckBox.SetValue(globalOptions['disable_clipboard_transfer'])
         if not sys.platform.startswith("win"):
             self.disableClipboardTransferCheckBox.SetValue(False)
             self.disableClipboardTransferCheckBox.Disable()
@@ -399,8 +399,8 @@ class LauncherOptionsDialog(wx.Dialog):
         self.scaleByComboBox = wx.Choice(self.scaleByPanel, wx.ID_ANY, choices=scaleOptions)
         SCALE_OPTION_100_PERCENT = 4
         self.scaleByComboBox.SetSelection(SCALE_OPTION_100_PERCENT)
-        if 'scale' in vncOptions:
-            self.scaleByComboBox.SetStringSelection(vncOptions['scale'])
+        if 'scale' in globalOptions:
+            self.scaleByComboBox.SetStringSelection(globalOptions['scale'])
         self.scaleByComboBox.SetFont(self.smallFont)
         self.scaleByPanelSizer.Add(self.scaleByComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
 
@@ -419,15 +419,15 @@ class LauncherOptionsDialog(wx.Dialog):
 
         self.doubleBufferingCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Double buffering")
         self.doubleBufferingCheckBox.SetValue(True)
-        if 'double_buffering' in vncOptions:
-            self.doubleBufferingCheckBox.SetValue(vncOptions['double_buffering'])
+        if 'double_buffering' in globalOptions:
+            self.doubleBufferingCheckBox.SetValue(globalOptions['double_buffering'])
         self.innerDisplayPanelSizer.Add(self.doubleBufferingCheckBox)
         self.doubleBufferingCheckBox.SetFont(self.smallFont)
         
         self.fullScreenModeCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Full-screen mode")
         self.fullScreenModeCheckBox.SetValue(False)
-        if 'full_screen_mode' in vncOptions:
-            self.fullScreenModeCheckBox.SetValue(vncOptions['full_screen_mode'])
+        if 'full_screen_mode' in globalOptions:
+            self.fullScreenModeCheckBox.SetValue(globalOptions['full_screen_mode'])
         self.innerDisplayPanelSizer.Add(self.fullScreenModeCheckBox)
         self.fullScreenModeCheckBox.SetFont(self.smallFont)
         
@@ -447,12 +447,12 @@ class LauncherOptionsDialog(wx.Dialog):
         SPAN_MODE_AUTOMATIC = 2
         self.spanModeComboBox.SetSelection(SPAN_MODE_AUTOMATIC)
         self.spanModeCommandLineString = {0:"primary", 1:"all", 2:"auto"}
-        if 'span' in vncOptions:
-            if vncOptions['span']=='primary':
+        if 'span' in globalOptions:
+            if globalOptions['span']=='primary':
                 self.spanModeComboBox.SetStringSelection('Primary monitor only')
-            if vncOptions['span']=='all':
+            if globalOptions['span']=='all':
                 self.spanModeComboBox.SetStringSelection('All monitors')
-            if vncOptions['span']=='auto':
+            if globalOptions['span']=='auto':
                 self.spanModeComboBox.SetStringSelection('Automatic')
         self.spanModeComboBox.SetFont(self.smallFont)
         self.spanModePanelSizer.Add(self.spanModeComboBox, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=2)
@@ -468,8 +468,8 @@ class LauncherOptionsDialog(wx.Dialog):
         self.deiconifyOnRemoteBellEventCheckBox = wx.CheckBox(self.innerDisplayPanel, wx.ID_ANY, "Deiconify on remote Bell event")
         #self.deiconifyOnRemoteBellEventCheckBox.SetValue(False)
         self.deiconifyOnRemoteBellEventCheckBox.SetValue(True)
-        if 'deiconify_on_remote_bell_event' in vncOptions:
-            self.deiconifyOnRemoteBellEventCheckBox.SetValue(vncOptions['deiconify_on_remote_bell_event'])
+        if 'deiconify_on_remote_bell_event' in globalOptions:
+            self.deiconifyOnRemoteBellEventCheckBox.SetValue(globalOptions['deiconify_on_remote_bell_event'])
         self.innerDisplayPanelSizer.Add(self.deiconifyOnRemoteBellEventCheckBox)
         self.deiconifyOnRemoteBellEventCheckBox.SetFont(self.smallFont)
         
@@ -494,16 +494,16 @@ class LauncherOptionsDialog(wx.Dialog):
         self.emulate3ButtonsWith2ButtonClickCheckBox = wx.CheckBox(self.innerMousePanel, wx.ID_ANY, "Emulate 3 buttons (with 2-button click)")
         if sys.platform.startswith("win"):
             self.emulate3ButtonsWith2ButtonClickCheckBox.SetValue(True)
-            if 'emulate3' in vncOptions:
-                self.emulate3ButtonsWith2ButtonClickCheckBox.SetValue(vncOptions['emulate3'])
+            if 'emulate3' in globalOptions:
+                self.emulate3ButtonsWith2ButtonClickCheckBox.SetValue(globalOptions['emulate3'])
         self.innerMousePanelSizer.Add(self.emulate3ButtonsWith2ButtonClickCheckBox)
         self.emulate3ButtonsWith2ButtonClickCheckBox.SetFont(self.smallFont)
         
         self.swapMouseButtons2And3CheckBox = wx.CheckBox(self.innerMousePanel, wx.ID_ANY, "Swap mouse buttons 2 and 3")
         self.swapMouseButtons2And3CheckBox.SetValue(False)
         if sys.platform.startswith("win"):
-            if 'swapmouse' in vncOptions:
-                self.swapMouseButtons2And3CheckBox.SetValue(vncOptions['swapmouse'])
+            if 'swapmouse' in globalOptions:
+                self.swapMouseButtons2And3CheckBox.SetValue(globalOptions['swapmouse'])
         self.innerMousePanelSizer.Add(self.swapMouseButtons2And3CheckBox)
         self.swapMouseButtons2And3CheckBox.SetFont(self.smallFont)
         
@@ -534,22 +534,22 @@ class LauncherOptionsDialog(wx.Dialog):
 
         self.trackRemoteCursorLocallyRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Track remote cursor locally")
         self.trackRemoteCursorLocallyRadioButton.SetValue(True)
-        if 'track_remote_cursor_locally' in vncOptions:
-            self.trackRemoteCursorLocallyRadioButton.SetValue(vncOptions['track_remote_cursor_locally'])
+        if 'track_remote_cursor_locally' in globalOptions:
+            self.trackRemoteCursorLocallyRadioButton.SetValue(globalOptions['track_remote_cursor_locally'])
         self.innerMouseCursorPanelSizer.Add(self.trackRemoteCursorLocallyRadioButton)
         self.trackRemoteCursorLocallyRadioButton.SetFont(self.smallFont)
         
         self.letRemoteServerDealWithMouseCursorRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Let remote server deal with mouse cursor")
         self.letRemoteServerDealWithMouseCursorRadioButton.SetValue(False)
-        if 'let_remote_server_deal_with_mouse_cursor' in vncOptions:
-            self.letRemoteServerDealWithMouseCursorRadioButton.SetValue(vncOptions['let_remote_server_deal_with_mouse_cursor'])
+        if 'let_remote_server_deal_with_mouse_cursor' in globalOptions:
+            self.letRemoteServerDealWithMouseCursorRadioButton.SetValue(globalOptions['let_remote_server_deal_with_mouse_cursor'])
         self.innerMouseCursorPanelSizer.Add(self.letRemoteServerDealWithMouseCursorRadioButton)
         self.letRemoteServerDealWithMouseCursorRadioButton.SetFont(self.smallFont)
         
         self.dontShowRemoteCursorRadioButton = wx.RadioButton(self.innerMouseCursorPanel, wx.ID_ANY, "Don't show remote cursor")
         self.dontShowRemoteCursorRadioButton.SetValue(False)
-        if 'dont_show_remote_cursor' in vncOptions:
-            self.dontShowRemoteCursorRadioButton.SetValue(vncOptions['dont_show_remote_cursor'])
+        if 'dont_show_remote_cursor' in globalOptions:
+            self.dontShowRemoteCursorRadioButton.SetValue(globalOptions['dont_show_remote_cursor'])
         self.innerMouseCursorPanelSizer.Add(self.dontShowRemoteCursorRadioButton)
         self.dontShowRemoteCursorRadioButton.SetFont(self.smallFont)
         
@@ -573,8 +573,8 @@ class LauncherOptionsDialog(wx.Dialog):
 
         self.requestSharedSessionCheckBox = wx.CheckBox(self.requestSharedSessionPanel, wx.ID_ANY, "Request shared session")
         self.requestSharedSessionCheckBox.SetValue(True)
-        if 'request_shared_session' in vncOptions:
-            self.requestSharedSessionCheckBox.SetValue(vncOptions['request_shared_session'])
+        if 'request_shared_session' in globalOptions:
+            self.requestSharedSessionCheckBox.SetValue(globalOptions['request_shared_session'])
         self.requestSharedSessionPanelSizer.Add(self.requestSharedSessionCheckBox)
         self.requestSharedSessionCheckBox.SetFont(self.smallFont)
         
@@ -642,8 +642,8 @@ class LauncherOptionsDialog(wx.Dialog):
         self.showToolbarsByDefaultCheckBox = wx.CheckBox(self.innerInterfaceOptionsPanel, wx.ID_ANY, "Show toolbars by default")
         if sys.platform.startswith("win"):
             self.showToolbarsByDefaultCheckBox.SetValue(True)
-            if 'toolbar' in vncOptions:
-                self.showToolbarsByDefaultCheckBox.SetValue(vncOptions['toolbar'])
+            if 'toolbar' in globalOptions:
+                self.showToolbarsByDefaultCheckBox.SetValue(globalOptions['toolbar'])
         else:
             self.showToolbarsByDefaultCheckBox.SetValue(False)
             self.showToolbarsByDefaultCheckBox.Disable()
@@ -713,8 +713,8 @@ class LauncherOptionsDialog(wx.Dialog):
         self.dotCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Dot cursor")
         if sys.platform.startswith("win"):
             self.dotCursorRadioButton.SetValue(True)
-            if 'dotcursor' in vncOptions:
-                self.dotCursorRadioButton.SetValue(vncOptions['dotcursor'])
+            if 'dotcursor' in globalOptions:
+                self.dotCursorRadioButton.SetValue(globalOptions['dotcursor'])
         self.innerLocalCursorShapePanelSizer.Add(self.dotCursorRadioButton, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfRadioButtons)
         self.dotCursorRadioButton.SetFont(self.smallFont)
         
@@ -722,22 +722,22 @@ class LauncherOptionsDialog(wx.Dialog):
         self.innerLocalCursorShapePanelSizer.Add(self.smallDotCursorRadioButton, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfRadioButtons)
         self.smallDotCursorRadioButton.SetFont(self.smallFont)
         if sys.platform.startswith("win"):
-            if 'smalldotcursor' in vncOptions:
-                self.smallDotCursorRadioButton.SetValue(vncOptions['smalldotcursor'])
+            if 'smalldotcursor' in globalOptions:
+                self.smallDotCursorRadioButton.SetValue(globalOptions['smalldotcursor'])
         
         self.normalArrowRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "Normal arrow")
         self.innerLocalCursorShapePanelSizer.Add(self.normalArrowRadioButton, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfRadioButtons)
         self.normalArrowRadioButton.SetFont(self.smallFont)
         if sys.platform.startswith("win"):
-            if 'normalcursor' in vncOptions:
-                self.normalArrowRadioButton.SetValue(vncOptions['normalcursor'])
+            if 'normalcursor' in globalOptions:
+                self.normalArrowRadioButton.SetValue(globalOptions['normalcursor'])
         
         self.noLocalCursorRadioButton = wx.RadioButton(self.innerLocalCursorShapePanel, wx.ID_ANY, "No local cursor")
         self.innerLocalCursorShapePanelSizer.Add(self.noLocalCursorRadioButton, flag=wx.EXPAND|wx.RIGHT, border=spacingRightOfRadioButtons)
         self.noLocalCursorRadioButton.SetFont(self.smallFont)
         if sys.platform.startswith("win"):
-            if 'nocursor' in vncOptions:
-                self.noLocalCursorRadioButton.SetValue(vncOptions['nocursor'])
+            if 'nocursor' in globalOptions:
+                self.noLocalCursorRadioButton.SetValue(globalOptions['nocursor'])
 
         self.innerLocalCursorShapePanel.SetSizerAndFit(self.innerLocalCursorShapePanelSizer)
         self.localCursorShapeGroupBoxSizer.Add(self.innerLocalCursorShapePanel, flag=wx.EXPAND)
@@ -807,8 +807,8 @@ class LauncherOptionsDialog(wx.Dialog):
         self.innerLoggingPanel.SetSizer(self.innerLoggingPanelSizer)
 
         self.writeLogToAFileCheckBox = wx.CheckBox(self.innerLoggingPanel, wx.ID_ANY, "Write log to a file:")
-        if 'writelog' in vncOptions:
-            self.writeLogToAFileCheckBox.SetValue(vncOptions['writelog'])
+        if 'writelog' in globalOptions:
+            self.writeLogToAFileCheckBox.SetValue(globalOptions['writelog'])
         self.innerLoggingPanelSizer.Add(self.writeLogToAFileCheckBox, flag=wx.EXPAND)
         self.writeLogToAFileCheckBox.SetFont(self.smallFont)
         self.writeLogToAFileCheckBox.Bind(wx.EVT_CHECKBOX, self.onToggleWriteLogToAFileCheckBox)
@@ -817,8 +817,8 @@ class LauncherOptionsDialog(wx.Dialog):
             self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(400,-1))
         else:
             self.vncViewerLogFilenameTextField = wx.TextCtrl(self.innerLoggingPanel, wx.ID_ANY, "vncviewer.log", size=(300,-1))
-        if 'logfile' in vncOptions:
-            self.vncViewerLogFilenameTextField.SetValue(vncOptions['logfile'])
+        if 'logfile' in globalOptions:
+            self.vncViewerLogFilenameTextField.SetValue(globalOptions['logfile'])
         self.vncViewerLogFilenameTextField.Disable()
         self.innerLoggingPanelSizer.Add(self.vncViewerLogFilenameTextField, flag=wx.EXPAND)
         self.vncViewerLogFilenameTextField.SetFont(self.smallFont)
@@ -838,8 +838,8 @@ class LauncherOptionsDialog(wx.Dialog):
         self.verbosityLevelSpinCtrl = wx.SpinCtrl(self.innerLoggingPanel, value='0')
         self.verbosityLevelSpinCtrl.Disable()
         self.verbosityLevelSpinCtrl.SetFont(self.smallFont)
-        if 'loglevel' in vncOptions:
-            self.verbosityLevelSpinCtrl.SetValue(int(vncOptions['loglevel']))
+        if 'loglevel' in globalOptions:
+            self.verbosityLevelSpinCtrl.SetValue(int(globalOptions['loglevel']))
         self.innerLoggingPanelSizer.Add(self.verbosityLevelSpinCtrl)
         
         self.innerLoggingPanel.SetSizerAndFit(self.innerLoggingPanelSizer)
@@ -900,9 +900,9 @@ If you use a password to authenticate, a new keypair will be generated each time
         self.authPanel.GetSizer().Add(self.authModeExplanation, proportion=1,flag=wx.EXPAND|wx.ALL, border=15)
         self.authPanel.Layout()
         var='auth_mode'
-        if var in vncOptions:
+        if var in globalOptions:
             auth_mode = self.FindWindowByName(var)
-            auth_mode.SetSelection(int(vncOptions[var]))
+            auth_mode.SetSelection(int(globalOptions[var]))
             # Fire the event manually, as this will control enabled/disabled of some menu items
             nextevent = wx.CommandEvent(wx.wxEVT_COMMAND_RADIOBOX_SELECTED, auth_mode.GetId())
             nextevent.SetEventObject(auth_mode)
@@ -939,15 +939,15 @@ If you use a password to authenticate, a new keypair will be generated each time
 #
 #        self.privateModeRadioButton = wx.RadioButton(self.innerPrivatePublicModePanel, wx.ID_ANY, "Private mode (a passphrase-protected private key file will remain on this computer after the Launcher exits)")
 #        self.privateModeRadioButton.SetValue(True)
-#        if 'private_mode' in vncOptions:
-#            self.privateModeRadioButton.SetValue(vncOptions['private_mode'])
+#        if 'private_mode' in globalOptions:
+#            self.privateModeRadioButton.SetValue(globalOptions['private_mode'])
 #        self.innerPrivatePublicModePanelSizer.Add(self.privateModeRadioButton)
 #        self.privateModeRadioButton.SetFont(self.smallFont)
 #
 #        self.publicModeRadioButton = wx.RadioButton(self.innerPrivatePublicModePanel, wx.ID_ANY, "Public mode (to be used when running the Launcher from a shared \"Guest\" account)")
 #        self.publicModeRadioButton.SetValue(False)
-#        if 'public_mode' in vncOptions:
-#            self.publicModeRadioButton.SetValue(vncOptions['public_mode'])
+#        if 'public_mode' in globalOptions:
+#            self.publicModeRadioButton.SetValue(globalOptions['public_mode'])
 #        self.innerPrivatePublicModePanelSizer.Add(self.publicModeRadioButton)
 #        self.publicModeRadioButton.SetFont(self.smallFont)
 #
@@ -1004,8 +1004,8 @@ If you use a password to authenticate, a new keypair will be generated each time
 
         self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox = wx.CheckBox(self.innerShareLocalHomeFolderPanel, wx.ID_ANY, "Share local home directory on remote desktop")
         self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetValue(False)
-        if 'share_local_home_directory_on_remote_desktop' in vncOptions:
-            self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetValue(vncOptions['share_local_home_directory_on_remote_desktop'])
+        if 'share_local_home_directory_on_remote_desktop' in globalOptions:
+            self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetValue(globalOptions['share_local_home_directory_on_remote_desktop'])
 
         self.innerShareLocalHomeFolderPanelSizer.Add(self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox)
         self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.SetFont(self.smallFont)
@@ -1056,7 +1056,7 @@ If you use a password to authenticate, a new keypair will be generated each time
         self.Layout()
 
     def getVncOptions(self):
-        return self.vncOptions
+        return self.globalOptions
 
     def setVncOptions(self):
         return
@@ -1069,39 +1069,39 @@ If you use a password to authenticate, a new keypair will be generated each time
 
     def onOK(self, event):
         self.okClicked = True
-        self.vncOptions['jpeg_compression'] = self.jpegCompressionCheckBox.GetValue()
-        self.vncOptions['jpeg_chrominance_subsampling'] = self.jpegChrominanceSubsamplingCommandLineString[self.jpegChrominanceSubsamplingSlider.GetValue()]
-        self.vncOptions['jpeg_image_quality'] = str(self.jpegImageQualitySlider.GetValue())
-        self.vncOptions['zlib_compression_enabled'] = self.zlibCompressionLevelSlider.IsEnabled()
-        self.vncOptions['zlib_compression_level'] = self.zlibCompressionLevelCommandLineString[self.zlibCompressionLevelSlider.GetValue()]
-        self.vncOptions['view_only'] = self.viewOnlyCheckBox.GetValue()
-        self.vncOptions['disable_clipboard_transfer'] = self.disableClipboardTransferCheckBox.GetValue()
+        self.globalOptions['jpeg_compression'] = self.jpegCompressionCheckBox.GetValue()
+        self.globalOptions['jpeg_chrominance_subsampling'] = self.jpegChrominanceSubsamplingCommandLineString[self.jpegChrominanceSubsamplingSlider.GetValue()]
+        self.globalOptions['jpeg_image_quality'] = str(self.jpegImageQualitySlider.GetValue())
+        self.globalOptions['zlib_compression_enabled'] = self.zlibCompressionLevelSlider.IsEnabled()
+        self.globalOptions['zlib_compression_level'] = self.zlibCompressionLevelCommandLineString[self.zlibCompressionLevelSlider.GetValue()]
+        self.globalOptions['view_only'] = self.viewOnlyCheckBox.GetValue()
+        self.globalOptions['disable_clipboard_transfer'] = self.disableClipboardTransferCheckBox.GetValue()
         if sys.platform.startswith("win"):
-            self.vncOptions['scale'] = self.scaleByComboBox.GetStringSelection()
-            self.vncOptions['span'] = self.spanModeCommandLineString[self.spanModeComboBox.GetSelection()]
-        self.vncOptions['double_buffering'] = self.doubleBufferingCheckBox.GetValue()
-        self.vncOptions['full_screen_mode'] = self.fullScreenModeCheckBox.GetValue()
-        self.vncOptions['deiconify_on_remote_bell_event'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()
+            self.globalOptions['scale'] = self.scaleByComboBox.GetStringSelection()
+            self.globalOptions['span'] = self.spanModeCommandLineString[self.spanModeComboBox.GetSelection()]
+        self.globalOptions['double_buffering'] = self.doubleBufferingCheckBox.GetValue()
+        self.globalOptions['full_screen_mode'] = self.fullScreenModeCheckBox.GetValue()
+        self.globalOptions['deiconify_on_remote_bell_event'] = self.deiconifyOnRemoteBellEventCheckBox.GetValue()
         if sys.platform.startswith("win"):
-            self.vncOptions['emulate3'] = self.emulate3ButtonsWith2ButtonClickCheckBox.GetValue()
-            self.vncOptions['swapmouse'] = self.swapMouseButtons2And3CheckBox.GetValue()
-        self.vncOptions['track_remote_cursor_locally'] = self.trackRemoteCursorLocallyRadioButton.GetValue()
-        self.vncOptions['let_remote_server_deal_with_mouse_cursor'] = self.letRemoteServerDealWithMouseCursorRadioButton.GetValue()
-        self.vncOptions['dont_show_remote_cursor'] = self.dontShowRemoteCursorRadioButton.GetValue()
-        self.vncOptions['request_shared_session'] = self.requestSharedSessionCheckBox.GetValue()
+            self.globalOptions['emulate3'] = self.emulate3ButtonsWith2ButtonClickCheckBox.GetValue()
+            self.globalOptions['swapmouse'] = self.swapMouseButtons2And3CheckBox.GetValue()
+        self.globalOptions['track_remote_cursor_locally'] = self.trackRemoteCursorLocallyRadioButton.GetValue()
+        self.globalOptions['let_remote_server_deal_with_mouse_cursor'] = self.letRemoteServerDealWithMouseCursorRadioButton.GetValue()
+        self.globalOptions['dont_show_remote_cursor'] = self.dontShowRemoteCursorRadioButton.GetValue()
+        self.globalOptions['request_shared_session'] = self.requestSharedSessionCheckBox.GetValue()
         if sys.platform.startswith("win"):
-            self.vncOptions['toolbar'] = self.showToolbarsByDefaultCheckBox.GetValue()
-            self.vncOptions['dotcursor'] = self.dotCursorRadioButton.GetValue()
-            self.vncOptions['smalldotcursor'] = self.smallDotCursorRadioButton.GetValue()
-            self.vncOptions['normalcursor'] = self.normalArrowRadioButton.GetValue()
-            self.vncOptions['nocursor'] = self.noLocalCursorRadioButton.GetValue()
-            self.vncOptions['writelog'] = self.writeLogToAFileCheckBox.GetValue()
-            self.vncOptions['loglevel'] = str(self.verbosityLevelSpinCtrl.GetValue())
-            self.vncOptions['logfile'] = self.vncViewerLogFilenameTextField.GetValue()
-        self.vncOptions['share_local_home_directory_on_remote_desktop'] = self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.GetValue()
-        self.vncOptions['auth_mode']=self.FindWindowByName('auth_mode').GetSelection()
-        #self.vncOptions['private_mode'] = self.privateModeRadioButton.GetValue()
-        #self.vncOptions['public_mode'] = self.publicModeRadioButton.GetValue()
+            self.globalOptions['toolbar'] = self.showToolbarsByDefaultCheckBox.GetValue()
+            self.globalOptions['dotcursor'] = self.dotCursorRadioButton.GetValue()
+            self.globalOptions['smalldotcursor'] = self.smallDotCursorRadioButton.GetValue()
+            self.globalOptions['normalcursor'] = self.normalArrowRadioButton.GetValue()
+            self.globalOptions['nocursor'] = self.noLocalCursorRadioButton.GetValue()
+            self.globalOptions['writelog'] = self.writeLogToAFileCheckBox.GetValue()
+            self.globalOptions['loglevel'] = str(self.verbosityLevelSpinCtrl.GetValue())
+            self.globalOptions['logfile'] = self.vncViewerLogFilenameTextField.GetValue()
+        self.globalOptions['share_local_home_directory_on_remote_desktop'] = self.shareLocalHomeDirectoryOnRemoteDesktopCheckBox.GetValue()
+        self.globalOptions['auth_mode']=self.FindWindowByName('auth_mode').GetSelection()
+        #self.globalOptions['private_mode'] = self.privateModeRadioButton.GetValue()
+        #self.globalOptions['public_mode'] = self.publicModeRadioButton.GetValue()
         #self.Close(True)
         self.Show(False)
         self.EndModal(wx.OK)
@@ -1191,14 +1191,4 @@ If you use a password to authenticate, a new keypair will be generated each time
         if saveFileDialog.ShowModal() == wx.ID_OK:
             turboVncLogFilePath = saveFileDialog.GetPath()
             self.vncViewerLogFilenameTextField.WriteText(turboVncLogFilePath)
-
-class turboVncOptions(wx.App):
-    def OnInit(self):
-        frame = wx.Frame(None, wx.ID_ANY)
-        frame.Show(True)
-        vncOptions = {}
-        #dialog = LauncherOptionsDialog(frame, wx.ID_ANY, "TurboVNC Viewer Options", vncOptions)
-        dialog = LauncherOptionsDialog(frame, wx.ID_ANY, "Preferences", vncOptions)
-        dialog.ShowModal()
-        return True
 
