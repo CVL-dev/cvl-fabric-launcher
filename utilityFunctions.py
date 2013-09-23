@@ -62,8 +62,8 @@ at the website https://web.cvl.massive.org.au/users"""
         self.passwdPromptIncorrect="Sorry, that password was incorrect.\n"+self.passwdPrompt
         self.passphrasePrompt="Please enter the passphrase for your SSH key"
         self.passphrasePromptIncorrect="""Sorry, that passphrase was incorrect.
-Please enter the passphrase for you SSH Key
-If you have forgoten the passphrase for you key, you may need to delete it and create a new key.
+Please enter the passphrase for your SSH Key
+If you have forgotten the passphrase for your key, you may need to delete it and create a new key.
 You can find this option under the Identity menu.
 """
         self.newPassphrase="""It looks like this is the first time you're using the CVL on this
@@ -99,8 +99,8 @@ class sshKeyDistDisplayStringsMASSIVE(sshKeyDistDisplayStrings):
         self.passphrasePrompt="Please enter the passphrase for your SSH key"
         self.passphrasePromptIncorrect="""
 Sorry, that passphrase was incorrect.
-Please enter the passphrase for you SSH Key
-If you have forgoten the passphrase for you key, you may need to delete it and create a new key.
+Please enter the passphrase for your SSH Key
+If you have forgotten the passphrase for your key, you may need to delete it and create a new key.
 You can find this option under the Identity menu.
 """
         self.newPassphrase="""It looks like this is the first time you're logging in to MASSIVE with this version of the launcher.
