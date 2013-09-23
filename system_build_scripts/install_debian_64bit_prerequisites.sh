@@ -10,7 +10,7 @@ wget -c http://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz
 wget http://downloads.sourceforge.net/project/modules/Modules/modules-3.2.9/modules-3.2.9c.tar.gz
 wget http://downloads.sourceforge.net/wxpython/wxPython-src-2.8.12.1.tar.bz2
 
-apt-get install apt-file screen git-core build-essential gcc g++ tcl8.5-dev tk8.5 tk8.5-dev tcl8.5 tcl8.5-dev tk8.5 tk8.5-dev tcl8.5 libreadline5{,-dev} zlib1g-dev libx11-dev libbz2-dev sqlite3 libsqlite3-dev libgdbm-dev libgtk2.0-dev mesa-common-dev libglu1-mesa-dev python-setuptools python-dev libssl-dev curl
+apt-get install apt-file screen git-core build-essential gcc g++ tcl8.5-dev tk8.5 tk8.5-dev tcl8.5 tcl8.5-dev tk8.5 tk8.5-dev tcl8.5 libreadline5{,-dev} zlib1g-dev libx11-dev libbz2-dev sqlite3 libsqlite3-dev libgdbm-dev libgtk2.0-dev mesa-common-dev libglu1-mesa-dev python-setuptools python-dev libssl-dev curl libxml2-dev libxslt-dev
 
 tar zxf modules-3.2.9c.tar.gz
 cd modules-3.2.9
