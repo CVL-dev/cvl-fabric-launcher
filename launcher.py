@@ -759,6 +759,50 @@ class LauncherMainFrame(wx.Frame):
                 # Connection profile was not found in combo-box.
                 self.cvlConnectionProfileComboBox.SetSelection(0)
 
+        self.cvlLoginHostLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Host')
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlLoginHost = ""
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
+                self.cvlLoginHost = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_login_host")
+            else:
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host","")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        else:
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
+            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        self.cvlLoginHost = self.cvlLoginHost.strip()
+        self.cvlLoginHostTextFieldPanel = wx.Panel(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, size=wx.Size(widgetWidth1, -1))
+        self.cvlLoginHostTextFieldPanelSizer = wx.FlexGridSizer(rows=1, cols=1)
+        self.cvlLoginHostTextField = wx.TextCtrl(self.cvlLoginHostTextFieldPanel, wx.ID_ANY, self.cvlLoginHost, size=wx.Size(widgetWidth1, -1))
+        self.cvlLoginHostTextFieldPanelSizer.Add(self.cvlLoginHostTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlLoginHostTextFieldPanel.SetSizerAndFit(self.cvlLoginHostTextFieldPanelSizer)
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostTextFieldPanel, flag=wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=3)
+        if self.cvlConnectionProfileComboBox.GetValue()!="Other...":
+            self.cvlSimpleLoginFieldsPanelSizer.Show(self.cvlLoginHostTextFieldPanel,False)
+
+        self.cvlUsernameLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Username')
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+
+        self.cvlUsername = ""
+        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
+            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_username"):
+                self.cvlUsername = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_username")
+            else:
+                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username","")
+                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        else:
+            cvlLauncherConfig.add_section("CVL Launcher Preferences")
+            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
+                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
+        self.cvlUsernameTextField = wx.TextCtrl(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
+        if self.cvlUsername.strip()!="":
+            self.cvlUsernameTextField.SelectAll()
+
 
         self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Resolution')
         self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -838,54 +882,6 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.cvlSshTunnelCipherComboBox.SetValue(defaultCipher)
 
-        self.cvlUsernameLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Username')
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlUsernameLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-
-        self.cvlUsername = ""
-        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
-            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_username"):
-                self.cvlUsername = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_username")
-            else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_username","")
-                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        else:
-            cvlLauncherConfig.add_section("CVL Launcher Preferences")
-            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        self.cvlUsernameTextField = wx.TextCtrl(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, self.cvlUsername, size=(widgetWidth1, -1))
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlUsernameTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=8)
-        if self.cvlUsername.strip()!="":
-            self.cvlUsernameTextField.SelectAll()
-
-        self.cvlLoginHostLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Host')
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        if self.cvlConnectionProfileComboBox.GetValue()!="Other...":
-            #self.cvlLoginHostLabel.Show(False)
-            self.cvlSimpleLoginFieldsPanelSizer.Show(self.cvlLoginHostLabel,False)
-        self.cvlLoginHost = ""
-        if cvlLauncherConfig.has_section("CVL Launcher Preferences"):
-            if cvlLauncherConfig.has_option("CVL Launcher Preferences", "cvl_login_host"):
-                self.cvlLoginHost = cvlLauncherConfig.get("CVL Launcher Preferences", "cvl_login_host")
-            else:
-                cvlLauncherConfig.set("CVL Launcher Preferences", "cvl_login_host","")
-                with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                    cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        else:
-            cvlLauncherConfig.add_section("CVL Launcher Preferences")
-            with open(cvlLauncherPreferencesFilePath, 'wb') as cvlLauncherPreferencesFileObject:
-                cvlLauncherConfig.write(cvlLauncherPreferencesFileObject)
-        self.cvlLoginHost = self.cvlLoginHost.strip()
-        self.cvlLoginHostTextFieldPanel = wx.Panel(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, size=wx.Size(widgetWidth1, -1))
-        self.cvlLoginHostTextFieldPanelSizer = wx.FlexGridSizer(rows=1, cols=1)
-        self.cvlLoginHostTextFieldPanelSizer.AddGrowableCol(0)
-        self.cvlLoginHostTextField = wx.TextCtrl(self.cvlLoginHostTextFieldPanel, wx.ID_ANY, self.cvlLoginHost, size=wx.Size(widgetWidth1, -1))
-        self.cvlLoginHostTextFieldPanelSizer.Add(self.cvlLoginHostTextField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.cvlLoginHostTextFieldPanel.SetSizerAndFit(self.cvlLoginHostTextFieldPanelSizer)
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlLoginHostTextFieldPanel, flag=wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=3)
-        if self.cvlConnectionProfileComboBox.GetValue()!="Other...":
-            self.cvlSimpleLoginFieldsPanelSizer.Show(self.cvlLoginHostTextFieldPanel,False)
-
         self.cvlShowAdvancedLoginLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Show advanced options')
         self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlShowAdvancedLoginLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.cvlAdvancedLoginCheckBox = wx.CheckBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, "")
@@ -936,6 +932,10 @@ class LauncherMainFrame(wx.Frame):
         self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlDebugAndAutoExitPanel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         
         self.cvlSimpleLoginFieldsPanel.SetSizerAndFit(self.cvlSimpleLoginFieldsPanelSizer)
+        if self.cvlConnectionProfileComboBox.GetValue()!="Other...":
+            self.cvlSimpleLoginFieldsPanelSizer.Show(self.cvlLoginHostLabel,False)
+            self.cvlSimpleLoginFieldsPanelSizer.Layout()
+        self.cvlAdvancedLoginFieldsPanel.SetSizerAndFit(self.cvlAdvancedLoginFieldsPanelSizer)
 
         self.cvlLoginDialogPanelSizer.Add(self.cvlSimpleLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
         self.cvlLoginDialogPanelSizer.Add(self.cvlAdvancedLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
@@ -1169,8 +1169,10 @@ class LauncherMainFrame(wx.Frame):
     def onCvlAdvancedLoginCheckBox(self, event):
         if self.cvlAdvancedLoginCheckBox.GetValue():
             launcherMainFrame.cvlLoginDialogPanelSizer.Show(launcherMainFrame.cvlAdvancedLoginFieldsPanel)
+            launcherMainFrame.cvlLoginDialogPanelSizer.Layout()
         else:
             launcherMainFrame.cvlLoginDialogPanelSizer.Show(launcherMainFrame.cvlAdvancedLoginFieldsPanel,False)
+            launcherMainFrame.cvlLoginDialogPanelSizer.Layout()
 
     def onCloseDebugWindow(self, event):
         self.massiveShowDebugWindowCheckBox.SetValue(False)
@@ -1571,11 +1573,15 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         if self.cvlConnectionProfileComboBox.GetValue()=="Other...":
             launcherMainFrame.cvlSimpleLoginFieldsPanelSizer.Show(launcherMainFrame.cvlLoginHostLabel)
             launcherMainFrame.cvlSimpleLoginFieldsPanelSizer.Show(launcherMainFrame.cvlLoginHostTextFieldPanel)
+            launcherMainFrame.cvlSimpleLoginFieldsPanelSizer.Layout()
+            launcherMainFrame.cvlLoginDialogPanelSizer.Layout()
             launcherMainFrame.cvlLoginHostTextField.SelectAll()
             launcherMainFrame.cvlLoginHostTextField.SetFocus()
         else:
             launcherMainFrame.cvlSimpleLoginFieldsPanelSizer.Show(launcherMainFrame.cvlLoginHostLabel,False)
             launcherMainFrame.cvlSimpleLoginFieldsPanelSizer.Show(launcherMainFrame.cvlLoginHostTextFieldPanel,False)
+            launcherMainFrame.cvlSimpleLoginFieldsPanelSizer.Layout()
+            launcherMainFrame.cvlLoginDialogPanelSizer.Layout()
             #launcherMainFrame.cvlLoginHostTextField.SetValue("")
 
 class siteConfig():
