@@ -1515,14 +1515,6 @@ class LoginProcess():
                 # Calling shutdown() doesn't seem to work - shutdownReal never gets called.
                 logger.debug('loginProcessEvent: shutdownReal: calling skd.shutdownReal()')
                 self.skd.shutdownReal()
-                count = 0
-                while not self.skd.complete():
-                    count = count + 1
-                    logger.debug("loginProcessEvent.shutdownKeyDist: Waiting for sshKeyDist to shut down...")
-                    time.sleep(0.5)
-                    if count > 10:
-                        logger.error("sshKeyDist failed to shut down in 5 seconds.")
-                        break
         if (self.progressDialog != None):
             wx.CallAfter(self.progressDialog.Hide)
             wx.CallAfter(self.progressDialog.Show, False)
