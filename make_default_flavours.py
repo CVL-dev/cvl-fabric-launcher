@@ -268,7 +268,7 @@ def getOtherSession():
     siteConfigDict={}
     siteConfigDict['messageRegexs']=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
     siteConfigDict['listAll']=siteConfig.cmdRegEx('\'vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
-    siteConfigDict['startServer']=siteConfig.cmdRegEx('\"vncserver --vnc turbovnc --geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
+    siteConfigDict['startServer']=siteConfig.cmdRegEx('\"vncserver -geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
     siteConfigDict['stop']=siteConfig.cmdRegEx('\'vncserver -kill {vncDisplay}\'')
     siteConfigDict['stopForRestart']=siteConfig.cmdRegEx('\'vncserver -kill {vncDisplay}\'')
     siteConfigDict['otp']= siteConfig.cmdRegEx('\'vncpasswd -o -display localhost{vncDisplay}\'','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')

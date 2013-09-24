@@ -1041,7 +1041,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             except:
                 logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (no existing agent found)")
                 pass
-            self.keyModel.setUseTemporaryKey(True)
+            self.keyModel=KeyModel(temporaryKey=True)
             removeKeyOnExit = True
         else:
             logger.debug("launcherMainFrame.onLogin: using a permanent Key pair")

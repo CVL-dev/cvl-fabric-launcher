@@ -1512,7 +1512,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"vncserver --vnc turbovnc --geometry {resolution}\"",
+                "cmd": "\"vncserver -geometry {resolution}\"",
                 "host": "login",
                 "loop": false,
                 "regex": [

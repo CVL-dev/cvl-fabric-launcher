@@ -1569,7 +1569,8 @@ class LoginProcess():
         update={}
         update['sshBinary']=self.keyModel.getsshBinary()
         update['launcher_version_number']=launcher_version_number.version_number
-        update['loginHost']=self.siteConfig.loginHost
+        if (self.siteConfig.loginHost!=None):
+            update['loginHost']=self.siteConfig.loginHost
         self.jobParams.update(update)
 
         for k, v in self.__dict__.iteritems():
