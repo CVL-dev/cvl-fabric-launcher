@@ -944,8 +944,11 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             self.loginProcess.remove(lp)
         except:
             logger.debug("launcher: Couldn't remove the loginprocess")
+        self.loginButton.Enable()
+
     def loginCancel(self,lp,jobParams):
         self.loginProcess.remove(lp)
+        self.loginButton.Enable()
 
     def onLoginProcessComplete(self, jobParams):
         logger.debug("launcher.py: onLogin: Enabling login button.")
