@@ -43,45 +43,51 @@
 """
 A wxPython GUI to provide easy login to the MASSIVE Desktop.
 It can be run using "python launcher.py", assuming that you
-have a 32-bit (*) version of Python installed,
-wxPython, and the dependent Python modules imported below.
+have an appropriate (32-bit or 64-bit) version of Python 
+installed (*), wxPython, and the dependent Python modules 
+listed in the DEPENDENCIES file.
 
-(*) wxPython on Mac OS X doesn't yet work nicely in 64-bit mode.
+(*) wxPython 2.8.x on Mac OS X doesn't support 64-bit mode.
 
-The py2app module is required to build the "CVL Launcher.app"
+The py2app module is required to build the "MASSIVE Launcher.app"
 application bundle on Mac OS X, which can be built as follows:
 
    python create_mac_bundle.py py2app
 
+To build a DMG containing the app bundle and a symbolic link to
+Applications, you can run:
+
+   python package_mac_version.py <version_number>
+
 See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Mac+OS+X+build+instructions
 
-The py2exe module is required to build the "CVL Launcher.exe"
-executable on Windows, which can be built as follows:
+The PyInstaller module, bundled with the Launcher code is used
+to build the Windows and Linux executables. The Windows setup wizard
+(created with InnoSetup) can be built using:
 
-   python create_windows_bundle.py py2exe
+   package_windows_version.bat C:\path\to\code\signing\certificate.pfx <certificate_password>
+
+assuming that you have InnoSetup installed and that you have signtool.exe installed for
+code signing.
 
 See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Windows+build+instructions
 
-A Windows installation wizard can be built using InnoSetup,
-and the CVL.iss script.
+If you want to build a stand-alone Launcher binary for Mac or Windows
+without using a code-signing certificate, you can do so by commenting
+out the code-signing functionality in package_mac_version.py and in
+package_windows_version.bat.  In other words, sorry, this is not 
+possible at present without modifying the packaging scripts.
 
 A self-contained Linux binary distribution can be built using
 PyInstaller, as described on the following wiki page.
 
 See: https://confluence-vre.its.monash.edu.au/display/CVL/MASSIVE+Launcher+Linux+build+instructions
 
-ACKNOWLEDGEMENT
-
-Thanks to Michael Eager for a concise, non-GUI Python script
-which demonstrated the use of the Python pexpect module to
-automate SSH logins and to automate calling TurboVNC
-on Linux and on Mac OS X.
-
 """
 
 
 # Make sure that the Launcher doesn't attempt to write to
-# "CVL Launcher.exe.log", because it might not have
+# "MASSIVE Launcher.exe.log", because it might not have
 # permission to do so.
 import sys
 if sys.platform.startswith("win"):
@@ -717,10 +723,6 @@ class LauncherMainFrame(wx.Frame):
         self.cvlSimpleLoginFieldsPanelSizer = wx.FlexGridSizer(rows=5, cols=2, vgap=3, hgap=5)
         self.cvlSimpleLoginFieldsPanel.SetSizer(self.cvlSimpleLoginFieldsPanelSizer)
 
-        self.cvlAdvancedLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
-        self.cvlAdvancedLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
-        self.cvlAdvancedLoginFieldsPanel.SetSizer(self.cvlAdvancedLoginFieldsPanelSizer)
-
         self.cvlConnectionProfileLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Connection')
         self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlConnectionProfileLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -803,6 +805,17 @@ class LauncherMainFrame(wx.Frame):
         if self.cvlUsername.strip()!="":
             self.cvlUsernameTextField.SelectAll()
 
+        self.cvlShowAdvancedLoginLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Show advanced options')
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlShowAdvancedLoginLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
+        self.cvlAdvancedLoginCheckBox = wx.CheckBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, "")
+        self.cvlAdvancedLoginCheckBox.SetMinSize(self.cvlAdvancedLoginCheckBox.GetSize())
+        self.cvlAdvancedLoginCheckBox.SetValue(False)
+        self.cvlAdvancedLoginCheckBox.Bind(wx.EVT_CHECKBOX, self.onCvlAdvancedLoginCheckBox)
+        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlAdvancedLoginCheckBox, flag=wx.LEFT|wx.EXPAND, border=10)
+
+        self.cvlAdvancedLoginFieldsPanel = wx.Panel(self.cvlLoginDialogPanel, wx.ID_ANY)
+        self.cvlAdvancedLoginFieldsPanelSizer = wx.FlexGridSizer(rows=4, cols=2, vgap=3, hgap=5)
+        self.cvlAdvancedLoginFieldsPanel.SetSizer(self.cvlAdvancedLoginFieldsPanelSizer)
 
         self.cvlVncDisplayResolutionLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Resolution')
         self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlVncDisplayResolutionLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -882,13 +895,6 @@ class LauncherMainFrame(wx.Frame):
         else:
             self.cvlSshTunnelCipherComboBox.SetValue(defaultCipher)
 
-        self.cvlShowAdvancedLoginLabel = wx.StaticText(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, 'Show advanced options')
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlShowAdvancedLoginLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
-        self.cvlAdvancedLoginCheckBox = wx.CheckBox(self.cvlSimpleLoginFieldsPanel, wx.ID_ANY, "")
-        self.cvlAdvancedLoginCheckBox.SetValue(False)
-        self.cvlAdvancedLoginCheckBox.Bind(wx.EVT_CHECKBOX, self.onCvlAdvancedLoginCheckBox)
-        self.cvlSimpleLoginFieldsPanelSizer.Add(self.cvlAdvancedLoginCheckBox, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
-
         self.cvlShowDebugWindowLabel = wx.StaticText(self.cvlAdvancedLoginFieldsPanel, wx.ID_ANY, 'Show debug window')
         self.cvlAdvancedLoginFieldsPanelSizer.Add(self.cvlShowDebugWindowLabel, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
 
@@ -936,6 +942,8 @@ class LauncherMainFrame(wx.Frame):
             self.cvlSimpleLoginFieldsPanelSizer.Show(self.cvlLoginHostLabel,False)
             self.cvlSimpleLoginFieldsPanelSizer.Layout()
         self.cvlAdvancedLoginFieldsPanel.SetSizerAndFit(self.cvlAdvancedLoginFieldsPanelSizer)
+
+        self.cvlAdvancedLoginFieldsPanel.Show(False)
 
         self.cvlLoginDialogPanelSizer.Add(self.cvlSimpleLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
         self.cvlLoginDialogPanelSizer.Add(self.cvlAdvancedLoginFieldsPanel, flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, border=15)
@@ -1571,10 +1579,15 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
 
     def onCvlConnectionProfileChanged(self, event):
         if self.cvlConnectionProfileComboBox.GetValue()=="Other...":
+            if self.cvlAdvancedLoginCheckBox.GetValue():
+                # Temporarily hide the advanced options panel while we add a new field to the simple options panel.
+                launcherMainFrame.cvlLoginDialogPanelSizer.Show(launcherMainFrame.cvlAdvancedLoginFieldsPanel,False)
             launcherMainFrame.cvlSimpleLoginFieldsPanelSizer.Show(launcherMainFrame.cvlLoginHostLabel)
             launcherMainFrame.cvlSimpleLoginFieldsPanelSizer.Show(launcherMainFrame.cvlLoginHostTextFieldPanel)
-            launcherMainFrame.cvlSimpleLoginFieldsPanelSizer.Layout()
-            launcherMainFrame.cvlLoginDialogPanelSizer.Layout()
+            launcherMainFrame.cvlSimpleLoginFieldsPanel.Layout()
+            if self.cvlAdvancedLoginCheckBox.GetValue():
+                launcherMainFrame.cvlLoginDialogPanelSizer.Show(launcherMainFrame.cvlAdvancedLoginFieldsPanel,True)
+            launcherMainFrame.cvlLoginDialogPanel.Layout()
             launcherMainFrame.cvlLoginHostTextField.SelectAll()
             launcherMainFrame.cvlLoginHostTextField.SetFocus()
         else:
