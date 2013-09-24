@@ -999,7 +999,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: startTunnel: set remotePortNumber to ' + str(event.loginprocess.jobParams['remotePortNumber']))
 
 
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION,event.loginprocess)
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK,event.loginprocess)
                 t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.tunnel,nextevent,"Unable to start the tunnel for some reason")
                 t.setDaemon(False)
                 t.start()
@@ -1008,21 +1008,29 @@ class LoginProcess():
             else:
                 event.Skip()
 
-        def setDesktopResolution(event):
-            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION):
-                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION')
-                event.loginprocess.updateProgressDialog( 8, "Setting the desktop resolution")
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK,event.loginprocess)
-
-                logger.debug('Setting the desktop resolution.')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.setDisplayResolution, nextevent, '')
-                t.setDaemon(False)
-                t.start()
-                event.loginprocess.threads.append(t)
-            else:
-                event.Skip()
-
         def runSanityCheck(event):
+            """
+            FIXME: Please read the following and confirm that running the sanity check after the Vis job has
+                   been submitted is intentional!
+
+            The original reason for having a sanity check server-side script on MASSIVE separate from the request_visnode 
+            script was so that it could be called much earlier in the login process, well before the Vis node was 
+            requested.  The original use cases were the following:
+            1. The Launcher would connect to MASSIVE using a password first, and then the sanity check could
+                 do things like check whether the user had incorrect permissions on their ~/.ssh/ directory which could 
+                 prevent them from being able to authenticate using keys (which were only used for the SSH tunnel in 
+                 previous Launcher versions).
+            2. If a MASSIVE administrator noticed that one particular user had multiple jobs in the Vis queue, due to
+                 multiple attempts at using a Launcher version containing a bug, the MASSIVE administrator could use
+                 the sanity check script to prevent the user from submitting additional Vis node jobs.
+            3. The sanity check script could raise an exception if the user was running an old Launcher version.  
+
+            Now it seems that the sanity check event is running AFTER the Vis node has been requested.  If this is
+            intentional, we need to ensure that MASSIVE admins understand this.  Perhaps the justification is that
+            the Launcher's Vis node job cleanup has now been well tested, so we trust the Launcher to clean up 
+            after itself, so we don't need to be able to stop a Launcher session before it has requested a Vis node?
+            """
+
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_RUN_SANITY_CHECK')
                 event.loginprocess.updateProgressDialog( 8, "Running the sanity check script")
@@ -1644,7 +1652,6 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_SHOW_ESTIMATED_START = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_GET_PROJECTS = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_SELECT_PROJECT = wx.NewId()
-        LoginProcess.EVT_LOGINPROCESS_SET_DESKTOP_RESOLUTION = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_GET_DBUS_SESSION_ADDRESS = wx.NewId()
@@ -1680,7 +1687,6 @@ class LoginProcess():
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.showEstimatedStart)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getProjects)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.selectProject)
-        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.setDesktopResolution)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.runSanityCheck)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.startWebDavServer)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.getDbusSessionAddress)
