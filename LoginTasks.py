@@ -763,9 +763,23 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISTRIBUTE_KEY')
                 wx.CallAfter(event.loginprocess.updateProgressDialog, 2,"Configuring authorisation")
                 event.loginprocess.skd = cvlsshutils.sshKeyDist.KeyDist(event.loginprocess.parentWindow,event.loginprocess.progressDialog,event.loginprocess.jobParams['username'],event.loginprocess.jobParams['loginHost'],event.loginprocess.jobParams['configName'],event.loginprocess.notify_window,event.loginprocess.keyModel,event.loginprocess.displayStrings,removeKeyOnExit=event.loginprocess.removeKeyOnExit,startupinfo=event.loginprocess.startupinfo,creationflags=event.loginprocess.creationflags)
-                successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
+                successevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK,event.loginprocess)
                 event.loginprocess.skd.distributeKey(callback_success=lambda: wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),successevent),
                                                      callback_fail=event.loginprocess.cancel)
+            else:
+                event.Skip()
+
+        def runSanityCheck(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK):
+                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_RUN_SANITY_CHECK')
+                event.loginprocess.updateProgressDialog( 8, "Running the sanity check script")
+                nextevent = LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CHECK_RUNNING_SERVER,event.loginprocess)
+
+                logger.debug('Running server-side sanity check.')
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.runSanityCheck,nextevent,'Error reported by server-side sanity check.')
+                t.setDaemon(False)
+                t.start()
+                event.loginprocess.threads.append(t)
             else:
                 event.Skip()
 
@@ -999,51 +1013,12 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: startTunnel: set remotePortNumber to ' + str(event.loginprocess.jobParams['remotePortNumber']))
 
 
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK,event.loginprocess)
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
                 t = LoginProcess.runAsyncServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.tunnel,nextevent,"Unable to start the tunnel for some reason")
                 t.setDaemon(False)
                 t.start()
                 event.loginprocess.threads.append(t)
 
-            else:
-                event.Skip()
-
-        def runSanityCheck(event):
-            """
-            FIXME: Please read the following and confirm that running the sanity check after the Vis job has
-                   been submitted is intentional!
-
-            The original reason for having a sanity check server-side script on MASSIVE separate from the request_visnode 
-            script was so that it could be called much earlier in the login process, well before the Vis node was 
-            requested.  The original use cases were the following:
-            1. The Launcher would connect to MASSIVE using a password first, and then the sanity check could
-                 do things like check whether the user had incorrect permissions on their ~/.ssh/ directory which could 
-                 prevent them from being able to authenticate using keys (which were only used for the SSH tunnel in 
-                 previous Launcher versions).
-            2. If a MASSIVE administrator noticed that one particular user had multiple jobs in the Vis queue, due to
-                 multiple attempts at using a Launcher version containing a bug, the MASSIVE administrator could use
-                 the sanity check script to prevent the user from submitting additional Vis node jobs.
-            3. The sanity check script could raise an exception if the user was running an old Launcher version.  
-
-            Now it seems that the sanity check event is running AFTER the Vis node has been requested.  If this is
-            intentional, we need to ensure that MASSIVE admins understand this.  Perhaps the justification is that
-            the Launcher's Vis node job cleanup has now been well tested, so we trust the Launcher to clean up 
-            after itself, so we don't need to be able to stop a Launcher session before it has requested a Vis node?
-            """
-
-            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_RUN_SANITY_CHECK):
-                logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_RUN_SANITY_CHECK')
-                event.loginprocess.updateProgressDialog( 8, "Running the sanity check script")
-                nextevent = LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT,event.loginprocess)
-
-                logger.debug('Running server-side sanity check.')
-                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.runSanityCheck,
-                                                        nextevent,
-                                                        'Error reported by server-side sanity check.'
-                                                        )
-                t.setDaemon(False)
-                t.start()
-                event.loginprocess.threads.append(t)
             else:
                 event.Skip()
 
