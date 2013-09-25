@@ -1395,6 +1395,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
                     error_string = "Error contacting Massive to retrieve user's default project"
                     logger.error(error_string)
                     die_from_main_frame(launcherMainFrame,error_string)
+                    self.loginButton.Enable()
                     return
 
                 if self.massiveProject in self.massiveProjects:
