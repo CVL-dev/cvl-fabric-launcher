@@ -1222,6 +1222,12 @@ class LauncherMainFrame(wx.Frame):
         # so there's no need to delete it as part of clean-up.
 
         try:
+            if hasattr(self, 'loginProcess') and self.loginProcess is not None:
+                logger.debug("launcher.py: onExit: Calling self.loginProcess.shutdownReal().")
+                self.loginProcess.shutdownReal()
+            else:
+                logger.debug("launcher.py: onExit: Didn't find a login process to shut down.")
+
             logger.dump_log(launcherMainFrame)
         finally:
             os._exit(0)
@@ -1328,6 +1334,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             return wx.ID_CANCEL
 
     def onLoginProcessComplete(self, jobParams):
+        self.loginProcess = None
         logger.debug("launcher.py: onLogin: Enabling login button.")
         self.loginButton.Enable()
 
