@@ -1359,6 +1359,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
                         "Please enter your MASSIVE username.",
                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
+                self.loginButton.Enable()
                 self.massiveUsernameTextField.SetFocus()
                 return
         else:
@@ -1373,6 +1374,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
                         "Please enter your CVL username.",
                         "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
+                self.loginButton.Enable()
                 self.cvlUsernameTextField.SetFocus()
                 return
 
