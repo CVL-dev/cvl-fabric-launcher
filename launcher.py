@@ -1392,9 +1392,12 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
                     self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
                 except:
                     logger.debug(traceback.format_exc())
-                    error_string = "Error contacting Massive to retrieve user's default project"
+                    error_string = "Failed to contact MASSIVE to retrieve your default project."
+                    dlg = wx.MessageDialog(launcherMainFrame,
+                            error_string,
+                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                    dlg.ShowModal()
                     logger.error(error_string)
-                    die_from_main_frame(launcherMainFrame,error_string)
                     self.loginButton.Enable()
                     return
 
