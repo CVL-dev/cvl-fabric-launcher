@@ -35,6 +35,7 @@ Do you want me to delete the job or leave it in the queue so you can reconnect l
         self.reconnectMessageYes="Reconnect"
         self.reconnectMessageNo="New desktop"
         self.createNewKeyDialogNewPassphraseMismatch="Passphrases don't match"
+	    self.helpEmailAddress="help@massive.org.au"
         for key,value in kwargs.iteritems():
             self.__dict__[key]=value
 
