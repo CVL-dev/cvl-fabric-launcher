@@ -63,7 +63,7 @@ class LoginProcess():
                 # Not 100% sure if this is necessary on Windows vs Linux. Seems to break the
                 # Windows version of the launcher, but leaving in for Linux/OSX.
                 logger.debug("runAsyncServerCommandThread: self.cmdRegex.cmd = " + self.cmdRegex.cmd)
-                cmd=self.cmdRegex.cmd.format(**self.loginprocess.jobParams)
+                cmd=self.cmdRegex.cmd.format(**self.loginprocess.jobParams).encode('ascii')
                 logger.debug("runAsyncServerCommandThread: running %s"%cmd)
                 if sys.platform.startswith("win"):
                     pass

@@ -34,6 +34,7 @@ Do you want me to delete the job or leave it in the queue so you can reconnect l
         self.reconnectMessage="An Existing Desktop was found. It has {timestring} remaining. Would you like to reconnect or kill it and start a new desktop?"
         self.reconnectMessageYes="Reconnect"
         self.reconnectMessageNo="New desktop"
+	self.helpEmailAddress="help@massive.org.au"
         for key,value in kwargs.iteritems():
             self.__dict__[key]=value
 

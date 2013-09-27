@@ -372,7 +372,7 @@ class LauncherMainFrame(wx.Frame):
         self.siteConfigPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.configLabel = wx.StaticText(self.siteConfigPanel, wx.ID_ANY, 'Site')
         self.siteConfigPanel.GetSizer().Add(self.configLabel, proportion=0, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND, border=5)
-        self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=self.sites.keys(), value='', style=wx.CB_READONLY,name='jobParams_configName')
+        self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=self.sites.keys(), value=self.sites.keys()[0], style=wx.CB_READONLY,name='jobParams_configName')
         self.siteConfigComboBox.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
         self.siteConfigPanel.GetSizer().Add(self.siteConfigComboBox, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.loginFieldsPanel.GetSizer().Add(self.siteConfigPanel,proportion=0,flag=wx.EXPAND)
@@ -771,9 +771,12 @@ class LauncherMainFrame(wx.Frame):
         advanced=self.FindWindowByName('advancedCheckBox').GetValue()
         if visible==None:
             try:
-                visible = self.sites[self.FindWindowByName('jobParams_configName').GetValue()].visibility
+		sc=None
+		sc=self.FindWindowByName('jobParams_configName').GetValue()
+                visible = self.sites[sc].visibility
             except Exception as e:
-                logger.debug('updateVisibility: no visibility information associated with the siteConfig configName: %s'%self.FindWindowByName('jobParams_configName').GetValue())
+		logger.debug('updateVisibility: looking for site %s'%sc)
+                logger.debug('updateVisibility: no visibility information associated with the siteConfig configName: %s'%sc)
                 visible={}
         for key in visible.keys():
             try:
@@ -930,7 +933,8 @@ If this computer is shared by a number of people then passwords are preferable.
 
 If this computer is not shared, then an SSH Key pair will give you advanced features for managing your access.
 """
-        dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices,helpEmailAddress=self.displayStrings.helpEmailAddress)
+        configName=self.FindWindowByName('jobParams_configName').GetValue()
+        dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices,helpEmailAddress=self.sites[configName].displayStrings.helpEmailAddress)
         rv=dlg.ShowModal()
         if rv in range(auth_mode.GetCount()):
             authModeRadioBox = self.launcherOptionsDialog.FindWindowByName('auth_mode')
@@ -1053,7 +1057,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
         self.configName=self.FindWindowByName('jobParams_configName').GetValue()
         autoExit=False
-        lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,vncOptions=self.vncOptions,removeKeyOnExit=self.vncOptions['public_mode'])
+        lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,vncOptions=self.vncOptions)
         lp.setCallback(lambda jobParams: self.loginComplete(lp,jobParams))
         lp.setCancelCallback(lambda jobParams: self.loginCancel(lp,jobParams))
         self.loginProcess.append(lp)
