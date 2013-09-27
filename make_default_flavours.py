@@ -308,25 +308,31 @@ cvlvisible['debugCheckBoxPanel']='Advanced'
 cvlvisible['advancedCheckBoxPanel']=True
 cvlvisible['optionsDialog']=False
 
+massiveStrings = sshKeyDistDisplayStringsMASSIVE()
+cvlStrings = sshKeyDistDisplayStringsCVL()
 m1=siteConfig.siteConfig()
 d=buildSiteConfigCmdRegExDict("m1")
 m1.__dict__.update(d)
 m1.visibility=massivevisible
+m1.displayStrings.__dict__.update(massiveStrings.__dict__)
 
 m2=siteConfig.siteConfig()
 d=buildSiteConfigCmdRegExDict("m2")
 m2.__dict__.update(d)
 m2.visibility=massivevisible
+m2.displayStrings.__dict__.update(massiveStrings.__dict__)
 
 cvl=siteConfig.siteConfig()
 d=buildSiteConfigCmdRegExDict("cvl")
 cvl.__dict__.update(d)
 cvl.visibility=cvlvisible
+cvl.displayStrings.__dict__.update(cvlStrings.__dict__)
 
 huygens=siteConfig.siteConfig()
 d=buildSiteConfigCmdRegExDict("Huygens")
 huygens.__dict__.update(d)
 huygens.visibility=cvlvisible
+huygens.displayStrings.__dict__.update(cvlStrings.__dict__)
 
 other=getOtherSession()
 
