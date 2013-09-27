@@ -399,9 +399,7 @@ class LauncherMainFrame(wx.Frame):
         self.projectLabel = wx.StaticText(self.projectPanel, wx.ID_ANY, 'Project')
         self.projectPanel.GetSizer().Add(self.projectLabel, proportion=1, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, border=5)
 
-        self.defaultProjectPlaceholder = '[Use my default project]'
-        self.projects = ['[Use my default projec]']
-        self.projectField = wx.ComboBox(self.projectPanel, wx.ID_ANY, value='', choices=self.projects, size=(widgetWidth2, -1), style=wx.CB_DROPDOWN,name='jobParams_project')
+        self.projectField = wx.TextCtrl(self.projectPanel, wx.ID_ANY, size=(widgetWidth2, -1), name='jobParams_project')
         #self.projectComboBox.Bind(wx.EVT_TEXT, self.onProjectTextChanged)
         self.projectPanel.GetSizer().Add(self.projectField, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.loginFieldsPanel.GetSizer().Add(self.projectPanel, proportion=0,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
@@ -496,10 +494,6 @@ class LauncherMainFrame(wx.Frame):
         self.buttonsPanel = wx.Panel(self.loginDialogPanel, wx.ID_ANY)
         #self.buttonsPanel.SetSizer(wx.FlexGridSizer(rows=1, cols=4, vgap=5, hgap=10))
         self.buttonsPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
-
-        self.preferencesButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Preferences')
-        self.buttonsPanel.GetSizer().Add(self.preferencesButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
-        self.Bind(wx.EVT_BUTTON, self.onOptions, id=self.preferencesButton.GetId())
 
         self.exitButton = wx.Button(self.buttonsPanel, wx.ID_ANY, 'Exit')
         self.buttonsPanel.GetSizer().Add(self.exitButton, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT, border=10)
@@ -943,14 +937,37 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             return int(rv)
         else:
             self.queryAuthMode()
-    def loginComplete(self,lp,jobParams):
+    def loginComplete(self,lp,oldParams,jobParams):
+        shouldSave=False
+        for k in jobParams:
+            if oldParams.has_key(k): 
+                # This is a bit messy, but some of our parameters get converted from ints to strings
+                # Specifically nodes is requsted as an int from a SpinCtrl but is updated to a string from the output of qstat.
+                if not oldParams[k] == jobParams[k] and isinstance(oldParams[k],type(jobParams[k])):
+                    winName='jobParams_%s'%k
+                    try:
+                        self.FindWindowByName(winName).SetValue(jobParams[k])
+                        shouldSave=True
+                    except Exception as e:
+                        logger.debug("launcher: Couldn't update the parameter %s %s %s"%(k,e,e.__class__))
+                        pass
+                elif isinstance(oldParams[k],int) and int(jobParams[k])!= oldParams[k]:
+                    try:
+                        self.FindWindowByName(winName).SetValue(int(jobParams[k]))
+                        shouldSave=True
+                    except Exception as e:
+                        logger.debug("launcher: Couldn't update the parameter %s %s %s"%(k,e,e.__class__))
+                        pass
         try:
             self.loginProcess.remove(lp)
         except:
             logger.debug("launcher: Couldn't remove the loginprocess")
+        if shouldSave:
+            wx.CallAfter(self.Refresh)
+            threading.Thread(target=self.savePrefs).start()
         self.loginButton.Enable()
 
-    def loginCancel(self,lp,jobParams):
+    def loginCancel(self,lp,oldParams,jobParams):
         self.loginProcess.remove(lp)
         self.loginButton.Enable()
 
@@ -1058,8 +1075,9 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         self.configName=self.FindWindowByName('jobParams_configName').GetValue()
         autoExit=False
         lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,vncOptions=self.vncOptions)
-        lp.setCallback(lambda jobParams: self.loginComplete(lp,jobParams))
-        lp.setCancelCallback(lambda jobParams: self.loginCancel(lp,jobParams))
+        oldParams  = jobParams.copy()
+        lp.setCallback(lambda jobParams: self.loginComplete(lp,oldParams,jobParams))
+        lp.setCancelCallback(lambda jobParams: self.loginCancel(lp,oldParams,jobParams))
         self.loginProcess.append(lp)
         lp.doLogin()
         event.Skip()
