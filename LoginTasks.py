@@ -3,6 +3,7 @@ import cvlsshutils.sshKeyDist
 from utilityFunctions import *
 import traceback
 import sys
+import platform
 import launcher_version_number
 import shlex
 import xmlrpclib
@@ -604,9 +605,7 @@ class LoginProcess():
             font.SetPointSize(14)
             font.SetWeight(wx.BOLD)
             turboVncNotFoundTitleLabel.SetFont(font)
-            turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
-            turboVncNotFoundPanelSizer.Add(turboVncNotFoundTitleLabel, flag=wx.EXPAND)
-            turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
+            turboVncNotFoundPanelSizer.Add(turboVncNotFoundTitleLabel, flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=15)
             turboVncNotFoundTextLabel1 = wx.StaticText(turboVncNotFoundPanel,
                 label = "TurboVNC (>= 1.1) was not found.\n\n" +
                         "Please download it from:\n")
@@ -628,6 +627,35 @@ class LoginProcess():
                 font.SetPointSize(8)
             turboVncNotFoundHyperlink.SetFont(font)
             turboVncNotFoundPanelSizer.Add(turboVncNotFoundHyperlink, border=10, flag=wx.LEFT|wx.RIGHT|wx.BORDER)
+            if sys.platform.startswith("darwin"):
+                from distutils.version import StrictVersion
+                if StrictVersion(platform.mac_ver()[0]) >= StrictVersion("10.8.0"):
+                    messageLabel = wx.StaticText(turboVncNotFoundPanel,
+                        label= "TurboVNC's Mac OS X installer is not digitally signed, \n" + \
+                               "so you will need to right-click or control-click on it \n" + \
+                               "to avoid being told that it can't be opened because it \n" + \
+                               "is from an unidentified developer.")
+                    font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+                    if sys.platform.startswith("darwin"):
+                        font.SetPointSize(11)
+                    else:
+                        font.SetPointSize(9)
+                    messageLabel.SetFont(font)
+                    turboVncNotFoundPanelSizer.Add(messageLabel, flag=wx.TOP,border=10)
+
+                    appleGateKeeperSupportUrl = "http://support.apple.com/kb/HT5290"
+                    appleGateKeeperSupportHyperlink = wx.HyperlinkCtrl(turboVncNotFoundPanel,
+                        id = wx.ID_ANY,
+                        label = appleGateKeeperSupportUrl,
+                        url = appleGateKeeperSupportUrl)
+                    font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+                    if sys.platform.startswith("darwin"):
+                        font.SetPointSize(11)
+                    else:
+                        font.SetPointSize(8)
+                    appleGateKeeperSupportHyperlink.SetFont(font)
+                    turboVncNotFoundPanelSizer.Add(appleGateKeeperSupportHyperlink, border=10, flag=wx.LEFT|wx.RIGHT|wx.BORDER)
+
             turboVncNotFoundPanelSizer.Add(wx.StaticText(turboVncNotFoundPanel))
 
             turboVncNotFoundDialog.addPanel(turboVncNotFoundPanel)
