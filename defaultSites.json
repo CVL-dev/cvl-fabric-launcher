@@ -140,6 +140,18 @@
                     "pattern": "^ERROR:(?P<error>.*(?:\n|\r\n?))"
                 }
             ],
+            "onConnectScript": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} 'module load keyutility ; mountUtility.py'\"",
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
             "openWebDavShareInRemoteFileBrowser": {
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
@@ -476,6 +488,18 @@
                     "pattern": "^ERROR:(?P<error>.*(?:\n|\r\n?))"
                 }
             ],
+            "onConnectScript": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
             "openWebDavShareInRemoteFileBrowser": {
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
@@ -812,6 +836,18 @@
                     "pattern": "^ERROR:(?P<error>.*(?:\n|\r\n?))"
                 }
             ],
+            "onConnectScript": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
             "openWebDavShareInRemoteFileBrowser": {
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
@@ -1137,6 +1173,18 @@
                     "pattern": "^ERROR:(?P<error>.*(?:\n|\r\n?))"
                 }
             ],
+            "onConnectScript": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} 'module load keyutility ; mountUtility.py'\"",
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
             "openWebDavShareInRemoteFileBrowser": {
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
@@ -1458,6 +1506,18 @@
                     "pattern": "^ERROR:(?P<error>.*(?:\n|\r\n?))"
                 }
             ],
+            "onConnectScript": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
             "openWebDavShareInRemoteFileBrowser": {
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",

@@ -137,6 +137,7 @@ class siteConfig():
         self.openWebDavShareInRemoteFileBrowser=cmdRegEx()
         self.displayWebDavInfoDialogOnRemoteDesktop=cmdRegEx()
         self.webDavTunnel=cmdRegEx()
+        self.onConnectScript=cmdRegEx()
         self.agent=cmdRegEx()
         self.tunnel=cmdRegEx()
         self.visibility={}

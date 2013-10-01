@@ -1055,8 +1055,8 @@ class LoginProcess():
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_WEBDAV_SERVER')
                 else:
-                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
-                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
+                    nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CONNECTED,event.loginprocess)
+                    logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_CONNECTED')
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.otp,nextevent,"Unable to determine the one-time password for the VNC session")
                 t.setDaemon(False)
                 t.start()
@@ -1066,8 +1066,8 @@ class LoginProcess():
 
         def startWebDavServer(event):
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_START_WEBDAV_SERVER):
-                logger.debug('LoginProcess.startWebDavServer: posting START_VIEWER while we also connect the webdav server')
-                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
+                logger.debug('LoginProcess.startWebDavServer: posting ON_CONNECT while we also connect the webdav server')
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_CONNECTED,event.loginprocess)
                 wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_START_WEBDAV_SERVER')
                 event.loginprocess.updateProgressDialog( 10,"Sharing your home directory with the remote server")
@@ -1194,15 +1194,12 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG):
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_DISPLAY_WEBDAV_ACCESS_INFO_IN_REMOTE_DIALOG')
                 event.loginprocess.updateProgressDialog( 10, "Sharing your home directory with the remote server")
-                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
 
                 t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.displayWebDavInfoDialogOnRemoteDesktop, None, '', requireMatch=False)
                 t.setDaemon(True)
                 t.start()
                 event.loginprocess.threads.append(t)
 
-                #nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
-                #wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),nextevent)
 
             else:
                 event.Skip()
@@ -1233,13 +1230,23 @@ class LoginProcess():
                     logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_UNMOUNT_WEBDAV')
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHUTDOWN,event.loginprocess)
                     logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_SHUTDOWN')
-
                     t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.webDavUnmount, nextevent, '', requireMatch=False)
                     t.setDaemon(True)
                     t.start()
                     event.loginprocess.threads.append(t)
                     # Technically this is a bit early to clear the event, but I don't think it really matters. -- Chris.
                     event.loginprocess.webdavMounted.clear()
+            else:
+                event.Skip()
+
+        def onConnection(event):
+            if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_CONNECTED):
+                nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_VIEWER,event.loginprocess)
+                logger.debug('loginProcessEvent: posting EVT_LOGINPROCESS_START_VIEWER')
+                t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.onConnectScript,nextevent,"Unable to determine the one-time password for the VNC session")
+                t.setDaemon(False)
+                t.start()
+                event.loginprocess.threads.append(t)
             else:
                 event.Skip()
 
@@ -1598,6 +1605,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_CANCEL = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_FORWARD_AGENT = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_START_VIEWER = wx.NewId()
+        LoginProcess.EVT_LOGINPROCESS_CONNECTED = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_QUESTION_KILL_SERVER = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_STAT_RUNNING_JOB = wx.NewId()
         LoginProcess.EVT_LOGINPROCESS_COMPLETE = wx.NewId()
@@ -1624,6 +1632,7 @@ class LoginProcess():
         LoginProcess.EVT_LOGINPROCESS_UNMOUNT_WEBDAV = wx.NewId()
 
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.cancel)
+        self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.onConnection)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.distributeKey)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.checkRunningServer)
         self.notify_window.Bind(self.EVT_CUSTOM_LOGINPROCESS, LoginProcess.loginProcessEvent.checkVNCVer)

@@ -212,6 +212,8 @@ def buildSiteConfigCmdRegExDict(configName):
         #cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount -u \"$HOME/.gvfs/WebDAV on localhost\"\'"'
         cmd = '"/usr/bin/ssh {execHost} \'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav\'"'
         siteConfigDict['webDavUnmount']=siteConfig.cmdRegEx(cmd)
+        cmd = '"/usr/bin/ssh {execHost} \'module load keyutility ; mountUtility.py\'"'
+        siteConfigDict['onConnectScript'] = siteConfig.cmdRegEx(cmd)
     else:
         siteConfigDict['loginHost']=configName
         siteConfigDict['listAll']=siteConfig.cmdRegEx('\'module load turbovnc ; vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
