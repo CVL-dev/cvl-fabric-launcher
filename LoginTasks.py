@@ -597,7 +597,7 @@ class LoginProcess():
             turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
 
             turboVncNotFoundPanel = wx.Panel(turboVncNotFoundDialog)
-            turboVncNotFoundPanelSizer = wx.FlexGridSizer(rows=4, cols=1, vgap=5, hgap=5)
+            turboVncNotFoundPanelSizer = wx.FlexGridSizer(rows=6, cols=1, vgap=5, hgap=5)
             turboVncNotFoundPanel.SetSizer(turboVncNotFoundPanelSizer)
             turboVncNotFoundTitleLabel = wx.StaticText(turboVncNotFoundPanel,
                 label = "MASSIVE/CVL Launcher")
