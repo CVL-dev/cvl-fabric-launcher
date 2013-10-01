@@ -1433,7 +1433,7 @@ class LoginProcess():
             if (event.GetId() == LoginProcess.EVT_LOGINPROCESS_COMPLETE):
                 event.loginprocess.shutdownThread.join() #These events aren't processed until the thread is complete anyway.
                 if (event.loginprocess.canceled()):
-                    if event.loginprocess.skd.canceled():
+                    if event.loginprocess.skd!=None and event.loginprocess.skd.canceled():
                         logger.debug("LoginProcess.complete: sshKeyDist was canceled.")
                         logger.debug("Not asking user if they want to submit log, because they probably intentionally")
                         logger.debug("clicked a Cancel button, and then had to click an OK button to acknowledge that")
