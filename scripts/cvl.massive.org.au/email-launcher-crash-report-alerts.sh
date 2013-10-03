@@ -12,10 +12,10 @@ find /opt/launcher_crash_reports/ -type f -mmin -5 | while read filename
 do
     emailBody=""
 
-    crashReportContent=`cat $filename`
-    emailBody="${emailBody}${crashReportContent}"
+    emailBody="${emailBody}"
 
     echo -e "$emailBody" > $tmp
+    cat $filename >> $tmp
 
     recipients="james.wettenhall@monash.edu,paul.mcintosh@monash.edu,jupiter.hu@monash.edu,chris.hines@monash.edu"
     originalRecipients=$recipients
