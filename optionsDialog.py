@@ -869,7 +869,7 @@ class GlobalOptionsDialog(wx.Dialog):
         self.authPanel = wx.Panel(self.tabbedView,wx.ID_ANY)
         self.authPanel.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.authPanel.Fit()
-        choices=["Use my SSH Key Pair","Use my password"]
+        choices=["Use an SSH key pair","Use my password"]
         if sys.platform.startswith("darwin"):
             self.authPanel.SetWindowVariant(wx.WINDOW_VARIANT_SMALL)
         rb=wx.RadioBox(self.authPanel,wx.ID_ANY,majorDimension=1,name="auth_mode",label="Authentication Mode",choices=choices)

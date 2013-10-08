@@ -1317,11 +1317,11 @@ class LauncherMainFrame(wx.Frame):
         for i in range(auth_mode.GetCount()):
             choices.append(auth_mode.GetString(i))
         message = """
-Would you like to use an SSH Key pair or your password to authenticate yourself?
+Would you like to use an SSH key pair or your password to authenticate yourself?
 
 If this computer is shared by a number of people then passwords are preferable.
 
-If this computer is not shared, then an SSH Key pair will give you advanced features for managing your access.
+If this computer is not shared, then an SSH key pair will give you advanced features for managing your access.
 """
         dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices,helpEmailAddress=self.displayStrings.helpEmailAddress)
         rv=dlg.ShowModal()
