@@ -38,8 +38,8 @@ SSH Keys are recommended if you are the only person who uses this account.
 
 This option can be changed from the Identity menu.
 """
-        self.temporaryKeyYes="Use my password every time"
-        self.temporaryKeyNo="Use my SSH Key"
+        self.temporaryKeyYes="Use my password"
+        self.temporaryKeyNo="Use an SSH key pair"
         self.qdelQueuedJob="""It looks like you've been waiting for a job to start.
 Do you want me to delete the job or leave it in the queue so you can reconnect later?
 """
