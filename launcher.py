@@ -1396,16 +1396,24 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
                     # users_massiveProjects = xmlrpcServer.get_users_massiveProjects(self.massiveUsername, self.massivePassword)
                     # self.massiveProjects = users_massiveProjects[1]
                     # Get user's default massiveProject from Karaage:
-                    self.massiveProject = xmlrpcServer.get_project(self.massiveUsername)
-                except:
+                    defaultProjectFromKaraage = xmlrpcServer.get_project(self.massiveUsername)
+                    if "not found" in defaultProjectFromKaraage:
+                        raise Exception("Karaage error: " + defaultProjectFromKaraage)
+                    self.massiveProject = defaultProjectFromKaraage
+                except Exception as exception:
                     logger.debug(traceback.format_exc())
-                    error_string = "Failed to contact MASSIVE to retrieve your default project."
+                    if "Karaage error" in str(exception):
+                        error_string = str(exception)
+                    else:
+                        error_string = "Failed to contact MASSIVE's Karaage to retrieve your default project."
                     dlg = wx.MessageDialog(launcherMainFrame,
                             error_string,
                             "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
                     dlg.ShowModal()
                     logger.error(error_string)
                     self.loginButton.Enable()
+                    if "Karaage error" in str(exception) and "not found" in str(exception):
+                        self.massiveUsernameTextField.SetFocus()
                     return
 
                 if self.massiveProject in self.massiveProjects:
