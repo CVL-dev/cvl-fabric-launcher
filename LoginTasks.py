@@ -850,9 +850,9 @@ class LoginProcess():
                         timestring = "%s minute"%minutes
                     else:
                         timestring = "%s minutes"%minutes
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage.format(timestring=timestring),event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage.format(timestring=timestring),event.loginprocess.displayStrings.reconnectMessageNo,event.loginprocess.displayStrings.reconnectMessageYes,NewDesktopCallback,ReconnectCallback)
                 else:
-                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage,event.loginprocess.displayStrings.reconnectMessageYes,event.loginprocess.displayStrings.reconnectMessageNo,ReconnectCallback,NewDesktopCallback)
+                    dialog=LoginProcess.SimpleOptionDialog(event.loginprocess.notify_window,-1,"Reconnect to Existing Desktop",event.loginprocess.displayStrings.reconnectMessage,event.loginprocess.displayStrings.reconnectMessageNo,event.loginprocess.displayStrings.reconnectMessageYes,NewDesktopCallback,ReconnectCallback)
                 showModal(dialog,event.loginprocess)
             else:
                 event.Skip()
