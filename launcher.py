@@ -344,6 +344,8 @@ class LauncherMainFrame(wx.Frame):
             widgetWidth2 = widgetWidth2 + 25
         widgetWidth3 = 75
 
+
+        import siteConfig
         DEFAULT_SITES_JSON='defaultSites.json'
         self.defaultSites={}
         with open(DEFAULT_SITES_JSON,'r') as f:
@@ -594,7 +596,7 @@ class LauncherMainFrame(wx.Frame):
 
     def loadSession(self,f):
         import json
-        saved=GenericJSONDecoder().decode(f.read())
+        saved=siteConfig.GenericJSONDecoder().decode(f.read())
         self.sites=saved
         cb=self.FindWindowByName('jobParams_configName')
         cbid=cb.GetId()
@@ -633,8 +635,8 @@ class LauncherMainFrame(wx.Frame):
 
     def saveSessionThreadTarget(self,q):
         filename = q.get(block=True)
-        siteConfig = q.get(block=True)
-        if siteConfig!=None and filename!=None:
+        sc = q.get(block=True)
+        if sc!=None and filename!=None:
             try:
                 f=open(filename,'w')
                 logger.debug('opened file %s to save the session to'%filename)
@@ -642,14 +644,14 @@ class LauncherMainFrame(wx.Frame):
                 logger.debug('error opening file for saving')
                 raise e
             logger.debug('retrieved the session configuration from the loginProcess')
-        if siteConfig==None:
-            siteConfig=q.get()
-        if siteConfig==None:
+        if sc==None:
+            sc=q.get()
+        if sc==None:
             return
         mydict={}
-        mydict['Saved Session']=siteConfig
+        mydict['Saved Session']=sc
         import json
-        s=json.dumps(mydict,f,cls=GenericJSONEncoder,sort_keys=True,indent=4,separators=(',',': '))
+        s=json.dumps(mydict,f,cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',',': '))
         f.write(s)
         f.close()
 
@@ -1074,7 +1076,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
         self.configName=self.FindWindowByName('jobParams_configName').GetValue()
         autoExit=False
-        lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,vncOptions=self.vncOptions)
+        lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,globalOptions=self.vncOptions)
         oldParams  = jobParams.copy()
         lp.setCallback(lambda jobParams: self.loginComplete(lp,oldParams,jobParams))
         lp.setCancelCallback(lambda jobParams: self.loginCancel(lp,oldParams,jobParams))
