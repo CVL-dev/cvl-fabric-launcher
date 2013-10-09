@@ -1755,7 +1755,7 @@ class LoginProcess():
 
 
     def getSharedSession(self,queue):
-        from siteConfig import siteConfig
+        import siteConfig
         from siteConfig import cmdRegEx
         print "in get shared session"
         t = LoginProcess.runServerCommandThread(self,self.siteConfig.otp,None,"Unable to determine the one-time password for the VNC session")
@@ -1781,7 +1781,7 @@ class LoginProcess():
         siteConfigDict['agent']=self.siteConfig.agent
         siteConfigDict['tunnel']=self.siteConfig.tunnel
         #newConfig = siteConfig(siteConfigDict,Visible)
-        newConfig = siteConfig()
+        newConfig = siteConfig.siteConfig()
         newConfig.__dict__.update(siteConfigDict)
         newConfig.visibility=Visible
         queue.put(newConfig)
