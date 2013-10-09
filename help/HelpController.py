@@ -69,7 +69,10 @@ class HelpController():
                 # we will try using local help files instead.
 
                 if hasattr(sys, 'frozen'):
-                    self.helpFilesDirectory = os.path.join(os.path.dirname(sys.executable), "help", "helpfiles")
+                    if sys.platform.startswith("darwin"):
+                        self.helpFilesDirectory = os.path.join(os.path.dirname(sys.executable), "..", "Resources", "help", "helpfiles")
+                    else:
+                        self.helpFilesDirectory = os.path.join(os.path.dirname(sys.executable), "help", "helpfiles")
                 else:
                     launcherModulePath = os.path.dirname(pkgutil.get_loader("launcher").filename)
                     self.helpFilesDirectory = os.path.join(launcherModulePath, "help", "helpfiles")
