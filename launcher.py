@@ -259,8 +259,10 @@ class LauncherMainFrame(wx.Frame):
         loadDefaultSessions=wx.MenuItem(self.file_menu,wx.ID_ANY,"&Load default sessions")
         self.file_menu.AppendItem(loadDefaultSessions)
         self.Bind(wx.EVT_MENU, self.loadDefaultSessionsEvent, id=loadDefaultSessions.GetId())
+        manageSites=wx.MenuItem(self.file_menu,wx.ID_ANY,"&Manage sites")
+        self.file_menu.AppendItem(manageSites)
+        self.Bind(wx.EVT_MENU,self.manageSites,id=manageSites.GetId())
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
-            self.file_menu = wx.Menu()
             self.file_menu.Append(wx.ID_EXIT, "E&xit", "Close window and exit program.")
             self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
            
@@ -583,6 +585,14 @@ class LauncherMainFrame(wx.Frame):
         self.contacted_massive_website = False
         #self.loadPrefs()
 #        self.checkVersionNumber()
+
+
+    def manageSites(self,event):
+        import siteListDialog
+        dlg=siteListDialog.siteListDialog(parent=self,siteList=[['https://cvl.massive.org.au/launcher_files/defaultSites.json',True]],style=wx.OK|wx.CANCEL)
+        if (dlg.ShowModal() == wx.ID_OK):
+            siteList=dlg.getList()
+            print siteList
 
 
     def loadSessionEvent(self,event):
