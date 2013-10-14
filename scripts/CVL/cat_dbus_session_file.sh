@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Used by the MASSIVE/CVL Launcher
+# The MASSIVE/CVL Launcher's home-directory sharing functionality  assumes that 
+# this script is available (and executable) on the CVL VMs as:
+#
+#   /usr/local/bin/cat_dbus_session_file.sh
 
 # The inotifywait stuff was inspired by:
 # http://stackoverflow.com/questions/2379829/while-loop-to-test-if-a-file-exists-in-bash
