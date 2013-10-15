@@ -46,12 +46,6 @@ do
     inotifywait -t 1 -e create -e moved_to ~/.dbus/session-bus
 done
 
-#if [ $USER == "wettenhj" ]
-#then
-  ## Trying to trigger Launcher issue CVLFAB-796
-  #exit 1
-#fi
-
 # Ensure that we are not using an old DBUS session file.
 
 while [ $DBUS_SESSION_FILE -ot $VNC_PID_FILE ]
