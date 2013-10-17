@@ -259,8 +259,10 @@ class LauncherMainFrame(wx.Frame):
         loadDefaultSessions=wx.MenuItem(self.file_menu,wx.ID_ANY,"&Load default sessions")
         self.file_menu.AppendItem(loadDefaultSessions)
         self.Bind(wx.EVT_MENU, self.loadDefaultSessionsEvent, id=loadDefaultSessions.GetId())
+        manageSites=wx.MenuItem(self.file_menu,wx.ID_ANY,"&Manage sites")
+        self.file_menu.AppendItem(manageSites)
+        self.Bind(wx.EVT_MENU,self.manageSites,id=manageSites.GetId())
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
-            self.file_menu = wx.Menu()
             self.file_menu.Append(wx.ID_EXIT, "E&xit", "Close window and exit program.")
             self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
            
@@ -585,6 +587,14 @@ class LauncherMainFrame(wx.Frame):
 #        self.checkVersionNumber()
 
 
+    def manageSites(self,event):
+        import siteListDialog
+        dlg=siteListDialog.siteListDialog(parent=self,siteList=[['https://cvl.massive.org.au/launcher_files/defaultSites.json',True]],style=wx.OK|wx.CANCEL)
+        if (dlg.ShowModal() == wx.ID_OK):
+            siteList=dlg.getList()
+            print siteList
+
+
     def loadSessionEvent(self,event):
         dlg=wx.FileDialog(self,"Load a session",style=wx.FD_OPEN)
         status=dlg.ShowModal()
@@ -599,31 +609,21 @@ class LauncherMainFrame(wx.Frame):
         saved=siteConfig.GenericJSONDecoder().decode(f.read())
         self.sites=saved
         cb=self.FindWindowByName('jobParams_configName')
-        cbid=cb.GetId()
-        size=cb.GetSize()
-        pos=cb.GetPosition()
-        si=self.siteConfigPanel.GetSizer().GetItem(cb)
-        si.DeleteWindows()
-        cb = wx.ComboBox(self.siteConfigPanel, cbid, choices=self.sites.keys(), value=self.sites.keys()[0], style=wx.CB_READONLY,name='jobParams_configName')
-        cb.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
-        cb.SetSize(size)
-        cb.SetPosition(pos)
-        si.SetWindow(cb)
+        for i in range(0,cb.GetCount()):
+            cb.Delete(0)
+        for s in self.sites.keys():
+            cb.Append(s)
+        cb.SetSelection(0)
         self.updateVisibility()
 
     def loadDefaultSessions(self):
         self.sites=self.defaultSites.copy()
         cb=self.FindWindowByName('jobParams_configName')
-        cbid=cb.GetId()
-        size=cb.GetSize()
-        pos=cb.GetPosition()
-        si=self.siteConfigPanel.GetSizer().GetItem(cb)
-        si.DeleteWindows()
-        cb = wx.ComboBox(self.siteConfigPanel, cbid, choices=self.sites.keys(), value='', style=wx.CB_READONLY,name='jobParams_configName')
-        cb.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
-        cb.SetSize(size)
-        cb.SetPosition(pos)
-        si.SetWindow(cb)
+        for i in range(0,cb.GetCount()):
+            cb.Delete(0)
+        for s in self.sites.keys():
+            cb.Append(s)
+        cb.SetSelection(0)
         self.updateVisibility(self.noneVisible)
 
     def loadDefaultSessionsEvent(self,event):
