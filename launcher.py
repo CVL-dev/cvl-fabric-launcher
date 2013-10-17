@@ -609,31 +609,21 @@ class LauncherMainFrame(wx.Frame):
         saved=siteConfig.GenericJSONDecoder().decode(f.read())
         self.sites=saved
         cb=self.FindWindowByName('jobParams_configName')
-        cbid=cb.GetId()
-        size=cb.GetSize()
-        pos=cb.GetPosition()
-        si=self.siteConfigPanel.GetSizer().GetItem(cb)
-        si.DeleteWindows()
-        cb = wx.ComboBox(self.siteConfigPanel, cbid, choices=self.sites.keys(), value=self.sites.keys()[0], style=wx.CB_READONLY,name='jobParams_configName')
-        cb.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
-        cb.SetSize(size)
-        cb.SetPosition(pos)
-        si.SetWindow(cb)
+        for i in range(0,cb.GetCount()):
+            cb.Delete(0)
+        for s in self.sites.keys():
+            cb.Append(s)
+        cb.SetSelection(0)
         self.updateVisibility()
 
     def loadDefaultSessions(self):
         self.sites=self.defaultSites.copy()
         cb=self.FindWindowByName('jobParams_configName')
-        cbid=cb.GetId()
-        size=cb.GetSize()
-        pos=cb.GetPosition()
-        si=self.siteConfigPanel.GetSizer().GetItem(cb)
-        si.DeleteWindows()
-        cb = wx.ComboBox(self.siteConfigPanel, cbid, choices=self.sites.keys(), value='', style=wx.CB_READONLY,name='jobParams_configName')
-        cb.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
-        cb.SetSize(size)
-        cb.SetPosition(pos)
-        si.SetWindow(cb)
+        for i in range(0,cb.GetCount()):
+            cb.Delete(0)
+        for s in self.sites.keys():
+            cb.Append(s)
+        cb.SetSelection(0)
         self.updateVisibility(self.noneVisible)
 
     def loadDefaultSessionsEvent(self,event):
