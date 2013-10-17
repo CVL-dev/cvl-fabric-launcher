@@ -132,14 +132,14 @@ class LauncherMainFrame(wx.Frame):
         # I should be able to use a python iterator here
         shouldSave=False
         for ctrl in self.savedControls:
-            if isinstance(item,ctrl):
+            if isinstance(item,ctrl) and 'jobParams' in item.GetName():
                 shouldSave=True
         return shouldSave
 
     
     def loadPrefs(self,window=None,site=None):
         if (self.prefs==None):
-            self.prefs=ConfigParser.RawConfigParser(allow_no_value=True)
+            self.prefs=ConfigParser.SafeConfigParser(allow_no_value=True)
             if (os.path.exists(launcherPreferencesFilePath)):
                 with open(launcherPreferencesFilePath,'r') as o:
                     self.prefs.readfp(o)
@@ -187,14 +187,14 @@ class LauncherMainFrame(wx.Frame):
             if (configName!=None):
                 if (not self.prefs.has_section("Launcher Config")):
                     self.prefs.add_section("Launcher Config")
-                self.prefs.set("Launcher Config","siteConfigDefault",configName)
+                self.prefs.set("Launcher Config","siteConfigDefault",'%s'%configName)
                 self.savePrefs(prefs=prefs,site=configName)
         elif (site!=None):
             if (not self.prefs.has_section(site)):
                 self.prefs.add_section(site)
             for item in window.GetChildren():
                 if self.shouldSave(item):
-                    self.prefs.set(site,item.GetName(),item.GetValue())
+                    self.prefs.set(site,item.GetName(),'%s'%item.GetValue())
                 else:
                     self.savePrefs(prefs=prefs,site=site,window=item)
         if (write):
@@ -589,10 +589,24 @@ class LauncherMainFrame(wx.Frame):
 
     def manageSites(self,event):
         import siteListDialog
-        dlg=siteListDialog.siteListDialog(parent=self,siteList=[['https://cvl.massive.org.au/launcher_files/defaultSites.json',True]],style=wx.OK|wx.CANCEL)
+        siteList=[]
+        if self.prefs!=None:
+            if self.prefs.has_section('configured_sites'):
+                l=self.prefs.options('configured_sites')
+                for s in l:
+                    siteList.append([s,self.prefs.get('configured_sites',s)])
+        if siteList==[]:
+            siteList=[['https://cvl.massive.org.au/launcher_files/defaultSites.json',True]]
+                
+        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList,style=wx.OK|wx.CANCEL)
         if (dlg.ShowModal() == wx.ID_OK):
-            siteList=dlg.getList()
-            print siteList
+            newSiteList=dlg.getList()
+            if self.prefs.has_section('configured_sites'):
+                self.prefs.remove_section('configured_sites')
+            self.prefs.add_section('configured_sites')
+            for s in newSiteList:
+                self.prefs.set('configured_sites','%s'%s[0],'%s'%s[1])
+            self.savePrefs()
 
 
     def loadSessionEvent(self,event):
@@ -994,7 +1008,8 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         if jobParams['username'] == "":
             dlg = LauncherMessageDialog(self,
                     "Please enter your username.",
-                    "MASSIVE/CVL Launcher", flags=wx.OK | wx.ICON_INFORMATION)
+                    #"MASSIVE/CVL Launcher", style=wx.OK | wx.ICON_INFORMATION)
+                    "MASSIVE/CVL Launcher")
             dlg.ShowModal()
             usernamefield = self.FindWindowByName('jobParams_username')
             usernamefield.SetFocus()
@@ -1105,7 +1120,7 @@ class MyApp(wx.App):
         global launcherPreferencesFilePath 
         launcherPreferencesFilePath = os.path.join(appUserDataDir,"Launcher Preferences.cfg")
 
-        sys.modules[__name__].turboVncConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+        sys.modules[__name__].turboVncConfig = ConfigParser.SafeConfigParser(allow_no_value=True)
         turboVncConfig = sys.modules[__name__].turboVncConfig
         sys.modules[__name__].turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
         turboVncPreferencesFilePath = sys.modules[__name__].turboVncPreferencesFilePath
