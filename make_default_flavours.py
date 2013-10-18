@@ -156,7 +156,7 @@ def buildSiteConfigCmdRegExDict(configName):
         if ("Huygens" in configName):
             cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -q huygens -l nodes=1:ppn=1 -N desktop_{username} -o .vnc/ -e .vnc/\""
         else:
-            cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes=1:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
+            cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -l nodes={nodes}:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\""
         regex="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
         siteConfigDict['startServer']=siteConfig.cmdRegEx(cmd,regex)
         siteConfigDict['stop']=siteConfig.cmdRegEx('\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"')
@@ -329,6 +329,7 @@ d=buildSiteConfigCmdRegExDict("cvl")
 cvl.__dict__.update(d)
 cvl.visibility=cvlvisible
 cvl.displayStrings.__dict__.update(cvlStrings.__dict__)
+
 
 huygens=siteConfig.siteConfig()
 d=buildSiteConfigCmdRegExDict("Huygens")

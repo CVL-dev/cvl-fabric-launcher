@@ -588,13 +588,22 @@ class LauncherMainFrame(wx.Frame):
 
 
     def manageSites(self,event):
+        import base64
         import siteListDialog
         siteList=[]
         if self.prefs!=None:
             if self.prefs.has_section('configured_sites'):
                 l=self.prefs.options('configured_sites')
                 for s in l:
-                    siteList.append([s,self.prefs.get('configured_sites',s)])
+                    if 'sitename' in s:
+                        site=self.prefs.get('configured_sites',s)
+                        number=int(s[8:])
+                        enabled=self.prefs.get('configured_sites','siteenabled%i'%number)
+                        if enabled=='True':
+                            enabled=True
+                        else:
+                            enabled=False
+                        siteList.append([site,enabled])
         if siteList==[]:
             siteList=[['https://cvl.massive.org.au/launcher_files/defaultSites.json',True]]
                 
@@ -604,8 +613,11 @@ class LauncherMainFrame(wx.Frame):
             if self.prefs.has_section('configured_sites'):
                 self.prefs.remove_section('configured_sites')
             self.prefs.add_section('configured_sites')
+            i=0
             for s in newSiteList:
-                self.prefs.set('configured_sites','%s'%s[0],'%s'%s[1])
+                self.prefs.set('configured_sites','sitename%i'%i,'%s'%s[0])
+                self.prefs.set('configured_sites','siteenabled%i'%i,'%s'%s[1])
+                i=i+1
             self.savePrefs()
 
 
@@ -673,7 +685,6 @@ class LauncherMainFrame(wx.Frame):
 
 
     def saveSession(self):
-        print "in Savesession"
         import Queue
         q=Queue.Queue()
         dlg=wx.FileDialog(self,"Save your desktop session",style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
@@ -854,7 +865,6 @@ class LauncherMainFrame(wx.Frame):
 
 
     def onOptions(self, event, tabIndex=0):
-        print "in onOptions"
 
         self.launcherOptionsDialog.tabbedView.SetSelection(tabIndex)
         rv = self.launcherOptionsDialog.ShowModal()
