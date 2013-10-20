@@ -1336,9 +1336,10 @@ If this computer is not shared, then an SSH key pair will give you advanced feat
     def onLoginProcessComplete(self, jobParams):
         self.loginProcess = None
         logger.debug("launcher.py: onLogin: Enabling login button.")
-        # The refresh below is a workaround for a Windows bug where
-        # a dark-coloured rectangle appears in the middle of the
-        # CVL panel after a completed or canceled login session:
+        # The refresh below is a workaround for a Windows bug where a
+        # dark-coloured rectangle appears in the middle of the main
+        # dialog's current panel after a completed or canceled login session:
+        self.massiveLoginDialogPanel.Refresh()
         self.cvlLoginDialogPanel.Refresh()
         self.loginButton.Enable()
 
