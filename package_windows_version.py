@@ -11,7 +11,6 @@ code_signing_certificate_password = sys.argv[2]
 
 os.system('del /Q dist\\*.*')
 
-#os.system('C:\\Python27\\python.exe  .\\pyinstaller-2.0\\pyinstaller.py --icon MASSIVE.ico --windowed launcher.py')
 #os.system('C:\\Python27\\python.exe  .\\pyinstaller-2.1\\pyinstaller.py --icon MASSIVE.ico --console --debug --log-level=DEBUG launcher.py')
 os.system('C:\\Python27\\python.exe  .\\pyinstaller-2.1\\pyinstaller.py --icon MASSIVE.ico --windowed launcher.py')
 

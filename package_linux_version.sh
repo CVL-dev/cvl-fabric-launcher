@@ -5,7 +5,7 @@
 # You may have to change PYINSTALLERDIR to point to the directory where
 # pyinstaller was unpacked.
 
-PYINSTALLERDIR=`pwd`/pyinstaller-2.0
+PYINSTALLERDIR=`pwd`/pyinstaller-2.1
 
 set -o nounset
 set -e
@@ -17,7 +17,7 @@ rm -fr dist
 
 python create_commit_def.py
 
-# PyInstaller 2.0
+# PyInstaller 2.1
 python ${PYINSTALLERDIR}/pyinstaller.py launcher.py
 
 cp "MASSIVE Launcher.desktop" 	dist/launcher/
