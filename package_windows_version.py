@@ -30,7 +30,6 @@ import requests
 cacert = requests.certs.where()
 os.system('copy /Y ' + cacert + ' dist\\launcher\\')
 
-os.system('copy /Y sshHelpText.txt dist\\launcher\\')
 os.system('mkdir dist\\launcher\\help')
 os.system('mkdir dist\\launcher\\help\\helpfiles')
 os.system('copy /Y help\\helpfiles\\*.* dist\\launcher\\help\\helpfiles\\')

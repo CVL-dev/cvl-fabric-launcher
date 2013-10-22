@@ -30,7 +30,6 @@ cp -r cvlsshutils dist/launcher/
 
 cp `python -c 'import requests; print requests.certs.where()'` dist/launcher/
 
-cp sshHelpText.txt dist/launcher/
 mkdir -p dist/launcher/help/helpfiles/
 cp help/helpfiles/* dist/launcher/help/helpfiles/
 cp help/README.txt dist/launcher/help/
