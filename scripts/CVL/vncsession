@@ -1,0 +1,415 @@
+#!/bin/sh
+#
+# CVL VNC session
+#
+
+ARG0=`basename $0`
+
+# Change it according to the release number in config file, format as 
+# <version number><release number>"
+RELEASE_VERSION="12418"
+MAJOR_UPDATE=$((12416))
+MINOR_UPDATE=$((12416))
+
+USERHOME="$HOME"
+VNCHOME="${USERHOME}/.vnc"
+RUN_LOG="/usr/local/bin/cvllog.sh"
+
+if [ ! -d $HOME/.vnc ]; then
+    mkdir $HOME/.vnc
+fi
+
+if [ -f ${RUN_LOG} ]; then
+source ${RUN_LOG} ${LOG_FILE}
+else
+LOG="${VNCHOME}/${LOG_FILE}"
+function Log()
+{
+    message=$1
+    echo "`date`(missing log script): ${message}" 
+#    echo "`date`(missing log script): ${message}" >> ${LOG} 
+}
+fi
+
+Geometry="1440x900"
+Depth="24"
+DefaultDisplay="1"
+VncServer="turbovnc"
+MODULE=`echo $MODULEPATH`
+
+# RELEASE_VERSION=<version number><release number>, remove "." in version number and release number.
+
+LAST_RELEASE=$((${RELEASE_VERSION}))
+
+if [ -z "${MODULE}" ]; then
+    source /etc/profile.d/modules.sh    
+fi
+
+if [ ! -d "/usr/local/tigervnc" ]; then
+    VncServer="turbovnc"
+fi
+
+module load libjpeg-turbo
+module load turbovnc
+CONFIG_PREFIX=`which vncserver | sed "s/\/bin\/vncserver//g"`
+CONFIG_LIB="${CONFIG_PREFIX}/config"
+
+
+function Usage()
+{
+    echo "Usage: "
+    echo "${ARG0} - Start VNC session using default configuration."
+    echo "${ARG0} --geometry <geometry_value> --display <display_number> --vnc <tigervnc|turbovnc> - Start VNC session using user configuration"
+    echo "${ARG0} stop <display_number> - Stop VNC session"
+}
+
+if [ ! -d "${USERHOME}" ]; then
+    exit 1
+fi
+
+function SetVnc()
+{
+    vnc=$1
+
+    if [[ "${vnc}" == "tigervnc" ]]; then 
+        Log "Error: tigervnc is not supported, switch to turbovnc"
+        VncServer=turbovnc
+    elif [[ "${vnc}" == "turbovnc" ]]; then
+        VncServer=${vnc}
+    else
+        Log "Error: ${vnc} is not a valid name"
+    fi
+}
+
+function CreateVncPassword()
+{
+    UserName=$1
+    Password=$2
+    
+    if [ ! -d ${VNCHOME} ]; then
+        mkdir ${VNCHOME}
+    fi
+
+    module load ${VncServer}
+
+    echo ${Password} | vncpasswd -f ${UserName} --stdin > ${VNCHOME}/passwd
+    Log "Create ${UserName} VNC password"
+}
+
+function VncPassword()
+{
+    UserName=$1
+    Password=$2
+   
+    if [[ ${UserName} == "" || ${Password} == "" ]]; then
+        Log "Error: ${UserName} password is not valid"
+        exit 1
+    fi
+
+    if [ $( id -u ) -eq 0 ]; then
+        USERHOME=`su ${UserName} -c "echo ~"`
+        VNCHOME="${USERHOME}/.vnc"
+        if [ ! -d ${VNCHOME} ]; then
+            su ${UserName} -c "mkdir ${VNCHOME}"
+        fi
+        su ${UserName} -c "module load ${VncServer}; echo ${Password} | vncpasswd -f ${UserName} --stdin > ${VNCHOME}/passwd; chmod 600 ${VNCHOME}/passwd; Log 'Create ${UserName} VNC password'" 
+    else
+        CreateVncPassword ${UserName} ${Password}
+    fi
+}
+
+function List()
+{
+    module load ${VncServer}
+
+    vncserver -list
+}
+
+function Stop()
+{
+    module load ${VncServer}
+
+    if [ -z ${Display} ]; then
+        Display="${DefaultDisplay}"
+    fi
+
+    vncserver -kill :${Display}
+    Log "Close VNC session :${Display}"
+}
+
+function Start()
+{
+    ERROR="0"
+    Log "Start VNC server ..."
+    
+    if [ -z "${Display}" ]; then
+        vncserver -geometry ${Geometry} -depth ${Depth} -otp  || { echo "Failing to start vncserver" && ERROR=1; } 
+    else
+        vncserver -geometry ${Geometry} -depth ${Depth} :${Display} -otp  || { echo "Failing to start vncserver" && ERROR=1; }
+    fi
+ 
+    RETVAL=$?
+
+    if [[ ${ERROR} == "0" && ${RETVAL} == "0" ]]; then
+        Log "Start VNC server succeeded"
+        UpdateReleaseVersionNumber
+        List
+    else
+        Log "Start VNC server failed"
+    fi
+
+    Log ${message}
+}
+
+function SelectDesktopConfig()
+{
+    Log "Start of selecting GNOME configuration"
+    if [ ! -h ${HOME}/.gconf ]; then
+        Log "${HOME}/.gconf is not a symbolic link."
+        if [ ! -e ${HOME}/.gconf ]; then
+            Log "${HOME}/.gconf doesn't exist."
+        fi
+        if [ -d ${HOME}/.gconf ]; then
+            Log "${HOME}/.gconf is a directory."
+        fi
+        if [ -d ${HOME}/.cvl-gconf ]; then
+            Log "${HOME}/.cvl-gconf/ already exists, renaming to ${HOME}/.cvl-gconf-old/"
+            mv ${HOME}/.cvl-gconf ${HOME}/.cvl-gconf-old
+        fi
+        if [ -d ${HOME}/.gconf ]; then
+            Log "Renaming ${HOME}/.gconf/ to ${HOME}/.cvl-gconf/"
+            mv ${HOME}/.gconf ${HOME}/.cvl-gconf
+            Log "Creating ${HOME}/.gconf as a symbolic link to ${HOME}/.cvl-gconf/"
+            ln -s ${HOME}/.cvl-gconf/ ${HOME}/.gconf
+        fi
+    fi
+
+    # Eventually, we should allow the preferred GNOME configuration to be passed to the 
+    # vncsession script as a command-line argument from the Launcher, but for now, we
+    # will use the VM's HOSTNAME to determine which gconf directory the ~/.gconf 
+    # symbolic link points to.
+    if [ $HOSTNAME != "huygens.massive.org.au" ]; then
+        if [ ! -d ${HOME}/.cvl-gconf ]; then
+            # We already checked earlier if ~/.gconf exists,
+            # and if so, it is renamed to ~/.cvl-gconf,
+            # so this case means that we need to load the
+            # default CVL GNOME configuration.
+            Log "Creating ${HOME}/.cvl-gconf/"
+            mkdir ${HOME}/.cvl-gconf
+            Log "Copying GNOME configuration for CVL into ${HOME}/.cvl-gconf/"
+            cp -r ${CONFIG_LIB}/gnome_config/* ${HOME}/.cvl-gconf/ || { Log "Failed to copy CVL gconf files"; }
+        fi
+        if [ -h ${HOME}/.gconf ]; then
+            Log "${HOME}/.gconf is a symbolic link."
+            CURRENT_GCONF_LINK_TARGET=`readlink ${HOME}/.gconf`
+            if [ $CURRENT_GCONF_LINK_TARGET == ${HOME}/.cvl-gconf/ ]; then
+                Log "${HOME}/.gconf is already pointing to ${CURRENT_GCONF_LINK_TARGET}"
+            else
+                Log "${HOME}/.gconf is currently pointing to ${CURRENT_GCONF_LINK_TARGET}"
+                Log "Removing ${HOME}/.gconf symbolic link."
+                rm -f ${HOME}/.gconf
+                Log "Creating ${HOME}/.gconf as a symbolic link to ${HOME}/.cvl-gconf/"
+                ln -s ${HOME}/.cvl-gconf/ ${HOME}/.gconf
+            fi
+        else
+            Log "${HOME}/.gconf is not a symbolic link."
+            if [ ! -e ${HOME}/.gconf ]; then
+                Log "${HOME}/.gconf doesn't exist."
+                Log "Creating ${HOME}/.gconf as a symbolic link to ${HOME}/.cvl-gconf/"
+                ln -s ${HOME}/.cvl-gconf/ ${HOME}/.gconf
+            fi
+            if [ -d ${HOME}/.gconf ]; then
+                Log "${HOME}/.gconf is a directory."
+                Log "Renaming ${HOME}/.gconf/ to ${HOME}/.cvl-gconf/"
+                mv ${HOME}/.gconf ${HOME}/.cvl-gconf
+                Log "Creating ${HOME}/.gconf as a symbolic link to ${HOME}/.cvl-gconf/"
+                ln -s ${HOME}/.cvl-gconf/ ${HOME}/.gconf
+            fi
+        fi
+    fi
+    # Eventually, we should allow the preferred GNOME configuration to be passed to the 
+    # vncsession script as a command-line argument from the Launcher, but for now, we
+    # will use the VM's HOSTNAME to determine which gconf directory the ~/.gconf 
+    # symbolic link points to.
+    if [ $HOSTNAME == "huygens.massive.org.au" ]; then
+        if [ ! -d ${HOME}/.huygens-gconf ]; then
+            Log "Creating ${HOME}/.huygens-gconf/"
+            mkdir ${HOME}/.huygens-gconf
+            Log "Copying GNOME configuration for Huygens into ${HOME}/.huygens-gconf/"
+            cp -r ${CONFIG_LIB}/huygens_config/* ${HOME}/.huygens-gconf/ || { Log "Failed to copy Huygens gconf files"; }
+        fi
+        if [ -h ${HOME}/.gconf ]; then
+            Log "${HOME}/.gconf is a symbolic link."
+            CURRENT_GCONF_LINK_TARGET=`readlink ${HOME}/.gconf`
+            if [ $CURRENT_GCONF_LINK_TARGET == ${HOME}/.huygens-gconf/ ]; then
+                Log "${HOME}/.gconf is already pointing to ${CURRENT_GCONF_LINK_TARGET}"
+            else
+                Log "${HOME}/.gconf is currently pointing to ${CURRENT_GCONF_LINK_TARGET}"
+                Log "Removing ${HOME}/.gconf symbolic link."
+                rm -f ${HOME}/.gconf
+                Log "Creating ${HOME}/.gconf as a symbolic link to ${HOME}/.huygens-gconf/"
+                ln -s ${HOME}/.huygens-gconf/ ${HOME}/.gconf
+            fi
+        else
+            Log "${HOME}/.gconf is not a symbolic link."
+            if [ ! -e ${HOME}/.gconf ]; then
+                Log "${HOME}/.gconf doesn't exist."
+                Log "Creating ${HOME}/.gconf as a symbolic link to ${HOME}/.huygens-gconf/"
+                ln -s ${HOME}/.huygens-gconf/ ${HOME}/.gconf
+            fi
+            if [ -d ${HOME}/.gconf ]; then
+                Log "${HOME}/.gconf is a directory."
+                Log "Renaming ${HOME}/.gconf/ to ${HOME}/.cvl-gconf/"
+                mv ${HOME}/.gconf ${HOME}/.cvl-gconf
+                Log "Creating ${HOME}/.gconf as a symbolic link to ${HOME}/.huygens-gconf/"
+                ln -s ${HOME}/.huygens-gconf/ ${HOME}/.gconf
+            fi
+        fi
+    fi
+    Log "End of selecting GNOME configuration."
+}
+
+function UpdateDesktopConfig()
+{
+    Log "Start of updating GNOME configuration"
+
+    if [ -d ${HOME}/.gconf ]; then
+        rm -rf ${HOME}/.gconf/* || { Log "Failing to remove ${HOME}/.gconf"; }
+        Log "Clean ${HOME}/.gconf/*"
+    fi
+    # Eventually, we should allow the preferred GNOME configuration to be passed to the 
+    # vncsession script as a command-line argument from the Launcher, but for now, we
+    # will use the VM's HOSTNAME to determine which gconf directory the ~/.gconf 
+    # symbolic link points to.
+    if [ $HOSTNAME == "huygens.massive.org.au" ]; then
+        cp -r ${CONFIG_LIB}/huygens_config/* ${HOME}/.gconf/ || { Log "Failed to copy Huygens gconf files"; }
+    else
+        cp -r ${CONFIG_LIB}/gnome_config/* ${HOME}/.gconf/ || { Log "Failing to copy CVL gconf files"; }
+    fi
+    if [ ! -d ${HOME}/.fontconfig ]; then
+        cp -r ${CONFIG_LIB}/fontconfig ${HOME}/.fontconfig || { Log "Failing to copy font config file"; }
+    fi
+
+    Log "Update ${HOME}/.gconf done"
+    Log "End of updating GNOME configuration."
+}
+
+function UpdateVncConfig()
+{
+    Log "Start of updating VNC configuration ....."
+    if [ ! -d ${HOME}/.vnc ]; then
+        mkdir ${HOME}/.vnc || { Log "Failing to make ${HOME}/.vnc"; }
+    fi
+    if [ ! -f ${HOME}/.vnc/xstartup ]; then
+        cp ${CONFIG_LIB}/xstartup.gnome ${HOME}/.vnc/xstartup.turbovnc || { Log "Failing to copy xstartup.gnome"; }
+    fi
+
+    if [ -d ${HOME}/.config ]; then
+        rm -rf ${HOME}/.config || { Log "Failing to remove ${HOME}/.config"; }
+        Log "Clean ${HOME}/.config"
+    fi
+    cp -r ${CONFIG_LIB}/desktop_config ${HOME}/.config || { Log "Failing to copy desktop config files"; }
+    Log "Update ${HOME}/.config done"
+
+    if [ -d ${HOME}/.mozilla ]; then
+        rm -rf ${HOME}/.mozilla || { Log "Failing to remove ${HOME}/.mozilla"; }
+        Log "Clean ${HOME}/.mozilla"
+    fi
+    cp -r ${CONFIG_LIB}/mozilla_config ${HOME}/.mozilla || { Log "Failing to copy mozilla config files"; }
+    Log "Update ${HOME}/.mozilla done"
+    Log "End of updating VNC configuration."
+}
+
+function ReleaseVersionUpdate()
+{
+    if [ ! -f ${HOME}/.gtkrc-2.0 ]; then
+        cp ${CONFIG_LIB}/.gtkrc-2.0 ${HOME} || { Log "Failing to copy gtk text config files"; }
+        killall nautilus
+    fi
+
+    if [ -d ${HOME}/.vnc ]; then
+        if [ ! -f ${HOME}/.vnc/.releaseversion ]; then
+            UpdateVncConfig
+            UpdateDesktopConfig
+        else
+            releaseversion=$(cat ${HOME}/.vnc/.releaseversion) 
+            Log "Release version: ${releaseversion}"
+            if ((${releaseversion} < MINOR_UPDATE)); then
+                UpdateDesktopConfig
+            fi
+            if ((${releaseversion} < MAJOR_UPDATE)); then
+                UpdateVncConfig
+            fi
+        fi
+    else
+        UpdateVncConfig
+        UpdateDesktopConfig
+    fi
+}
+
+function UpdateReleaseVersionNumber()
+{
+    VERSION="0"
+    if [ -f ${HOME}/.vnc/.releaseversion ]; then
+        VERSION=$(cat ${HOME}/.vnc/.releaseversion)
+    fi
+    if (( ${LAST_RELEASE} != ${VERSION} )); then
+        echo "${LAST_RELEASE}" > ${HOME}/.vnc/.releaseversion
+    fi
+
+    VERSION=$(cat ${HOME}/.vnc/.releaseversion)
+    Log "Last update: ${VERSION}"
+}
+
+function Initialisation()
+{
+    SelectDesktopConfig
+    ReleaseVersionUpdate
+
+    if [[ ${VncServer} == "tigervnc" ]]; then
+        Log "${VncServer} is not supported"
+        VncServer="turbovnc"
+    fi
+    
+    module unload ${VncServer} 
+}
+
+while [ $# -ge 1 ]; do
+    case "$1" in
+        -d|--display)
+            Display=$2
+            ;;
+        -g|--geometry)
+            Geometry=$2
+            ;;
+        -h|--help)
+            Usage
+            exit 0
+            ;;
+        -l|--list)
+            List
+            exit 0
+            ;;
+        -o|--otp)
+            VncOpt
+            exit 0
+            ;;
+        -p|--password)
+            VncPassword $2 $3 
+            exit 0
+            ;;
+        -s|stop)
+            Display=$2
+            Stop
+            exit 0
+            ;;
+        -v|--vnc)
+            SetVnc $2
+            ;;
+    esac
+    shift
+done
+
+Initialisation
+module load ${VncServer} 
+Start

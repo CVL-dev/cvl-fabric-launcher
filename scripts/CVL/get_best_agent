@@ -1,0 +1,14 @@
+#!/bin/bash
+user=`whoami`
+bestagent=$SSH_AUTH_SOCK
+maxkeys=$( ssh-add -l 2>/dev/null | grep -v "The agent has no identities" | wc -l )
+for i in `find /tmp -user $user -name "*agent*" 2>/dev/null`
+do
+    numkeys=$( SSH_AUTH_SOCK=$i ssh-add -l 2>/dev/null | grep -v "The agent has no identities" | wc -l )
+    if [ "$numkeys" -gt "$maxkeys" ]
+    then
+        maxkeys=$numkeys
+        bestagent=$i
+    fi
+done
+export SSH_AUTH_SOCK=$bestagent
