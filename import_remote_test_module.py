@@ -1,4 +1,12 @@
 #!/usr/bin/python
+
+"""
+This is a proof of concept for downloading a Python module from GitHub, saving it as a temporary
+file and importing it.  Putting some of the Launcher's Python code on a server (like GitHub)
+would allow Launcher admins to make changes without having to build and release a new version
+of the Launcher.
+"""
+
 import tempfile
 import requests
 import traceback
@@ -14,10 +22,10 @@ tempfile._name_sequence = MyRandomSequence()
 try:
     # Download test.py
 
-    testModuleFile = tempfile.NamedTemporaryFile(mode='w+b', prefix='test_', suffix='.py', delete=False)
+    testModuleFile = tempfile.NamedTemporaryFile(mode='w+b', prefix='test_module_for_remote_importing_', suffix='.py', delete=False)
     testModuleFilePath = testModuleFile.name
     print "testModuleFilePath = " + testModuleFilePath
-    r = requests.get("https://raw.github.com/CVL-dev/cvl-fabric-launcher/JamesJuly30/test.py", verify=False)
+    r = requests.get("https://raw.github.com/CVL-dev/cvl-fabric-launcher/master/test_module_for_remote_importing.py", verify=False)
     if r.status_code == 200:
         for chunk in r.iter_content():
             testModuleFile.write(chunk)
