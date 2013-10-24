@@ -1,5 +1,33 @@
 import json
 import sys
+import collections
+
+def getSites(prefs):
+    siteList=[]
+    if prefs.has_section('configured_sites'):
+        l=prefs.options('configured_sites')
+        for s in l:
+            if 'sitename' in s:
+                site=prefs.get('configured_sites',s)
+                number=int(s[8:])
+                enabled=prefs.get('configured_sites','siteenabled%i'%number)
+                if enabled=='True':
+                    siteList.append(site)
+    
+    for site in siteList:
+        print site
+
+    DEFAULT_SITES_JSON='defaultSites.json'
+    defaultSites={}
+    with open(DEFAULT_SITES_JSON,'r') as f:
+        defaultSites=GenericJSONDecoder().decode(f.read())
+    if (isinstance(defaultSites,list)):
+        keyorder=defaultSites[0]
+        r=collections.OrderedDict()
+        for key in keyorder:
+            r[key]=defaultSites[1][key]
+        defaultSites=r
+    return defaultSites
 
 class sshKeyDistDisplayStrings(object):
     def __init__(self,**kwargs):
