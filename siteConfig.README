@@ -1,0 +1,222 @@
+This document is intended to tell you how to customize the launcher for users
+at your particular site. The aim is to build a (json formated) file, put it on
+a web server, and tell the user to go File->Manage Sites->Add and add in the
+URI that you put the file at. This is the details of what is in the file and
+why.
+
+At its core this code is a finite state machine going through the steps of 
+1) Estabilising authentication (by distributing an SSH public key)
+2) Looking for an existing VNC server (and offering to reconnect)
+2) Starting a VNC (or possibly NX) server
+3) Setting up an ssh tunnel to the server
+4) Setting up ssh agent forwardinging
+5) Optionally starting a WebDav server on the users workstation and creating an ssh tunnel to the host running the vnc server
+6) Starting the VNC viewer
+7) When the VNC viewer closes asking the user if they would like to stop the VNC server
+
+We (MASSIVE sys admins at Monash eResearch Center in Melbourn Australia) choose
+to run the vnc server via PBS. This is by no means compulsory, but it does mean
+that we use concepts of a login host (where you run qsub) and an execution host
+(where the vnc server is actaully running). We also choose to run only one VNC
+server per user (we've talked about adding code for the user to select between
+multiple VNC servers that they own, but we haven't written that code yet)
+
+Every step in the finite state machine executes a command with some parameters
+subistuted in from a python dictionary, then parses the output with a regular
+expression. Matches in the regular expression are used to update the dictionary
+so that the next command executed has more information.
+
+There are 25 different command/regular expression pairs. Many of them can be
+left the same as our default ones. Others can be left out completly if you
+dont' want a feature etc. Each command can be run on either the users local
+workstation (we sometimes use this if we already know a value but just need to
+move to the next state) the login host (if submitting via PBS) or the execution
+host (if your not submitting via PBS the login and execution host will
+certainly be the same). Each command can also be async(hronos) or not. Async
+commands are for example the SSH tunnels for forwarding. They are started, you
+look for a regular expression to show they were succesfull, but you don't
+terminate them. Synchronos commands terminate before moving to the next state
+(for example qsub/qstat)
+
+agent:
+
+Description: Create an SSH tunnel with agent fowarding. The users bashrc (or whatever shell they are running) is responsible for finding the socket created by this.
+
+Example command: 
+We use this command when we can ssh straight to the execution host:
+{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} \"echo agent_hello; bash \"
+We use this command when the execution host is on a non-routable IP address and you have to ssh to the login host first (escaping characters is a pain :-):
+{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\\"echo agent_hello; bash \\\"\"
+
+Example regex:
+This one is easy, its whatever is in the echo command above.
+agent_hello
+
+
+dbusSessionBusAddress:
+If your vnc server is running gnome (and thus has a dbus session) and you want to use the options to share the local home directory via webdav) this will determint the dbus session bus. Once you have the dbus session bus, you can cause gnome to open a browser window pointing at the webdav server.
+
+Example command:
+\"/usr/bin/ssh {execHost} 'MACHINE_ID=\\$(cat /var/lib/dbus/machine-id); cat ~/.dbus/session-bus/\\$MACHINE_ID-\\$(echo {vncDisplay} | tr -d \\\":\\\" | tr -d \\\".0\\\")'\"
+
+again, baah escape characters.
+example regex:
+^DBUS_SESSION_BUS_ADDRESS=(?P<dbusSessionBusAddress>.*)$
+
+Note that this part ?P<name>pattern saves the match into a dictionary for use in subsequent commands.
+
+
+displayStrings:
+The display strings control exactly what message is shown in each dialog the user might see. You probably want to just read each of these and change any words you like
+
+displayWebDavInfoOnRemoteDesktop:
+I don't think this is really used any more. It used to pop up a window in the VNC session with info on the webdav server.
+
+execHost:
+Determine what host the VNC server is running on. In our case we do this via the PBS qstat command and looking for what host the job is running on. If you are running vncservers on the login node, you could just echo the login node.
+
+examples commands:
+On massive we have the qpeek command installed and the PBS prologue prints ouf the executionhost so we just:
+qpeek {jobidNumber}
+
+On CVL we don't have the qpeek command, so we qstat for the exeuction host, then turn the hostname into an IP address.
+
+\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed 's/\\ \\ */\\ /g' | cut -f 4 -d ' ' | cut -f 1 -d '/' | xargs -iname hostn name | grep address | sed 's/\\ \\ */\\ /g' | cut -f 3 -d ' ' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"
+
+
+example regexpressions:
+MASSIVE simply prints out the string:
+\\s*To access the desktop first create a secure tunnel to (?P<execHost>\\S+)\\s*$
+
+for CVL the complicated command above involving lost of cuts and seds ends up printing a very simple string
+^\\s*execHost (?P<execHost>\\S+)\\s*$
+
+getProjects:
+Description: If you (like most HPC sites) require a user to be a member of a project with an allocation of CPU hours, this command will get a list of projects that the user is a member of. If they have already specified a project in the UI it will check this list to see if they are allowed to use that project. If not it will display this list to let the user select which project they want.
+
+On CVL we simply use the groups command:
+groups | sed 's@ @\\n@g'\"
+with the regular expression
+\\s*(?P<group>\\S+)\\s*$
+
+Which matches any line with any string and assumes that is a group.
+
+On MASSIVE where we differentate groups that allow access to software licences from groups that allow access to CPU allocations we use gold for CPU allocation purposes:
+\"glsproject -A -q | grep ',{username},\\|\\s{username},\\|,{username}\\s' \"
+
+If you don't need to sepcify the group to start the VNC server (either you don't need a project to run a VNC server, or using a default group is good enough), you may leave this command completly blank
+
+listAll:
+This command lists all the users running VNC servers. It is used so that you can reconnect to an existing VNC server. Also at MASSIVE we run a policy of no more than one VNC server per user. If you are running vncservers on a known node (eg the login node, or not using PBS at all), you might use vncserver -list to just get display numbers. If you are running on the PBS queue (like we are) you use this to get the jobid for the VNC servers.
+
+command:
+qstat -u {username}
+regular expression
+^\\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\\S+)\\s+\\S+\\s+(?P<queue>\\S+)\\s+(?P<jobname>desktop_\\S+)\\s+(?P<sessionID>\\S+)\\s+(?P<nodes>\\S+)\\s+(?P<tasks>\\S+)\\s+(?P<mem>\\S+)\\s+(?P<reqTime>\\S+)\\s+(?P<state>[^C])\\s+(?P<elapTime>\\S+)\\s*$
+
+This regex is supposed to match what qstat pumps out. Be careful because differnt qstats might change the column order a bit. Also qstat sometimes truncates the username
+
+For a no pbs system
+cmd: 'vncserver -list'
+regex: "^(?P<vncDisplay>:[0-9]+)\\s+[0-9]+\\s*$"
+
+loginHost: 
+This isn't a command, just a string. You can set it to null if for example you use the "Other" configuration and allow a user to enter an IP or Hostname that they want to run the VNC server on.
+
+messageRegexs:
+If any of these regular expressions match the output of any command it will result in the user getting a dialog.
+
+If the info one matches, the user gets the dialog and the login continues
+If the error one matches, the user gets the dialog and the login stops.
+I can't quite remember what warn does (I think our intention was to pause the login and make the user select to continue or cancel)
+
+You probably won't want to change these, but if you make any of your commands spit out these strings you can commuicate with the user. For example, you might wrap the VNC server command so that if you have a scheduled outage you can display a dialog to the user about it. Use is like a GUI motd.
+
+onConnectScript:
+Put in here any commands you want to run once the user is connected. There are some commands you don't want to run immediatly on the VNC server starting, but instead wait until SSH agent forwarding is setup (for example we run a few sshfs mount commands at this point) This is where they go.
+
+example:
+\"/usr/bin/ssh {execHost} 'module load keyutility ; mountUtility.py'\"
+regex
+null
+
+openWebDavShareInRemoteFileBrowser:
+Cause a GNOME nautils window to open on the VNC server pointing back at the users tunnel to webdav on their local machine. This is one ugly command and I won't write any further doco for it. If you need to change if your best bet is to look at our json file.
+
+otp:
+Our vncsessions are authenticated via a one time password (we were using unix login, but we don't want the user to enter their password if we can avoid it). At the moment we ask the vncserver to generated the password. We might move to using straight vnc passwords in an attempt to make shareing the desktop more easily accessible.
+
+cmd:
+\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\"
+regex:
+^\\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\\s*$"
+
+runSanityCheck:
+May be used if you want to execute a script before starting the VNC server. You might like to use this to display a message of the day, or info on disk and CPU quotas.
+
+running:
+Check if the PBS job has moved from the Q stat to the R state. We can't determine the exeuction host until this has actually happened. If we spend too long in this state we will attempt to get the estimated start time.
+exmaple command:
+\"module load pbs ; module load maui ; qstat | grep {username}\"
+example regex:
+^\\s*(?P<jobid>{jobidNumber}\\.\\S+)\\s+(?P<jobname>desktop_\\S+)\\s+{username}\\s+(?P<elapTime>\\S+)\\s+(?P<state>R)\\s+(?P<queue>\\S+)\\s*$
+
+setDisplayResolution:
+On Massive we run a command to create a file specifying the resolution of the VNC server we woud like to start. On CVL we just include the resolution as part of the command line to the VNC server.
+
+showStart:
+If your scheduler inclues a command to estimate the start time for a job (MAUI does, the torque build in scheduler/moab doesn't) you can specify it here. If the user is waiting for a long time for resources to become available they will get some feed back.
+
+startServer:
+This command will cause the vncserver to start (either by submitting a pbs job or by executing the server directly) All ours are started via PBS and a result of requesting the server to start is that we get a job id out of PBS.
+
+example:
+\"module load pbs ; module load maui ; echo 'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}' |  qsub -q huygens -l nodes=1:ppn=1 -N desktop_{username} -o .vnc/ -e .vnc/\"
+
+example regex:
+^(?P<jobid>(?P<jobidNumber>[0-9]+)\\.\\S+)\\s*$
+This regex is a little complicated because it extracts both the job id (which looks like 12355.login-host and just the number.
+
+stop:
+This command should stop the vnc server, for example by qdel'ing the job.
+
+"module load pbs ; module load maui ; qdel -a {jobidNumber}\"
+
+stopForRestart:
+You can probably make this identical to the stop command, but this command is executed if the ser is already running a desktop and rather than reconnecting to it, they want to stop it and start a new one.
+On MASSIVE we put a sleep in after the qdel because if you qstat too soon after a qdel the job you just qdel'd may still be in state R rather than state C.
+
+tunnel:
+create the SSH tunnel for the VNC session. One CVL where we go directly to the execution host
+{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\"
+
+On MASSIVE where we go the the login host then trust the private network:
+{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} \"echo tunnel_hello; bash\"
+
+visibility:
+a list of which components of the UI to show. Options are true false and "Advanced" options set to "Advanced" only show if the advanced checkbox is ticked. On MASSIVE we are in your face about the number of nodes and the number of CPU hours you will run for. On CVL we let jobs run indefinitly. If you want the user to enter the IP rather than going via PBS unhide the loginHostPanel.
+
+vncDisplay:
+once you have the execution Host, determine the VNC display number. On CVL we do this via vncserver -list. 
+
+webDavIntermediatePort
+webDavRemotePort
+In order to run a webdav server on the users workstation and export their homedirectory to the VNC session we need to create a reverse ssh tunnel (so the vnc server can connect to the workstation. Where the execution host is non-routable weuse two ssh commands (not sure if this is strictly necessary, but we haven't figured out how to avoid it yet) These commands get a free port on the loginHost and the execution host respectivly for the reverse SSH tunnel to be connected to.
+The get_ephemeral_port.py script is included with the source code for the launcher
+
+example:
+\"/usr/local/desktop/get_ephemeral_port.py\"
+^(?P<intermediateWebDavPortNumber>[0-9]+)$
+
+webDavTunnel:
+create a reverse SSH tunnel (i.e. use the -R option) allowing the execution host to connect to the webdav server on the local workstation:
+example:
+
+{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} \"ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} 'echo tunnel_hello; bash'\"
+
+webDavUnmount:
+Attempt to close the webdav window when we disconnect (so that if you reconnect again you won't have multiple windows)
+
+examlpe:
+\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"
+
