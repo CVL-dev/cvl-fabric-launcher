@@ -597,7 +597,7 @@ class LauncherMainFrame(wx.Frame):
                         siteList.append([site,enabled])
         origSiteList=siteList
         if siteList==[]:
-            siteList=[['https://cvl.massive.org.au/launcher_files/defaultSites.json',True]]
+            siteList=[['https://cvl.massive.org.au/cvl_flavours.json',True],['https://cvl.massive.org.au/massive_flavours.json',True]]
                 
         dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList,style=wx.OK|wx.CANCEL)
         if (dlg.ShowModal() == wx.ID_OK):
@@ -1152,7 +1152,10 @@ class MyApp(wx.App):
         launcherMainFrame.Layout()
         launcherMainFrame.Center()
         def loadPrefsDelayed():
-            time.sleep(0.1)
+            # I don't know what this is about, but on Ubuntu 13.10 if you don't sleep for long
+            # enough before calling updateVisibility (which hides a lot of elements)
+            # Then fit and layout (above) will place things in incorrect locations
+            time.sleep(0.2)
             wx.CallAfter(launcherMainFrame.loadPrefs)
             wx.CallAfter(launcherMainFrame.loadDefaultSessions)
             wx.CallAfter(launcherMainFrame.loadPrefs)
