@@ -1,0 +1,328 @@
+[
+    [
+        "Other"
+    ],
+    {
+        "Other": {
+            "__class__": "siteConfig",
+            "__module__": "siteConfig",
+            "agent": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": true,
+                "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {loginHost} \"echo agent_hello; bash \"",
+                "host": "local",
+                "loop": false,
+                "regex": [
+                    "agent_hello"
+                ],
+                "requireMatch": true
+            },
+            "directConnect": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "displayStrings": {
+                "__class__": "sshKeyDistDisplayStrings",
+                "__module__": "siteConfig",
+                "createNewKeyDialogNewPassphraseMismatch": "Passphrases don't match",
+                "helpEmailAddress": "help@massive.org.au",
+                "newPassphrase": "new passphrase for new key",
+                "newPassphraseEmptyForbidden": "new passphrase. empty passphrase forbidden",
+                "newPassphraseMismatch": "passphrases don't match. enter new passphrases",
+                "newPassphraseTitle": "Please enter a new passphrase",
+                "newPassphraseTooShort": "passphrase to short. enter a new passphrase",
+                "passphrasePrompt": "enter key passphrase",
+                "passphrasePromptIncorrectl": "Incorrect. enter key passphrase",
+                "passwdPrompt": "enter passwd",
+                "passwdPromptIncorrect": "passwd incorrect. reenter",
+                "persistentMessage": "Would you like to leave your current session running so that you can reconnect later?\nIt has {timestring} remaining.",
+                "persistentMessagePersist": "Leave it running",
+                "persistentMessageStop": "Stop the desktop",
+                "qdelQueuedJob": "It looks like you've been waiting for a job to start.\nDo you want me to delete the job or leave it in the queue so you can reconnect later?\n",
+                "qdelQueuedJobNOOP": "Leave it in the queue (I'll reconnect later)",
+                "qdelQueuedJobQdel": "Delete the job",
+                "reconnectMessage": "An Existing Desktop was found. It has {timestring} remaining. Would you like to reconnect or kill it and start a new desktop?",
+                "reconnectMessageNo": "New desktop",
+                "reconnectMessageYes": "Reconnect",
+                "temporaryKey": "\nWould you like to use the launchers old behaviour (entering a password every time you start a new desktop) or try the new behaviour (creating an ssh key pair and entering a passphrase the first time you use the launcher after reboot.)\n\nPasswords are recomended if this is a shared user account.\n\nSSH Keys are recommended if you are the only person who uses this account.\n\nThis option can be changed from the Identity menu.\n",
+                "temporaryKeyNo": "Use my SSH Key",
+                "temporaryKeyYes": "Use my password every time"
+            },
+            "displayWebDavInfoDialogOnRemoteDesktop": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "execHost": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "getProjects": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "listAll": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "'vncserver -list'",
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    "^(?P<vncDisplay>:[0-9]+)\\s+[0-9]+\\s*$"
+                ],
+                "requireMatch": false
+            },
+            "loginHost": null,
+            "messageRegeexs": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "messageRegexs": [
+                {
+                    "__class__": "__regex__",
+                    "pattern": "^INFO:(?P<info>.*(?:\n|\r\n?))"
+                },
+                {
+                    "__class__": "__regex__",
+                    "pattern": "^WARN:(?P<warn>.*(?:\n|\r\n?))"
+                },
+                {
+                    "__class__": "__regex__",
+                    "pattern": "^ERROR:(?P<error>.*(?:\n|\r\n?))"
+                }
+            ],
+            "onConnectScript": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "openWebDavShareInRemoteFileBrowser": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "otp": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "'vncpasswd -o -display localhost{vncDisplay}'",
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    "^\\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\\s*$"
+                ],
+                "requireMatch": true
+            },
+            "runSanityCheck": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "running": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "setDisplayResolution": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "showStart": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "startServer": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"vncserver -geometry {resolution}\"",
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    "^.*?started on display \\S+(?P<vncDisplay>:[0-9]+)\\s*$"
+                ],
+                "requireMatch": true
+            },
+            "stop": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "'vncserver -kill {vncDisplay}'",
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "stopForRestart": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "'vncserver -kill {vncDisplay}'",
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "tunnel": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": true,
+                "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {loginHost} \"echo tunnel_hello; bash\"",
+                "host": "local",
+                "loop": false,
+                "regex": [
+                    "tunnel_hello"
+                ],
+                "requireMatch": true
+            },
+            "visibility": {
+                "advancedCheckBoxPanel": true,
+                "cipherPanel": "Advanced",
+                "debugCheckBoxPanel": "Advanced",
+                "loginHostPanel": true,
+                "optionsDialog": false,
+                "projectPanel": false,
+                "resolutionPanel": false,
+                "resourcePanel": false,
+                "usernamePanel": true
+            },
+            "vncDisplay": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "webDavIntermediatePort": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "webDavRemotePort": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
+            "webDavTunnel": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": null,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            }
+        }
+    }
+]

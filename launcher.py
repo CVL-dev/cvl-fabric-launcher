@@ -132,14 +132,14 @@ class LauncherMainFrame(wx.Frame):
         # I should be able to use a python iterator here
         shouldSave=False
         for ctrl in self.savedControls:
-            if isinstance(item,ctrl):
+            if isinstance(item,ctrl) and 'jobParams' in item.GetName():
                 shouldSave=True
         return shouldSave
 
     
     def loadPrefs(self,window=None,site=None):
         if (self.prefs==None):
-            self.prefs=ConfigParser.RawConfigParser(allow_no_value=True)
+            self.prefs=ConfigParser.SafeConfigParser(allow_no_value=True)
             if (os.path.exists(launcherPreferencesFilePath)):
                 with open(launcherPreferencesFilePath,'r') as o:
                     self.prefs.readfp(o)
@@ -147,17 +147,20 @@ class LauncherMainFrame(wx.Frame):
             window=self
         window.Freeze()
         if (site==None):
+            print "site is none, loading config name pref"
             siteConfigComboBox=self.FindWindowByName('jobParams_configName')
             site=siteConfigComboBox.GetValue()
             if (site==None or site==""):
                 if self.prefs.has_option("Launcher Config","siteConfigDefault"):
                     siteConfigDefault = self.prefs.get("Launcher Config","siteConfigDefault")
+                    print "siteConfigDefault is %s"%siteConfigDefault
                     if siteConfigDefault in self.sites.keys():
                         siteConfigComboBox.SetValue(siteConfigDefault)
                         site=siteConfigDefault
                         self.loadPrefs(window=self,site=site)
                         #self.updateVisibility()
         if (site != None):
+            print "site is %s loading prefs"%site
             if self.prefs.has_section(site):
                 for item in window.GetChildren():
                     if self.shouldSave(item):
@@ -187,14 +190,14 @@ class LauncherMainFrame(wx.Frame):
             if (configName!=None):
                 if (not self.prefs.has_section("Launcher Config")):
                     self.prefs.add_section("Launcher Config")
-                self.prefs.set("Launcher Config","siteConfigDefault",configName)
+                self.prefs.set("Launcher Config","siteConfigDefault",'%s'%configName)
                 self.savePrefs(prefs=prefs,site=configName)
         elif (site!=None):
             if (not self.prefs.has_section(site)):
                 self.prefs.add_section(site)
             for item in window.GetChildren():
                 if self.shouldSave(item):
-                    self.prefs.set(site,item.GetName(),item.GetValue())
+                    self.prefs.set(site,item.GetName(),'%s'%item.GetValue())
                 else:
                     self.savePrefs(prefs=prefs,site=site,window=item)
         if (write):
@@ -347,17 +350,6 @@ class LauncherMainFrame(wx.Frame):
         widgetWidth3 = 75
 
 
-        import siteConfig
-        DEFAULT_SITES_JSON='defaultSites.json'
-        self.defaultSites={}
-        with open(DEFAULT_SITES_JSON,'r') as f:
-            self.defaultSites=siteConfig.GenericJSONDecoder().decode(f.read())
-        if (isinstance(self.defaultSites,list)):
-            keyorder=self.defaultSites[0]
-            defaultSites=collections.OrderedDict()
-            for key in keyorder:
-                defaultSites[key]=self.defaultSites[1][key]
-            self.defaultSites=defaultSites
         
         self.noneVisible={}
         self.noneVisible['usernamePanel']=False
@@ -370,13 +362,13 @@ class LauncherMainFrame(wx.Frame):
         self.noneVisible['advancedCheckBoxPanel']=False
         self.noneVisible['optionsDialog']=False
 
-        self.sites=self.defaultSites.copy()
 
+        self.sites={}
         self.siteConfigPanel = wx.Panel(self.loginFieldsPanel, wx.ID_ANY)
         self.siteConfigPanel.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.configLabel = wx.StaticText(self.siteConfigPanel, wx.ID_ANY, 'Site')
         self.siteConfigPanel.GetSizer().Add(self.configLabel, proportion=0, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND, border=5)
-        self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=self.sites.keys(), value=self.sites.keys()[0], style=wx.CB_READONLY,name='jobParams_configName')
+        self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=self.sites.keys(), style=wx.CB_READONLY,name='jobParams_configName')
         self.siteConfigComboBox.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
         self.siteConfigPanel.GetSizer().Add(self.siteConfigComboBox, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.loginFieldsPanel.GetSizer().Add(self.siteConfigPanel,proportion=0,flag=wx.EXPAND)
@@ -589,10 +581,46 @@ class LauncherMainFrame(wx.Frame):
 
     def manageSites(self,event):
         import siteListDialog
-        dlg=siteListDialog.siteListDialog(parent=self,siteList=[['https://cvl.massive.org.au/launcher_files/defaultSites.json',True]],style=wx.OK|wx.CANCEL)
+        siteList=[]
+        if self.prefs!=None:
+            if self.prefs.has_section('configured_sites'):
+                l=self.prefs.options('configured_sites')
+                for s in l:
+                    if 'sitename' in s:
+                        site=self.prefs.get('configured_sites',s)
+                        number=int(s[8:])
+                        enabled=self.prefs.get('configured_sites','siteenabled%i'%number)
+                        if enabled=='True':
+                            enabled=True
+                        else:
+                            enabled=False
+                        siteList.append([site,enabled])
+        origSiteList=siteList
+        if siteList==[]:
+            siteList=[['https://cvl.massive.org.au/cvl_flavours.json',True],['https://cvl.massive.org.au/massive_flavours.json',True]]
+                
+        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList,style=wx.OK|wx.CANCEL)
         if (dlg.ShowModal() == wx.ID_OK):
-            siteList=dlg.getList()
-            print siteList
+            newSiteList=dlg.getList()
+            changed=False
+            if len(newSiteList) == len(origSiteList):
+                for i in range(0,len(newSiteList)):
+                    if newSiteList[i][0]!=origSiteList[i][0] or newSiteList[i][1]!=origSiteList[i][1]:
+                        changed=True
+            else:
+                changed=True
+            if changed:
+                if self.prefs.has_section('configured_sites'):
+                    self.prefs.remove_section('configured_sites')
+                self.prefs.add_section('configured_sites')
+                i=0
+                for s in newSiteList:
+                    self.prefs.set('configured_sites','sitename%i'%i,'%s'%s[0])
+                    self.prefs.set('configured_sites','siteenabled%i'%i,'%s'%s[1])
+                    i=i+1
+                self.savePrefs()
+                wx.CallAfter(launcherMainFrame.loadDefaultSessions)
+                wx.CallAfter(launcherMainFrame.updateVisibility)
 
 
     def loadSessionEvent(self,event):
@@ -617,13 +645,13 @@ class LauncherMainFrame(wx.Frame):
         self.updateVisibility()
 
     def loadDefaultSessions(self):
-        self.sites=self.defaultSites.copy()
+        self.sites=siteConfig.getSites(self.prefs)
         cb=self.FindWindowByName('jobParams_configName')
         for i in range(0,cb.GetCount()):
             cb.Delete(0)
         for s in self.sites.keys():
             cb.Append(s)
-        cb.SetSelection(0)
+        #cb.SetSelection(0)
         self.updateVisibility(self.noneVisible)
 
     def loadDefaultSessionsEvent(self,event):
@@ -659,7 +687,6 @@ class LauncherMainFrame(wx.Frame):
 
 
     def saveSession(self):
-        print "in Savesession"
         import Queue
         q=Queue.Queue()
         dlg=wx.FileDialog(self,"Save your desktop session",style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
@@ -840,7 +867,6 @@ class LauncherMainFrame(wx.Frame):
 
 
     def onOptions(self, event, tabIndex=0):
-        print "in onOptions"
 
         self.launcherOptionsDialog.tabbedView.SetSelection(tabIndex)
         rv = self.launcherOptionsDialog.ShowModal()
@@ -994,7 +1020,8 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         if jobParams['username'] == "":
             dlg = LauncherMessageDialog(self,
                     "Please enter your username.",
-                    "MASSIVE/CVL Launcher", flags=wx.OK | wx.ICON_INFORMATION)
+                    #"MASSIVE/CVL Launcher", style=wx.OK | wx.ICON_INFORMATION)
+                    "MASSIVE/CVL Launcher")
             dlg.ShowModal()
             usernamefield = self.FindWindowByName('jobParams_username')
             usernamefield.SetFocus()
@@ -1105,7 +1132,7 @@ class MyApp(wx.App):
         global launcherPreferencesFilePath 
         launcherPreferencesFilePath = os.path.join(appUserDataDir,"Launcher Preferences.cfg")
 
-        sys.modules[__name__].turboVncConfig = ConfigParser.RawConfigParser(allow_no_value=True)
+        sys.modules[__name__].turboVncConfig = ConfigParser.SafeConfigParser(allow_no_value=True)
         turboVncConfig = sys.modules[__name__].turboVncConfig
         sys.modules[__name__].turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
         turboVncPreferencesFilePath = sys.modules[__name__].turboVncPreferencesFilePath
@@ -1125,7 +1152,12 @@ class MyApp(wx.App):
         launcherMainFrame.Layout()
         launcherMainFrame.Center()
         def loadPrefsDelayed():
-            time.sleep(0.1)
+            # I don't know what this is about, but on Ubuntu 13.10 if you don't sleep for long
+            # enough before calling updateVisibility (which hides a lot of elements)
+            # Then fit and layout (above) will place things in incorrect locations
+            time.sleep(0.2)
+            wx.CallAfter(launcherMainFrame.loadPrefs)
+            wx.CallAfter(launcherMainFrame.loadDefaultSessions)
             wx.CallAfter(launcherMainFrame.loadPrefs)
             wx.CallAfter(launcherMainFrame.updateVisibility)
         t=threading.Thread(target=loadPrefsDelayed)
