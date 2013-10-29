@@ -14,12 +14,11 @@ def getSites(prefs):
                 enabled=prefs.get('configured_sites','siteenabled%i'%number)
                 if enabled=='True':
                     siteList.append(site)
-    
+
     r=collections.OrderedDict()
     for site in siteList:
         req=requests.get(site)
         if req.status_code == 200:
-            print "requests.get returned text %s"%req.text
             newSites=GenericJSONDecoder().decode(req.text)
             if (isinstance(newSites,list)):
                 keyorder=newSites[0]

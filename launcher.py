@@ -147,20 +147,20 @@ class LauncherMainFrame(wx.Frame):
             window=self
         window.Freeze()
         if (site==None):
-            print "site is none, loading config name pref"
             siteConfigComboBox=self.FindWindowByName('jobParams_configName')
-            site=siteConfigComboBox.GetValue()
+            try:
+                site=siteConfigComboBox.GetValue()
+            except:
+                pass
             if (site==None or site==""):
                 if self.prefs.has_option("Launcher Config","siteConfigDefault"):
                     siteConfigDefault = self.prefs.get("Launcher Config","siteConfigDefault")
-                    print "siteConfigDefault is %s"%siteConfigDefault
                     if siteConfigDefault in self.sites.keys():
                         siteConfigComboBox.SetValue(siteConfigDefault)
                         site=siteConfigDefault
                         self.loadPrefs(window=self,site=site)
                         #self.updateVisibility()
         if (site != None):
-            print "site is %s loading prefs"%site
             if self.prefs.has_section(site):
                 for item in window.GetChildren():
                     if self.shouldSave(item):
@@ -186,12 +186,15 @@ class LauncherMainFrame(wx.Frame):
             write=True
             window=self
         if (site==None):
-            configName=self.FindWindowByName('jobParams_configName').GetValue()
-            if (configName!=None):
-                if (not self.prefs.has_section("Launcher Config")):
-                    self.prefs.add_section("Launcher Config")
-                self.prefs.set("Launcher Config","siteConfigDefault",'%s'%configName)
-                self.savePrefs(prefs=prefs,site=configName)
+            try:
+                configName=self.FindWindowByName('jobParams_configName').GetValue()
+                if (configName!=None):
+                    if (not self.prefs.has_section("Launcher Config")):
+                        self.prefs.add_section("Launcher Config")
+                    self.prefs.set("Launcher Config","siteConfigDefault",'%s'%configName)
+                    self.savePrefs(prefs=prefs,site=configName)
+            except:
+                pass
         elif (site!=None):
             if (not self.prefs.has_section(site)):
                 self.prefs.add_section(site)
@@ -878,7 +881,7 @@ class LauncherMainFrame(wx.Frame):
     def saveGlobalOptions(self):
 
         for key in self.vncOptions:
-            turboVncConfig.set("TurboVNC Preferences", key, self.vncOptions[key])
+            turboVncConfig.set("TurboVNC Preferences", key, "%s"%self.vncOptions[key])
 
         with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
             turboVncConfig.write(turboVncPreferencesFileObject)
@@ -1023,6 +1026,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
                     #"MASSIVE/CVL Launcher", style=wx.OK | wx.ICON_INFORMATION)
                     "MASSIVE/CVL Launcher")
             dlg.ShowModal()
+            self.loginButton.Enable()
             usernamefield = self.FindWindowByName('jobParams_username')
             usernamefield.SetFocus()
             return
