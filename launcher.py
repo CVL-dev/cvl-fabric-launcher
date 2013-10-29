@@ -602,7 +602,7 @@ class LauncherMainFrame(wx.Frame):
         if siteList==[]:
             siteList=[['https://cvl.massive.org.au/cvl_flavours.json',True],['https://cvl.massive.org.au/massive_flavours.json',True]]
                 
-        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList,style=wx.OK|wx.CANCEL)
+        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList)
         if (dlg.ShowModal() == wx.ID_OK):
             newSiteList=dlg.getList()
             changed=False

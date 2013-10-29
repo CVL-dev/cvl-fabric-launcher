@@ -32,13 +32,13 @@ class siteListDialog(wx.Dialog):
     def __init__(self,siteList=None,*args,**kwargs):
         super(siteListDialog,self).__init__(*args,**kwargs)
         mainSizer=wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(mainSizer)
         
         t=wx.StaticText(self,wx.ID_ANY,label="Available Sites")
         mainSizer.Add(t)
         self.siteList=ULC.UltimateListCtrl(self,wx.ID_ANY,size=(500,100),agwStyle=ULC.ULC_REPORT|ULC.ULC_HAS_VARIABLE_ROW_HEIGHT)
         self.siteList.InsertColumn(0,"Site")
         self.siteList.InsertColumn(1,"Active")
-        self.siteList.SetColumnWidth(0,-3)
         i=0
         for s in siteList:
             self.siteList.InsertStringItem(i,"%s"%s[0])
@@ -46,7 +46,8 @@ class siteListDialog(wx.Dialog):
             cb.SetValue(s[1])
             self.siteList.SetItemWindow(i,col=1,wnd=cb)
             i=i+1
-        #self.siteList.SetColumnWidth(0,wx.LIST_AUTOSIZE)
+        self.siteList.SetColumnWidth(0,wx.LIST_AUTOSIZE)
+        self.siteList.SetColumnWidth(1,wx.LIST_AUTOSIZE_USEHEADER)
         mainSizer.Add(self.siteList,flag=wx.EXPAND)
 
         p=wx.Panel(self,wx.ID_ANY)
@@ -61,8 +62,10 @@ class siteListDialog(wx.Dialog):
         s.Add(b)
         b.Bind(wx.EVT_BUTTON,self.onDelete)
         p.SetSizer(s)
-        mainSizer.Add(p)
-        self.SetSizerAndFit(mainSizer)
+        mainSizer.Add(p,1,flag=wx.EXPAND)
+        self.Fit()
+        self.Refresh()
+        self.Update()
 
     def onNew(self,evt):
         dlg=newSiteDialog(parent=self)
