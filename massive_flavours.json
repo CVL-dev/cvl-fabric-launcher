@@ -295,11 +295,11 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncserver -list'\"",
-                "host": "login",
+                "cmd": "echo :1",
+                "host": "local",
                 "loop": false,
                 "regex": [
-                    "^(?P<vncDisplay>:[0-9]+)\\s*(?P<vncPID>[0-9]+)\\s*$"
+                    "(?P<vncDisplay>.*)$"
                 ],
                 "requireMatch": true
             },
@@ -643,11 +643,11 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncserver -list'\"",
-                "host": "login",
+                "cmd": "echo :1",
+                "host": "local",
                 "loop": false,
                 "regex": [
-                    "^(?P<vncDisplay>:[0-9]+)\\s*(?P<vncPID>[0-9]+)\\s*$"
+                    "(?P<vncDisplay>.*)$"
                 ],
                 "requireMatch": true
             },
