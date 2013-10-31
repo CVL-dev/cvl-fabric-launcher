@@ -2,8 +2,10 @@ import json
 import sys
 import collections
 import requests
+from logger.Logger import logger
 
 def getSites(prefs):
+    logger.debug("getting a list of sites")
     siteList=[]
     if prefs.has_section('configured_sites'):
         l=prefs.options('configured_sites')
@@ -17,13 +19,18 @@ def getSites(prefs):
 
     r=collections.OrderedDict()
     for site in siteList:
-        req=requests.get(site)
-        if req.status_code == 200:
-            newSites=GenericJSONDecoder().decode(req.text)
-            if (isinstance(newSites,list)):
-                keyorder=newSites[0]
-                for key in keyorder:
-                    r[key]=newSites[1][key]
+        logger.debug("retrieving the config for %s"%site)
+        try:
+            req=requests.get(site,verify=False)
+            if req.status_code == 200:
+                newSites=GenericJSONDecoder().decode(req.text)
+                if (isinstance(newSites,list)):
+                    keyorder=newSites[0]
+                    for key in keyorder:
+                        r[key]=newSites[1][key]
+        except Exception as e:
+            logger.debug("error retrieving the config for %s"%site)
+            logger.debug("%s"%e)
     return r
         
         
