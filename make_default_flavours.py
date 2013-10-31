@@ -94,7 +94,10 @@ def buildSiteConfigCmdRegExDict(configName):
         siteConfigDict['setDisplayResolution']=siteConfig.cmdRegEx("\'/usr/local/desktop/set_display_resolution.sh {resolution}\'")
         siteConfigDict['getProjects']=siteConfig.cmdRegEx('\"glsproject -A -q | grep \',{username},\|\s{username},\|,{username}\s|\s{username}\s\' \"','^(?P<group>\S+)\s+.*$')
         siteConfigDict['showStart']=siteConfig.cmdRegEx("showstart {jobid}","Estimated Rsv based start .*?on (?P<estimatedStart>.*)")
-        siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"','^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$')
+
+        siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('echo :1','(?P<vncDisplay>.*)$',host='local')
+
+        #siteConfigDict['vncDisplay']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncserver -list\'"','^(?P<vncDisplay>:[0-9]+)\s*(?P<vncPID>[0-9]+)\s*$')
         siteConfigDict['otp']= siteConfig.cmdRegEx('"/usr/bin/ssh {execHost} \' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\'"','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
         siteConfigDict['agent']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\"echo agent_hello; bash \\"\"','agent_hello',async=True)
         siteConfigDict['tunnel']=siteConfig.cmdRegEx('{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} "echo tunnel_hello; bash"','tunnel_hello',async=True)
@@ -341,11 +344,11 @@ other=getOtherSession()
 #import collections
 defaultSites=collections.OrderedDict()
 #defaultSites={}
-#defaultSites['Desktop on m1.massive.org.au']  = m1
-#defaultSites['Desktop on m2.massive.org.au']  = m2 
+defaultSites['Desktop on m1.massive.org.au']  = m1
+defaultSites['Desktop on m2.massive.org.au']  = m2 
 #defaultSites['CVL Desktop']  = cvl
 #defaultSites['Huygens on the CVL']  = huygens
-defaultSites['Other']  = other
+#defaultSites['Other']  = other
 
 #defaultSites=siteList()
 #defaultSites.add('Desktop on m1.massive.org.au'  , m1)
