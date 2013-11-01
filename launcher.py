@@ -372,7 +372,7 @@ class LauncherMainFrame(wx.Frame):
         self.configLabel = wx.StaticText(self.siteConfigPanel, wx.ID_ANY, 'Site')
         self.siteConfigPanel.GetSizer().Add(self.configLabel, proportion=0, flag=wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND, border=5)
         self.siteConfigComboBox = wx.ComboBox(self.siteConfigPanel, wx.ID_ANY, choices=self.sites.keys(), style=wx.CB_READONLY,name='jobParams_configName')
-        self.siteConfigComboBox.Bind(wx.EVT_TEXT, self.onSiteConfigChanged)
+        self.siteConfigComboBox.Bind(wx.EVT_COMBOBOX, self.onSiteConfigChanged)
         self.siteConfigPanel.GetSizer().Add(self.siteConfigComboBox, proportion=1,flag=wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, border=5)
         self.loginFieldsPanel.GetSizer().Add(self.siteConfigPanel,proportion=0,flag=wx.EXPAND)
 
@@ -803,6 +803,7 @@ class LauncherMainFrame(wx.Frame):
             except Exception as e:
 		logger.debug('updateVisibility: looking for site %s'%sc)
                 logger.debug('updateVisibility: no visibility information associated with the siteConfig configName: %s'%sc)
+                logger.debug("sc: %s exception:%s"%(sc,e))
                 visible={}
         for key in visible.keys():
             try:
