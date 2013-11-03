@@ -189,11 +189,11 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"module load pbs ; module load maui ; qstat -u {username}\"",
+                "cmd": "\"module load pbs ; module load maui ; qstat -x {jobidNumber}\"",
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    "^\\s*(?P<jobid>{jobidNumber}\\.\\S+)\\s+(?P<jobname>desktop_\\S+)\\s+\\S+\\s+(?P<elapTime>\\S+)\\s+(?P<state>R)\\s+(?P<queue>\\S+)\\s*$"
+                    "<job_state>R</job_state>"
                 ],
                 "requireMatch": true
             },
@@ -526,11 +526,11 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"module load pbs ; module load maui ; qstat -u {username}\"",
+                "cmd": "\"module load pbs ; module load maui ; qstat -x {jobidNumber}\"",
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    "^\\s*(?P<jobid>{jobidNumber}\\.\\S+)\\s+(?P<jobname>desktop_\\S+)\\s+\\S+\\s+(?P<elapTime>\\S+)\\s+(?P<state>R)\\s+(?P<queue>\\S+)\\s*$"
+                    "<job_state>R</job_state>"
                 ],
                 "requireMatch": true
             },

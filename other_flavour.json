@@ -97,11 +97,11 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "'vncserver -list'",
+                "cmd": "'ls ~/.vnc/`hostname`*pid'",
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    "^(?P<vncDisplay>:[0-9]+)\\s+[0-9]+\\s*$"
+                    "^\\S+(?P<vncDisplay>:[0-9]+).pid$"
                 ],
                 "requireMatch": false
             },
@@ -160,11 +160,11 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "'vncpasswd -o -display localhost{vncDisplay}'",
+                "cmd": "'cat ~/.vnc/clearpass'",
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    "^\\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\\s*$"
+                    "^(?P<vncPasswd>\\S+)$"
                 ],
                 "requireMatch": true
             },
@@ -220,11 +220,11 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"vncserver -geometry {resolution}\"",
+                "cmd": "\" rm -f ~/.vnc/clearpass ; touch ~/.vnc/clearpass ; chmod 600 ~/.vnc/clearpass ; passwd=$( dd if=/dev/urandom bs=1 count=8 2>/dev/null | md5sum | cut -b 1-8 ) ; echo \\$passwd > ~/.vnc/clearpass ; cat ~/.vnc/clearpass | vncpasswd -f > ~/.vnc/passwd ; vncserver -geometry {resolution}\"",
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    "^.*?started on display \\S+(?P<vncDisplay>:[0-9]+)\\s*$"
+                    "^.*?desktop is \\S+(?P<vncDisplay>:[0-9]+)\\s*$"
                 ],
                 "requireMatch": true
             },

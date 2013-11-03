@@ -276,7 +276,7 @@ def getOtherSession():
     #siteConfigDict['listAll']=siteConfig.cmdRegEx('\'vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
     siteConfigDict['listAll']=siteConfig.cmdRegEx('\'ls ~/.vnc/`hostname`*pid\'','^\S+(?P<vncDisplay>:[0-9]+).pid$',requireMatch=False)
     #siteConfigDict['startServer']=siteConfig.cmdRegEx('\"vncserver -geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
-    siteConfigDict['startServer']=siteConfig.cmdRegEx('\" rm ~/.vnc/clearpass ; touch ~/.vnc/clearpass ; chmod 600 ~/.vnc/clearpass ; passwd=\\$\\( dd if=/dev/urandom bs=1 count=8 2>/dev/null | md5sum | cut -f 1 -d \" \" | cut -b 1-8 \\) ; echo \\$passwd > ~/.vnc/clearpass ; cat ~/.vnc/clearpass | vncpasswd -f > ~/.vnc/vncpasswd ; vncserver -geometry {resolution}\"','^.*?desktop is \S+(?P<vncDisplay>:[0-9]+)\s*$')
+    siteConfigDict['startServer']=siteConfig.cmdRegEx('\" rm -f ~/.vnc/clearpass ; touch ~/.vnc/clearpass ; chmod 600 ~/.vnc/clearpass ; passwd=$( dd if=/dev/urandom bs=1 count=8 2>/dev/null | md5sum | cut -b 1-8 ) ; echo \\$passwd > ~/.vnc/clearpass ; cat ~/.vnc/clearpass | vncpasswd -f > ~/.vnc/passwd ; vncserver -geometry {resolution}\"','^.*?desktop is \S+(?P<vncDisplay>:[0-9]+)\s*$')
     siteConfigDict['stop']=siteConfig.cmdRegEx('\'vncserver -kill {vncDisplay}\'')
     siteConfigDict['stopForRestart']=siteConfig.cmdRegEx('\'vncserver -kill {vncDisplay}\'')
     #siteConfigDict['otp']= siteConfig.cmdRegEx('\'vncpasswd -o -display localhost{vncDisplay}\'','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
