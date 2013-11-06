@@ -348,6 +348,9 @@ other=getOtherSession()
 newton=getOtherSession()
 newton.visibility['loginHostPanel']=False
 newton.loginHost="newton.cqu.edu.au"
+isaac=getOtherSession()
+isaac.visibility['loginHostPanel']=False
+isaac.loginHost="isaac.cqu.edu.au"
 
 import utilityFunctions
 import json
@@ -375,6 +378,7 @@ with open('other_flavour.json','w') as f:
     f.write(jsons)
 
 defaultSites=collections.OrderedDict()
+defaultSites['Isaac']=isaac
 defaultSites['Newton']=newton
 keys=defaultSites.keys()
 jsons=json.dumps([keys,defaultSites],cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))

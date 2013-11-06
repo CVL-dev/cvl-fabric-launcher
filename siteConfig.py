@@ -155,8 +155,8 @@ class cmdRegEx():
         else:
             sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
         cmd=self.cmd
-        if sys.platform.startswith("win"):
-            cmd=windowsEscape(cmd)
+        #if sys.platform.startswith("win"):
+        #    cmd=windowsEscape(cmd)
         string=sshCmd.format(**jobParam).encode('ascii')+cmd.format(**jobParam).encode('ascii')
         return string
 
