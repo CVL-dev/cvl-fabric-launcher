@@ -94,7 +94,7 @@ class LoginProcess():
                                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
                     else:
                         logger.debug("runAsyncServerCommandThread: Didn't find match for " + regex.format(**self.loginprocess.jobParams).encode('ascii'))
-                        if (not success and not self.loginprocess._shutdown.is_set()):
+                        if (not success and self.cmdRegex.failFatal  and not self.loginprocess._shutdown.is_set()):
                             self.loginprocess.cancel(errormessage)
                     if self.stopped():
                         return
@@ -104,7 +104,8 @@ class LoginProcess():
             except Exception as e:
                 error_message = "%s"%e
                 logger.error('async server command failure: '+ error_message)
-                self.loginprocess.cancel(error_message)
+                if self.cmdRegex.failFatal:
+                    self.loginprocess.cancel(error_message)
                 return
 
     class runServerCommandThread(Thread):
@@ -152,13 +153,18 @@ class LoginProcess():
     
             self.loginprocess.matchlist=[]
             try:
-                (stdout, stderr) = run_command(self.cmdRegex.getCmd(self.loginprocess.jobParams),ignore_errors=True, callback=self.loginprocess.cancel, startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
+                if self.cmdRegex.failFatal:
+                    cb=self.loginprocess.cancel
+                else:
+                    def cb():
+                        pass
+                (stdout, stderr) = run_command(self.cmdRegex.getCmd(self.loginprocess.jobParams),ignore_errors=True, callback=cb, startupinfo=self.loginprocess.startupinfo, creationflags=self.loginprocess.creationflags)
                 logger.debug("runServerCommandThread: stderr = " + stderr)
                 logger.debug("runServerCommandThread: stdout = " + stdout)
             except Exception as e:
                 logger.error("could not format the command in runServerCommandThread %s)"%self.cmdRegex.cmd)
                 logger.error("the error returned was %s"%e)
-                if (not self.loginprocess._shutdown.is_set()):
+                if (not self.loginprocess._shutdown.is_set() and self.cmdRegex.failFatal):
                     self.loginprocess.cancel("An error occured. I'm sorry I can't give any more detailed information")
                 return
 
@@ -418,7 +424,8 @@ class LoginProcess():
                     logger.debug("runLoopServerCommandThread: stderr = " + stderr)
                     logger.debug("runLoopServerCommandThread: stdout = " + stdout)
                 except KeyError as e:
-                    self.loginprocess.cancel("Trying to run a command but I was missing a parameter %s"%(e))
+                    if self.cmdRegex.failFatal:
+                        self.loginprocess.cancel("Trying to run a command but I was missing a parameter %s"%(e))
                     return
                 
             
@@ -431,7 +438,8 @@ class LoginProcess():
                                     logger.debug("searching the output of %s using regex %s"%(self.cmdRegex.cmd.format(**jobParams),regex))
                                 except KeyError as e:
                                     logger.error("Trying to run %s, unable to formulate regex, missing parameter %s"%(regexUnformatted,e))
-                                    self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
+                                    if self.cmdRegex.failFatal:
+                                        self.loginprocess.cancel("Sorry, a catastropic error occured and I was unable to connect to your VNC session")
                                     return
                                 match = re.search(regex,line)
                                 if (match):

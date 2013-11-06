@@ -130,7 +130,7 @@ class GenericJSONDecoder(json.JSONDecoder):
         return inst
 
 class cmdRegEx():
-    def __init__(self,cmd=None,regex=None,requireMatch=True,loop=False,async=False,host='login'):
+    def __init__(self,cmd=None,regex=None,requireMatch=True,loop=False,async=False,host='login',failFatal=True):
 
         self.cmd=cmd
         if (not isinstance(regex,list)):
@@ -145,6 +145,7 @@ class cmdRegEx():
         self.host=host
         if (self.async):
             self.host='local'
+        self.failFatal=failFatal
 
     def getCmd(self,jobParam={}):
         if ('exec' in self.host):
@@ -164,26 +165,26 @@ class siteConfig():
         
     def __init__(self,**kwargs):
         self.loginHost=None
-        self.listAll=cmdRegEx()
+        self.listAll=cmdRegEx(failFatal=False)
         self.running=cmdRegEx()
-        self.stop=cmdRegEx()
-        self.stopForRestart=cmdRegEx()
+        self.stop=cmdRegEx(failFatal=False)
+        self.stopForRestart=cmdRegEx(failFatal=False)
         self.execHost=cmdRegEx()
         self.startServer=cmdRegEx()
-        self.runSanityCheck=cmdRegEx()
-        self.setDisplayResolution=cmdRegEx()
-        self.getProjects=cmdRegEx()
-        self.showStart=cmdRegEx()
+        self.runSanityCheck=cmdRegEx(failFatal=False)
+        self.setDisplayResolution=cmdRegEx(failFatal=False)
+        self.getProjects=cmdRegEx(failFatal=False)
+        self.showStart=cmdRegEx(failFatal=False)
         self.vncDisplay=cmdRegEx()
         self.otp=cmdRegEx()
         self.directConnect=cmdRegEx()
         self.messageRegeexs=cmdRegEx()
-        self.webDavIntermediatePort=cmdRegEx()
-        self.webDavRemotePort=cmdRegEx()
-        self.openWebDavShareInRemoteFileBrowser=cmdRegEx()
-        self.displayWebDavInfoDialogOnRemoteDesktop=cmdRegEx()
-        self.webDavTunnel=cmdRegEx()
-        self.onConnectScript=cmdRegEx()
+        self.webDavIntermediatePort=cmdRegEx(failFatal=False)
+        self.webDavRemotePort=cmdRegEx(failFatal=False)
+        self.openWebDavShareInRemoteFileBrowser=cmdRegEx(failFatal=False)
+        self.displayWebDavInfoDialogOnRemoteDesktop=cmdRegEx(failFatal=False)
+        self.webDavTunnel=cmdRegEx(failFatal=False)
+        self.onConnectScript=cmdRegEx(failFatal=False)
         self.agent=cmdRegEx()
         self.tunnel=cmdRegEx()
         self.visibility={}

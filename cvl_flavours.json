@@ -12,6 +12,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} \"echo agent_hello; bash \"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -24,6 +25,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'MACHINE_ID=\\$(cat /var/lib/dbus/machine-id); cat ~/.dbus/session-bus/\\$MACHINE_ID-\\$(echo {vncDisplay} | tr -d \\\":\\\" | tr -d \\\".0\\\")'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -67,6 +69,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'sleep 2;echo -e \\\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -79,6 +82,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed 's/\\ \\ */\\ /g' | cut -f 4 -d ' ' | cut -f 1 -d '/' | xargs -iname hostn name | grep address | sed 's/\\ \\ */\\ /g' | cut -f 3 -d ' ' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -91,6 +95,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"groups | sed 's@ @\\n@g'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -103,6 +108,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; qstat -u {username} | tail -n +6\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -116,6 +122,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -142,6 +149,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'module load keyutility ; mountUtility.py'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -154,6 +162,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" | python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -166,6 +175,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\"",
+                "failFatal": true,
                 "host": "exec",
                 "loop": false,
                 "regex": [
@@ -178,6 +188,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -190,6 +201,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; module load maui ; qstat -x {jobidNumber}\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -202,6 +214,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -214,6 +227,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -226,6 +240,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; module load maui ; echo 'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}' |  qsub -l nodes={nodes}:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -238,6 +253,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -250,6 +266,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -262,6 +279,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -285,6 +303,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"cat /var/spool/torque/spool/{jobidNumber}.*\"",
+                "failFatal": true,
                 "host": "exec",
                 "loop": false,
                 "regex": [
@@ -297,6 +316,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/local/bin/get_ephemeral_port.py\"",
+                "failFatal": true,
                 "host": "exec",
                 "loop": false,
                 "regex": [
@@ -309,6 +329,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/local/bin/get_ephemeral_port.py\"",
+                "failFatal": true,
                 "host": "exec",
                 "loop": false,
                 "regex": [
@@ -321,6 +342,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -333,6 +355,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -349,6 +372,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {execHost} \"echo agent_hello; bash \"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -361,6 +385,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'MACHINE_ID=\\$(cat /var/lib/dbus/machine-id); cat ~/.dbus/session-bus/\\$MACHINE_ID-\\$(echo {vncDisplay} | tr -d \\\":\\\" | tr -d \\\".0\\\")'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -404,6 +429,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'sleep 2;echo -e \\\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -416,6 +442,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; qstat -f {jobidNumber} | grep exec_host | sed 's/\\ \\ */\\ /g' | cut -f 4 -d ' ' | cut -f 1 -d '/' | xargs -iname hostn name | grep address | sed 's/\\ \\ */\\ /g' | cut -f 3 -d ' ' | xargs -iip echo execHost ip; qstat -f {jobidNumber}\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -428,6 +455,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"groups | sed 's@ @\\n@g'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -440,6 +468,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; qstat -u {username} | tail -n +6\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -453,6 +482,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -479,6 +509,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'module load keyutility ; mountUtility.py'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -491,6 +522,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" | python;/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true;DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -503,6 +535,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}\"",
+                "failFatal": true,
                 "host": "exec",
                 "loop": false,
                 "regex": [
@@ -515,6 +548,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -527,6 +561,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; module load maui ; qstat -x {jobidNumber}\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -539,6 +574,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -551,6 +587,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -563,6 +600,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; module load maui ; echo 'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}' |  qsub -q huygens -l nodes=1:ppn=1 -N desktop_{username} -o .vnc/ -e .vnc/\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -575,6 +613,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -587,6 +626,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -599,6 +639,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -622,6 +663,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"cat /var/spool/torque/spool/{jobidNumber}.*\"",
+                "failFatal": true,
                 "host": "exec",
                 "loop": false,
                 "regex": [
@@ -634,6 +676,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/local/bin/get_ephemeral_port.py\"",
+                "failFatal": true,
                 "host": "exec",
                 "loop": false,
                 "regex": [
@@ -646,6 +689,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/local/bin/get_ephemeral_port.py\"",
+                "failFatal": true,
                 "host": "exec",
                 "loop": false,
                 "regex": [
@@ -658,6 +702,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {remoteWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {execHost} \"echo tunnel_hello; bash\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -670,6 +715,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [

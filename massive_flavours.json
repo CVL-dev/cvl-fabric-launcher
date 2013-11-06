@@ -12,6 +12,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\\"echo agent_hello; bash \\\"\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -24,6 +25,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"echo DBUS_SESSION_BUS_ADDRESS=dummy_dbus_session_bus_address\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -36,6 +38,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -78,6 +81,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -90,6 +94,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "qpeek {jobidNumber}",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -102,6 +107,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"glsproject -A -q | grep ',{username},\\|\\s{username},\\|,{username}\\s|\\s{username}\\s' \"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -114,6 +120,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "qstat -u {username}",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -127,6 +134,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -153,6 +161,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -165,6 +174,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -177,6 +187,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -189,6 +200,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'/usr/local/desktop/sanity_check.sh {launcher_version_number}'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -201,6 +213,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "qstat -u {username}",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -213,6 +226,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'/usr/local/desktop/set_display_resolution.sh {resolution}'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -225,6 +239,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "showstart {jobid}",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -237,6 +252,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -249,6 +265,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'qdel -a {jobid}'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -261,6 +278,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'qdel {jobid} ; sleep 5'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -273,6 +291,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} \"echo tunnel_hello; bash\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -296,6 +315,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "echo :1",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -308,6 +328,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/local/desktop/get_ephemeral_port.py\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -320,6 +341,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} /usr/local/desktop/get_ephemeral_port.py\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -332,6 +354,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} \"ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} 'echo tunnel_hello; bash'\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -344,6 +367,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -360,6 +384,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -l {username} {loginHost} \"/usr/bin/ssh -A {execHost} \\\"echo agent_hello; bash \\\"\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -372,6 +397,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"echo DBUS_SESSION_BUS_ADDRESS=dummy_dbus_session_bus_address\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -384,6 +410,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -426,6 +453,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -438,6 +466,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "qpeek {jobidNumber}",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -450,6 +479,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"glsproject -A -q | grep ',{username},\\|\\s{username},\\|,{username}\\s|\\s{username}\\s' \"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -462,6 +492,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "qstat -u {username}",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -475,6 +506,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -501,6 +533,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -513,6 +546,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/bin/konqueror webdav://{localUsername}:{vncPasswd}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -525,6 +559,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncpasswd -o -display localhost{vncDisplay}'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -537,6 +572,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'/usr/local/desktop/sanity_check.sh {launcher_version_number}'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -549,6 +585,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "qstat -u {username}",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -561,6 +598,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'/usr/local/desktop/set_display_resolution.sh {resolution}'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -573,6 +611,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "showstart {jobid}",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -585,6 +624,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -597,6 +637,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'qdel -a {jobid}'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -609,6 +650,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'qdel {jobid} ; sleep 5'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -621,6 +663,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=yes -L {localPortNumber}:{execHost}:{remotePortNumber} -l {username} {loginHost} \"echo tunnel_hello; bash\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -644,6 +687,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "echo :1",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -656,6 +700,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/local/desktop/get_ephemeral_port.py\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -668,6 +713,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} /usr/local/desktop/get_ephemeral_port.py\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -680,6 +726,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -oExitOnForwardFailure=yes -R {intermediateWebDavPortNumber}:localhost:{localWebDavPortNumber} -l {username} {loginHost} \"ssh -R {remoteWebDavPortNumber}:localhost:{intermediateWebDavPortNumber} {execHost} 'echo tunnel_hello; bash'\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -692,6 +739,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [

@@ -11,6 +11,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -l {username} {loginHost} \"echo agent_hello; bash \"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -23,6 +24,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -62,6 +64,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -74,6 +77,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -86,6 +90,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -98,6 +103,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'ls ~/.vnc/`hostname`*pid'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -111,6 +117,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -137,6 +144,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -149,6 +157,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -161,6 +170,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'cat ~/.vnc/clearpass'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -173,6 +183,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -185,6 +196,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -197,6 +209,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -209,6 +222,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -220,7 +234,8 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\" rm -f ~/.vnc/clearpass ; touch ~/.vnc/clearpass ; chmod 600 ~/.vnc/clearpass ; passwd=$( dd if=/dev/urandom bs=1 count=8 2>/dev/null | md5sum | cut -b 1-8 ) ; echo \\$passwd > ~/.vnc/clearpass ; cat ~/.vnc/clearpass | vncpasswd -f > ~/.vnc/passwd ; vncserver -geometry {resolution}\"",
+                "cmd": "\" rm -f ~/.vnc/clearpass ; touch ~/.vnc/clearpass ; chmod 600 ~/.vnc/clearpass ; passwd=\\$( dd if=/dev/urandom bs=1 count=8 2>/dev/null | md5sum | cut -b 1-8 ) ; echo \\$passwd > ~/.vnc/clearpass ; cat ~/.vnc/clearpass | vncpasswd -f > ~/.vnc/passwd ; vncserver -geometry {resolution}\"",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -233,6 +248,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'vncserver -kill {vncDisplay}'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -245,6 +261,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": "'vncserver -kill {vncDisplay}'",
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -257,6 +274,7 @@
                 "__module__": "siteConfig",
                 "async": true,
                 "cmd": "{sshBinary} -A -c {cipher} -t -t -oStrictHostKeyChecking=no -L {localPortNumber}:localhost:{remotePortNumber} -l {username} {loginHost} \"echo tunnel_hello; bash\"",
+                "failFatal": true,
                 "host": "local",
                 "loop": false,
                 "regex": [
@@ -271,7 +289,7 @@
                 "loginHostPanel": true,
                 "optionsDialog": false,
                 "projectPanel": false,
-                "resolutionPanel": false,
+                "resolutionPanel": "Advanced",
                 "resourcePanel": false,
                 "usernamePanel": true
             },
@@ -280,6 +298,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -292,6 +311,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -304,6 +324,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -316,6 +337,7 @@
                 "__module__": "siteConfig",
                 "async": false,
                 "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [

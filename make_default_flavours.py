@@ -266,7 +266,7 @@ def getOtherSession():
     Visible['projectPanel']=False
     Visible['loginHostPanel']=True
     Visible['resourcePanel']=False
-    Visible['resolutionPanel']=False
+    Visible['resolutionPanel']='Advanced'
     Visible['cipherPanel']='Advanced'
     Visible['debugCheckBoxPanel']='Advanced'
     Visible['advancedCheckBoxPanel']=True
@@ -276,7 +276,7 @@ def getOtherSession():
     #siteConfigDict['listAll']=siteConfig.cmdRegEx('\'vncserver -list\'','^(?P<vncDisplay>:[0-9]+)\s+[0-9]+\s*$',requireMatch=False)
     siteConfigDict['listAll']=siteConfig.cmdRegEx('\'ls ~/.vnc/`hostname`*pid\'','^\S+(?P<vncDisplay>:[0-9]+).pid$',requireMatch=False)
     #siteConfigDict['startServer']=siteConfig.cmdRegEx('\"vncserver -geometry {resolution}\"','^.*?started on display \S+(?P<vncDisplay>:[0-9]+)\s*$')
-    siteConfigDict['startServer']=siteConfig.cmdRegEx('\" rm -f ~/.vnc/clearpass ; touch ~/.vnc/clearpass ; chmod 600 ~/.vnc/clearpass ; passwd=$( dd if=/dev/urandom bs=1 count=8 2>/dev/null | md5sum | cut -b 1-8 ) ; echo \\$passwd > ~/.vnc/clearpass ; cat ~/.vnc/clearpass | vncpasswd -f > ~/.vnc/passwd ; vncserver -geometry {resolution}\"','^.*?desktop is \S+(?P<vncDisplay>:[0-9]+)\s*$')
+    siteConfigDict['startServer']=siteConfig.cmdRegEx('\" rm -f ~/.vnc/clearpass ; touch ~/.vnc/clearpass ; chmod 600 ~/.vnc/clearpass ; passwd=\\$( dd if=/dev/urandom bs=1 count=8 2>/dev/null | md5sum | cut -b 1-8 ) ; echo \\$passwd > ~/.vnc/clearpass ; cat ~/.vnc/clearpass | vncpasswd -f > ~/.vnc/passwd ; vncserver -geometry {resolution}\"','^.*?desktop is \S+(?P<vncDisplay>:[0-9]+)\s*$')
     siteConfigDict['stop']=siteConfig.cmdRegEx('\'vncserver -kill {vncDisplay}\'')
     siteConfigDict['stopForRestart']=siteConfig.cmdRegEx('\'vncserver -kill {vncDisplay}\'')
     #siteConfigDict['otp']= siteConfig.cmdRegEx('\'vncpasswd -o -display localhost{vncDisplay}\'','^\s*Full control one-time password: (?P<vncPasswd>[0-9]+)\s*$')
@@ -345,36 +345,38 @@ huygens.visibility=cvlvisible
 huygens.displayStrings.__dict__.update(cvlStrings.__dict__)
 
 other=getOtherSession()
+newton=getOtherSession()
+newton.visibility['loginHostPanel']=False
+newton.loginHost="newton.cqu.edu.au"
 
-#import collections
-defaultSites=collections.OrderedDict()
-#defaultSites={}
-#defaultSites['Desktop on m1.massive.org.au']  = m1
-#defaultSites['Desktop on m2.massive.org.au']  = m2 
-#defaultSites['CVL Desktop']  = cvl
-#defaultSites['Huygens on the CVL']  = huygens
-defaultSites['Other']  = other
-
-#defaultSites=siteList()
-#defaultSites.add('Desktop on m1.massive.org.au'  , m1)
-#defaultSites.add('Desktop on m2.massive.org.au'  , m2 )
-#defaultSites.add('CVL Desktop'  , cvl)
-#defaultSites.add('Huygens on the CVL'  , huygens)
-#defaultSites.add('Other'  , other)
-#defaultSites=[]
-#defaultSites.append(('Desktop on m1.massive.org.au'  , m1))
-#defaultSites.append(('Desktop on m2.massive.org.au'  , m2 ))
-#defaultSites.append(('CVL Desktop'  , cvl))
-#defaultSites.append(('Huygens on the CVL'  , huygens))
-#defaultSites.append(('Other'  , other))
 import utilityFunctions
 import json
+defaultSites=collections.OrderedDict()
+defaultSites['Desktop on m1.massive.org.au']  = m1
+defaultSites['Desktop on m2.massive.org.au'] = m2 
 keys=defaultSites.keys()
-#jsons=json.dumps(keys,cls=siteConfig.GenericJSONEncoder,sort_keys=False,indent=4,separators=(',', ': '))
-#jsons=jsons+json.dumps([keys,defaultSites],cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))
 jsons=json.dumps([keys,defaultSites],cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))
-#json=utilityFunctions.GenericJSONEncoder().encode(defaultSites)
-print jsons
+with open('massive_flavours.json','w') as f:
+    f.write(jsons)
 
+defaultSites=collections.OrderedDict()
+defaultSites['CVL Desktop']=  cvl
+defaultSites['Huygens on the CVL']= huygens
+keys=defaultSites.keys()
+jsons=json.dumps([keys,defaultSites],cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))
+with open('cvl_flavours.json','w') as f:
+    f.write(jsons)
 
+defaultSites=collections.OrderedDict()
+defaultSites['Other']=other
+keys=defaultSites.keys()
+jsons=json.dumps([keys,defaultSites],cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))
+with open('other_flavour.json','w') as f:
+    f.write(jsons)
 
+defaultSites=collections.OrderedDict()
+defaultSites['Newton']=newton
+keys=defaultSites.keys()
+jsons=json.dumps([keys,defaultSites],cls=siteConfig.GenericJSONEncoder,sort_keys=True,indent=4,separators=(',', ': '))
+with open('cqu.json','w') as f:
+    f.write(jsons)
