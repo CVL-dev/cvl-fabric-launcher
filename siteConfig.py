@@ -49,14 +49,14 @@ def getSites(prefs):
 
 class sshKeyDistDisplayStrings(object):
     def __init__(self,**kwargs):
-        self.passwdPrompt="enter passwd"
-        self.passwdPromptIncorrect="passwd incorrect. reenter"
-        self.passphrasePrompt="enter key passphrase"
-        self.passphrasePromptIncorrectl="Incorrect. enter key passphrase"
-        self.newPassphraseEmptyForbidden="new passphrase. empty passphrase forbidden"
-        self.newPassphraseTooShort="passphrase to short. enter a new passphrase"
-        self.newPassphraseMismatch="passphrases don't match. enter new passphrases"
-        self.newPassphrase="new passphrase for new key"
+        self.passwdPrompt="Please enter your password"
+        self.passwdPromptIncorrect="Sorry that password was incorrect. Please reenter"
+        self.passphrasePrompt="Please enter the passphrase for you ssh key"
+        self.passphrasePromptIncorrectl="Sorry, that passphrase was incorrect. Please enter the passphrase for your ssh key"
+        self.newPassphraseEmptyForbidden="Sorry, you can't use an empty passphrase. Please enter a new passphrase"
+        self.newPassphraseTooShort="Sorry, the passphrase must be at least six character long. Please enter a new passphrase"
+        self.newPassphraseMismatch="Sorry, the passphrases don't match. Please enter a new passphrase"
+        self.newPassphrase="Please enter a new passphrase"
         self.newPassphraseTitle="Please enter a new passphrase"
         self.temporaryKey="""
 Would you like to use the launchers old behaviour (entering a password every time you start a new desktop) or try the new behaviour (creating an ssh key pair and entering a passphrase the first time you use the launcher after reboot.)
