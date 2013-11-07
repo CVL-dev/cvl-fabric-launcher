@@ -159,8 +159,12 @@ class cmdRegEx():
             sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=yes -l {username} {loginHost} '
         cmd=self.cmd
         if sys.platform.startswith("win"):
-            cmd=windowsEscape(cmd)
-        string=sshCmd.format(**jobParam).encode('ascii')+cmd.format(**jobParam).encode('ascii')
+            escapedChars={'ampersand':'^&','pipe':'^|'}
+        else:
+            escapedChars={'ampersand':'&','pipe':'|'}
+        formatdict = jobParam.copy()
+        formatdict.update(escapedChars)
+        string=sshCmd.format(**formatdict).encode('ascii')+cmd.format(**formatdict).encode('ascii')
         return string
 
 
