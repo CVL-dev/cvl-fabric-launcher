@@ -19,6 +19,8 @@ class Logger():
         self.loggerOutput = None
         self.loggerFileHandler = None
         self.configureLogger()
+        self.globalLauncherConfig=None
+        self.globalLauncherPreferencesFilePath=None
 
     def setGlobalLauncherConfig(self, globalLauncherConfig):
         self.globalLauncherConfig = globalLauncherConfig

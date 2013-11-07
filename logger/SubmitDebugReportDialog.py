@@ -4,6 +4,7 @@ import wx
 import os
 import sys
 import traceback
+import ConfigParser
 
 if os.path.abspath("..") not in sys.path:
     sys.path.append(os.path.abspath(".."))
@@ -53,6 +54,12 @@ class SubmitDebugReportDialog(wx.Dialog):
 
         self.nameLabel = wx.StaticText(self.innerContactDetailsPanel, wx.ID_ANY, "Name:")
         self.innerContactDetailsPanelSizer.Add(self.nameLabel)
+
+        if self.globalLauncherConfig == None:
+            self.globalLauncherConfig=ConfigParser.SafeConfigParser(allow_no_value=True)
+            if (os.path.exists(self.globalLauncherPreferencesFilePath)):
+                with open(self.globalLauncherPreferencesFilePath,'r') as o:
+                    self.globalLauncherConfig.readfp(o)
 
         name = ""
         if self.globalLauncherConfig.has_section("Global Preferences"):
@@ -126,6 +133,7 @@ class SubmitDebugReportDialog(wx.Dialog):
         self.innerCommentsPanel.SetSizer(self.innerCommentsPanelSizer)
 
         self.commentsField = wx.TextCtrl(self.innerCommentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
+        self.commentsField.SetMinSize(wx.Size(-1,100))
         self.innerCommentsPanelSizer.Add(self.commentsField, flag=wx.EXPAND)
 
         self.Bind(wx.EVT_TEXT, self.onNameOrEmailOrCommentsModified, id=self.commentsField.GetId())
@@ -214,6 +222,8 @@ class SubmitDebugReportDialog(wx.Dialog):
     def onSubmit(self, event):
         print "Submitting debug report."
 
+        if not self.globalLauncherConfig.has_section("Global Preferences"):
+            self.globalLauncherConfig.add_section("Global Preferences")
         self.globalLauncherConfig.set("Global Preferences", "name", self.nameField.GetValue().strip())
         with open(self.globalLauncherPreferencesFilePath, 'wb') as globalLauncherPreferencesFileObject:
             self.globalLauncherConfig.write(globalLauncherPreferencesFileObject)

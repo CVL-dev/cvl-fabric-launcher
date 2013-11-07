@@ -1148,6 +1148,8 @@ class MyApp(wx.App):
 
         if sys.platform.startswith("win"):
             os.environ['CYGWIN'] = "nodosfilewarning"
+
+        logger.setGlobalLauncherPreferencesFilePath(launcherPreferencesFilePath)
         sys.modules[__name__].launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
         launcherMainFrame = sys.modules[__name__].launcherMainFrame
         launcherMainFrame.SetStatusBar(launcherMainFrame.loginDialogStatusBar)

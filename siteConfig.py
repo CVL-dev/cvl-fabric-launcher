@@ -185,7 +185,7 @@ class siteConfig():
         self.vncDisplay=cmdRegEx()
         self.otp=cmdRegEx()
         self.directConnect=cmdRegEx()
-        self.messageRegeexs=cmdRegEx()
+        self.messageRegexs=[]
         self.webDavIntermediatePort=cmdRegEx(failFatal=False)
         self.webDavRemotePort=cmdRegEx(failFatal=False)
         self.openWebDavShareInRemoteFileBrowser=cmdRegEx(failFatal=False)
