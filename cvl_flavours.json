@@ -24,7 +24,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'MACHINE_ID=\\$(cat /var/lib/dbus/machine-id); cat ~/.dbus/session-bus/\\$MACHINE_ID-\\$(echo {vncDisplay} | tr -d \\\":\\\" | tr -d \\\".0\\\")'\"",
+                "cmd": "\"/usr/bin/ssh {execHost} 'export DISPLAY={vncDisplay};timeout 15 /usr/local/bin/cat_dbus_session_file.sh'\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -68,7 +68,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'sleep 2;echo -e \\\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt'\"",
+                "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$(hostname){vncDisplay}-webdav.txt'\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -112,7 +112,7 @@
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    "^\\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\\S+)\\s+\\S+\\s+(?P<queue>\\S+)\\s+(?P<jobname>desktop_\\S+)\\s+(?P<sessionID>\\S+)\\s+(?P<nodes>\\S+)\\s+(?P<tasks>\\S+)\\s+(?P<mem>\\S+)\\s+(?P<reqTime>\\S+)\\s+(?P<state>[^C])\\s+(?P<elapTime>\\S+)\\s*$"
+                    "^\\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\\S+)\\s+\\S+\\s+(?P<queue>batch)\\s+(?P<jobname>desktop_\\S+)\\s+(?P<sessionID>\\S+)\\s+(?P<nodes>\\S+)\\s+(?P<tasks>\\S+)\\s+(?P<mem>\\S+)\\s+(?P<reqTime>\\S+)\\s+(?P<state>[^C])\\s+(?P<elapTime>\\S+)\\s*$"
                 ],
                 "requireMatch": false
             },
@@ -148,8 +148,8 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'module load keyutility ; mountUtility.py'\"",
-                "failFatal": true,
+                "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -161,7 +161,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress}; echo \\\\\\\"import pexpect; child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" {pipe} python ; /usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true {ampersand}{ampersand} DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"",
+                "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true {ampersand}{ampersand} DISPLAY={vncDisplay} xdg-open dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\\"\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -200,12 +200,12 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"module load pbs ; module load maui ; qstat -x {jobidNumber}\"",
+                "cmd": "\"module load pbs ; module load maui ; qstat | grep {username}\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    "<job_state>R</job_state>"
+                    "^\\s*(?P<jobid>{jobidNumber}\\.\\S+)\\s+(?P<jobname>desktop_\\S+)\\s+\\S+\\s+(?P<elapTime>\\S+)\\s+(?P<state>R)\\s+(?P<queue>\\S+)\\s*$"
                 ],
                 "requireMatch": true
             },
@@ -239,7 +239,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"module load pbs ; module load maui ; echo 'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}' |  qsub -l nodes={nodes}:ppn=1,walltime={wallseconds} -N desktop_{username} -o .vnc/ -e .vnc/\"",
+                "cmd": "\"module load pbs ; module load maui ; echo 'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}' |  qsub -q batch -l nodes=1:ppn=1 -N desktop_{username} -o .vnc/ -e .vnc/\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -265,7 +265,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
+                "cmd": "\"module load pbs ; module load maui ; qdel {jobid}\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -311,6 +311,19 @@
                 ],
                 "requireMatch": true
             },
+            "webDavCloseWindow": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};export DISPLAY={vncDisplay}; wmctrl -F -i -c {webDavWindowID}'\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
             "webDavIntermediatePort": {
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
@@ -321,6 +334,19 @@
                 "loop": false,
                 "regex": [
                     "^(?P<intermediateWebDavPortNumber>[0-9]+)$"
+                ],
+                "requireMatch": true
+            },
+            "webDavMount": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}');child.expect(pexpect.EOF);child.close();print 'gvfs-mount returned ' + str(child.exitstatus)\\\\\\\" {pipe} python\\\"\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    "^gvfs-mount returned (?P<webDavMountingExitCode>.*)$"
                 ],
                 "requireMatch": true
             },
@@ -354,7 +380,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav'\"",
+                "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};export DISPLAY={vncDisplay};timeout 1 gvfs-mount --unmount-scheme dav'\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -362,6 +388,19 @@
                     null
                 ],
                 "requireMatch": false
+            },
+            "webDavWindowID": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress}; DISPLAY={vncDisplay} xwininfo -root -tree'\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    "^\\s+(?P<webDavWindowID>\\S+)\\s+\"{homeDirectoryWebDavShareName}.*Browser.*$"
+                ],
+                "requireMatch": true
             }
         },
         "Huygens on the CVL": {
@@ -384,7 +423,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'MACHINE_ID=\\$(cat /var/lib/dbus/machine-id); cat ~/.dbus/session-bus/\\$MACHINE_ID-\\$(echo {vncDisplay} | tr -d \\\":\\\" | tr -d \\\".0\\\")'\"",
+                "cmd": "\"/usr/bin/ssh {execHost} 'export DISPLAY={vncDisplay};timeout 15 /usr/local/bin/cat_dbus_session_file.sh'\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -428,7 +467,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'sleep 2;echo -e \\\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:8080/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt'\"",
+                "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Nautilus File Browser, using the location:\\n\\ndav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\n\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$(hostname){vncDisplay}-webdav.txt'\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -508,8 +547,8 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'module load keyutility ; mountUtility.py'\"",
-                "failFatal": true,
+                "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -521,7 +560,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress}; echo \\\\\\\"import pexpect; child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}')\\\\\\\" {pipe} python ; /usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true {ampersand}{ampersand} DISPLAY={vncDisplay} /usr/bin/nautilus --no-desktop --sm-disable dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName};\\\"\"",
+                "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};/usr/bin/gconftool-2 --type=Boolean --set /apps/nautilus/preferences/always_use_location_entry true {ampersand}{ampersand} DISPLAY={vncDisplay} xdg-open dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}\\\"\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -560,12 +599,12 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"module load pbs ; module load maui ; qstat -x {jobidNumber}\"",
+                "cmd": "\"module load pbs ; module load maui ; qstat | grep {username}\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    "<job_state>R</job_state>"
+                    "^\\s*(?P<jobid>{jobidNumber}\\.\\S+)\\s+(?P<jobname>desktop_\\S+)\\s+\\S+\\s+(?P<elapTime>\\S+)\\s+(?P<state>R)\\s+(?P<queue>\\S+)\\s*$"
                 ],
                 "requireMatch": true
             },
@@ -625,7 +664,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"module load pbs ; module load maui ; qdel -a {jobidNumber}\"",
+                "cmd": "\"module load pbs ; module load maui ; qdel {jobid}\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -671,6 +710,19 @@
                 ],
                 "requireMatch": true
             },
+            "webDavCloseWindow": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};export DISPLAY={vncDisplay}; wmctrl -F -i -c {webDavWindowID}'\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
+            },
             "webDavIntermediatePort": {
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
@@ -681,6 +733,19 @@
                 "loop": false,
                 "regex": [
                     "^(?P<intermediateWebDavPortNumber>[0-9]+)$"
+                ],
+                "requireMatch": true
+            },
+            "webDavMount": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} \\\"export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};echo \\\\\\\"import pexpect;child = pexpect.spawn('gvfs-mount dav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}');child.expect('Password: ');child.sendline('{vncPasswd}');child.expect(pexpect.EOF);child.close();print 'gvfs-mount returned ' + str(child.exitstatus)\\\\\\\" {pipe} python\\\"\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    "^gvfs-mount returned (?P<webDavMountingExitCode>.*)$"
                 ],
                 "requireMatch": true
             },
@@ -714,7 +779,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};DISPLAY={vncDisplay} wmctrl -F -c \"{homeDirectoryWebDavShareName} - File Browser\"; DISPLAY={vncDisplay} timeout 3 gvfs-mount --unmount-scheme dav'\"",
+                "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress};export DISPLAY={vncDisplay};timeout 1 gvfs-mount --unmount-scheme dav'\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -722,6 +787,19 @@
                     null
                 ],
                 "requireMatch": false
+            },
+            "webDavWindowID": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} 'export DBUS_SESSION_BUS_ADDRESS={dbusSessionBusAddress}; DISPLAY={vncDisplay} xwininfo -root -tree'\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    "^\\s+(?P<webDavWindowID>\\S+)\\s+\"{homeDirectoryWebDavShareName}.*Browser.*$"
+                ],
+                "requireMatch": true
             }
         }
     }

@@ -80,7 +80,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;'\"",
+                "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$(hostname){vncDisplay}-webdav.txt;'\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -106,7 +106,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"glsproject -A -q | grep ',{username},\\|\\s{username},\\|,{username}\\s|\\s{username}\\s' \"",
+                "cmd": "\"glsproject -A -q | grep ',{username},\\|\\s{username},\\|,{username}\\s\\|\\s{username}\\s' \"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -225,8 +225,8 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "'/usr/local/desktop/set_display_resolution.sh {resolution}'",
-                "failFatal": true,
+                "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -251,7 +251,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False'",
+                "cmd": "'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False {resolution}'",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -277,7 +277,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "'qdel {jobid} ; sleep 5'",
+                "cmd": "qdel {jobid} ; sleep 5'",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -314,14 +314,27 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "echo :1",
+                "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncserver -list'\"",
                 "failFatal": true,
-                "host": "local",
+                "host": "login",
                 "loop": false,
                 "regex": [
-                    "(?P<vncDisplay>.*)$"
+                    "^(?P<vncDisplay>:[0-9]+)\\s*(?P<vncPID>[0-9]+)\\s*$"
                 ],
                 "requireMatch": true
+            },
+            "webDavCloseWindow": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
             },
             "webDavIntermediatePort": {
                 "__class__": "cmdRegEx",
@@ -335,6 +348,19 @@
                     "^(?P<intermediateWebDavPortNumber>[0-9]+)$"
                 ],
                 "requireMatch": true
+            },
+            "webDavMount": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "echo Mounting WebDAV...",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
             },
             "webDavRemotePort": {
                 "__class__": "cmdRegEx",
@@ -366,14 +392,27 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
+                "cmd": "echo hello",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    null
+                    "hello"
                 ],
-                "requireMatch": false
+                "requireMatch": true
+            },
+            "webDavWindowID": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"echo DummyWebDavWindowID=-1\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    "^DummyWebDavWindowID=(?P<webDavWindowID>.*)$"
+                ],
+                "requireMatch": true
             }
         },
         "Desktop on m2.massive.org.au": {
@@ -452,7 +491,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$HOSTNAME\\$DISPLAY-webdav.txt;'\"",
+                "cmd": "\"/usr/bin/ssh {execHost} 'echo -e \\\"You can access your local home directory in Konqueror with the URL:%sbr%s\\nwebdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}%sbr%s\\nYour one-time password is {vncPasswd}\\\" > ~/.vnc/\\$(hostname){vncDisplay}-webdav.txt;'\"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -478,7 +517,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"glsproject -A -q | grep ',{username},\\|\\s{username},\\|,{username}\\s|\\s{username}\\s' \"",
+                "cmd": "\"glsproject -A -q | grep ',{username},\\|\\s{username},\\|,{username}\\s\\|\\s{username}\\s' \"",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -597,8 +636,8 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "'/usr/local/desktop/set_display_resolution.sh {resolution}'",
-                "failFatal": true,
+                "cmd": null,
+                "failFatal": false,
                 "host": "login",
                 "loop": false,
                 "regex": [
@@ -623,7 +662,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False'",
+                "cmd": "'/usr/local/desktop/request_visnode.sh {project} {hours} {nodes} True False False {resolution}'",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -649,7 +688,7 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "'qdel {jobid} ; sleep 5'",
+                "cmd": "qdel {jobid} ; sleep 5'",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
@@ -686,14 +725,27 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "echo :1",
+                "cmd": "\"/usr/bin/ssh {execHost} ' module load turbovnc ; vncserver -list'\"",
                 "failFatal": true,
-                "host": "local",
+                "host": "login",
                 "loop": false,
                 "regex": [
-                    "(?P<vncDisplay>.*)$"
+                    "^(?P<vncDisplay>:[0-9]+)\\s*(?P<vncPID>[0-9]+)\\s*$"
                 ],
                 "requireMatch": true
+            },
+            "webDavCloseWindow": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
             },
             "webDavIntermediatePort": {
                 "__class__": "cmdRegEx",
@@ -707,6 +759,19 @@
                     "^(?P<intermediateWebDavPortNumber>[0-9]+)$"
                 ],
                 "requireMatch": true
+            },
+            "webDavMount": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "echo Mounting WebDAV...",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    null
+                ],
+                "requireMatch": false
             },
             "webDavRemotePort": {
                 "__class__": "cmdRegEx",
@@ -738,14 +803,27 @@
                 "__class__": "cmdRegEx",
                 "__module__": "siteConfig",
                 "async": false,
-                "cmd": "\"/usr/bin/ssh {execHost} 'DISPLAY={vncDisplay} /usr/local/desktop/close_webdav_window.sh webdav://{localUsername}@localhost:{remoteWebDavPortNumber}/{homeDirectoryWebDavShareName}'\"",
+                "cmd": "echo hello",
                 "failFatal": true,
                 "host": "login",
                 "loop": false,
                 "regex": [
-                    null
+                    "hello"
                 ],
-                "requireMatch": false
+                "requireMatch": true
+            },
+            "webDavWindowID": {
+                "__class__": "cmdRegEx",
+                "__module__": "siteConfig",
+                "async": false,
+                "cmd": "\"echo DummyWebDavWindowID=-1\"",
+                "failFatal": true,
+                "host": "login",
+                "loop": false,
+                "regex": [
+                    "^DummyWebDavWindowID=(?P<webDavWindowID>.*)$"
+                ],
+                "requireMatch": true
             }
         }
     }
