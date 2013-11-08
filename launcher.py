@@ -209,12 +209,13 @@ class LauncherMainFrame(wx.Frame):
         
     def savePrefs(self,window=None,section=None):
         assert self.prefs!=None
+        specialSections=['Global Preferences','configured_sites']
         write=False
         # If we called savePrefs without a window specified, its the root of recussion
-        if (window==None and section!='Global Preferences'):
+        if (window==None and not section in specialSections):
             write=True
             window=self
-        if (section=='Global Preferences'):
+        if (section in specialSections):
             write=True
             window=None
         if (section==None):
@@ -237,10 +238,8 @@ class LauncherMainFrame(wx.Frame):
                     else:
                         self.savePrefs(section=section,window=item)
             except:
-                print "couldn't load the children to save"
                 pass
         if (write):
-            print "writing the preferences to filesystem"
             with open(launcherPreferencesFilePath,'w') as o:
                 self.prefs.write(o)
 
@@ -615,22 +614,18 @@ class LauncherMainFrame(wx.Frame):
     def manageSites(self,event):
         import siteListDialog
         siteList=[]
-        if self.prefs!=None:
-            if self.prefs.has_section('configured_sites'):
-                l=self.prefs.options('configured_sites')
-                for s in l:
-                    if 'sitename' in s:
-                        site=self.prefs.get('configured_sites',s)
-                        number=int(s[8:])
-                        enabled=self.prefs.get('configured_sites','siteenabled%i'%number)
-                        if enabled=='True':
-                            enabled=True
-                        else:
-                            enabled=False
-                        siteList.append([site,enabled])
+        options = self.getPrefsSection('configured_sites')
+        for s in options.keys():
+            if 'sitename' in s:
+                site=options[s]
+                number=int(s[8:])
+                enabled=options['siteenabled%i'%number]
+                if enabled=='True':
+                    enabled=True
+                else:
+                    enabled=False
+                siteList.append([site,enabled])
         origSiteList=siteList
-        if siteList==[]:
-            siteList=[['https://cvl.massive.org.au/cvl_flavours.json',True],['https://cvl.massive.org.au/massive_flavours.json',True]]
                 
         dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList)
         if (dlg.ShowModal() == wx.ID_OK):
@@ -643,17 +638,18 @@ class LauncherMainFrame(wx.Frame):
             else:
                 changed=True
             if changed:
-                if self.prefs.has_section('configured_sites'):
-                    self.prefs.remove_section('configured_sites')
-                self.prefs.add_section('configured_sites')
+                options={}
                 i=0
                 for s in newSiteList:
-                    self.prefs.set('configured_sites','sitename%i'%i,'%s'%s[0])
-                    self.prefs.set('configured_sites','siteenabled%i'%i,'%s'%s[1])
+                    options['sitename%i'%i]='%s'%s[0]
+                    options['siteenabled%i'%i]='%s'%s[1]
                     i=i+1
+                self.prefs.remove_section('configured_sites')
+                self.setPrefsSection('configured_sites',options)
                 self.savePrefs(section='configured_sites')
                 wx.CallAfter(launcherMainFrame.loadDefaultSessions)
                 wx.CallAfter(launcherMainFrame.updateVisibility)
+
 
 
     def loadSessionEvent(self,event):
@@ -678,6 +674,15 @@ class LauncherMainFrame(wx.Frame):
         self.updateVisibility()
 
     def loadDefaultSessions(self):
+        sites=self.getPrefsSection(section='configured_sites')
+        if sites.keys() == []:
+            sites['sitename0']='https://cvl.massive.org.au/cvl_flavours.json'
+            sites['siteenabled0']='True'
+            sites['sitename1']='https://cvl.massive.org.au/massive_flavours.json'
+            sites['siteenabled1']='True'
+            self.setPrefsSection('configured_sites',sites)
+            self.savePrefs(section='configured_sites')
+            
         self.sites=siteConfig.getSites(self.prefs)
         cb=self.FindWindowByName('jobParams_configName')
         for i in range(0,cb.GetCount()):
@@ -1141,7 +1146,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
         self.configName=self.FindWindowByName('jobParams_configName').GetValue()
         autoExit=False
-        globalOptions = self.getPrefsSection("Global Options")
+        globalOptions = self.getPrefsSection("Global Preferences")
         lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,globalOptions=globalOptions)
         oldParams  = jobParams.copy()
         lp.setCallback(lambda jobParams: self.loginComplete(lp,oldParams,jobParams))

@@ -133,7 +133,7 @@ class LoginProcess():
     
         def stop(self):
             if (self.cmdRegex.cmd!= None):
-                logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
+                logger.debug("Stopping the runServerCommandThread cmd %s"%self.cmdRegex.getCmd(self.loginprocess.jobParams))
             self._stop.set()
         
         def stopped(self):
@@ -146,7 +146,7 @@ class LoginProcess():
                 return
             logger.debug("runServerCommandThread: self.cmd = " + self.cmdRegex.cmd)
             try:
-                logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) = " + self.cmdRegex.cmd.format(**self.loginprocess.jobParams))
+                logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) = " + self.cmdRegex.getCmd(self.loginprocess.jobParams))
             except:
                 logger.debug("runServerCommandThread: self.cmd.format(**self.loginprocess.jobParams) gives an exception. Why wasn't this picked up earlier?")
     

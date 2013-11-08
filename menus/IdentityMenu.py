@@ -80,18 +80,14 @@ class IdentityMenu(wx.Menu):
         options = self.launcherMainFrame.getPrefsSection('Global Preferences')
         options['auth_mode'] = self.launcherMainFrame.PERM_SSH_KEY
         self.launcherMainFrame.setPrefsSection('Global Preferences',options)
-        print options
-        print self.launcherMainFrame.getPrefsSection('Global Preferences')
         self.launcherMainFrame.savePrefs(section='Global Preferences')
         self.disableItems(self.launcherMainFrame.PERM_SSH_KEY)
 
     def setRadio(self,state):
         if state == self.launcherMainFrame.PERM_SSH_KEY:
-            print "using key radio button%s"%state
             self.useSSHKey.Check(True)
             self.usePassword.Check(False)
         else:
-            print "using paswd radio %s %s"%(state,self.launcherMainFrame.PERM_SSH_KEY)
             self.useSSHKey.Check(False)
             self.usePassword.Check(True)
     
