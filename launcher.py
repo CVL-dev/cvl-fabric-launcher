@@ -1110,7 +1110,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
 
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         configName=self.FindWindowByName('jobParams_configName').GetValue()
-        options.self.getPrefsSection('Global Preferences')
+        options=self.getPrefsSection('Global Preferences')
         if not options.has_key('auth_mode'):
             mode=self.queryAuthMode()
             if mode==wx.ID_CANCEL:
@@ -1122,7 +1122,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             self.identity_menu.disableItems(mode)
         jobParams=self.buildJobParams(self)
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
-        if self.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
+        if options['auth_mode']==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
             try:
                 if 'SSH_AUTH_SOCK' in os.environ:

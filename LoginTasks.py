@@ -176,7 +176,7 @@ class LoginProcess():
             elif (messages.has_key('warn') or messages.has_key('info')):
                 def showMessageWindow(concat):
                     if sys.platform.startswith("linux"):
-                        dlg=HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                        dlg=HelpDialog(self.loginprocess.notify_window, title=self.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                         panel=wx.Panel(dlg)
                         sizer=wx.BoxSizer()
                         panel.SetSizer(sizer)
@@ -184,7 +184,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = LauncherMessageDialog(self.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=concat,helpEmailAddress=self.loginprocess.displayStrings.helpEmailAddress)
+                        dlg = LauncherMessageDialog(self.loginprocess.notify_window,title=self.loginprocess.notify_window.programName,message=concat,helpEmailAddress=self.loginprocess.displayStrings.helpEmailAddress)
                     dlg.Show()
                 wx.CallAfter(showMessageWindow,concat)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
@@ -595,13 +595,13 @@ class LoginProcess():
 
         def showTurboVncNotFoundMessageDialog(self,turboVncLatestVersion):
 
-            turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+            turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title=self.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
 
             turboVncNotFoundPanel = wx.Panel(turboVncNotFoundDialog)
             turboVncNotFoundPanelSizer = wx.FlexGridSizer(rows=6, cols=1, vgap=5, hgap=5)
             turboVncNotFoundPanel.SetSizer(turboVncNotFoundPanelSizer)
             turboVncNotFoundTitleLabel = wx.StaticText(turboVncNotFoundPanel,
-                label = "MASSIVE/CVL Launcher")
+                label = self.loginprocess.notify_window.programName)
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             font.SetPointSize(14)
             font.SetWeight(wx.BOLD)
@@ -694,7 +694,7 @@ class LoginProcess():
                     def error_dialog():
                         dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
                                                 "The launcher cannot continue.\n",
-                                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                        title=self.loginprocess.notify_window.programName, style=wx.OK | wx.ICON_INFORMATION)
                         showModal(dlg,self.loginprocess)
                         dlg.Destroy()
                         # If we can't contact the MASSIVE website, it's probably because
@@ -740,7 +740,7 @@ class LoginProcess():
                 def error_dialog():
                     dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Could not determine TurboVNC version number.\n\n" +
                                             "The launcher cannot continue.\n",
-                                    "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                    title=self.loginprocess.notify_window.programName, style=wx.OK | wx.ICON_INFORMATION)
                     showModal(dlg,self.loginprocess)
                     dlg.Destroy()
                     logger.dump_log(self.loginprocess.notify_window)
@@ -923,7 +923,7 @@ class LoginProcess():
                         event.loginprocess.jobParams.update([('project',"%s"%project)])
                         parentWindow = event.loginprocess.notify_window
                     cancelCallback=lambda x: event.loginprocess.cancel(x)
-                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, progressDialog=event.loginprocess.progressDialog, title='MASSIVE/CVL Launcher', headers=None, message=msg, noSelectionMessage="Please select a valid MASSIVE project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE, helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
+                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, progressDialog=event.loginprocess.progressDialog, title=event.loginprocess.notify_window.programName, headers=None, message=msg, noSelectionMessage="Please select a valid project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE, helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     showModal(dlg,event.loginprocess)
                 if (not event.loginprocess.canceled()):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
@@ -1025,9 +1025,6 @@ class LoginProcess():
                 event.loginprocess.updateProgressDialog( 7,"Starting the tunnel")
                 event.loginprocess.localPortNumber = "0" # Request ephemeral port.
 
-
-                # Dodgyness ... I can't think of how to determine the remotePortNumber except by adding 5900 to the vnc Display number.
-                # I can't think of an easy way to get the vncDisplay number when executing via qsub, but on MASSIVE it will always ben display :1
                 if (not event.loginprocess.jobParams.has_key('localPortNumber')):
                     import socket
                     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1181,7 +1178,7 @@ class LoginProcess():
                         logger.debug(message)
                         def showMessageWindow(message):
                             if sys.platform.startswith("linux"):
-                                dlg=HelpDialog(event.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                                dlg=HelpDialog(event.loginprocess.notify_window, title=event.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                                 panel=wx.Panel(dlg)
                                 sizer=wx.BoxSizer()
                                 panel.SetSizer(sizer)
@@ -1189,7 +1186,7 @@ class LoginProcess():
                                 sizer.Add(text,0,wx.ALL,15)
                                 dlg.addPanel(panel)
                             else:
-                                dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=message,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
+                                dlg = LauncherMessageDialog(event.loginprocess.notify_window,title=event.loginprocess.notify_window.programName,message=message,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                             dlg.Show()
                         wx.CallAfter(showMessageWindow,message)
                         return
@@ -1213,7 +1210,7 @@ class LoginProcess():
                         logger.debug(message)
                         def showMessageWindow(message):
                             if sys.platform.startswith("linux"):
-                                dlg=HelpDialog(event.loginprocess.notify_window, title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                                dlg=HelpDialog(event.loginprocess.notify_window, title=event.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                                 panel=wx.Panel(dlg)
                                 sizer=wx.BoxSizer()
                                 panel.SetSizer(sizer)
@@ -1221,7 +1218,7 @@ class LoginProcess():
                                 sizer.Add(text,0,wx.ALL,15)
                                 dlg.addPanel(panel)
                             else:
-                                dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=message,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
+                                dlg = LauncherMessageDialog(event.loginprocess.notify_window,title=event.loginprocess.notify_window.programName,message=message,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                             dlg.Show()
                         wx.CallAfter(showMessageWindow,message)
                         return
@@ -1349,7 +1346,7 @@ class LoginProcess():
                 #wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
                 if (event.string!=""):
                     if sys.platform.startswith("linux"):
-                        dlg=HelpDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher", name="MASSIVE/CVL Launcher",size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                        dlg=HelpDialog(event.loginprocess.notify_window,title=event.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                         panel=wx.Panel(dlg)
                         sizer=wx.BoxSizer()
                         panel.SetSizer(sizer)
@@ -1357,7 +1354,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title="MASSIVE/CVL Launcher",message=event.string,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
+                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title=event.loginprocess.notify_window.programName,message=event.string,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     showModal(dlg,event.loginprocess)
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
@@ -1389,7 +1386,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_STAT_RUNNING_JOB')
                 if sys.platform.startswith("darwin"):
                     if hasattr(sys, 'frozen'):
-                        applicationName = "MASSIVE Launcher"
+                        applicationName = event.loginprocess.notify_window.programName
                     else:
                         applicationName = "Python"
                     def grabFocusBackFromTurboVNC():
@@ -1562,7 +1559,7 @@ class LoginProcess():
                 def noopCallback():
                     logger.debug("Leaving a job in the queue after cancel")
 
-                dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,"MASSIVE/CVL Launcher",self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback)
+                dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback,title=self.notify_window.programName,)
                 logger.debug("threading.current_thread().name = " + threading.current_thread().name)
                 showModal(dialog,self)
                 self.askUserIfTheyWantToDeleteQueuedJobCompleted = True
