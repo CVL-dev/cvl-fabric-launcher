@@ -3,7 +3,7 @@ import sys
 
 import IconPys.MASSIVElogoTransparent64x64
 
-class LauncherOptionsDialog(wx.Dialog):
+class multiButtonDialog(wx.Dialog):
     def __init__(self, parent, message, title, ButtonLabels=['OK'],onHelp=None,helpEmailAddress="help@massive.org.au",**kw):
         wx.Dialog.__init__(self, parent, style=wx.DEFAULT_DIALOG_STYLE, **kw)
        

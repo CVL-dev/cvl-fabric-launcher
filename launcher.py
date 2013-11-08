@@ -122,6 +122,7 @@ from MacMessageDialog import LauncherMessageDialog
 from logger.Logger import logger
 import collections
 import optionsDialog
+import LauncherOptionsDialog
 
 
 class LauncherMainFrame(wx.Frame):
@@ -985,10 +986,11 @@ class LauncherMainFrame(wx.Frame):
         var='auth_mode'
         options=self.getPrefsSection('Global Preferences')
         # Create a dialog that will never be shown just so we get an authorative list of options
-        dlg = optionsDialog.LauncherOptionsDialog(self,wx.ID_ANY,"Global Options",options,tabIndex)
+        dlg = optionsDialog.LauncherOptionsDialog(self,wx.ID_ANY,"Global Options",options,0)
         auth_mode=dlg.FindWindowByName(var)
-        choices={}
-        for i in range(auth_mode.GetCount()):
+        choices=[]
+        nmodes=auth_mode.GetCount()
+        for i in range(0,nmodes):
             choices.append(auth_mode.GetString(i))
         dlg.Destroy()
         message = """
@@ -1001,10 +1003,11 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         configName=self.FindWindowByName('jobParams_configName').GetValue()
         dlg = LauncherOptionsDialog.multiButtonDialog(launcherMainFrame,message.strip(),title=self.programName,ButtonLabels=choices,helpEmailAddress=self.sites[configName].displayStrings.helpEmailAddress)
         rv=dlg.ShowModal()
-        if rv in range(auth_mode.GetCount()):
+        if rv in range(0,nmodes):
             options['auth_mode'] = int(rv)
             self.setPrefsSection('Global Preferences',options)
-            self.identity_menu.setRadio(options,rv)
+            self.identity_menu.setRadio(rv)
+            self.identity_menu.disableItems(rv)
             return int(rv)
         else:
             self.queryAuthMode()

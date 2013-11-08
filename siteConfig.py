@@ -147,9 +147,6 @@ class cmdRegEx():
             self.host='local'
         self.failFatal=failFatal
 
-    def windowsEscape(cmd):
-        return cmd.replace('&','^&').replace('|','^|')
-
     def getCmd(self,jobParam={}):
         if ('exec' in self.host):
             sshCmd = '{sshBinary} -A -T -o PasswordAuthentication=no -o PubkeyAuthentication=yes -o StrictHostKeyChecking=no -l {username} {execHost} '

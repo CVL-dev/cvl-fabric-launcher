@@ -64,7 +64,7 @@ class LoginProcess():
                 # Not 100% sure if this is necessary on Windows vs Linux. Seems to break the
                 # Windows version of the launcher, but leaving in for Linux/OSX.
                 logger.debug("runAsyncServerCommandThread: self.cmdRegex.cmd = " + self.cmdRegex.cmd)
-                cmd=self.cmdRegex.cmd.format(**self.loginprocess.jobParams)
+                cmd=self.cmdRegex.getCmd(self.loginprocess.jobParams)
                 logger.debug("runAsyncServerCommandThread: running %s"%cmd)
                 if sys.platform.startswith("win"):
                     pass
@@ -88,12 +88,12 @@ class LoginProcess():
                         if line!="":
                             lastNonEmptyLine = line
                         for regex in self.cmdRegex.regex:
-                            match = re.search(regex.format(**self.loginprocess.jobParams),line)
+                            match = re.search(regex.format(**self.loginprocess.jobParams).encode('ascii'),line)
                             if (match and not self.stopped() and not self.loginprocess.canceled() and not self.loginprocess._shutdown.is_set()):
-                                logger.debug("runAsyncServerCommandThread: Found match for " + regex.format(**self.loginprocess.jobParams))
+                                logger.debug("runAsyncServerCommandThread: Found match for " + regex.format(**self.loginprocess.jobParams).encode('ascii'))
                                 wx.PostEvent(self.loginprocess.notify_window.GetEventHandler(),self.nextevent)
                     else:
-                        logger.debug("runAsyncServerCommandThread: Didn't find match for " + regex.format(**self.loginprocess.jobParams))
+                        logger.debug("runAsyncServerCommandThread: Didn't find match for " + regex.format(**self.loginprocess.jobParams).encode('ascii'))
                         if (not success and not self.loginprocess._shutdown.is_set()):
                             self.loginprocess.cancel(errormessage)
                     if self.stopped():
@@ -176,7 +176,7 @@ class LoginProcess():
             elif (messages.has_key('warn') or messages.has_key('info')):
                 def showMessageWindow(concat):
                     if sys.platform.startswith("linux"):
-                        dlg=HelpDialog(self.loginprocess.notify_window, title=self.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                        dlg=HelpDialog(self.loginprocess.notify_window, title=self.loginprocess.parentWindow.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                         panel=wx.Panel(dlg)
                         sizer=wx.BoxSizer()
                         panel.SetSizer(sizer)
@@ -184,7 +184,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = LauncherMessageDialog(self.loginprocess.notify_window,title=self.loginprocess.notify_window.programName,message=concat,helpEmailAddress=self.loginprocess.displayStrings.helpEmailAddress)
+                        dlg = LauncherMessageDialog(self.loginprocess.notify_window,title=self.loginprocess.parentWindow.programName,message=concat,helpEmailAddress=self.loginprocess.displayStrings.helpEmailAddress)
                     dlg.Show()
                 wx.CallAfter(showMessageWindow,concat)
             for line  in itertools.chain(stdout.splitlines(False),stderr.splitlines(False)):
@@ -595,13 +595,13 @@ class LoginProcess():
 
         def showTurboVncNotFoundMessageDialog(self,turboVncLatestVersion):
 
-            turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title=self.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+            turboVncNotFoundDialog = HelpDialog(self.loginprocess.notify_window, title=self.loginprocess.parentWindow.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
 
             turboVncNotFoundPanel = wx.Panel(turboVncNotFoundDialog)
             turboVncNotFoundPanelSizer = wx.FlexGridSizer(rows=6, cols=1, vgap=5, hgap=5)
             turboVncNotFoundPanel.SetSizer(turboVncNotFoundPanelSizer)
             turboVncNotFoundTitleLabel = wx.StaticText(turboVncNotFoundPanel,
-                label = self.loginprocess.notify_window.programName)
+                label = self.loginprocess.parentWindow.programName)
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             font.SetPointSize(14)
             font.SetWeight(wx.BOLD)
@@ -694,7 +694,7 @@ class LoginProcess():
                     def error_dialog():
                         dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
                                                 "The launcher cannot continue.\n",
-                                        title=self.loginprocess.notify_window.programName, style=wx.OK | wx.ICON_INFORMATION)
+                                        title=self.loginprocess.parentWindow.programName, style=wx.OK | wx.ICON_INFORMATION)
                         showModal(dlg,self.loginprocess)
                         dlg.Destroy()
                         # If we can't contact the MASSIVE website, it's probably because
@@ -740,7 +740,7 @@ class LoginProcess():
                 def error_dialog():
                     dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Could not determine TurboVNC version number.\n\n" +
                                             "The launcher cannot continue.\n",
-                                    title=self.loginprocess.notify_window.programName, style=wx.OK | wx.ICON_INFORMATION)
+                                    title=self.loginprocess.parentWindow.programName, style=wx.OK | wx.ICON_INFORMATION)
                     showModal(dlg,self.loginprocess)
                     dlg.Destroy()
                     logger.dump_log(self.loginprocess.notify_window)
@@ -923,7 +923,7 @@ class LoginProcess():
                         event.loginprocess.jobParams.update([('project',"%s"%project)])
                         parentWindow = event.loginprocess.notify_window
                     cancelCallback=lambda x: event.loginprocess.cancel(x)
-                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, progressDialog=event.loginprocess.progressDialog, title=event.loginprocess.notify_window.programName, headers=None, message=msg, noSelectionMessage="Please select a valid project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE, helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
+                    dlg=ListSelectionDialog(parent=event.loginprocess.notify_window, progressDialog=event.loginprocess.progressDialog, title=event.loginprocess.parentWindow.programName, headers=None, message=msg, noSelectionMessage="Please select a valid project from the list.", items=grouplist, okCallback=okCallback, cancelCallback = cancelCallback, style=wx.DEFAULT_DIALOG_STYLE, helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     showModal(dlg,event.loginprocess)
                 if (not event.loginprocess.canceled()):
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_START_SERVER,event.loginprocess)
@@ -1178,7 +1178,7 @@ class LoginProcess():
                         logger.debug(message)
                         def showMessageWindow(message):
                             if sys.platform.startswith("linux"):
-                                dlg=HelpDialog(event.loginprocess.notify_window, title=event.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                                dlg=HelpDialog(event.loginprocess.notify_window, title=event.loginprocess.parentWindow.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                                 panel=wx.Panel(dlg)
                                 sizer=wx.BoxSizer()
                                 panel.SetSizer(sizer)
@@ -1186,7 +1186,7 @@ class LoginProcess():
                                 sizer.Add(text,0,wx.ALL,15)
                                 dlg.addPanel(panel)
                             else:
-                                dlg = LauncherMessageDialog(event.loginprocess.notify_window,title=event.loginprocess.notify_window.programName,message=message,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
+                                dlg = LauncherMessageDialog(event.loginprocess.notify_window,title=event.loginprocess.parentWindow.programName,message=message,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                             dlg.Show()
                         wx.CallAfter(showMessageWindow,message)
                         return
@@ -1210,7 +1210,7 @@ class LoginProcess():
                         logger.debug(message)
                         def showMessageWindow(message):
                             if sys.platform.startswith("linux"):
-                                dlg=HelpDialog(event.loginprocess.notify_window, title=event.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                                dlg=HelpDialog(event.loginprocess.notify_window, title=event.loginprocess.parentWindow.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                                 panel=wx.Panel(dlg)
                                 sizer=wx.BoxSizer()
                                 panel.SetSizer(sizer)
@@ -1218,7 +1218,7 @@ class LoginProcess():
                                 sizer.Add(text,0,wx.ALL,15)
                                 dlg.addPanel(panel)
                             else:
-                                dlg = LauncherMessageDialog(event.loginprocess.notify_window,title=event.loginprocess.notify_window.programName,message=message,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
+                                dlg = LauncherMessageDialog(event.loginprocess.notify_window,title=event.loginprocess.parentWindow.programName,message=message,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                             dlg.Show()
                         wx.CallAfter(showMessageWindow,message)
                         return
@@ -1346,7 +1346,7 @@ class LoginProcess():
                 #wx.PostEvent(event.loginprocess.notify_window.GetEventHandler(),newevent)
                 if (event.string!=""):
                     if sys.platform.startswith("linux"):
-                        dlg=HelpDialog(event.loginprocess.notify_window,title=event.loginprocess.notify_window.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+                        dlg=HelpDialog(event.loginprocess.notify_window,title=event.loginprocess.parentWindow.programName, size=(680,290),style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
                         panel=wx.Panel(dlg)
                         sizer=wx.BoxSizer()
                         panel.SetSizer(sizer)
@@ -1354,7 +1354,7 @@ class LoginProcess():
                         sizer.Add(text,0,wx.ALL,15)
                         dlg.addPanel(panel)
                     else:
-                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title=event.loginprocess.notify_window.programName,message=event.string,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
+                        dlg = LauncherMessageDialog(event.loginprocess.notify_window,title=event.loginprocess.parentWindow.programName,message=event.string,helpEmailAddress=event.loginprocess.displayStrings.helpEmailAddress)
                     showModal(dlg,event.loginprocess)
                 nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_COMPLETE,event.loginprocess)
                 event.loginprocess.shutdownThread = threading.Thread(target=event.loginprocess.shutdownReal,args=[nextevent])
@@ -1386,7 +1386,7 @@ class LoginProcess():
                 logger.debug('loginProcessEvent: caught EVT_LOGINPROCESS_STAT_RUNNING_JOB')
                 if sys.platform.startswith("darwin"):
                     if hasattr(sys, 'frozen'):
-                        applicationName = event.loginprocess.notify_window.programName
+                        applicationName = event.loginprocess.parentWindow.programName
                     else:
                         applicationName = "Python"
                     def grabFocusBackFromTurboVNC():
@@ -1559,7 +1559,7 @@ class LoginProcess():
                 def noopCallback():
                     logger.debug("Leaving a job in the queue after cancel")
 
-                dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback,title=self.notify_window.programName,)
+                dialog=LoginProcess.SimpleOptionDialog(self.notify_window,-1,self.displayStrings.qdelQueuedJob,self.displayStrings.qdelQueuedJobQdel,self.displayStrings.qdelQueuedJobNOOP,qdelCallback,noopCallback,title=self.parentWindow.programName,)
                 logger.debug("threading.current_thread().name = " + threading.current_thread().name)
                 showModal(dialog,self)
                 self.askUserIfTheyWantToDeleteQueuedJobCompleted = True
