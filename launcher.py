@@ -121,6 +121,7 @@ import siteConfig
 from MacMessageDialog import LauncherMessageDialog
 from logger.Logger import logger
 import collections
+import optionsDialog
 
 
 class LauncherMainFrame(wx.Frame):
@@ -136,13 +137,40 @@ class LauncherMainFrame(wx.Frame):
                 shouldSave=True
         return shouldSave
 
+# Use this method to read a specifig section of the preferences file
+    def loadConfig(self):
+        assert self.prefs == None
+        self.prefs=ConfigParser.SafeConfigParser(allow_no_value=True)
+        if (os.path.exists(launcherPreferencesFilePath)):
+            with open(launcherPreferencesFilePath,'r') as o:
+                self.prefs.readfp(o)
+
+    def getPrefsSection(self,section):
+        assert self.prefs != None
+        options = {}
+        if self.prefs.has_section(section):
+            optionsList =  self.prefs.items(section)
+            for option in optionsList:
+                key = option[0]
+                value = option[1]
+                if value=='True':
+                    value = True
+                if value=='False':
+                    value = False
+                options[key] = value
+        return options
+
+    def setPrefsSection(self,section,options):
+        assert self.prefs != None
+        if not self.prefs.has_section(section):
+            self.prefs.add_section(section)
+        for key in options.keys():
+            self.prefs.set(section,key,"%s"%options[key])
+        pass
     
+# Use this method to a) Figure out if we have a default site b) load the parameters for that site.
     def loadPrefs(self,window=None,site=None):
-        if (self.prefs==None):
-            self.prefs=ConfigParser.SafeConfigParser(allow_no_value=True)
-            if (os.path.exists(launcherPreferencesFilePath)):
-                with open(launcherPreferencesFilePath,'r') as o:
-                    self.prefs.readfp(o)
+        assert self.prefs != None
         if window==None:
             window=self
         window.Freeze()
@@ -179,38 +207,49 @@ class LauncherMainFrame(wx.Frame):
         threading.Thread(target=self.savePrefs).start()
         event.Skip()
         
-    def savePrefs(self,prefs=None,window=None,site=None):
+    def savePrefs(self,window=None,section=None):
+        assert self.prefs!=None
         write=False
         # If we called savePrefs without a window specified, its the root of recussion
-        if (window==None):
+        if (window==None and section!='Global Preferences'):
             write=True
             window=self
-        if (site==None):
+        if (section=='Global Preferences'):
+            write=True
+            window=None
+        if (section==None):
             try:
                 configName=self.FindWindowByName('jobParams_configName').GetValue()
                 if (configName!=None):
                     if (not self.prefs.has_section("Launcher Config")):
                         self.prefs.add_section("Launcher Config")
                     self.prefs.set("Launcher Config","siteConfigDefault",'%s'%configName)
-                    self.savePrefs(prefs=prefs,site=configName)
+                    self.savePrefs(section=configName)
             except:
                 pass
-        elif (site!=None):
-            if (not self.prefs.has_section(site)):
-                self.prefs.add_section(site)
-            for item in window.GetChildren():
-                if self.shouldSave(item):
-                    self.prefs.set(site,item.GetName(),'%s'%item.GetValue())
-                else:
-                    self.savePrefs(prefs=prefs,site=site,window=item)
+        elif (section!=None):
+            if (not self.prefs.has_section(section)):
+                self.prefs.add_section(section)
+            try:
+                for item in window.GetChildren():
+                    if self.shouldSave(item):
+                        self.prefs.set(section,item.GetName(),'%s'%item.GetValue())
+                    else:
+                        self.savePrefs(section=section,window=item)
+            except:
+                print "couldn't load the children to save"
+                pass
         if (write):
+            print "writing the preferences to filesystem"
             with open(launcherPreferencesFilePath,'w') as o:
                 self.prefs.write(o)
+
 
 
     def __init__(self, parent, id, title):
 
         super(LauncherMainFrame,self).__init__(parent, id, title, style=wx.DEFAULT_FRAME_STYLE )
+        self.programName="StRuDeL"
         self.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.SetAutoLayout(0)
 
@@ -227,22 +266,6 @@ class LauncherMainFrame(wx.Frame):
 
 
 
-        self.vncOptions = {}
-        import optionsDialog
-        if len(self.vncOptions)==0:
-            if turboVncConfig.has_section("TurboVNC Preferences"):
-                savedTurboVncOptions =  turboVncConfig.items("TurboVNC Preferences")
-                for option in savedTurboVncOptions:
-                    key = option[0]
-                    value = option[1]
-                    if value=='True':
-                        value = True
-                    if value=='False':
-                        value = False
-                    self.vncOptions[key] = value
-
-        self.launcherOptionsDialog = optionsDialog.LauncherOptionsDialog(self, wx.ID_ANY, "VNC Options", self.vncOptions, 0)
-        self.launcherOptionsDialog.Show(False)
 
         if sys.platform.startswith("win"):
             _icon = wx.Icon('MASSIVE.ico', wx.BITMAP_TYPE_ICO)
@@ -251,6 +274,8 @@ class LauncherMainFrame(wx.Frame):
         if sys.platform.startswith("linux"):
             import MASSIVE_icon
             self.SetIcon(MASSIVE_icon.getMASSIVElogoTransparent128x128Icon())
+
+        self.loadConfig()
 
         self.menu_bar  = wx.MenuBar()
 
@@ -309,12 +334,17 @@ class LauncherMainFrame(wx.Frame):
         self.menu_bar.Append(self.edit_menu, "&Edit")
 
         self.identity_menu = IdentityMenu()
-        self.identity_menu.initialize(self)
+        options=self.getPrefsSection('Global Preferences')
+        if options.has_key('auth_mode'):
+            auth_mode = int(options['auth_mode'])
+        else:
+            auth_mode = 0
+        self.identity_menu.initialize(self,auth_mode=auth_mode)
         self.menu_bar.Append(self.identity_menu, "&Identity")
 
         self.help_menu = wx.Menu()
         helpContentsMenuItemID = wx.NewId()
-        self.help_menu.Append(helpContentsMenuItemID, "&MASSIVE/CVL Launcher Help")
+        self.help_menu.Append(helpContentsMenuItemID, "&%s Help"%self.programName)
         self.Bind(wx.EVT_MENU, self.onHelpContents, id=helpContentsMenuItemID)
         self.help_menu.AppendSeparator()
         emailHelpAtMassiveMenuItemID = wx.NewId()
@@ -331,11 +361,11 @@ class LauncherMainFrame(wx.Frame):
         # need a separator.
         if not sys.platform.startswith("darwin"):
             self.help_menu.AppendSeparator()
-        self.help_menu.Append(wx.ID_ABOUT,   "&About MASSIVE/CVL Launcher")
+        self.help_menu.Append(wx.ID_ABOUT,   "&About %s"%self.programName)
         self.Bind(wx.EVT_MENU, self.onAbout, id=wx.ID_ABOUT)
         self.menu_bar.Append(self.help_menu, "&Help")
 
-        self.SetTitle("MASSIVE / CVL Launcher")
+        self.SetTitle(self.programName)
 
 
         self.loginDialogPanel = wx.Panel(self, wx.ID_ANY)
@@ -518,7 +548,7 @@ class LauncherMainFrame(wx.Frame):
 
         #self.Centre()
 
-        self.logWindow = wx.Frame(self, title="MASSIVE/CVL Launcher Debug Log", name="MASSIVE/CVL Launcher Debug Log",pos=(200,150),size=(700,450))
+        self.logWindow = wx.Frame(self, title="%s Debug Log"%self.programName, name="%s Debug Log"%self.programName,pos=(200,150),size=(700,450))
         #self.logWindow.Bind(wx.EVT_CLOSE, self.onCloseDebugWindow)
         self.logWindowPanel = wx.Panel(self.logWindow)
         self.logTextCtrl = wx.TextCtrl(self.logWindowPanel, style=wx.TE_MULTILINE|wx.TE_READONLY)
@@ -621,7 +651,7 @@ class LauncherMainFrame(wx.Frame):
                     self.prefs.set('configured_sites','sitename%i'%i,'%s'%s[0])
                     self.prefs.set('configured_sites','siteenabled%i'%i,'%s'%s[1])
                     i=i+1
-                self.savePrefs()
+                self.savePrefs(section='configured_sites')
                 wx.CallAfter(launcherMainFrame.loadDefaultSessions)
                 wx.CallAfter(launcherMainFrame.updateVisibility)
 
@@ -724,7 +754,7 @@ class LauncherMainFrame(wx.Frame):
             logger.debug(traceback.format_exc())
             self.contacted_massive_website = False
             dlg = wx.MessageDialog(self, "Warning: Could not contact the MASSIVE website to check version number.\n\n",
-                                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                "%s"%self.programName, wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
 
             latestVersionNumber = launcher_version_number.version_number
@@ -732,7 +762,7 @@ class LauncherMainFrame(wx.Frame):
 
         if latestVersionNumber != launcher_version_number.version_number:
             import new_version_alert_dialog
-            newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(self, wx.ID_ANY, "MASSIVE/CVL Launcher", latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
+            newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(self, wx.ID_ANY, self.programName, latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
             logger.debug('Old launcher version !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             logger.debug('launcher version: ' + str(launcher_version_number.version_number))
@@ -849,7 +879,7 @@ class LauncherMainFrame(wx.Frame):
         dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n"
                                    + 'launcher Commit: ' + commit_def.LATEST_COMMIT + '\n'
                                    + 'cvlsshutils Commit: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS + '\n',
-                                "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                                self.programName, wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -872,20 +902,21 @@ class LauncherMainFrame(wx.Frame):
 
     def onOptions(self, event, tabIndex=0):
 
-        self.launcherOptionsDialog.tabbedView.SetSelection(tabIndex)
-        rv = self.launcherOptionsDialog.ShowModal()
-
+        options = self.getPrefsSection("Global Preferences")
+        print options
+        dlg = optionsDialog.LauncherOptionsDialog(self,wx.ID_ANY,"Global Options",options,tabIndex)
+        rv = dlg.ShowModal()
         if rv == wx.OK:
-            self.vncOptions = self.launcherOptionsDialog.getVncOptions()
-            self.saveGlobalOptions()
+            options = dlg.getOptions()
+            self.setPrefsSection("Global Preferences",options)
+            self.savePrefs(section="Global Preferences")
+        dlg.Destroy()
+        auth_mode = int(self.getPrefsSection('Global Preferences')['auth_mode'])
+        print "setting teh radio button in the menu %s"%auth_mode
+        self.identity_menu.setRadio(auth_mode)
+        self.identity_menu.disableItems(auth_mode)
     
-    def saveGlobalOptions(self):
 
-        for key in self.vncOptions:
-            turboVncConfig.set("TurboVNC Preferences", key, "%s"%self.vncOptions[key])
-
-        with open(turboVncPreferencesFilePath, 'wb') as turboVncPreferencesFileObject:
-            turboVncConfig.write(turboVncPreferencesFileObject)
 
     def onCut(self, event):
         textCtrl = self.FindFocus()
@@ -946,12 +977,15 @@ class LauncherMainFrame(wx.Frame):
         super(LauncherMainFrame, self).SetCursor(cursor)
 
     def queryAuthMode(self):
-        import LauncherOptionsDialog
         var='auth_mode'
-        auth_mode=self.launcherOptionsDialog.FindWindowByName(var)
-        choices=[]
+        options=self.getPrefsSection('Global Preferences')
+        # Create a dialog that will never be shown just so we get an authorative list of options
+        dlg = optionsDialog.LauncherOptionsDialog(self,wx.ID_ANY,"Global Options",options,tabIndex)
+        auth_mode=dlg.FindWindowByName(var)
+        choices={}
         for i in range(auth_mode.GetCount()):
             choices.append(auth_mode.GetString(i))
+        dlg.Destroy()
         message = """
 Would you like to use an SSH Key pair or your password to authenticate yourself?
 
@@ -960,12 +994,12 @@ If this computer is shared by a number of people then passwords are preferable.
 If this computer is not shared, then an SSH Key pair will give you advanced features for managing your access.
 """
         configName=self.FindWindowByName('jobParams_configName').GetValue()
-        dlg = LauncherOptionsDialog.LauncherOptionsDialog(launcherMainFrame,message.strip(),title="MASSIVE/CVL Launcher",ButtonLabels=choices,helpEmailAddress=self.sites[configName].displayStrings.helpEmailAddress)
+        dlg = LauncherOptionsDialog.multiButtonDialog(launcherMainFrame,message.strip(),title=self.programName,ButtonLabels=choices,helpEmailAddress=self.sites[configName].displayStrings.helpEmailAddress)
         rv=dlg.ShowModal()
         if rv in range(auth_mode.GetCount()):
-            authModeRadioBox = self.launcherOptionsDialog.FindWindowByName('auth_mode')
-            authModeRadioBox.SetSelection(int(rv))
-            self.identity_menu.setRadio()
+            options['auth_mode'] = int(rv)
+            self.setPrefsSection('Global Preferences',options)
+            self.identity_menu.setRadio(options,rv)
             return int(rv)
         else:
             self.queryAuthMode()
@@ -1012,8 +1046,6 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         logger.debug("launcher.py: onLogin: Disabling login button.")
         self.loginButton.Disable()
 
-        MASSIVE_TAB_INDEX = 0
-        CVL_TAB_INDEX =1
         configName=self.FindWindowByName('jobParams_configName').GetValue()
         if configName=="" or configName==None:
             dlg=LauncherMessageDialog(self,"Please select a site to log into first","Please select a site")
@@ -1025,7 +1057,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             dlg = LauncherMessageDialog(self,
                     "Please enter your username.",
                     #"MASSIVE/CVL Launcher", style=wx.OK | wx.ICON_INFORMATION)
-                    "MASSIVE/CVL Launcher")
+                    self.programName)
             dlg.ShowModal()
             self.loginButton.Enable()
             usernamefield = self.FindWindowByName('jobParams_username')
@@ -1078,15 +1110,16 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
 
         # project hours and nodes will be ignored for the CVL login, but they will be used for Massive.
         configName=self.FindWindowByName('jobParams_configName').GetValue()
-        if not self.vncOptions.has_key('auth_mode'):
+        options.self.getPrefsSection('Global Preferences')
+        if not options.has_key('auth_mode'):
             mode=self.queryAuthMode()
             if mode==wx.ID_CANCEL:
                 self.onLoginProcessComplete(None)
                 return
-            self.vncOptions['auth_mode']=mode
-            self.launcherOptionsDialog.FindWindowByName('auth_mode').SetSelection(mode)
-            self.identity_menu.disableItems()
-            self.saveGlobalOptions()
+            options['auth_mode']=mode
+            self.setPrefsSection('Global Preferences',options)
+            self.savePrefs(section="Global Preferences")
+            self.identity_menu.disableItems(mode)
         jobParams=self.buildJobParams(self)
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
         if self.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()==LauncherMainFrame.TEMP_SSH_KEY:
@@ -1108,7 +1141,8 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
         self.configName=self.FindWindowByName('jobParams_configName').GetValue()
         autoExit=False
-        lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,globalOptions=self.vncOptions)
+        globalOptions = self.getPrefsSection("Global Options")
+        lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,globalOptions=globalOptions)
         oldParams  = jobParams.copy()
         lp.setCallback(lambda jobParams: self.loginComplete(lp,oldParams,jobParams))
         lp.setCancelCallback(lambda jobParams: self.loginCancel(lp,oldParams,jobParams))
@@ -1138,13 +1172,6 @@ class MyApp(wx.App):
         launcherPreferencesFilePath = os.path.join(appUserDataDir,"Launcher Preferences.cfg")
 
         sys.modules[__name__].turboVncConfig = ConfigParser.SafeConfigParser(allow_no_value=True)
-        turboVncConfig = sys.modules[__name__].turboVncConfig
-        sys.modules[__name__].turboVncPreferencesFilePath = os.path.join(appUserDataDir,"TurboVNC Preferences.cfg")
-        turboVncPreferencesFilePath = sys.modules[__name__].turboVncPreferencesFilePath
-        if os.path.exists(turboVncPreferencesFilePath):
-            turboVncConfig.read(turboVncPreferencesFilePath)
-        if not turboVncConfig.has_section("TurboVNC Preferences"):
-            turboVncConfig.add_section("TurboVNC Preferences")
 
         if sys.platform.startswith("win"):
             os.environ['CYGWIN'] = "nodosfilewarning"

@@ -1055,10 +1055,10 @@ If you use a password to authenticate, a new keypair will be generated each time
         self.Fit()
         self.Layout()
 
-    def getVncOptions(self):
+    def getOptions(self):
         return self.vncOptions
 
-    def setVncOptions(self):
+    def setOptions(self):
         return
 
     def onCancel(self, event):

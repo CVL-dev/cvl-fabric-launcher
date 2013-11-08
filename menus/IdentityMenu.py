@@ -20,7 +20,7 @@ userCanModifyPrivateKeyFilePath = False
 
 class IdentityMenu(wx.Menu):
 
-    def initialize(self, launcherMainFrame):
+    def initialize(self, launcherMainFrame,auth_mode=0):
 
         self.launcherMainFrame = launcherMainFrame
         #self.massiveLauncherConfig = massiveLauncherConfig
@@ -66,36 +66,36 @@ class IdentityMenu(wx.Menu):
         helpAboutKeysMenuItem = wx.NewId()
         self.Append(helpAboutKeysMenuItem, "&Help about keys")
         self.launcherMainFrame.Bind(wx.EVT_MENU, self.onHelpAboutKeys, id=helpAboutKeysMenuItem)
-        self.setRadio()
-        self.disableItems()
+        self.setRadio(auth_mode)
+        self.disableItems(auth_mode)
 
     def onUsePassword(self,event):
-        auth_mode=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode')
-        auth_mode.SetSelection(self.launcherMainFrame.TEMP_SSH_KEY)
-        self.disableItems()
-        self.launcherMainFrame.vncOptions['auth_mode']=self.launcherMainFrame.TEMP_SSH_KEY
-        self.launcherMainFrame.saveGlobalOptions()
+        options = self.launcherMainFrame.getPrefsSection('Global Preferences')
+        options['auth_mode'] = self.launcherMainFrame.TEMP_SSH_KEY
+        self.launcherMainFrame.setPrefsSection('Global Preferences',options)
+        self.launcherMainFrame.savePrefs(section='Global Preferences')
+        self.disableItems(self.launcherMainFrame.TEMP_SSH_KEY)
 
     def onSSHKey(self,event):
-        auth_mode=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode')
-        auth_mode.SetSelection(self.launcherMainFrame.PERM_SSH_KEY)
-        self.disableItems()
-        self.launcherMainFrame.vncOptions['auth_mode']=self.launcherMainFrame.PERM_SSH_KEY
-        self.launcherMainFrame.saveGlobalOptions()
+        options = self.launcherMainFrame.getPrefsSection('Global Preferences')
+        options['auth_mode'] = self.launcherMainFrame.PERM_SSH_KEY
+        self.launcherMainFrame.setPrefsSection('Global Preferences',options)
+        print options
+        print self.launcherMainFrame.getPrefsSection('Global Preferences')
+        self.launcherMainFrame.savePrefs(section='Global Preferences')
+        self.disableItems(self.launcherMainFrame.PERM_SSH_KEY)
 
-    def setRadio(self):
-        state=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()
+    def setRadio(self,state):
         if state == self.launcherMainFrame.PERM_SSH_KEY:
+            print "using key radio button%s"%state
             self.useSSHKey.Check(True)
             self.usePassword.Check(False)
         else:
+            print "using paswd radio %s %s"%(state,self.launcherMainFrame.PERM_SSH_KEY)
             self.useSSHKey.Check(False)
             self.usePassword.Check(True)
     
-    def disableItems(self):
-        #print "toggling items"
-        state=self.launcherMainFrame.launcherOptionsDialog.FindWindowByName('auth_mode').GetSelection()
-        #print state
+    def disableItems(self,state):
         if state == self.launcherMainFrame.PERM_SSH_KEY:
             enable=True
         else:
