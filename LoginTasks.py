@@ -965,6 +965,10 @@ class LoginProcess():
                 if (event.loginprocess.siteConfig.showStart.cmd!=None):
                     logger.debug('loginProcessEvent: event.loginprocess.showStartCmd is not None, so posting EVT_LOGINPROCESS_SHOW_ESTIMATED_START')
                     nextevent=LoginProcess.loginProcessEvent(LoginProcess.EVT_LOGINPROCESS_SHOW_ESTIMATED_START,event.loginprocess)
+                    # Cleanup any old threads before we launch a new one, just incase we are hitting a max threads limit
+                    for t in event.loginprocess.threads:
+                        if not t.is_alive():
+                            event.loginprocess.threads.remove(t)
                     t = LoginProcess.runServerCommandThread(event.loginprocess,event.loginprocess.siteConfig.showStart,nextevent,"Error estimating the start time")
                     t.setDaemon(False)
                     t.start()
@@ -1637,7 +1641,8 @@ class LoginProcess():
         update={}
         update['sshBinary']=self.keyModel.getsshBinary()
         update['launcher_version_number']=launcher_version_number.version_number
-        update['loginHost']=self.siteConfig.loginHost
+        if self.siteConfig.loginHost!=None:
+            update['loginHost']=self.siteConfig.loginHost
         self.jobParams.update(update)
 
         for k, v in self.__dict__.iteritems():

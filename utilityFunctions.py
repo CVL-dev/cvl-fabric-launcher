@@ -576,7 +576,7 @@ def die_from_main_frame(launcherMainFrame,error_message):
     logger.dump_log(launcherMainFrame,submit_log=True)
     os._exit(1)
 
-def run_command(command,ignore_errors=False,log_output=True,callback=None,startupinfo=None,creationflags=0):
+def run_command(command,ignore_errors=False,log_output=True,callback=None,startupinfo=None,creationflags=0,timeout=120):
     stdout=""
     stderr=""
     if command != None:
@@ -586,7 +586,10 @@ def run_command(command,ignore_errors=False,log_output=True,callback=None,startu
         ssh_process=subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True,startupinfo=startupinfo,creationflags=creationflags)
 
         #(stdout,stderr) = ssh_process.communicate(command)
+        t=threading.Timer(timeout,ssh_process.kill)
+        t.start()
         (stdout,stderr) = ssh_process.communicate()
+        t.cancel()
         ssh_process.wait()
         if log_output:
             logger.debug('command stdout: %s' % stdout)
