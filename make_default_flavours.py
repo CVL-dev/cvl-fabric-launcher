@@ -87,7 +87,9 @@ def getMassiveSiteConfig(loginHost):
     c.messageRegexs=[re.compile("^INFO:(?P<info>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^WARN:(?P<warn>.*(?:\n|\r\n?))",re.MULTILINE),re.compile("^ERROR:(?P<error>.*(?:\n|\r\n?))",re.MULTILINE)]
     c.loginHost=loginHost
     c.listAll=siteConfig.cmdRegEx('qstat -u {username}','^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+\S+\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$',requireMatch=False)
-    c.running=siteConfig.cmdRegEx('qstat -u {username}','^\s*(?P<jobid>{jobid})\s+\S+\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>R)\s+(?P<elapTime>\S+)\s*$')
+    cmd='\"module load pbs ; module load maui ; qstat -f {jobidNumber} -x\"'
+    regex='.*<job_state>R</job_state>.*'
+    c.running = siteConfigDict['running']=siteConfig.cmdRegEx(cmd,regex)
     c.stop=siteConfig.cmdRegEx('\'qdel -a {jobid}\'')
     c.stopForRestart=siteConfig.cmdRegEx('qdel {jobid} ; sleep 5\'')
     c.execHost=siteConfig.cmdRegEx('qpeek {jobidNumber}','\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$')
@@ -168,8 +170,8 @@ def getCVLSiteConfig(queue):
     regex='^\s*(?P<group>\S+)\s*$'
     c.getProjects = siteConfig.cmdRegEx(cmd,regex)
     c.listAll=siteConfig.cmdRegEx('\"module load pbs ; qstat -u {username} | tail -n +6\"','^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+\S+\s+(?P<queue>%s)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$'%queue,requireMatch=False)
-    cmd='\"module load pbs ; module load maui ; qstat | grep {username}\"'
-    regex='^\s*(?P<jobid>{jobidNumber}\.\S+)\s+(?P<jobname>desktop_\S+)\s+\S+\s+(?P<elapTime>\S+)\s+(?P<state>R)\s+(?P<queue>\S+)\s*$'
+    cmd='\"module load pbs ; module load maui ; qstat -f {jobidNumber} -x\"'
+    regex='.*<job_state>R</job_state>.*'
     c.running=siteConfig.cmdRegEx(cmd,regex)
     cmd="\"module load pbs ; module load maui ; echo \'module load pbs ; /usr/local/bin/vncsession --vnc turbovnc --geometry {resolution} ; sleep {wallseconds}\' |  qsub -q %s -l nodes=1:ppn=1 -N desktop_{username} -o .vnc/ -e .vnc/\""%queue
     regex="^(?P<jobid>(?P<jobidNumber>[0-9]+)\.\S+)\s*$"
