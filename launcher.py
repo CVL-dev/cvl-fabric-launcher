@@ -292,7 +292,7 @@ class LauncherMainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.loadDefaultSessionsEvent, id=loadDefaultSessions.GetId())
         manageSites=wx.MenuItem(self.file_menu,wx.ID_ANY,"&Manage sites")
         self.file_menu.AppendItem(manageSites)
-        self.Bind(wx.EVT_MENU,self.manageSites,id=manageSites.GetId())
+        self.Bind(wx.EVT_MENU,self.manageSitesEventHandler,id=manageSites.GetId())
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
             self.file_menu.Append(wx.ID_EXIT, "E&xit", "Close window and exit program.")
             self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
@@ -611,15 +611,17 @@ class LauncherMainFrame(wx.Frame):
         #self.loadPrefs()
 #        self.checkVersionNumber()
 
+    def manageSitesEventHandler(self,event):
+        self.manageSites()
 
-    def manageSites(self,event):
+    def manageSites(self):
         import siteListDialog
         siteList=[]
         options = self.getPrefsSection('configured_sites')
         for s in options.keys():
-            if 'sitename' in s:
+            if 'siteurl' in s:
                 site=options[s]
-                number=int(s[8:])
+                number=int(s[7:])
                 enabled=options['siteenabled%i'%number]
                 print "enabled %s"%enabled
                 if enabled=='True':
@@ -628,12 +630,13 @@ class LauncherMainFrame(wx.Frame):
                 elif enabled=='False':
                     enabled=False
                     print "site %s is disabled"%number
-                humanname=options['sitehumanname%i'%number]
-                siteList.append({'url':site,'enabled':enabled,'name':humanname,'number':number})
+                name=options['sitename%i'%number]
+                siteList.append({'url':site,'enabled':enabled,'name':name,'number':number})
                 siteList.sort(key=lambda x:x['number'])
         origSiteList=siteList
                 
-        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList)
+        newlist=[{'name':'CVL','url':'https://cvl.massive.org.au/cvl_flavours.json'},{'name':'MASSIVE','url':'http://cvl.massive.org.au/massive_flavours.json'}]
+        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList,newSites=newlist)
         if (dlg.ShowModal() == wx.ID_OK):
             newSiteList=dlg.getList()
             changed=False
@@ -647,9 +650,9 @@ class LauncherMainFrame(wx.Frame):
                 options={}
                 i=0
                 for s in newSiteList:
-                    options['sitename%i'%i]='%s'%s['url']
+                    options['siteurl%i'%i]='%s'%s['url']
                     options['siteenabled%i'%i]='%s'%s['enabled']
-                    options['sitehumanname%i'%i]='%s'%s['name']
+                    options['sitename%i'%i]='%s'%s['name']
                     i=i+1
                 self.prefs.remove_section('configured_sites')
                 self.setPrefsSection('configured_sites',options)
@@ -682,17 +685,15 @@ class LauncherMainFrame(wx.Frame):
 
     def loadDefaultSessions(self):
         sites=self.getPrefsSection(section='configured_sites')
-        if sites.keys() == []:
-            sites['sitename0']='https://cvl.massive.org.au/cvl_flavours.json'
-            sites['sitehumanname0']='NeCTAR: The Characterisation Virtual Laboratory'
-            sites['siteenabled0']='True'
-            sites['sitename1']='https://cvl.massive.org.au/massive_flavours.json'
-            sites['sitehumanname1']='Monash University: MASSIVE'
-            sites['siteenabled1']='True'
-            self.setPrefsSection('configured_sites',sites)
-            self.savePrefs(section='configured_sites')
+        while sites.keys() == []:
+            self.manageSites()
+            sites=self.getPrefsSection(section='configured_sites')
             
+        print "getting sites"
         self.sites=siteConfig.getSites(self.prefs)
+        print "site list %s"%self.sites
+        for s in self.sites:
+            print s
         cb=self.FindWindowByName('jobParams_configName')
         for i in range(0,cb.GetCount()):
             cb.Delete(0)

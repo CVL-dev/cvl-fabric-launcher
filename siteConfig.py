@@ -10,9 +10,9 @@ def getSites(prefs):
     if prefs.has_section('configured_sites'):
         l=prefs.options('configured_sites')
         for s in l:
-            if 'sitename' in s:
+            if 'siteurl' in s:
                 site=prefs.get('configured_sites',s)
-                number=int(s[8:])
+                number=int(s[7:])
                 enabled=prefs.get('configured_sites','siteenabled%i'%number)
                 if enabled=='True':
                     siteList.append(site)

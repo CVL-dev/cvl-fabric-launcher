@@ -8,10 +8,11 @@ class newSiteDialog(wx.Dialog):
         t = wx.StaticText(self,wx.ID_ANY,label='Name')
         self.GetSizer().Add(t)
         self.nametctrl=wx.TextCtrl(self,wx.ID_ANY,size=(400,-1))
+        self.GetSizer().Add(self.nametctrl,flag=wx.EXPAND)
         t = wx.StaticText(self,wx.ID_ANY,label='URL')
         self.GetSizer().Add(t)
         self.urltctrl=wx.TextCtrl(self,wx.ID_ANY,size=(400,-1))
-        self.GetSizer().Add(self.tctrl,flag=wx.EXPAND)
+        self.GetSizer().Add(self.urltctrl,flag=wx.EXPAND)
         p=wx.Panel(self)
         s=wx.BoxSizer(wx.HORIZONTAL)
         p.SetSizer(s)
@@ -37,7 +38,7 @@ class newSiteDialog(wx.Dialog):
 
 
 class siteListDialog(wx.Dialog):
-    def __init__(self,siteList=None,*args,**kwargs):
+    def __init__(self,siteList=None,newSites=[],*args,**kwargs):
         super(siteListDialog,self).__init__(*args,**kwargs)
         mainSizer=wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(mainSizer)
@@ -50,14 +51,26 @@ class siteListDialog(wx.Dialog):
         self.siteList.InsertColumn(2,"Active")
         i=0
         for s in siteList:
-            print "adding %s to the list"%s
             self.siteList.InsertStringItem(i,"%s"%s['name'])
             self.siteList.SetStringItem(i,1,"%s"%s['url'])
             cb=wx.CheckBox(self.siteList)
-            print "setting the checkbox value %s"%s['enabled']
             cb.SetValue(s['enabled'])
             self.siteList.SetItemWindow(i,col=2,wnd=cb)
             i=i+1
+        urls=[]
+        for s in siteList:
+            urls.append(s['url'])
+        for s in newSites:
+            if s['url'] not in urls:
+                self.siteList.InsertStringItem(i,"%s"%s['name'])
+                self.siteList.SetStringItem(i,1,"%s"%s['url'])
+                cb=wx.CheckBox(self.siteList)
+                cb.SetValue(False)
+                self.siteList.SetItemWindow(i,col=2,wnd=cb)
+                i=i+1
+                
+        
+
         self.siteList.SetColumnWidth(0,wx.LIST_AUTOSIZE)
         self.siteList.SetColumnWidth(1,wx.LIST_AUTOSIZE)
         self.siteList.SetColumnWidth(2,wx.LIST_AUTOSIZE_USEHEADER)
@@ -86,10 +99,11 @@ class siteListDialog(wx.Dialog):
         print r
         if r==wx.ID_OK:
             idx=self.siteList.GetItemCount()
-            self.siteList.InsertStringItem(idx,dlg.getSite())
+            self.siteList.InsertStringItem(idx,dlg.getName())
+            self.siteList.SetStringItem(idx,1,dlg.getSite())
             cb=wx.CheckBox(self.siteList)
             cb.SetValue(True)
-            self.siteList.SetItemWindow(idx,col=1,wnd=cb)
+            self.siteList.SetItemWindow(idx,col=2,wnd=cb)
 
     def onDelete(self,evt):
         i=self.siteList.GetFirstSelected()
