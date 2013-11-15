@@ -621,11 +621,16 @@ class LauncherMainFrame(wx.Frame):
                 site=options[s]
                 number=int(s[8:])
                 enabled=options['siteenabled%i'%number]
+                print "enabled %s"%enabled
                 if enabled=='True':
                     enabled=True
-                else:
+                    print "site %s is enabled"%number
+                elif enabled=='False':
                     enabled=False
-                siteList.append([site,enabled])
+                    print "site %s is disabled"%number
+                humanname=options['sitehumanname%i'%number]
+                siteList.append({'url':site,'enabled':enabled,'name':humanname,'number':number})
+                siteList.sort(key=lambda x:x['number'])
         origSiteList=siteList
                 
         dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList)
@@ -634,7 +639,7 @@ class LauncherMainFrame(wx.Frame):
             changed=False
             if len(newSiteList) == len(origSiteList):
                 for i in range(0,len(newSiteList)):
-                    if newSiteList[i][0]!=origSiteList[i][0] or newSiteList[i][1]!=origSiteList[i][1]:
+                    if newSiteList[i]['url']!=origSiteList[i]['url'] or newSiteList[i]['enabled']!=origSiteList[i]['enabled'] or newSiteList[i]['name']!=origSiteList[i]['name']:
                         changed=True
             else:
                 changed=True
@@ -642,8 +647,9 @@ class LauncherMainFrame(wx.Frame):
                 options={}
                 i=0
                 for s in newSiteList:
-                    options['sitename%i'%i]='%s'%s[0]
-                    options['siteenabled%i'%i]='%s'%s[1]
+                    options['sitename%i'%i]='%s'%s['url']
+                    options['siteenabled%i'%i]='%s'%s['enabled']
+                    options['sitehumanname%i'%i]='%s'%s['name']
                     i=i+1
                 self.prefs.remove_section('configured_sites')
                 self.setPrefsSection('configured_sites',options)
@@ -678,8 +684,10 @@ class LauncherMainFrame(wx.Frame):
         sites=self.getPrefsSection(section='configured_sites')
         if sites.keys() == []:
             sites['sitename0']='https://cvl.massive.org.au/cvl_flavours.json'
+            sites['sitehumanname0']='NeCTAR: The Characterisation Virtual Laboratory'
             sites['siteenabled0']='True'
             sites['sitename1']='https://cvl.massive.org.au/massive_flavours.json'
+            sites['sitehumanname1']='Monash University: MASSIVE'
             sites['siteenabled1']='True'
             self.setPrefsSection('configured_sites',sites)
             self.savePrefs(section='configured_sites')
