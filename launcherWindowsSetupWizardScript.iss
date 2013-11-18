@@ -46,7 +46,7 @@
 
 [Setup]
 AppName={#LauncherAppName}
-AppVersion=0.4.3
+AppVersion=0.6.0
 DefaultDirName={pf}\{#LauncherAppName}
 DefaultGroupName={#LauncherAppName}
 UninstallDisplayIcon={app}\{#LauncherAppExeName}

@@ -609,7 +609,7 @@ class LauncherMainFrame(wx.Frame):
         logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
         self.contacted_massive_website = False
         #self.loadPrefs()
-#        self.checkVersionNumber()
+        self.checkVersionNumber()
 
     def manageSitesEventHandler(self,event):
         self.manageSites()
@@ -787,7 +787,7 @@ class LauncherMainFrame(wx.Frame):
             latestVersionNumber = launcher_version_number.version_number
             latestVersionChanges = ''
 
-        if latestVersionNumber != launcher_version_number.version_number:
+        if latestVersionNumber > launcher_version_number.version_number:
             import new_version_alert_dialog
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(self, wx.ID_ANY, self.programName, latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
