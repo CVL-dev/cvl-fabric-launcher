@@ -1151,7 +1151,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             self.identity_menu.disableItems(mode)
         jobParams=self.buildJobParams(self)
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
-        if options['auth_mode']==LauncherMainFrame.TEMP_SSH_KEY:
+        if int(options['auth_mode'])==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
             try:
                 if 'SSH_AUTH_SOCK' in os.environ:
