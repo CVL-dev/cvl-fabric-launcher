@@ -635,8 +635,18 @@ class LauncherMainFrame(wx.Frame):
                 siteList.sort(key=lambda x:x['number'])
         origSiteList=siteList
                 
-        newlist=[{'name':'CVL','url':'https://cvl.massive.org.au/cvl_flavours.json'},{'name':'MASSIVE','url':'http://cvl.massive.org.au/massive_flavours.json'}]
-        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList,newSites=newlist)
+        try:
+            f=open("masterList.url",'r')
+            url=f.read().rstrip()
+            logger.debug("master list of sites is available at %s"%url)
+            print url
+            newlist=siteConfig.getMasterSites(url)
+        except Exception as e:
+            print e
+        finally:
+            f.close()
+        #newlist=[{'name':'CVL','url':'https://cvl.massive.org.au/cvl_flavours.json'},{'name':'MASSIVE','url':'http://cvl.massive.org.au/massive_flavours.json'}]
+        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList,newSites=newlist,style=wx.RESIZE_BORDER)
         if (dlg.ShowModal() == wx.ID_OK):
             newSiteList=dlg.getList()
             changed=False
@@ -686,6 +696,8 @@ class LauncherMainFrame(wx.Frame):
     def loadDefaultSessions(self):
         sites=self.getPrefsSection(section='configured_sites')
         while sites.keys() == []:
+            dlg=wx.MessageDialog(self,message="Before you can use this program, you must select from a list of computer systems that you commonly use.\n\nBy checking and unchecking items in this list you can control which options appear in the dropdown menu of which computer to connect to.\n\nYou can access this list again from the File->Manage Sites menu.",style=wx.OK)
+            dlg.ShowModal()
             self.manageSites()
             sites=self.getPrefsSection(section='configured_sites')
             

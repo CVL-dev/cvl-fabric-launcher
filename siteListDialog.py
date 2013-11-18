@@ -44,8 +44,8 @@ class siteListDialog(wx.Dialog):
         self.SetSizer(mainSizer)
         
         t=wx.StaticText(self,wx.ID_ANY,label="Available Sites")
-        mainSizer.Add(t)
-        self.siteList=ULC.UltimateListCtrl(self,wx.ID_ANY,size=(1000,200),agwStyle=ULC.ULC_REPORT|ULC.ULC_HAS_VARIABLE_ROW_HEIGHT)
+        mainSizer.Add(t,flag=wx.ALL,border=5)
+        self.siteList=ULC.UltimateListCtrl(self,wx.ID_ANY,agwStyle=ULC.ULC_REPORT|ULC.ULC_HAS_VARIABLE_ROW_HEIGHT)
         self.siteList.InsertColumn(0,"Name")
         self.siteList.InsertColumn(1,"URL")
         self.siteList.InsertColumn(2,"Active")
@@ -74,6 +74,10 @@ class siteListDialog(wx.Dialog):
         self.siteList.SetColumnWidth(0,wx.LIST_AUTOSIZE)
         self.siteList.SetColumnWidth(1,wx.LIST_AUTOSIZE)
         self.siteList.SetColumnWidth(2,wx.LIST_AUTOSIZE_USEHEADER)
+        w=0
+        for i in range(0,self.siteList.GetColumnCount()):
+            w=w+self.siteList.GetColumnWidth(i)
+        self.siteList.SetMinSize((w,200))
         mainSizer.Add(self.siteList,flag=wx.EXPAND)
 
         p=wx.Panel(self,wx.ID_ANY)

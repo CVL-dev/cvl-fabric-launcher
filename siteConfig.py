@@ -6,8 +6,13 @@ from logger.Logger import logger
 
 def getMasterSites(url):
     logger.debug("Getting the master list of all known sites/HPC installations")
-    r=requests.get(url)
-    return json.loads(r.text)
+    r=requests.get(url,verify=False)
+    if r.status_code==200:
+        logger.debug("loading master sites %s"%r.text)
+        return json.loads(r.text)
+    else:
+        logger.debug("Master site list unavailable status code %s"%r.status_code)
+        return []
     
     
 
