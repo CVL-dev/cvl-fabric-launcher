@@ -249,7 +249,7 @@ class LauncherMainFrame(wx.Frame):
     def __init__(self, parent, id, title):
 
         super(LauncherMainFrame,self).__init__(parent, id, title, style=wx.DEFAULT_FRAME_STYLE )
-        self.programName="StRuDeL"
+        self.programName="Paridee"
         self.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.SetAutoLayout(0)
 

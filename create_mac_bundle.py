@@ -55,6 +55,7 @@ import create_commit_def
 import requests
 import os
 import pkgutil
+myname="Paridee"
 
 resource_files=["MASSIVE.icns", requests.certs.where(), "sshHelpText.txt"]
 
@@ -76,8 +77,8 @@ setup(
         arch='x86_64',
         plist=dict(
             CFBundleDevelopmentRegion="English",
-            CFBundleDisplayName="StRuDeL",
-            CFBundleExecutable="StRuDeL",
+            CFBundleDisplayName=myname,
+            CFBundleExecutable=myname,
             CFBundleIconFile="MASSIVE.icns",
             CFBundleIdentifier="au.edu.monash.MASSIVE",
             CFBundleName="StRuDeL",
@@ -88,7 +89,7 @@ setup(
         )
     ),
     data_files=resource_files,
-    name="MASSIVE Launcher",
+    name=myname,
     setup_requires=["py2app"],
     app=['launcher.py']
 )

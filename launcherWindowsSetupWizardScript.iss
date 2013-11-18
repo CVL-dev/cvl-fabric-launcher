@@ -41,8 +41,8 @@
 ;MASSIVE Launcher InnoSetup script
 ;Change OutputDir to suit your build environment
 
-#define LauncherAppName "MASSIVE Launcher"
-#define LauncherAppExeName "launcher.exe"
+#define LauncherAppName "Paridee"
+#define LauncherAppExeName "paridee.exe"
 
 [Setup]
 AppName={#LauncherAppName}
