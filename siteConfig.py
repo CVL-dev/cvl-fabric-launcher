@@ -4,6 +4,13 @@ import collections
 import requests
 from logger.Logger import logger
 
+def getMasterSites(url):
+    logger.debug("Getting the master list of all known sites/HPC installations")
+    r=requests.get(url)
+    return json.loads(r.text)
+    
+    
+
 def getSites(prefs):
     logger.debug("getting a list of sites")
     siteList=[]
