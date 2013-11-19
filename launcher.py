@@ -1161,11 +1161,11 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             except:
                 logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (no existing agent found)")
                 pass
-            self.keyModel=KeyModel(temporaryKey=True)
+            self.keyModel=KeyModel(temporaryKey=True,startupinfo=self.startupinfo)
             removeKeyOnExit = True
         else:
             logger.debug("launcherMainFrame.onLogin: using a permanent Key pair")
-            self.keyModel=KeyModel(temporaryKey=False)
+            self.keyModel=KeyModel(temporaryKey=False,startupinfo=self.startupinfo)
         jobParams=self.buildJobParams(self)
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
         self.configName=self.FindWindowByName('jobParams_configName').GetValue()
