@@ -243,7 +243,7 @@ class ListSelectionDialog(wx.Dialog):
         if self.listSelectionList.GetFirstSelected()==-1:
             dlg = wx.MessageDialog(self.parent, 
                 self.noSelectionMessage,
-                "MASSIVE/CVL Launcher", 
+                "", 
                 wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             self.listSelectionList.SetFocus()
@@ -429,7 +429,7 @@ def die_from_login_thread(launcherMainFrame,error_message, display_error_dialog=
     if display_error_dialog:
         def error_dialog():
             dlg = wx.MessageDialog(launcherMainFrame, error_message,
-                            "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                            "", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
             launcherMainFrame.loginThread.die_from_login_thread_completed = True
@@ -456,7 +456,7 @@ def die_from_main_frame(launcherMainFrame,error_message):
 
     def error_dialog():
         dlg = wx.MessageDialog(launcherMainFrame, "Error: " + error_message + "\n\n" + "The launcher cannot continue.\n",
-                        "MASSIVE/CVL Launcher", wx.OK | wx.ICON_INFORMATION)
+                        "", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 #        launcherMainFrame.loginThread.die_from_main_frame_dialog_completed = True

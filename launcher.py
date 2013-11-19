@@ -249,7 +249,7 @@ class LauncherMainFrame(wx.Frame):
     def __init__(self, parent, id, title):
 
         super(LauncherMainFrame,self).__init__(parent, id, title, style=wx.DEFAULT_FRAME_STYLE )
-        self.programName="Paridee"
+        self.programName=title
         self.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.SetAutoLayout(0)
 
@@ -787,7 +787,7 @@ class LauncherMainFrame(wx.Frame):
             latestVersionNumber = launcher_version_number.version_number
             latestVersionChanges = ''
 
-        if latestVersionNumber > launcher_version_number.version_number:
+        if latestVersionNumber < launcher_version_number.version_number:
             import new_version_alert_dialog
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(self, wx.ID_ANY, self.programName, latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
@@ -1190,7 +1190,7 @@ class LauncherStatusBar(wx.StatusBar):
 class MyApp(wx.App):
     def OnInit(self):
 
-        appDirs = appdirs.AppDirs("MASSIVE Launcher", "Monash University")
+        appDirs = appdirs.AppDirs("paridee", "Monash University")
         appUserDataDir = appDirs.user_data_dir
         # Add trailing slash:
         appUserDataDir = os.path.join(appUserDataDir,"")
@@ -1198,7 +1198,7 @@ class MyApp(wx.App):
             os.makedirs(appUserDataDir)
 
         global launcherPreferencesFilePath 
-        launcherPreferencesFilePath = os.path.join(appUserDataDir,"Launcher Preferences.cfg")
+        launcherPreferencesFilePath = os.path.join(appUserDataDir,"paridee.cfg")
 
         sys.modules[__name__].turboVncConfig = ConfigParser.SafeConfigParser(allow_no_value=True)
 
@@ -1206,7 +1206,7 @@ class MyApp(wx.App):
             os.environ['CYGWIN'] = "nodosfilewarning"
 
         logger.setGlobalLauncherPreferencesFilePath(launcherPreferencesFilePath)
-        sys.modules[__name__].launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
+        sys.modules[__name__].launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'Paridee')
         launcherMainFrame = sys.modules[__name__].launcherMainFrame
         launcherMainFrame.SetStatusBar(launcherMainFrame.loginDialogStatusBar)
         launcherMainFrame.SetMenuBar(launcherMainFrame.menu_bar)

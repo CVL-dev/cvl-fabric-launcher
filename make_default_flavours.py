@@ -89,7 +89,7 @@ def getMassiveSiteConfig(loginHost):
     c.listAll=siteConfig.cmdRegEx('qstat -u {username}','^\s*(?P<jobid>(?P<jobidNumber>[0-9]+).\S+)\s+\S+\s+(?P<queue>\S+)\s+(?P<jobname>desktop_\S+)\s+(?P<sessionID>\S+)\s+(?P<nodes>\S+)\s+(?P<tasks>\S+)\s+(?P<mem>\S+)\s+(?P<reqTime>\S+)\s+(?P<state>[^C])\s+(?P<elapTime>\S+)\s*$',requireMatch=False)
     cmd='\"module load pbs ; module load maui ; qstat -f {jobidNumber} -x\"'
     regex='.*<job_state>R</job_state>.*'
-    c.running = siteConfigDict['running']=siteConfig.cmdRegEx(cmd,regex)
+    c.running = siteConfig.cmdRegEx(cmd,regex)
     c.stop=siteConfig.cmdRegEx('\'qdel -a {jobid}\'')
     c.stopForRestart=siteConfig.cmdRegEx('qdel {jobid} ; sleep 5\'')
     c.execHost=siteConfig.cmdRegEx('qpeek {jobidNumber}','\s*To access the desktop first create a secure tunnel to (?P<execHost>\S+)\s*$')
