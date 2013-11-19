@@ -42,7 +42,7 @@
 ;Change OutputDir to suit your build environment
 
 #define LauncherAppName "Paridee"
-#define LauncherAppExeName "paridee.exe"
+#define LauncherAppExeName "launcher.exe"
 
 [Setup]
 AppName={#LauncherAppName}
