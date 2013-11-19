@@ -4,15 +4,27 @@ import collections
 import requests
 from logger.Logger import logger
 
+def getMasterSites(url):
+    logger.debug("Getting the master list of all known sites/HPC installations")
+    r=requests.get(url,verify=False)
+    if r.status_code==200:
+        logger.debug("loading master sites %s"%r.text)
+        return json.loads(r.text)
+    else:
+        logger.debug("Master site list unavailable status code %s"%r.status_code)
+        return []
+    
+    
+
 def getSites(prefs):
     logger.debug("getting a list of sites")
     siteList=[]
     if prefs.has_section('configured_sites'):
         l=prefs.options('configured_sites')
         for s in l:
-            if 'sitename' in s:
+            if 'siteurl' in s:
                 site=prefs.get('configured_sites',s)
-                number=int(s[8:])
+                number=int(s[7:])
                 enabled=prefs.get('configured_sites','siteenabled%i'%number)
                 if enabled=='True':
                     siteList.append(site)

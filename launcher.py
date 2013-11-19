@@ -118,7 +118,12 @@ import tempfile
 from cvlsshutils.KeyModel import KeyModel
 import siteConfig
 
-from MacMessageDialog import LauncherMessageDialog
+if sys.platform.startswith("darwin"):
+    from MacMessageDialog import LauncherMessageDialog
+elif sys.platform.startswith("win"):
+    from WindowsMessageDialog import LauncherMessageDialog
+elif sys.platform.startswidh("linux"):
+    from LinuxMessageDialog import LauncherMessageDialog
 from logger.Logger import logger
 import collections
 import optionsDialog
@@ -249,7 +254,7 @@ class LauncherMainFrame(wx.Frame):
     def __init__(self, parent, id, title):
 
         super(LauncherMainFrame,self).__init__(parent, id, title, style=wx.DEFAULT_FRAME_STYLE )
-        self.programName="StRuDeL"
+        self.programName=title
         self.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.SetAutoLayout(0)
 
@@ -292,7 +297,7 @@ class LauncherMainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.loadDefaultSessionsEvent, id=loadDefaultSessions.GetId())
         manageSites=wx.MenuItem(self.file_menu,wx.ID_ANY,"&Manage sites")
         self.file_menu.AppendItem(manageSites)
-        self.Bind(wx.EVT_MENU,self.manageSites,id=manageSites.GetId())
+        self.Bind(wx.EVT_MENU,self.manageSitesEventHandler,id=manageSites.GetId())
         if sys.platform.startswith("win") or sys.platform.startswith("linux"):
             self.file_menu.Append(wx.ID_EXIT, "E&xit", "Close window and exit program.")
             self.Bind(wx.EVT_MENU, self.onExit, id=wx.ID_EXIT)
@@ -609,32 +614,50 @@ class LauncherMainFrame(wx.Frame):
         logger.debug('cvlsshutils commit hash: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS)
         self.contacted_massive_website = False
         #self.loadPrefs()
-#        self.checkVersionNumber()
+        self.checkVersionNumber()
 
+    def manageSitesEventHandler(self,event):
+        self.manageSites()
 
-    def manageSites(self,event):
+    def manageSites(self):
         import siteListDialog
         siteList=[]
         options = self.getPrefsSection('configured_sites')
         for s in options.keys():
-            if 'sitename' in s:
+            if 'siteurl' in s:
                 site=options[s]
-                number=int(s[8:])
+                number=int(s[7:])
                 enabled=options['siteenabled%i'%number]
+                print "enabled %s"%enabled
                 if enabled=='True':
                     enabled=True
-                else:
+                    print "site %s is enabled"%number
+                elif enabled=='False':
                     enabled=False
-                siteList.append([site,enabled])
+                    print "site %s is disabled"%number
+                name=options['sitename%i'%number]
+                siteList.append({'url':site,'enabled':enabled,'name':name,'number':number})
+                siteList.sort(key=lambda x:x['number'])
         origSiteList=siteList
                 
-        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList)
+        try:
+            f=open("masterList.url",'r')
+            url=f.read().rstrip()
+            logger.debug("master list of sites is available at %s"%url)
+            print url
+            newlist=siteConfig.getMasterSites(url)
+        except Exception as e:
+            print e
+        finally:
+            f.close()
+        #newlist=[{'name':'CVL','url':'https://cvl.massive.org.au/cvl_flavours.json'},{'name':'MASSIVE','url':'http://cvl.massive.org.au/massive_flavours.json'}]
+        dlg=siteListDialog.siteListDialog(parent=self,siteList=siteList,newSites=newlist,style=wx.RESIZE_BORDER)
         if (dlg.ShowModal() == wx.ID_OK):
             newSiteList=dlg.getList()
             changed=False
             if len(newSiteList) == len(origSiteList):
                 for i in range(0,len(newSiteList)):
-                    if newSiteList[i][0]!=origSiteList[i][0] or newSiteList[i][1]!=origSiteList[i][1]:
+                    if newSiteList[i]['url']!=origSiteList[i]['url'] or newSiteList[i]['enabled']!=origSiteList[i]['enabled'] or newSiteList[i]['name']!=origSiteList[i]['name']:
                         changed=True
             else:
                 changed=True
@@ -642,8 +665,9 @@ class LauncherMainFrame(wx.Frame):
                 options={}
                 i=0
                 for s in newSiteList:
-                    options['sitename%i'%i]='%s'%s[0]
-                    options['siteenabled%i'%i]='%s'%s[1]
+                    options['siteurl%i'%i]='%s'%s['url']
+                    options['siteenabled%i'%i]='%s'%s['enabled']
+                    options['sitename%i'%i]='%s'%s['name']
                     i=i+1
                 self.prefs.remove_section('configured_sites')
                 self.setPrefsSection('configured_sites',options)
@@ -676,15 +700,17 @@ class LauncherMainFrame(wx.Frame):
 
     def loadDefaultSessions(self):
         sites=self.getPrefsSection(section='configured_sites')
-        if sites.keys() == []:
-            sites['sitename0']='https://cvl.massive.org.au/cvl_flavours.json'
-            sites['siteenabled0']='True'
-            sites['sitename1']='https://cvl.massive.org.au/massive_flavours.json'
-            sites['siteenabled1']='True'
-            self.setPrefsSection('configured_sites',sites)
-            self.savePrefs(section='configured_sites')
+        while sites.keys() == []:
+            dlg=wx.MessageDialog(self,message="Before you can use this program, you must select from a list of computer systems that you commonly use.\n\nBy checking and unchecking items in this list you can control which options appear in the dropdown menu of which computer to connect to.\n\nYou can access this list again from the File->Manage Sites menu.",style=wx.OK)
+            dlg.ShowModal()
+            self.manageSites()
+            sites=self.getPrefsSection(section='configured_sites')
             
+        print "getting sites"
         self.sites=siteConfig.getSites(self.prefs)
+        print "site list %s"%self.sites
+        for s in self.sites:
+            print s
         cb=self.FindWindowByName('jobParams_configName')
         for i in range(0,cb.GetCount()):
             cb.Delete(0)
@@ -766,7 +792,7 @@ class LauncherMainFrame(wx.Frame):
             latestVersionNumber = launcher_version_number.version_number
             latestVersionChanges = ''
 
-        if latestVersionNumber != launcher_version_number.version_number:
+        if latestVersionNumber > launcher_version_number.version_number:
             import new_version_alert_dialog
             newVersionAlertDialog = new_version_alert_dialog.NewVersionAlertDialog(self, wx.ID_ANY, self.programName, latestVersionNumber, latestVersionChanges, LAUNCHER_URL)
             newVersionAlertDialog.ShowModal()
@@ -882,10 +908,11 @@ class LauncherMainFrame(wx.Frame):
 
     def onAbout(self, event):
         import commit_def
-        dlg = wx.MessageDialog(self, "Version " + launcher_version_number.version_number + "\n"
-                                   + 'launcher Commit: ' + commit_def.LATEST_COMMIT + '\n'
-                                   + 'cvlsshutils Commit: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS + '\n',
-                                self.programName, wx.OK | wx.ICON_INFORMATION)
+        msg="Paridee is the Program for Accessing Remote Interactive Desktop Environments Easily\n\n"
+        msg=msg+"Paridee was created with funding through the NeCTAR Characterisation Virtual Laboratory by the team at the Monash e-Research Center (Monash University, Australia)\n\n"
+        msg=msg+"Paridee is open source (GPL3) software available from https://github.com/CVL-dev/cvl-fabric-launcher\n\n"
+        msg=msg+"Version " + launcher_version_number.version_number + "\n" + 'launcher Commit: ' + commit_def.LATEST_COMMIT + '\n' + 'cvlsshutils Commit: ' + commit_def.LATEST_COMMIT_CVLSSHUTILS + '\n'
+        dlg = wx.MessageDialog(self, msg, self.programName, wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -1130,7 +1157,7 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             self.identity_menu.disableItems(mode)
         jobParams=self.buildJobParams(self)
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
-        if options['auth_mode']==LauncherMainFrame.TEMP_SSH_KEY:
+        if int(options['auth_mode'])==LauncherMainFrame.TEMP_SSH_KEY:
             logger.debug("launcherMainFrame.onLogin: using a temporary Key pair")
             try:
                 if 'SSH_AUTH_SOCK' in os.environ:
@@ -1140,17 +1167,17 @@ If this computer is not shared, then an SSH Key pair will give you advanced feat
             except:
                 logger.debug("launcherMainFrame.onLogin: spawning an ssh-agent (no existing agent found)")
                 pass
-            self.keyModel=KeyModel(temporaryKey=True)
+            self.keyModel=KeyModel(temporaryKey=True,startupinfo=self.startupinfo)
             removeKeyOnExit = True
         else:
             logger.debug("launcherMainFrame.onLogin: using a permanent Key pair")
-            self.keyModel=KeyModel(temporaryKey=False)
+            self.keyModel=KeyModel(temporaryKey=False,startupinfo=self.startupinfo)
         jobParams=self.buildJobParams(self)
         jobParams['wallseconds']=int(jobParams['hours'])*60*60
         self.configName=self.FindWindowByName('jobParams_configName').GetValue()
         autoExit=False
         globalOptions = self.getPrefsSection("Global Preferences")
-        lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,globalOptions=globalOptions)
+        lp=LoginTasks.LoginProcess(self,jobParams,self.keyModel,siteConfig=self.sites[self.configName],displayStrings=self.sites[self.configName].displayStrings,autoExit=autoExit,globalOptions=globalOptions,startupinfo=self.startupinfo)
         oldParams  = jobParams.copy()
         lp.setCallback(lambda jobParams: self.loginComplete(lp,oldParams,jobParams))
         lp.setCancelCallback(lambda jobParams: self.loginCancel(lp,oldParams,jobParams))
@@ -1169,7 +1196,7 @@ class LauncherStatusBar(wx.StatusBar):
 class MyApp(wx.App):
     def OnInit(self):
 
-        appDirs = appdirs.AppDirs("MASSIVE Launcher", "Monash University")
+        appDirs = appdirs.AppDirs("paridee", "Monash University")
         appUserDataDir = appDirs.user_data_dir
         # Add trailing slash:
         appUserDataDir = os.path.join(appUserDataDir,"")
@@ -1177,7 +1204,7 @@ class MyApp(wx.App):
             os.makedirs(appUserDataDir)
 
         global launcherPreferencesFilePath 
-        launcherPreferencesFilePath = os.path.join(appUserDataDir,"Launcher Preferences.cfg")
+        launcherPreferencesFilePath = os.path.join(appUserDataDir,"paridee.cfg")
 
         sys.modules[__name__].turboVncConfig = ConfigParser.SafeConfigParser(allow_no_value=True)
 
@@ -1185,7 +1212,7 @@ class MyApp(wx.App):
             os.environ['CYGWIN'] = "nodosfilewarning"
 
         logger.setGlobalLauncherPreferencesFilePath(launcherPreferencesFilePath)
-        sys.modules[__name__].launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'MASSIVE/CVL Launcher')
+        sys.modules[__name__].launcherMainFrame = LauncherMainFrame(None, wx.ID_ANY, 'Paridee')
         launcherMainFrame = sys.modules[__name__].launcherMainFrame
         launcherMainFrame.SetStatusBar(launcherMainFrame.loginDialogStatusBar)
         launcherMainFrame.SetMenuBar(launcherMainFrame.menu_bar)

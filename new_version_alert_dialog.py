@@ -72,7 +72,7 @@ class NewVersionAlertDialog(wx.Dialog):
         newVersionAlertPanel.SetSizer(newVersionAlertPanelSizer)
 
         newVersionAlertTitleLabel = wx.StaticText(newVersionAlertPanel,
-            label = "MASSIVE/CVL Launcher")
+            label = parent.programName)
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         font.SetPointSize(14)
         font.SetWeight(wx.BOLD)

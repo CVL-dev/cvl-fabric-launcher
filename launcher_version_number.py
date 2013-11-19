@@ -39,5 +39,5 @@
 #
 # Enquiries: help@massive.org.au
 
-version_number = "0.4.3"
+version_number = "0.6.0"
 

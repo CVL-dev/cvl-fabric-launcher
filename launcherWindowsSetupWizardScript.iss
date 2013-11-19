@@ -41,12 +41,12 @@
 ;MASSIVE Launcher InnoSetup script
 ;Change OutputDir to suit your build environment
 
-#define LauncherAppName "MASSIVE Launcher"
+#define LauncherAppName "Paridee"
 #define LauncherAppExeName "launcher.exe"
 
 [Setup]
 AppName={#LauncherAppName}
-AppVersion=0.4.3
+AppVersion=0.6.0
 DefaultDirName={pf}\{#LauncherAppName}
 DefaultGroupName={#LauncherAppName}
 UninstallDisplayIcon={app}\{#LauncherAppExeName}

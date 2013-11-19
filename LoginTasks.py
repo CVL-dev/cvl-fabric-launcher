@@ -13,8 +13,10 @@ import datetime
 import os
 if sys.platform.startswith("darwin"):
     from MacMessageDialog import LauncherMessageDialog
-if sys.platform.startswith("win"):
+elif sys.platform.startswith("win"):
     from WindowsMessageDialog import LauncherMessageDialog
+elif sys.platform.startswidh("linux"):
+    from LinuxMessageDialog import LauncherMessageDialog
 from utilityFunctions import LAUNCHER_URL,TURBOVNC_BASE_URL
 from logger.Logger import logger
 import inspect
@@ -692,9 +694,9 @@ class LoginProcess():
                     logger.debug("Exception while checking TurboVNC version number: " + str(e))
 
                     def error_dialog():
-                        dlg = wx.MessageDialog(self.loginprocess.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
+                        dlg = LauncherMessageDialog(self.loginprocess.notify_window, "Error: Unable to contact MASSIVE website to check the TurboVNC version number.\n\n" +
                                                 "The launcher cannot continue.\n",
-                                        title=self.loginprocess.parentWindow.programName, style=wx.OK | wx.ICON_INFORMATION)
+                                        title=self.loginprocess.parentWindow.programName)
                         showModal(dlg,self.loginprocess)
                         dlg.Destroy()
                         # If we can't contact the MASSIVE website, it's probably because
