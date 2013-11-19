@@ -118,7 +118,12 @@ import tempfile
 from cvlsshutils.KeyModel import KeyModel
 import siteConfig
 
-from MacMessageDialog import LauncherMessageDialog
+if sys.platform.startswith("darwin"):
+    from MacMessageDialog import LauncherMessageDialog
+elif sys.platform.startswith("win"):
+    from WindowsMessageDialog import LauncherMessageDialog
+elif sys.platform.startswidh("linux"):
+    from LinuxMessageDialog import LauncherMessageDialog
 from logger.Logger import logger
 import collections
 import optionsDialog
