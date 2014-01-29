@@ -1,8 +1,13 @@
 #!/bin/bash
+# Put the PBS output and error logs in the users .vnc directory
 #PBS -o $HOME/.vnc/
 #PBS -e $HOME/.vnc/
 
-cd $PBS_O_WORKDIR
+# Output the environment so we know a bit about how the user is launching the session
+env
+
+# Calculate the walltime so we can hold the session for that length of time (unfortunately this means that 
+# we cannot extend the walltime if the user requests it)
 walltime_seconds=$(qstat -f $PBS_JOBID | grep "Walltime.Remaining" | sed 's/Walltime.Remaining = //')
 let "session_hold_timer = $walltime_seconds - 10 " #let the session die before pbs kills it
 echo sleep $session_hold_timer
